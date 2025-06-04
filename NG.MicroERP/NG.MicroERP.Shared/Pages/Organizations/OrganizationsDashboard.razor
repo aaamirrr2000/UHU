@@ -1,0 +1,208 @@
+﻿@page "/OrganizationsDashboard"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject FileUploadService FileUploadService
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="row" style="margin: 2px; height: 90vh; display: flex;">
+    <MyDrawer @ref="_drawer" Title="ORGANIZATION" FaIcon="fa fa-building">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                     <OrganizationsPage Action="@Action" CurrentRecord="record.Id" />
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    @if (data == null)
+    {
+        <SimpleLoading />
+    }
+    else
+    {
+        <div class="row">
+            <MudDataGrid T="OrganizationsModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Class="custom-grid">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">Organizations Managment</MudText>
+                    <MudSpacer />
+                    <MudIconButton Icon="@Icons.Material.Outlined.Add" Size="MudBlazor.Size.Small" OnClick="@(() => Clear())" Style="font-size: 16px; padding: 4px;" />
+                </ToolBarContent>
+
+                <Columns>
+                    <TemplateColumn Title="Actions" CellStyle="width: 160px; min-width: 160px;">
+                        <CellTemplate Context="row">
+                            <MudIconButton Icon="@Icons.Material.TwoTone.Visibility" Size="MudBlazor.Size.Small" OnClick="@(() => View(row.Item.Id))" />
+                            <MudIconButton Icon="@Icons.Material.TwoTone.Edit" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.Id))" />
+                            <MudIconButton Icon="@Icons.Material.TwoTone.Delete" Size="MudBlazor.Size.Small" OnClick="@(() => Delete(row.Item.Id))" />
+                            <MudIconButton Icon="@Icons.Material.TwoTone.Restore" Size="MudBlazor.Size.Small" OnClick="@(() => SetParent(row.Item.Id))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Logo" CellStyle="width: 50px; min-width: 50px;">
+                        <CellTemplate Context="row">
+                            <img src="@(!string.IsNullOrWhiteSpace(row.Item.Logo) ? row.Item.Logo : "images/no-image.png")" alt="Logo" style="width:30px; height:30px; border-radius: 50%;" />
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="x => x.Code" Title="Code" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Name" Title="Organization" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.ParentOrganizationName" Title="Parent Organization" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Phone" Title="Phone" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Email" Title="Email" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Industry" Title="Industry" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Website" Title="Website" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.TimeZone" Title="TimeZone" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Expiry" Title="Expiry" Sortable="true" Filterable="true" Format="dd-MMM-yyy" />
+                    <TemplateColumn Title="Parent" CellStyle="width: 50px; min-width: 50px; color:green;">
+                        <CellTemplate Context="row">
+                            @if (row.Item.ParentId == 0)
+                            {
+                                <MudIconButton Icon="@Icons.Material.TwoTone.AutoFixNormal" Size="MudBlazor.Size.Medium" />
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <PagerContent>
+                    <MudDataGridPager T="OrganizationsModel" />
+                </PagerContent>
+            </MudDataGrid>
+        </div>
+    }
+</div>
+
+@code
+{
+    static List<OrganizationsModel> data = new();
+    static OrganizationsModel record = new();
+
+    public string Action { get; set; } = "INSERT";
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        data = await Functions.GetAsync<List<OrganizationsModel>>($"Organizations/Search", true) ?? new List<OrganizationsModel>();
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<OrganizationsModel>($"Organizations/Get?Id={id}", true) ?? new OrganizationsModel();
+        LoadingPanel = false;
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new OrganizationsModel();
+        record.IsActive = 1;
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        isReadOnly = true;
+        StateHasChanged();
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Get(id);
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedSource = Functions.GetComputerDetails();
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedSource = Functions.GetComputerDetails();
+
+        var result = await Functions.PostAsync<OrganizationsModel>($"Organizations/{Action}", record, true);
+        if (result.Success)
+        {
+            SnackbarService.Add($"Record Not {Action.Replace("Soft", "")}", Severity.Error);
+        }
+        else
+        {
+            SnackbarService.Add($"Record {Action.Replace("Soft", "")} Successfully", Severity.Success);
+            record = new();
+            isReadOnly = true;
+        }
+
+        data = await Functions.GetAsync<List<OrganizationsModel>>($"Organizations/Search", true) ?? new List<OrganizationsModel>();
+        LoadingPanel = false;
+        await _drawer.CloseDrawer();
+
+    }
+
+    protected async Task SetParent(int id)
+    {
+        await Get(id);
+        record.ParentId = 0;
+        isReadOnly = false;
+        await Save();
+    }
+
+    private async Task OnFileInputChanged(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var result = await Functions.FileUpload(e, FileUploadService);
+
+            if (result.Item1 == true)
+            {
+                record.Logo = result.Item2;
+                SnackbarService.Add("File uploaded successfully!", Severity.Success);
+            }
+            else
+            {
+                SnackbarService.Add($"Error: {result.Item2}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Exception: {ex.Message}", Severity.Error);
+            record.Logo = null;
+        }
+    }
+}
+

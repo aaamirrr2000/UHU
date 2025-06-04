@@ -1,0 +1,337 @@
+﻿@page "/EmployeesPage/{Action}/{CurrentRecord?}"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject FileUploadService FileUploadService
+
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+
+    <div class="text-end" style="margin-top:10px;">
+        @if (Action != "VIEW")
+        {
+            <MudButton Variant="Variant.Filled" OnClick="Save" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                @(Action == "INSERT" ? "Save" : "Update")
+            </MudButton>
+
+            @if (Action == "UPDATE")
+            {
+                <MudButton Variant="Variant.Filled" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                    Delete
+                </MudButton>
+            }
+        }
+    </div>
+
+    <br />
+
+    <MudExpansionPanels MultiExpansion="true">
+        <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
+            <div class="row" style="width:100%; display: flex;">
+                <div class="col-6 mb-3">
+                    <MudTextField Label="Code" id="EmpId" @bind-Value="record.EmpId" Variant="Variant.Filled" placeholder="Code" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.EmpId)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudTextField Label="Full Name" id="Fullname" @bind-Value="record.Fullname" Variant="Variant.Filled" placeholder="Full Name" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.Fullname)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudTextField Label="Phone" id="Phone" @bind-Value="record.Phone" Variant="Variant.Filled" placeholder="Phone" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.Phone)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudTextField Label="Email" id="Email" @bind-Value="record.Email" Variant="Variant.Filled" placeholder="Email" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.Email)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudTextField Label="Social Security Number/NIC" id="Cnic" @bind-Value="record.Cnic" Variant="Variant.Filled" placeholder="Social Security Number/NIC" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.Cnic)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudTextField Label="Address" id="EmpAddress" @bind-Value="record.EmpAddress" Variant="Variant.Filled" placeholder="Address" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.EmpAddress)" />
+                </div>
+                <div class="col-6 mb-3">
+
+                    <MudSelect T="string"
+                               @bind-Value="record.EmpType"
+                               Label="Employee Type"
+                               Variant="Variant.Filled"
+                               Dense="true"
+                               Placeholder="Employee Type"
+                               HelperText="Select Employee Type"
+                               HelperTextOnFocus="true"
+                               Clearable="true">
+
+                        @if (EmployeeType != null && EmployeeType.Any())
+                        {
+                            if (string.IsNullOrWhiteSpace(record.EmpType))
+                            {
+                                record.EmpType = EmployeeType.First().ListValue;
+                            }
+
+                            foreach (var i in EmployeeType)
+                            {
+                                <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+
+                    <ValidationMessage For="@(() => record.EmpType)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudSelect T="string"
+                               @bind-Value="record.EmpDept"
+                               Label="Department"
+                               Variant="Variant.Filled"
+                               Dense="true"
+                               Placeholder="EmpType"
+                               HelperText="Select Department"
+                               HelperTextOnFocus="true"
+                               Clearable="true">
+
+                        @if (Departments != null && Departments.Any())
+                        {
+                            if (string.IsNullOrWhiteSpace(record.EmpDept))
+                            {
+                                record.EmpDept = Departments.First().ListValue;
+                            }
+
+                            foreach (var i in Departments)
+                            {
+                                <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+
+                    <ValidationMessage For="@(() => record.EmpDept)" />
+                </div>
+                <div class="col-6 mb-3">
+
+                    <MudSelect @bind-Value="record.LocationId"
+                               Label="Location"
+                               Variant="Variant.Filled"
+                               Dense="true"
+                               Placeholder="Location"
+                               HelperText="Select Location"
+                               HelperTextOnFocus="true"
+                               Clearable="true">
+
+                        @if (Locations != null && Locations.Any())
+                        {
+                            if (record.LocationId == 0)
+                            {
+                                record.LocationId = Locations.First().Id;
+                            }
+
+                            foreach (var i in Locations)
+                            {
+                                <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                    <ValidationMessage For="@(() => record.LocationId)" />
+                </div>
+              
+                <div class="col-6 mb-3">
+
+                    <MudSelect T="int"
+                               @bind-Value="record.IsActive"
+                               Label="Active"
+                               Variant="Variant.Filled"
+                               Dense="true"
+                               Placeholder="Active"
+                               HelperText="Select Active"
+                               HelperTextOnFocus="true"
+                               Clearable="true">
+
+                        @if (record.IsActive != 0 && record.IsActive != 1)
+                        {
+                            record.IsActive = 1;
+                        }
+
+                        <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                        <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                    </MudSelect>
+
+                    <ValidationMessage For="@(() => record.IsActive)" />
+                </div>
+
+
+                <div class="w-100 d-flex justify-content-center">
+                    <div class="p-3 border rounded" style="width: 300px;">
+                        <label class="small fw-bold text-uppercase d-block mb-2 text-center">Employee Picture</label>
+
+                        <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
+                            @if (!string.IsNullOrEmpty(record.Pic))
+                            {
+                                <img src="@record.Pic"
+                                     class="img-fluid rounded"
+                                     alt="Employee Picture"
+                                     style="max-height: 100%; max-width: 100%; object-fit: cover;" />
+                            }
+                            else
+                            {
+                                <div class="d-flex align-items-center justify-content-center bg-secondary rounded-circle"
+                                     style="width: 120px; height: 120px;">
+                                    <i class="fas fa-image text-white fs-3"></i>
+                                </div>
+                            }
+                        </div>
+
+                        <InputFile OnChange="OnFileInputChanged" />
+                    </div>
+                </div>
+
+
+            </div>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+
+</div>
+
+@code
+{
+    static EmployeesModel record = new();
+    List<TypeCodeModel> EmployeeType = null!;
+    List<LocationsModel> Locations = new();
+    List<TypeCodeModel> Departments = new();
+
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        EmployeeType = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/EMPLOYEE TYPE", true) ?? new List<TypeCodeModel>();
+        Departments = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/DEPARTMENT", true) ?? new List<TypeCodeModel>();
+        Locations = await Functions.GetAsync<List<LocationsModel>>($"Locations/Search", true) ?? new List<LocationsModel>();
+
+        if (Action == "INSERT")
+        {
+            record = new EmployeesModel();
+            record.IsActive = 1;
+            isReadOnly = false;
+        }
+        else
+        {
+            await Get(CurrentRecord);
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<EmployeesModel>($"Employees/Get?Id={id}", true) ?? new EmployeesModel();
+        LoadingPanel = false;
+    }
+
+    protected async void Clear()
+    {
+        Action = "INSERT";
+        record = new EmployeesModel();
+        record.IsActive = 1;
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        isReadOnly = true;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        //await Get(record.Id);
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+
+        record.ParentId = 0;
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedFrom = Functions.GetComputerDetails();
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = Functions.GetComputerDetails();
+
+        string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+        var result = await Functions.PostAsync<EmployeesModel>($"Employees/{url}", record, true);
+        if (result.Success == false)
+        {
+            SnackbarService.Add($"Record {Action} Fail.", Severity.Error);
+        }
+        else
+        {
+            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+            record = new();
+            isReadOnly = true;
+
+        }
+            LoadingPanel = false;
+            await _drawer.CloseDrawer();
+    }
+
+    private async Task OnFileInputChanged(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var result = await Functions.FileUpload(e, FileUploadService);
+
+            if (result.Item1 == true)
+            {
+                record.Pic = result.Item2;
+                SnackbarService.Add("File uploaded successfully!", Severity.Success);
+            }
+            else
+            {
+                SnackbarService.Add($"Error: {result.Item2}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Exception: {ex.Message}", Severity.Error);
+            record.Pic = null;
+        }
+    }
+
+}
+

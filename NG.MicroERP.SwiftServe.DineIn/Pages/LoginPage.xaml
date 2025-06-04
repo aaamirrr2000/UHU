@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="NG.MicroERP.SwiftServe.DineIn.Pages.LoginPage"
+            Shell.FlyoutBehavior="Flyout"
+            Shell.TabBarForegroundColor="Aqua"
+            NavigationPage.BackButtonTitle="False"
+            Shell.ForegroundColor="Blue"
+            Shell.TabBarIsVisible="False"
+            BackgroundColor="White"
+            Title="">
+    
+    <ScrollView>
+        <Grid Padding="30">
+
+
+            <VerticalStackLayout Spacing="20">
+
+                <ImageButton Source="settings.gif"
+                      WidthRequest="30"
+                      HeightRequest="30"
+                      HorizontalOptions="End"
+                      VerticalOptions="Start"
+                      BackgroundColor="Transparent"
+                      Clicked="OnSettingsClicked" />
+
+
+                <Label Text="Swift Serve"
+                        FontSize="28"
+                        FontAttributes="Bold"
+                        HorizontalOptions="Center"
+                        TextColor="#333" 
+                        FontFamily="Orbitron"/>
+
+                <Label Text="Welcome" FontAttributes="Bold" FontSize="24"
+                        HorizontalOptions="Center" TextColor="Black" FontFamily="Orbitron"/>
+
+                <Entry x:Name="UsernameEntry"
+                        Placeholder="Username"
+                        TextColor="Black"
+                        PlaceholderColor="Gray"
+                        BackgroundColor="#F5F5F5"
+                        HeightRequest="45"
+                        Text="aamir"/>
+
+                <Entry x:Name="PasswordEntry"
+                        Placeholder="Password"
+                        IsPassword="True"
+                        TextColor="Black"
+                        PlaceholderColor="Gray"
+                        BackgroundColor="#F5F5F5"
+                        HeightRequest="45"
+                        Text="12345"/>
+
+                <ActivityIndicator x:Name="LoginSpinner" IsVisible="False" IsRunning="False"
+                                    Color="#007AFF" />
+
+                <Button Text="Login"
+                         BackgroundColor="#007AFF"
+                         TextColor="White"
+                         HeightRequest="50"
+                         Clicked="OnLoginClicked" />
+
+                <Label Text="Forgot password?" FontSize="12"
+                        HorizontalOptions="Center" TextColor="Gray" />
+
+                <Label Text="A Project by NexGen Tech Studios" FontSize="12"
+                         HorizontalOptions="Center" TextColor="Gray" />
+            </VerticalStackLayout>
+        </Grid>
+    </ScrollView>
+</ContentPage>

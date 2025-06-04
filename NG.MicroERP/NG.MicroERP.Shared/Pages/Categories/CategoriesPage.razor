@@ -1,0 +1,206 @@
+﻿@page "/CategoriesPage/{Action}/{CurrentRecord?}"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+
+    <div class="text-end" style="margin-top:10px;">
+        @if (Action != "VIEW")
+        {
+            <MudButton Variant="Variant.Filled" OnClick="Save" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                @(Action == "INSERT" ? "Save" : "Update")
+            </MudButton>
+
+            @if (Action == "UPDATE")
+            {
+                <MudButton Variant="Variant.Filled" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                    Delete
+                </MudButton>
+            }
+        }
+    </div>
+
+    <br />
+
+    <MudExpansionPanels MultiExpansion="true">
+        <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
+            <div class="row" style="width:100%; display: flex;">
+                <div class="col-6 mb-3">
+                    <MudTextField Label="Code" id="Code" @bind-Value="record.Code" Variant="Variant.Filled" placeholder="Code" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.Code)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudTextField Label="Name" id="Name" @bind-Value="record.Name" Variant="Variant.Filled" placeholder="Name" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.Name)" />
+                </div>
+                <div class="col-6 mb-3">
+
+                    <MudSelect @bind-Value="record.ParentId"
+                               Label="Parent Category"
+                               Variant="Variant.Filled"
+                               Dense="true"
+                               Placeholder="Parent Category"
+                               HelperText="Select Parent Category"
+                               HelperTextOnFocus="true"
+                               Clearable="true">
+
+                        @if (Par != null && Par.Any())
+                        {
+                            if (record.ParentId == 0)
+                            {
+                                record.ParentId = Par.First().Id;
+                            }
+
+                            foreach (var i in Par)
+                            {
+                                <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                    <ValidationMessage For="@(() => record.ParentId)" />
+                </div>
+                <div class="col-6 mb-3">
+
+                    <MudSelect T="int"
+                               @bind-Value="record.IsActive"
+                               Label="Active"
+                               Variant="Variant.Filled"
+                               Dense="true"
+                               Placeholder="Active"
+                               HelperText="Select Active"
+                               HelperTextOnFocus="true"
+                               Clearable="true">
+
+                        @if (record.IsActive != 0 && record.IsActive != 1)
+                        {
+                            record.IsActive = 1;
+                        }
+
+                        <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                        <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                    </MudSelect>
+
+                    <ValidationMessage For="@(() => record.IsActive)" />
+                </div>
+            </div>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+
+</div>
+
+@code
+{
+    static CategoriesModel record = new();
+    List<CategoriesModel> Par = new();
+
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        Par = await Functions.GetAsync<List<CategoriesModel>>($"Categories/Search", true) ?? new List<CategoriesModel>();
+
+        if (Action == "INSERT")
+        {
+            record = new CategoriesModel();
+            record.IsActive = 1;
+            isReadOnly = false;
+        }
+        else
+        {
+            await Get(CurrentRecord);
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<CategoriesModel>($"Categories/Get?Id={id}", true) ?? new CategoriesModel();
+        LoadingPanel = false;
+    }
+
+    protected async void Clear()
+    {
+        Action = "INSERT";
+        record = new CategoriesModel();
+        record.IsActive = 1;
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        isReadOnly = true;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedFrom = Functions.GetComputerDetails();
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = Functions.GetComputerDetails();
+
+        string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+        var result = await Functions.PostAsync<CategoriesModel>($"Categories/{url}", record, true);
+        if (result.Success == false)
+        {
+            SnackbarService.Add($"Record {Action} Fail.", Severity.Error);
+        }
+        else
+        {
+            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+            record = new();
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+        await _drawer.CloseDrawer();
+
+    }
+}
+

@@ -1,0 +1,62 @@
+﻿CREATE TABLE ChartOfAccounts
+(
+  Id                      INT             PRIMARY KEY IDENTITY(1,1),
+  Guid                    UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
+  OrganizationId          INT             NULL DEFAULT NULL,
+  Code                    VARCHAR(20)     NOT NULL,
+  Name                    VARCHAR(100)    NOT NULL,
+  Type                    VARCHAR(50)     NOT NULL,
+  InterfaceType           VARCHAR(50)     NULL,
+  Description             VARCHAR(100)    NULL,
+  ParentId                INT             NULL DEFAULT 0,
+  OpeningBalance          DECIMAL(15, 2)  DEFAULT 0.00,
+  IsActive                SMALLINT        NOT NULL DEFAULT 1,
+  CreatedBy               INT             NULL DEFAULT NULL,
+  CreatedOn               DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CreatedFrom             VARCHAR(255)    NULL DEFAULT NULL,
+  UpdatedBy               INT             NULL DEFAULT NULL,
+  UpdatedOn               DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UpdatedFrom             VARCHAR(255)    NULL DEFAULT NULL,
+  IsSoftDeleted           SMALLINT        NULL DEFAULT 0,
+  RowVersion              ROWVERSION,
+  FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+  FOREIGN KEY (UpdatedBy) REFERENCES Users(Id),
+  FOREIGN KEY (OrganizationId)   REFERENCES Organizations(Id)
+);
+
+INSERT INTO ChartOfAccounts 
+(
+    Guid, 
+    OrganizationId, 
+    Code, 
+    Name, 
+    Type, 
+    InterfaceType, 
+    Description, 
+    ParentId, 
+    OpeningBalance, 
+    IsActive, 
+    CreatedBy, 
+    CreatedOn, 
+    CreatedFrom, 
+    UpdatedBy, 
+    UpdatedOn, 
+    UpdatedFrom, 
+    IsSoftDeleted
+) 
+VALUES 
+  (NEWID(), 1, '10000', 'ASSET', 'ASSET', NULL, NULL, 0, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+  (NEWID(), 1, '20000', 'LIABILITY', 'LIABILITY', NULL, NULL, 0, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+  (NEWID(), 1, '30000', 'REVENUE', 'REVENUE', NULL, NULL, 0, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+  (NEWID(), 1, '40000', 'EXPENSE', 'EXPENSE', NULL, NULL, 0, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+  (NEWID(), 1, '30001', 'OTHER REVENUE', 'REVENUE', 'REVENUE', NULL, 3, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+  (NEWID(), 1, '40001', 'SALARIES', 'EXPENSE', 'EXPENSE', NULL, 4, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+  (NEWID(), 1, '40002', 'ELECTRICITY BILL', 'EXPENSE', 'EXPENSE', NULL, 4, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+  (NEWID(), 1, '10001', 'BANKS', 'ASSET', NULL, NULL, 1, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+  (NEWID(), 1, '10002', 'ALLIED BANK', 'ASSET', 'BANK', NULL, 8, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+  (NEWID(), 1, '10003', 'ACCOUNT RECEIVABLES', 'ASSET', NULL, NULL, 1, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+  (NEWID(), 1, '10004', 'B2C CUSTOMER', 'ASSET', 'AR', NULL, 10, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+  (NEWID(), 1, '10005', 'B2B CUSTOMER', 'ASSET', 'AR', NULL, 10, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+  (NEWID(), 1, '20001', 'ACCOUNT PAYABLES', 'LIABILITY', NULL, NULL, 1, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+  (NEWID(), 1, '20002', 'SUPPLIER', 'LIABILITY', NULL, NULL, 10, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+  (NEWID(), 1, '20003', 'B2B CUSTOMER', 'LIABILITY', 'AP', NULL, 10, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0);

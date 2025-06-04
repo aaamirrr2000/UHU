@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="NG.MicroERP.SwiftServe.DineIn.Pages.OrdersPage"
+             Title="Orders"
+             BackgroundColor="White">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="10" Spacing="10">
+            <SearchBar x:Name="BillSearchBar"
+                       Placeholder="Search bills..."
+                       TextChanged="OnSearchTextChanged" />
+
+            <!-- CollectionView will take up space but allow scrolling if needed -->
+            <CollectionView x:Name="BillsCollectionView" SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border BackgroundColor="Black"
+                                Padding="10"
+                                Margin="5">
+                            <Grid ColumnDefinitions="*,Auto"
+                                  RowDefinitions="Auto"
+                                  ColumnSpacing="10">
+
+                                <!-- Bill Info -->
+                                <VerticalStackLayout Grid.Column="0" Grid.Row="0">
+                                    <Label Text="{Binding SeqNo}"
+                                           FontAttributes="Bold"
+                                           FontSize="16"
+                                           TextColor="White" />
+                                    <Label Text="{Binding TranDate, StringFormat='Date: {0:dd-MMM-yyyy}'}"
+                                           FontSize="14"
+                                           TextColor="DarkGray" />
+                                    <Label Text="{Binding BillAmount, StringFormat='Amount: {0:C}'}"
+                                           FontSize="14"
+                                           TextColor="DarkGreen" />
+                                </VerticalStackLayout>
+
+                                <!-- Buttons -->
+                                <HorizontalStackLayout Grid.Column="1" Grid.Row="0"
+                                                       Spacing="6"
+                                                       VerticalOptions="Center">
+                                    <Button Text="View"
+                                            WidthRequest="70"
+                                            BackgroundColor="LightBlue"
+                                            Clicked="OnEditClicked"/>
+                                    <Button Text="Delete"
+                                            WidthRequest="70"
+                                            BackgroundColor="LightCoral"
+                                            Clicked="OnDeleteClicked"/>
+                                </HorizontalStackLayout>
+
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

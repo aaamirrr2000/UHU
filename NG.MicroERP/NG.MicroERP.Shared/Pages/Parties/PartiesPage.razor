@@ -1,0 +1,321 @@
+﻿@page "/PartiesPage/{Action}/{CurrentRecord?}"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject FileUploadService FileUploadService
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+
+    <div class="text-end" style="margin-top:10px;">
+        @if (Action != "VIEW")
+        {
+            <MudButton Variant="Variant.Filled" OnClick="Save" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                @(Action == "INSERT" ? "Save" : "Update")
+            </MudButton>
+
+            @if (Action == "UPDATE")
+            {
+                <MudButton Variant="Variant.Filled" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                    Delete
+                </MudButton>
+            }
+        }
+    </div>
+
+    <br />
+
+    <MudExpansionPanels MultiExpansion="true">
+        <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
+            <div class="row" style="width:100%; display: flex;">
+                <div class="col-6 mb-3">
+                    <MudTextField Label="Code" id="Code" @bind-Value="record.Code" Variant="Variant.Filled" placeholder="Code" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.Code)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudTextField Label="Name" id="Name" @bind-Value="record.Name" Variant="Variant.Filled" placeholder="Name" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.Name)" />
+                </div>
+                <div class="col-6 mb-3">
+
+                    <MudSelect T="string"
+                               @bind-Value="record.PartyType"
+                               Label="PartyType"
+                               Variant="Variant.Filled"
+                               Dense="true"
+                               Placeholder="PartyType"
+                               HelperText="Select PartyType"
+                               HelperTextOnFocus="true"
+                               Clearable="true">
+
+                        @if (Par != null && Par.Any())
+                        {
+                            if (string.IsNullOrWhiteSpace(record.PartyType))
+                            {
+                                record.PartyType = Par.First().ListValue;
+                            }
+
+                            foreach (var i in Par)
+                            {
+                                <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+
+                    <ValidationMessage For="@(() => record.PartyType)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudTextField Label="Address" id="Address" @bind-Value="record.Address" Variant="Variant.Filled" placeholder="Address" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.Address)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudTextField Label="Phone" id="Phone" @bind-Value="record.Phone" Variant="Variant.Filled" placeholder="Phone" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.Phone)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudTextField Label="Email" id="Email" @bind-Value="record.Email" Variant="Variant.Filled" placeholder="Email" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.Email)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudNumericField Label="DiscountPercentage" @bind-Value="record.DiscountPercentage" Variant="Variant.Filled" placeholder="DiscountPercentage" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
+                    <ValidationMessage For="@(() => record.DiscountPercentage)" />
+                </div>
+                <div class="col-6 mb-3">
+
+                    <MudSelect @bind-Value="record.AccountId"
+                               Label="Account"
+                               Variant="Variant.Filled"
+                               Dense="true"
+                               Placeholder="Account"
+                               HelperText="Select Account"
+                               HelperTextOnFocus="true"
+                               Clearable="true">
+
+                        @if (Acc != null && Acc.Any())
+                        {
+                            if (record.AccountId == 0)
+                            {
+                                record.AccountId = Acc.First().Id;
+                            }
+
+                            foreach (var i in Acc)
+                            {
+                                <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                    <ValidationMessage For="@(() => record.AccountId)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudTextField Label="Latitude" id="Latitude" @bind-Value="record.Latitude" Variant="Variant.Filled" placeholder="Latitude" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.Latitude)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudTextField Label="Longitude" id="Longitude" @bind-Value="record.Longitude" Variant="Variant.Filled" placeholder="Longitude" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.Longitude)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudNumericField Label="Radius" @bind-Value="record.Radius" Variant="Variant.Filled" placeholder="Radius" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
+                    <ValidationMessage For="@(() => record.Radius)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudTextField Label="Username" id="Username" @bind-Value="record.Username" Variant="Variant.Filled" placeholder="Username" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.Username)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudTextField Label="Password" id="Password" @bind-Value="record.Password" Variant="Variant.Filled" placeholder="Password" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.Password)" />
+                </div>
+                <div class="col-6 mb-3">
+
+                    <MudSelect T="int"
+                               @bind-Value="record.IsActive"
+                               Label="Active"
+                               Variant="Variant.Filled"
+                               Dense="true"
+                               Placeholder="Active"
+                               HelperText="Select Active"
+                               HelperTextOnFocus="true"
+                               Clearable="true">
+
+                        @if (record.IsActive != 0 && record.IsActive != 1)
+                        {
+                            record.IsActive = 1;
+                        }
+
+                        <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                        <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                    </MudSelect>
+
+                    <ValidationMessage For="@(() => record.IsActive)" />
+                </div>
+            </div> <div class="w-100 d-flex justify-content-center">
+                <div class="p-3 border rounded" style="width: 300px;">
+                    <label class="small fw-bold text-uppercase d-block mb-2 text-center">Party Image</label>
+
+                    <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
+                        @if (!string.IsNullOrEmpty(record.Pic))
+                        {
+                            <img src="@record.Pic"
+                                 class="img-fluid rounded"
+                                 alt="Party Image"
+                                 style="max-height: 100%; max-width: 100%; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div class="d-flex align-items-center justify-content-center bg-secondary rounded-circle"
+                                 style="width: 120px; height: 120px;">
+                                <i class="fas fa-image text-white fs-3"></i>
+                            </div>
+                        }
+                    </div>
+
+                    <InputFile OnChange="OnFileInputChanged" />
+                </div>
+
+            </div>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+
+</div>
+
+@code
+{
+    static PartiesModel record = new();
+    List<TypeCodeModel> Par = null!;
+    List<ChartOfAccountsModel> Acc = new();
+
+
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        Par = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PARTY TYPE", true) ?? new List<TypeCodeModel>();
+        Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search", true) ?? new List<ChartOfAccountsModel>();
+
+        if (Action == "INSERT")
+        {
+            record = new PartiesModel();
+            record.IsActive = 1;
+            isReadOnly = false;
+        }
+        else
+        {
+            await Get(CurrentRecord);
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<PartiesModel>($"Parties/Get?Id={id}", true) ?? new PartiesModel();
+        LoadingPanel = false;
+    }
+
+    protected async void Clear()
+    {
+        Action = "INSERT";
+        record = new PartiesModel();
+        record.IsActive = 1;
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        isReadOnly = true;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedFrom = Functions.GetComputerDetails();
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = Functions.GetComputerDetails();
+
+        string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+        var result = await Functions.PostAsync<PartiesModel>($"Parties/{url}", record, true);
+        if (result.Success == false)
+        {
+            SnackbarService.Add($"Record {Action} Fail.", Severity.Error);
+        }
+        else
+        {
+            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+            record = new();
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+        await _drawer.CloseDrawer();
+
+    }
+
+    private async Task OnFileInputChanged(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var result = await Functions.FileUpload(e, FileUploadService);
+
+            if (result.Item1 == true)
+            {
+                record.Pic = result.Item2;
+                SnackbarService.Add("File uploaded successfully!", Severity.Success);
+            }
+            else
+            {
+                SnackbarService.Add($"Error: {result.Item2}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Exception: {ex.Message}", Severity.Error);
+            record.Pic = null;
+        }
+    }
+}
+

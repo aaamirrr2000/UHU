@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="NG.MicroERP.SwiftServe.DineIn.Pages.OrderPage"
+             BackgroundColor="#F5F7FA"
+             Title="OrderPage">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="20">
+
+            <!-- Table Info -->
+            <Frame Padding="16" CornerRadius="10" HasShadow="True" BackgroundColor="White">
+                <VerticalStackLayout Spacing="8">
+                    <Label x:Name="TableNameLabel" FontSize="22" FontAttributes="Bold" TextColor="#333333" />
+                    <Label x:Name="TableStatusLabel" FontSize="14" TextColor="#666666" />
+                    <Button Text="View Cart"
+                            Clicked="OnViewCartClicked"
+                            CommandParameter="{Binding}"
+                            BackgroundColor="#27AE60"
+                            TextColor="White"
+                            CornerRadius="6"
+                            HeightRequest="44"
+                            FontAttributes="Bold"/>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Category Buttons -->
+            <ScrollView Orientation="Horizontal" HeightRequest="50" HorizontalScrollBarVisibility="Never">
+                <HorizontalStackLayout x:Name="CategoryButtonsPanel" Spacing="12" Padding="4,0" />
+            </ScrollView>
+
+            <ActivityIndicator x:Name="LoadingIndicator" IsRunning="False" IsVisible="False" Color="#999999" />
+
+            <!-- Food Items List -->
+            <CollectionView x:Name="ItemsCollectionView" Margin="0,10,0,0">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame Margin="0,5" Padding="16" CornerRadius="10" HasShadow="True" BackgroundColor="White">
+                            <VerticalStackLayout Spacing="12">
+
+                                <Label Text="{Binding Name}"
+                                       FontSize="20"
+                                       FontAttributes="Bold"
+                                       TextColor="#222222" />
+
+                                <Label Text="{Binding Description}"
+                                       FontSize="14"
+                                       TextColor="#777777" />
+
+                                <!-- Serving Sizes -->
+                                <ScrollView Orientation="Horizontal" HeightRequest="50" HorizontalScrollBarVisibility="Never">
+                                    <HorizontalStackLayout BindableLayout.ItemsSource="{Binding ServingSizes}" Spacing="10">
+                                        <BindableLayout.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Text="{Binding Size}"
+                                                        BackgroundColor="#E0E0E0"
+                                                        TextColor="#444444"
+                                                        Padding="12,6"
+                                                        CornerRadius="20"
+                                                        HeightRequest="36"
+                                                        CommandParameter="{Binding}"
+                                                        Clicked="OnServingSizeButtonClicked" />
+                                            </DataTemplate>
+                                        </BindableLayout.ItemTemplate>
+                                    </HorizontalStackLayout>
+                                </ScrollView>
+
+                                <!-- Quantity and Price -->
+                                <HorizontalStackLayout Spacing="15" VerticalOptions="Center" HorizontalOptions="Start">
+                                    <Button Text="−"
+                                            WidthRequest="40"
+                                            HeightRequest="40"
+                                            BackgroundColor="#D0D0D0"
+                                            TextColor="#333"
+                                            FontAttributes="Bold"
+                                            CornerRadius="8"
+                                            Clicked="OnDecreaseQty"
+                                            CommandParameter="{Binding}" />
+                                    <Label Text="{Binding MaxQty}"
+                                           FontSize="18"
+                                           WidthRequest="40"
+                                           HorizontalTextAlignment="Center"
+                                           VerticalOptions="Center"
+                                           TextColor="#222222" />
+                                    <Button Text="+"
+                                            WidthRequest="40"
+                                            HeightRequest="40"
+                                            BackgroundColor="#D0D0D0"
+                                            TextColor="#333"
+                                            FontAttributes="Bold"
+                                            CornerRadius="8"
+                                            Clicked="OnIncreaseQty"
+                                            CommandParameter="{Binding}" />
+
+                                    <Label Text="{Binding RetailPrice, StringFormat='₨ {0:F2}'}"
+                                           FontAttributes="Bold"
+                                           FontSize="26"
+                                           TextColor="#27AE60"
+                                           HorizontalOptions="End" />
+                                </HorizontalStackLayout>
+
+                                <!-- Add Item Button -->
+                                <Button Text="Add Item"
+                                        Clicked="OnAddItemClicked"
+                                        CommandParameter="{Binding}"
+                                        BackgroundColor="#27AE60"
+                                        TextColor="White"
+                                        FontAttributes="Bold"
+                                        CornerRadius="8"
+                                        HeightRequest="44"
+                                        HorizontalOptions="Fill" />
+                            </VerticalStackLayout>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

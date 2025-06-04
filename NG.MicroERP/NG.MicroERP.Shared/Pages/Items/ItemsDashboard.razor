@@ -1,0 +1,196 @@
+﻿@page "/ItemsDashboard"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="row" style="margin: 2px; height: 90vh; display: flex;">
+    <MyDrawer @ref="_drawer" Title="Items" FaIcon="fas fa-address-book">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <ItemsPage Action="@Action" CurrentRecord="record.Id"/>
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    <MyDrawer @ref="_drawerServingSize" Title="Serving Size" FaIcon="fas fa-address-book">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <ItemServingSizePage CurrentRecord="record.Id" />
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    @if (data == null)
+    {
+        <SimpleLoading />
+    }
+    else
+    {
+        <div class="row">
+            <MudDataGrid T="ItemsModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">Items Managment</MudText>
+                    <MudSpacer />
+                    <MudIconButton Icon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" OnClick="@(() => Clear())" />
+                    <MudIconButton Icon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" OnClick="@(() => Refresh())" />
+                </ToolBarContent>
+
+                <Columns>
+                    <TemplateColumn Title="Actions" Style="width: 150px; min-width: 150px;">
+                        <CellTemplate Context="row">
+                            <MudIconButton Icon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" OnClick="@(() => View(row.Item.Id))" />
+                            <MudIconButton Icon="@Icons.Material.TwoTone.Save" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.Id))" />
+                            <MudIconButton Icon="@Icons.Material.TwoTone.DeleteSweep" Size="MudBlazor.Size.Small" OnClick="@(() => Delete(row.Item.Id))" />
+                            <MudIconButton Icon="@Icons.Material.TwoTone.Code" Size="MudBlazor.Size.Small" OnClick="@(() => ServingSize(row.Item.Id))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <TemplateColumn Title="Picture" CellStyle="width: 50px; min-width: 50px;">
+                        <CellTemplate Context="row">
+                            <img src="@(!string.IsNullOrWhiteSpace(row.Item.Pic) ? row.Item.Pic : "images/no-image.png")" alt="Picture" style="width:30px; height:30px; border-radius: 50%;" />
+                        </CellTemplate>
+                    </TemplateColumn>
+				<PropertyColumn Property="x => x.Code" Title="Code" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.Name" Title="Item Name" Sortable="true" Filterable="true" />
+                <PropertyColumn Property="x => x.Description" Title="Description" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.StockType" Title="Stock Type" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.Unit" Title="Unit" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.RetailPrice" Title="Retail Price" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
+				@* <PropertyColumn Property="x => x.ServingSize" Title="Serving Size JSon" Sortable="true" Filterable="true" /> *@
+				
+                </Columns>
+
+                <PagerContent>
+                    <MudDataGridPager T="ItemsModel" />
+                </PagerContent>
+            </MudDataGrid>
+        </div>
+    }
+</div>
+
+@code
+{
+    static List<ItemsModel> data = new();
+    static ItemsModel record = new();
+
+    public string Action { get; set; } = "INSERT";
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+    private MyDrawer _drawerServingSize = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        data = await Functions.GetAsync<List<ItemsModel>>($"Items/Search", true) ?? new List<ItemsModel>();
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<ItemsModel>($"Items/Get?Id={id}", true) ?? new ItemsModel();
+        LoadingPanel = false;
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new ItemsModel();
+        record.IsActive = 1;
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Refresh()
+    {
+        data = await Functions.GetAsync<List<ItemsModel>>($"Items/Search", true) ?? new List<ItemsModel>();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        isReadOnly = true;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE"; 
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Get(id);
+        await Save();
+    }
+
+    protected async Task ServingSize(int id)
+    {
+        await Get(id);
+        _drawerServingSize.OpenDrawerAsync();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+         
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedFrom = Functions.GetComputerDetails();
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = Functions.GetComputerDetails();
+
+        var result = await Functions.PostAsync<ItemsModel>($"Items/{Action}", record, true);
+        if (result.Success == true)
+        {
+            SnackbarService.Add($"Record Not Deleted", Severity.Error);
+        }
+        else
+        {
+            SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
+            record = new();
+            isReadOnly = true;
+        }
+    
+        data = await Functions.GetAsync<List<ItemsModel>>($"Items/Search", true) ?? new List<ItemsModel>();
+        LoadingPanel = false;
+        await _drawer.CloseDrawer();
+     
+    }
+
+}
+

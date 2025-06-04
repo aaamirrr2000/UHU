@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="NG.MicroERP.SwiftServe.DineIn.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:local="clr-namespace:NG.MicroERP.SwiftServe.DineIn"
+    xmlns:pages="clr-namespace:NG.MicroERP.SwiftServe.DineIn.Pages"
+    Shell.FlyoutBehavior="Flyout"
+    Shell.TabBarForegroundColor="Aqua"
+    NavigationPage.BackButtonTitle="True"
+    Shell.ForegroundColor="Blue"
+    Title="NG.MicroERP.App">
+
+    <Shell.FlyoutBackdrop>
+        <LinearGradientBrush 
+              StartPoint="0,0"
+              EndPoint="1,1">
+            <GradientStop 
+                  Color="White"
+                  Offset="0.1"/>
+            <GradientStop 
+                  Color="#4792E6"
+                  Offset="0.6"/>
+            <GradientStop 
+                  Color="#283A6C"
+                  Offset="1.0" />
+        </LinearGradientBrush>
+    </Shell.FlyoutBackdrop>
+
+    <Shell.FlyoutHeader>
+        <Grid 
+              BackgroundColor="Black">
+            <Image 
+                  Aspect="AspectFill" 
+                  Source="logo.png" 
+                  Opacity="0.3" 
+                  HeightRequest="100"/>
+            <StackLayout 
+                  Orientation="Horizontal" 
+                  HorizontalOptions="Center" 
+                  VerticalOptions="Center">
+                <Border 
+                      HeightRequest="70" 
+                      WidthRequest="70" 
+                      VerticalOptions="Center" 
+                      HorizontalOptions="Center"
+                      BackgroundColor="White">
+
+                    <Image
+                      Source="logo.png"
+                      VerticalOptions="Center" 
+                      HorizontalOptions="Center" 
+                      Margin="0"/>
+
+                </Border>
+
+                <StackLayout
+                      Margin="0, 0, 0, 0"
+                      VerticalOptions="Center" 
+                      HorizontalOptions="Center"
+                      Spacing="2">
+                    <Label 
+                          Text="Vivid Solutions"
+                          FontAttributes="Bold" 
+                          FontSize="Small" 
+                          TextColor="White" 
+                          Margin="10,0,0,0" 
+                          VerticalOptions="Center"
+                          FontFamily="Orbitron"
+                          CharacterSpacing="1"/>
+                    <StackLayout 
+                          Orientation="Horizontal" 
+                          Margin="10,0,0,0" 
+                          IsVisible="True">
+                        <Image 
+                              Source="locate_icon_white" 
+                              HeightRequest="25" 
+                              Aspect="AspectFit" 
+                              Margin="0" />
+                        <Label 
+                              Text="Your Business Partner" 
+                              FontSize="Micro" 
+                              TextColor="White" 
+                              VerticalOptions="Center"
+                              FontFamily="Orbitron"
+                              CharacterSpacing="1"/>
+                    </StackLayout>
+                </StackLayout>
+            </StackLayout>
+        </Grid>
+    </Shell.FlyoutHeader>
+
+    <Shell.FlyoutFooter>
+        <Label x:Name="txtUser" Text="" HorizontalOptions="Center"/>
+    </Shell.FlyoutFooter>
+
+    <ShellContent   
+      ContentTemplate="{DataTemplate pages:LoginPage}"
+      Route="LoginPage"
+      Icon="logo.png"/>
+
+    <FlyoutItem FlyoutDisplayOptions="AsMultipleItems">
+
+        <ShellContent
+           Title="Home"
+           ContentTemplate="{DataTemplate pages:OrderPage}"
+           Route="OrderPage" 
+           Icon="home.png"/>
+
+        <ShellContent
+          Title="Orders"
+          ContentTemplate="{DataTemplate pages:ExecutionPage}"
+          Route="ExecutionPage" 
+          Icon="orders.png"/>
+
+        <ShellContent
+          Title="Orders"
+          ContentTemplate="{DataTemplate pages:ClientPage}"
+          Route="ClientPage" 
+          Icon="orders.png"/>
+
+    </FlyoutItem>
+
+    <FlyoutItem FlyoutDisplayOptions="AsMultipleItems">
+
+        <ShellContent
+          Title="Logout"
+          ContentTemplate="{DataTemplate pages:LogoutPage}"
+          Route="LogoutPage" 
+          Icon="exit.png" />
+    </FlyoutItem>
+
+</Shell>

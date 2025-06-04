@@ -1,0 +1,137 @@
+﻿<div id="modal" class="modal" style="@((Visible ? "display:flex;" : "display:none;"))">
+    <div class="modal-content" style="width:@Width; height:@Height;">
+        <div class="modal-title">
+            <span>@Title</span>
+            <span class="close" @onclick="Hide">&times;</span>
+        </div>
+
+        @if (HeaderContent != null)
+        {
+            <header class="modal-header">@HeaderContent</header>
+        }
+
+        <div class="modal-body" style="overflow: hidden;">
+            @ChildContent
+        </div>
+
+        <footer class="modal-footer">
+            <div class="footer-content">
+                @FooterContent
+            </div>
+        </footer>
+    </div>
+</div>
+
+
+@code {
+    [Parameter] public string? Width { get; set; } = "95vw";
+    [Parameter] public string? Height { get; set; } = "95vh";
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public RenderFragment? HeaderContent { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? FooterContent { get; set; }
+
+    public bool Visible = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //await UpdateModalSize();
+    }
+    protected override async Task OnParametersSetAsync()
+    {
+        //await UpdateModalSize();
+    }
+
+    public void Hide()
+    {
+        Visible = false;
+        StateHasChanged();
+    }
+
+    public void Show()
+    {
+        Visible = true;
+        StateHasChanged();
+    }
+}
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    .modal {
+        position: fixed;
+        z-index: 1501;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .modal-content {
+        background-color: #fff;
+        max-width: 95vw;
+        max-height: 95vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        padding: 10px;
+        border-radius: 8px;
+        overflow: hidden;
+        box-sizing: border-box; /* ensures padding doesn't overflow */
+    }
+
+    .modal-header,
+    .modal-footer {
+        padding: 8px;
+        flex-shrink: 0;
+        box-sizing: border-box;
+    }
+
+    .modal-title {
+        font-size: 22px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px;
+    }
+
+    .modal-body {
+        flex-grow: 1;
+        overflow-y: auto;
+        overflow-x: auto; /* ✅ allow horizontal scroll if content wider */
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+
+    .footer-content {
+        width: 100%;
+    }
+
+    .close {
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        color: #666;
+        padding: 0 10px;
+    }
+
+        .close:hover {
+            color: black;
+        }
+
+    .modal-body::-webkit-scrollbar {
+        width: 0px;
+        background: transparent;
+    }
+
+
+</style>

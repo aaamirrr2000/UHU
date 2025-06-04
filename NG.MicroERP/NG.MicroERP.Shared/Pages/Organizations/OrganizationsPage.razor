@@ -1,0 +1,337 @@
+﻿@page "/OrganizationsPage/{Action}/{CurrentRecord?}"
+
+@using System.Text.Json
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject FileUploadService FileUploadService
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+
+	<div class="text-end" style="margin-top:10px;">
+		@if (Action != "VIEW")
+		{
+			<MudButton Variant="Variant.Filled" OnClick="Save" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+				<MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+				@(Action == "INSERT" ? "Save" : "Update")
+			</MudButton>
+
+			@if (Action == "UPDATE")
+			{
+				<MudButton Variant="Variant.Filled" OnClick="Save" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+					<MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+					Delete
+				</MudButton>
+			}
+		}
+	</div>
+
+	<br />
+
+	<MudExpansionPanels MultiExpansion="true">
+		<MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
+			<div class="row" style="width:100%; display: flex;">
+				<div class="col-6 flex-input">
+					<label class="form-label">Code</label>
+					<MudInput id="Code" @bind-Value="record.Code" placeholder="Code" readonly="@isReadOnly" />
+					<ValidationMessage For="@(() => record.Code)" />
+				</div>
+				<div class="col-6 flex-input">
+					<label class="form-label">Entraid</label>
+					<MudInput id="EntraId" @bind-Value="record.EntraId" placeholder="EntraId" readonly="@isReadOnly"></MudInput>
+					<ValidationMessage For="@(() => record.EntraId)" />
+				</div>
+				<div class="col-6 flex-input">
+					<label class="form-label">Name</label>
+					<MudInput id="Name" @bind-Value="record.Name" placeholder="Name" readonly="@isReadOnly"></MudInput>
+					<ValidationMessage For="@(() => record.Name)" />
+				</div>
+				<div class="col-6 flex-input">
+					<label class="form-label">Description</label>
+					<MudInput id="Description" @bind-Value="record.Description" placeholder="Description" readonly="@isReadOnly"></MudInput>
+					<ValidationMessage For="@(() => record.Description)" />
+				</div>
+				<div class="col-6 flex-input">
+					<label class="form-label">Phone</label>
+					<MudInput id="Phone" @bind-Value="record.Phone" placeholder="Phone" readonly="@isReadOnly"></MudInput>
+					<ValidationMessage For="@(() => record.Phone)" />
+				</div>
+				<div class="col-6 flex-input">
+					<label class="form-label">Email</label>
+					<MudInput id="Email" @bind-Value="record.Email" placeholder="Email" readonly="@isReadOnly" Style="text-transform: unset;"></MudInput>
+					<ValidationMessage For="@(() => record.Email)" />
+				</div>
+				<div class="col-12 flex-input">
+					<label class="form-label">Address</label>
+					<MudInput id="Address" @bind-Value="record.Address" placeholder="Address" readonly="@isReadOnly"></MudInput>
+					<ValidationMessage For="@(() => record.Address)" />
+				</div>
+				<div class="col-12 flex-input">
+					<label class="form-label">Timezone</label>
+					<MudSelect T="string" @bind-Value="record.TimeZone" ReadOnly="@isReadOnly">
+						@if (timeZones != null)
+						{
+							@foreach (var tz in timeZones)
+							{
+								<MudSelectItem T="string" Value="@tz.Id">@tz.DisplayName</MudSelectItem>
+							}
+						}
+					</MudSelect>
+					<ValidationMessage For="@(() => record.TimeZone)" />
+				</div>
+
+				<div class="col-6 flex-input">
+					<label class="form-label">Maximum Users</label>
+					<MudInput @bind-Value="record.MaxUsers" placeholder="MaxUsers" ReadOnly="@isReadOnly" Format="#,##0.00"></MudInput>
+					<ValidationMessage For="@(() => record.MaxUsers)" />
+				</div>
+				<div class="col-6 flex-input">
+					<label class="form-label">Database Size</label>
+					<MudInput @bind-Value="record.DbSize" placeholder="DbSize" ReadOnly="@isReadOnly" Format="#,##0.00"></MudInput>
+					<ValidationMessage For="@(() => record.DbSize)" />
+				</div>
+				<div class="col-6 flex-input">
+					<label class="form-label">Sector</label>
+					<MudSelect T="string" @bind-Value="record.Industry" ReadOnly="@isReadOnly">
+						@if (Industry != null)
+						{
+							foreach (var ind in Industry)
+							{
+								<MudSelectItem T="string" Value="@ind.ListValue">@ind.ListValue</MudSelectItem>
+							}
+						}
+					</MudSelect>
+					<ValidationMessage For="@(() => record.Industry)" />
+				</div>
+				<div class="col-6 flex-input">
+					<label class="form-label">Website</label>
+					<MudInput id="Website" @bind-Value="record.Website" placeholder="Website" readonly="@isReadOnly" Style="text-transform: unset;"></MudInput>
+					<ValidationMessage For="@(() => record.Website)" />
+				</div>
+				<div class="col-6 flex-input">
+					<label class="form-label">Verification Status</label>
+					<MudSelect T="int" @bind-Value="record.IsVerified">
+						<MudSelectItem T="int" Value="1">Verified</MudSelectItem>
+						<MudSelectItem T="int" Value="0">Not Verified</MudSelectItem>
+					</MudSelect>
+					<ValidationMessage For="@(() => record.IsVerified)" />
+				</div>
+				<div class="col-6 flex-input">
+					<label class="form-label">Expiry</label>
+					<MudDatePicker @bind-Value="record.Expiry" Format="yyyy-MM-dd" placeholder="Expiry" ReadOnly="@isReadOnly"></MudDatePicker>
+					<ValidationMessage For="@(() => record.Expiry)" />
+				</div>
+				<div class="col-6 flex-input">
+					<label class="form-label">Parent Organization</label>
+					<MudSelect T="int" @bind-Value="record.ParentId" ReadOnly="@isReadOnly">
+						<MudSelectItem T="int" Value="0">Select from the List</MudSelectItem>
+						@if (data != null)
+						{
+							@foreach (var a in data)
+							{
+								<MudSelectItem T="int" Value="@a.Id">@a.Name</MudSelectItem>
+							}
+						}
+					</MudSelect>
+					<ValidationMessage For="@(() => record.ParentId)" />
+				</div>
+				<div class="col-6 flex-input">
+					<label class="form-label">Activation Status</label>
+					<MudSelect T="int" @bind-Value="record.IsActive">
+						<MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+						<MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+					</MudSelect>
+					<ValidationMessage For="@(() => record.IsActive)" />
+				</div>
+
+				<div class="col-6 flex-input" style="visibility:hidden;">
+					<label class="small fw-bold mb-2" style="color:@(record.ThemeColor);">Theme Color</label>
+					<MudColorPicker @bind-Text="record.ThemeColor" Placeholder="Select Color" ReadOnly="@isReadOnly" />
+					<ValidationMessage For="@(() => record.ThemeColor)" />
+				</div>
+				<div class="col-6 flex-input" style="visibility:hidden;">
+					<label class="small fw-bold mb-2" style="color:@(record.MenuColor);">Menu Color</label>
+					<MudColorPicker @bind-Text="record.MenuColor" Placeholder="Select Color" ReadOnly="@isReadOnly" />
+					<ValidationMessage For="@(() => record.MenuColor)" />
+				</div>
+				<div class="w-100 d-flex justify-content-center">
+					<div class="p-3 border rounded" style="width: 300px;">
+						<label class="small fw-bold text-uppercase d-block mb-2 text-center">Logo</label>
+
+						<div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
+							@if (!string.IsNullOrEmpty(record.Logo))
+							{
+								<img src="@record.Logo"
+								class="img-fluid rounded"
+								alt="Company Logo"
+								style="max-height: 100%; max-width: 100%; object-fit: cover;" />
+							}
+							else
+							{
+								<div class="d-flex align-items-center justify-content-center bg-secondary rounded-circle"
+								style="width: 120px; height: 120px;">
+									<i class="fas fa-image text-white fs-3"></i>
+								</div>
+							}
+						</div>
+
+						<InputFile OnChange="OnFileInputChanged" />
+					</div>
+				</div>
+			</div>
+		</MudExpansionPanel>
+
+
+	</MudExpansionPanels>
+
+</div>
+
+@code
+{
+	static List<OrganizationsModel> data = new();
+	static OrganizationsModel record = new();
+	[Parameter] public string Action { get; set; } = "INSERT";
+	[Parameter] public int CurrentRecord { get; set; } = 0;
+
+	bool isReadOnly = true;
+	private bool LoadingPanel { get; set; } = false;
+
+	List<TypeCodeModel> Industry = null!;
+	List<TimeZoneInfo> timeZones = null!;
+	private MyDrawer _drawer = new();
+
+	protected override async Task OnInitializedAsync()
+	{
+		await GetAll();
+	}
+
+	protected async Task GetAll()
+	{
+		LoadingPanel = true;
+		timeZones = new List<TimeZoneInfo>(TimeZoneInfo.GetSystemTimeZones());
+		Industry = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/ListName/INDUSTRY", true) ?? new List<TypeCodeModel>();
+
+		if (Action == "INSERT")
+		{
+			record = new OrganizationsModel();
+			record.IsActive = 1;
+			isReadOnly = false;
+		}
+		else
+		{
+			await Get(CurrentRecord);
+		}
+
+		LoadingPanel = false;
+	}
+
+	protected async Task Get(int id)
+	{
+		LoadingPanel = true;
+		record = await Functions.GetAsync<OrganizationsModel>($"Organizations/Get?Id={id}", true) ?? new OrganizationsModel();
+		LoadingPanel = false;
+	}
+
+	protected async Task Clear()
+	{
+		Action = "INSERT";
+		record = new OrganizationsModel();
+		record.IsActive = 1;
+		isReadOnly = false;
+		await _drawer.OpenDrawerAsync();
+
+	}
+
+	protected async Task View(int id)
+	{
+		await Get(id);
+		Action = "VIEW";
+		isReadOnly = true;
+		await _drawer.OpenDrawerAsync();
+	}
+
+	protected async Task Edit(int id)
+	{
+		await Get(id);
+		Action = "UPDATE";
+		isReadOnly = false;
+		await _drawer.OpenDrawerAsync();
+	}
+
+	protected async Task Delete(int id)
+	{
+		var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+		if (res == false)
+			return;
+
+		await Get(id);
+		await Save();
+	}
+
+	protected async Task Save()
+	{
+		LoadingPanel = true;
+
+		//record.OrganizationId = SelectedOrg.Id;
+		record.CreatedBy = Globals.User.Id;
+		record.CreatedOn = DateTime.Now;
+		record.CreatedSource = "Functions.GetComputerDetails()";
+		record.UpdatedBy = Globals.User.Id;
+		record.UpdatedOn = DateTime.Now;
+		record.UpdatedSource = "Functions.GetComputerDetails()";
+
+		// string json = JsonSerializer.Serialize(record);
+		// record.Description = json;
+
+		string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+		var result = await Functions.PostAsync<OrganizationsModel>($"Organizations/{url}", record, true);
+
+		if (result.Success && result.Result!=null)
+		{
+			SnackbarService.Add($"Record {Action} Fail.", Severity.Error);
+		}
+		else
+		{
+			SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+			record = new();
+			isReadOnly = true;
+		}
+
+		LoadingPanel = false;
+		await _drawer.CloseDrawer();
+
+	}
+
+	protected async Task SetParent(int id)
+	{
+		await Get(id);
+		record.ParentId = 0;
+		isReadOnly = false;
+		await Save();
+	}
+
+	private async Task OnFileInputChanged(InputFileChangeEventArgs e)
+	{
+		try
+		{
+			var result = await Functions.FileUpload(e, FileUploadService);
+
+			if (result.Item1 == true)
+			{
+				record.Logo = result.Item2;
+				SnackbarService.Add("File uploaded successfully!", Severity.Success);
+			}
+			else
+			{
+				SnackbarService.Add($"Error: {result.Item2}", Severity.Error);
+			}
+		}
+		catch (Exception ex)
+		{
+			SnackbarService.Add($"Exception: {ex.Message}", Severity.Error);
+			record.Logo = null;
+		}
+	}
+}
+

@@ -1,0 +1,99 @@
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="NG.MicroERP.SwiftServe.DineIn.Pages.TablesPage"
+             BackgroundColor="White"
+             Title="TablesPage">
+
+    <ScrollView>
+        <VerticalStackLayout Margin="5">
+            <CollectionView x:Name="TablesPageRef"
+                        ItemsSource="{Binding Tables}"
+                        SelectionMode="Single"
+                        SelectionChanged="TablesCollectionView_SelectionChanged">
+
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" />
+                </CollectionView.ItemsLayout>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border
+                            StrokeThickness="1"
+                            Margin="5"
+                            Padding="10"
+                            StrokeShape="Rectangle"
+                            HorizontalOptions="Fill">
+
+                            <Grid ColumnDefinitions="*, Auto"
+                                  RowDefinitions="Auto"
+                                  ColumnSpacing="10"
+                                  VerticalOptions="Center"
+                                  HorizontalOptions="Fill"
+                                  Padding="0">
+
+                                <HorizontalStackLayout Grid.Column="0"
+                                                       Spacing="10"
+                                                       VerticalOptions="Center"
+                                                       HorizontalOptions="Start">
+
+                                    <Image Source="{Binding TableImage}"
+                                           WidthRequest="50"
+                                           HeightRequest="50"
+                                           VerticalOptions="Center" />
+
+                                    <VerticalStackLayout Spacing="2"
+                                                         VerticalOptions="Center"
+                                                         HorizontalOptions="Start">
+                                        <Label Text="{Binding TableNumber}"
+                                               FontAttributes="Bold"
+                                               TextColor="Black"
+                                               FontSize="16" />
+
+                                        <Label Text="{Binding Capacity, StringFormat='Capacity: {0}'}"
+                                               FontSize="13"
+                                               TextColor="Gray" />
+
+                                        <Label Text="{Binding AvailableStatus}"
+                                               FontSize="13"
+                                               TextColor="Gray" />
+                                    </VerticalStackLayout>
+
+                                </HorizontalStackLayout>
+
+                                <!-- Right side: Buttons -->
+                                <HorizontalStackLayout Grid.Column="1"
+                                                       Spacing="10"
+                                                       VerticalOptions="Center"
+                                                       HorizontalOptions="End">
+
+                                    <Button Text="View"
+                                            BackgroundColor="LightGray"
+                                            WidthRequest="70"
+                                            HeightRequest="38"
+                                            Clicked="OnViewClicked"
+                                            CommandParameter="{Binding .}" />
+
+                                    <!--<Button Text="Order"
+                                            BackgroundColor="LightGreen"
+                                            WidthRequest="70"
+                                            HeightRequest="38"
+                                            Clicked="OnOrderClicked"
+                                            CommandParameter="{Binding .}" />-->
+                                </HorizontalStackLayout>
+
+                            </Grid>
+
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer
+                                Command="{Binding BindingContext.TableTappedCommand, Source={x:Reference TablesPageRef}}"
+                                CommandParameter="{Binding .}" />
+                            </Border.GestureRecognizers>
+
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<TabbedPage 
+    x:Class="NG.MicroERP.App.Pages.MainMenuPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:pages="clr-namespace:NG.MicroERP.App.Pages"
+    BackgroundColor="White">
+
+    <pages:TablesPage 
+        Title="Tables" 
+        IconImageSource="table.png"/>
+
+    <pages:OrdersPage 
+        Title="Orders" 
+        IconImageSource="waiter.png" />
+    
+    <pages:DineinOrdersPage 
+        Title="Pending Orders" 
+        IconImageSource="food.png" />
+    
+</TabbedPage>

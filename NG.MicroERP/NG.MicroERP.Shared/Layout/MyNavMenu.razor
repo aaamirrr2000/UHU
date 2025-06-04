@@ -1,0 +1,176 @@
+﻿@using Microsoft.AspNetCore.Components.Web
+@using System.Diagnostics
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Globals Globals
+@inject IJSRuntime JSRuntime
+@inject IFormFactor FormFactor
+@using MudBlazor
+
+<div class="sidebar-container">
+    <div class="employee-info">
+        @if (Globals.User == null)
+        {
+            <SimpleLoading />
+        }
+        else
+        {
+            @if (Globals.User != null && System.IO.File.Exists(Path.Combine("wwwroot/images", Globals.User.Pic!)))
+            {
+                <img src="@Globals.User.Pic" alt="Profile Picture" style="width: 50px; height: 50px; border-radius: 50%;" />
+            }
+
+            <MudStack Spacing="1" Margin="Margin.Top">
+                <MudText Typo="Typo.subtitle1" FontWeight="FontWeight.Bold" Color="Color.Primary">
+                    @Globals.User?.FullName
+                </MudText>
+                <MudText Typo="Typo.body2" Color="Color.Primary">
+                    @Globals.User?.GroupName
+                </MudText>
+            </MudStack>
+
+            @* <hr />
+            <MudText Color="Color.Primary" Class="platform-text" Typo="Typo.caption">
+                @platform
+            </MudText> *@
+            <hr />
+        }
+    </div>
+
+    <MudNavMenu>
+        @if (MenuGroupData != null && MenuGroupData.Count > 0)
+        {
+            @foreach (var group in MenuGroupData)
+            {
+                <MudNavGroup Title="@group.MenuCaption" Expanded="@IsExpanded(group.MenuId)" OnClick="() => ToggleGroup(group.MenuId)">
+                    <TitleContent>
+                        <i class="@group.Icon" style="margin-right: 8px;"></i>
+                        @group.MenuCaption
+                    </TitleContent>
+                    <ChildContent>
+                    @foreach (var item in data.Where(x => x.ParentId == group.MenuId))
+                    {
+                        <MudNavLink OnClick="() => LoadOption(item)" NavLinkMatch="NavLinkMatch.Prefix" Class="d-flex align-items-center">
+                            <i class="@item.Icon" style="width: 24px; text-align: center;"></i>
+                            <span style="font-size: 14px; margin-left: 8px;">@item.MenuCaption</span>
+                        </MudNavLink>
+                    }
+                    </ChildContent>
+                </MudNavGroup>
+            }
+        }
+        else
+        {
+            <SimpleLoading />
+        }
+    </MudNavMenu>
+</div>
+
+@code {
+    private List<GroupMenuModel> MenuGroupData = new();
+    private List<GroupMenuModel> data = new();
+    private bool LoadingPanel = false;
+    private string factor => FormFactor.GetFormFactor();
+    private string platform => FormFactor.GetPlatform();
+    int? expandedGroupId = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Globals.User == null || Globals.Organization == null)
+        {
+            SnackbarService.Add("Cannot Get User or Organization Details. Please try login again.", Severity.Error);
+            return;
+        }
+
+        LoadingPanel = true;
+        data = await Functions.GetAsync<List<GroupMenuModel>>($"Permissions/SearchGroupPermissions/{Globals.User.OrganizationId}", true) ?? new List<GroupMenuModel>();
+        LoadingPanel = false;
+
+        if (data != null && data.Count > 0)
+        {
+            data = data.Where(x => x.AdditionalInfo != "Report").ToList();
+            data = data.Where(x => x.GroupId == Globals.User.GroupId).ToList();
+
+            if (Globals.User.GroupId != 1)
+            {
+                MenuGroupData = MenuGroupData.Where(x => x.ParentId == 0 && (x.My_Privilege == "VIEW ONLY" || x.My_Privilege == "FULL ACCESS")).ToList();
+            }
+            else
+            {
+                MenuGroupData = data.Where(x => x.ParentId == 0).ToList();
+            }
+
+            foreach (var item in MenuGroupData)
+            {
+                item.IsToggled = false;
+            }
+
+            if (MenuGroupData.Count > 0)
+            {
+                MenuGroupData[^1].IsToggled = true;
+            }
+        }
+    }
+
+    private void LoadOption(GroupMenuModel item)
+    {
+        LoadingPanel = true;
+        Globals.seletctedMenuItem = item.MenuCaption!;
+        NavManager.NavigateTo($"/{item.PageName}/{item.AdditionalInfo}");
+        LoadingPanel = false;
+        StateHasChanged();
+    }
+
+    void ToggleGroup(int groupId)
+    {
+        if (expandedGroupId == groupId)
+            expandedGroupId = null;
+        else
+            expandedGroupId = groupId;
+    }
+
+    bool IsExpanded(int groupId)
+    {
+        return expandedGroupId == groupId;
+    }
+
+    private void ToggleMenuGroup(int menuid)
+    {
+        foreach (var menuGroup in MenuGroupData)
+        {
+            menuGroup.IsToggled = menuGroup.MenuId == menuid;
+        }
+    }
+
+    private void OnMenuItemClick(string icon = "")
+    {
+        Console.WriteLine($"Icon clicked: {icon}");
+    }
+
+}
+
+
+<style>
+
+    .employee-info {
+        border-radius: 5px;
+        color: white; /* White text color */
+        padding: 5px; /* Add padding */
+        margin-bottom: 15px; /* Space below the profile section */
+        /* background-color: rgba(255, 255, 255, 0.1);  */
+        text-align: center;
+    }
+
+    .sidebar-container {
+        display: flex;
+        flex-direction: column;
+        height: 90vh; /* Full height of viewport */
+        padding: 1rem;
+    }
+
+    .platform-text {
+        margin-top: auto;
+        font-size: 10px;
+    }
+</style>
+

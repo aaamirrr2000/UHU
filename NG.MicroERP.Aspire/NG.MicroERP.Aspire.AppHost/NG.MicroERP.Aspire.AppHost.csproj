@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Sdk Name="Aspire.AppHost.Sdk" Version="9.0.0" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsAspireHost>true</IsAspireHost>
+    <UserSecretsId>24c3d567-2159-48d1-81e3-5256eab97ed7</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\NG.MicroERP.API\NG.MicroERP.API.csproj" />
+    <ProjectReference Include="..\..\NG.MicroERP\NG.MicroERP.Web\NG.MicroERP.Web.csproj" />
+    <ProjectReference Include="..\NG.MicroERP.Aspire.ApiService\NG.MicroERP.Aspire.ApiService.csproj" />
+    <ProjectReference Include="..\NG.MicroERP.Aspire.ServiceDefaults\NG.MicroERP.Aspire.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="9.0.0" />
+  </ItemGroup>
+
+</Project>

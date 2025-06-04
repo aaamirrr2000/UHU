@@ -1,0 +1,129 @@
+﻿@page "/ItemServingSizePage/{CurrentRecord:int?}"
+@using System.Text.Json
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+
+<MudExpansionPanels MultiExpansion="true">
+    <MudButton Variant="Variant.Filled" OnClick="Save" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+        <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+        Save
+    </MudButton>
+    <MudExpansionPanel Expanded="true" Style="margin-bottom:10px;">
+        <div class="row" style="width:100%; display: flex;">
+            <div class="col-6 mb-3">
+                <MudTextField Label="Size" @bind-Value="servingSize.Size" Variant="Variant.Filled" Placeholder="Size" />
+                <ValidationMessage For="@(() => servingSize.Size)" />
+            </div>
+            <div class="col-6 mb-3">
+                <MudNumericField Label="Price" @bind-Value="servingSize.Price" Variant="Variant.Filled" Placeholder="Price" Format="#,##0.00" />
+                <ValidationMessage For="@(() => servingSize.Price)" />
+            </div>
+        </div>
+
+        <MudButton OnClick="AddSize" Color="Color.Primary" Variant="Variant.Filled" Style="margin: 10px 0;">
+            Add Serving Size
+        </MudButton>
+    </MudExpansionPanel>
+
+    <MudTable Items="@servingSizes" Hover="true" Dense="true">
+        <HeaderContent>
+            <MudTh>Size</MudTh>
+            <MudTh>Price</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate Context="item">
+            <MudTd>
+                <MudButton Color="Color.Error" OnClick="() => Delete(item)">Remove</MudButton>
+            </MudTd>
+            <MudTd>@item.Size</MudTd>
+            <MudTd>@item.Price</MudTd>
+        </RowTemplate>
+    </MudTable>
+
+</MudExpansionPanels>
+
+@code {
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+
+    private ItemsModel record = new();
+    private ServingSizeModel servingSize = new();
+    private List<ServingSizeModel> servingSizes = new();
+    private bool LoadingPanel { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    private async Task GetAll()
+    {
+        LoadingPanel = true;
+
+        record = await Functions.GetAsync<ItemsModel>($"Items/Get?Id={CurrentRecord}", true) ?? new ItemsModel();
+
+        if (!string.IsNullOrWhiteSpace(record.ServingSize))
+        {
+            try
+            {
+                servingSizes = JsonSerializer.Deserialize<List<ServingSizeModel>>(record.ServingSize) ?? new();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("JSON Parse Error: " + ex.Message);
+                servingSizes = new();
+            }
+        }
+        else
+        {
+            servingSizes = new();
+        }
+
+        LoadingPanel = false;
+    }
+
+    private void AddSize()
+    {
+        if (!string.IsNullOrWhiteSpace(servingSize.Size) && servingSize.Price > 0)
+        {
+            servingSizes.Add(new ServingSizeModel
+            {
+                Size = servingSize.Size,
+                Price = servingSize.Price
+            });
+
+            servingSize = new();
+        }
+    }
+
+    private void Delete(ServingSizeModel item)
+    {
+        servingSizes.Remove(item);
+    }
+
+    private async Task Save()
+    {
+        LoadingPanel = true;
+        record.Id = CurrentRecord;
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = Functions.GetComputerDetails();
+        record.ServingSize = JsonSerializer.Serialize(servingSizes);
+
+        var result = await Functions.PostAsync<ItemsModel>($"Items/ServingSizeUpdate", record, true);
+        if (result.Success == false)
+        {
+            SnackbarService.Add($"Serving Size Not Saved.", Severity.Error);
+        }
+        else
+        {
+            SnackbarService.Add($"Serving Size Saved Successfully", Severity.Success);
+            record = new();
+            servingSizes = new();
+        }
+
+        LoadingPanel = false;
+    }
+}

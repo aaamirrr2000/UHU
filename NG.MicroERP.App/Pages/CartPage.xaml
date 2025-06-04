@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="NG.MicroERP.App.Pages.CartPage"
+             BackgroundColor="White"
+             NavigationPage.HasNavigationBar="False"
+             Title="Cart">
+
+    <ContentPage.Background>
+        <LinearGradientBrush EndPoint="0,1">
+            <GradientStop Color="#E6F0FA" Offset="0.0" />
+            <GradientStop Color="#FFFFFF" Offset="1.0" />
+        </LinearGradientBrush>
+    </ContentPage.Background>
+    
+    <ScrollView>
+        <VerticalStackLayout Padding="10">
+            <Label Text="Cart" FontAttributes="Bold" FontSize="28" HorizontalOptions="Center" TextColor="#333" FontFamily="Orbitron"/>
+            <Label Text="{Binding TableNumber}" FontAttributes="Bold" FontSize="28" HorizontalOptions="Center" TextColor="#333" FontFamily="Orbitron"/>
+            
+            <Label 
+                x:Name="TotalLabel"
+                 FontSize="28"
+                FontAttributes="Bold"
+                TextColor="#333" 
+                CharacterSpacing="2"
+                FontFamily="Orbitron"
+                HorizontalOptions="Center" />
+
+            <ActivityIndicator x:Name="LoadingIndicator"
+                                     IsVisible="False"
+                                     IsRunning="False"
+                                     Color="#00C4B4"
+                                     HeightRequest="40" />
+
+            <CollectionView x:Name="Cart" Margin="0,10">
+
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="12" />
+                </CollectionView.ItemsLayout>
+                
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border StrokeThickness="0"
+                            Margin="10"
+                            Padding="20"
+                            BackgroundColor="White"
+                            HorizontalOptions="Fill"
+                            StrokeShape="RoundRectangle 15">
+                            <Border.Shadow>
+                                <Shadow Brush="#20000000" Offset="0,5" Radius="10" Opacity="0.3" />
+                            </Border.Shadow>
+
+                            <VerticalStackLayout Spacing="8" >
+
+                                <Grid ColumnDefinitions="*,Auto" Padding="0,0,0,0">
+                                    <Label Text="{Binding Name}" 
+                                       FontSize="18" 
+                                       FontAttributes="Bold" 
+                                       TextColor="#333" 
+                                       Grid.Column="0"
+                                       VerticalOptions="Center" />
+
+                                    <Button Text="Remove"
+                                            Clicked="OnRemoveItemClicked"
+                                            CommandParameter="{Binding}"
+                                            BackgroundColor="Red"
+                                            TextColor="White"
+                                            HeightRequest="50"
+                                            FontSize="14"
+                                            FontFamily="Roboto"
+                                            CornerRadius="5"
+                                            HorizontalOptions="Fill"
+                                            Grid.Column="1" />
+
+                                </Grid>
+
+                                <!-- Quantity and Price -->
+                                <HorizontalStackLayout Spacing="20">
+                                    <Label Text="{Binding MaxQty, StringFormat='Qty: {0}'}" 
+                                       FontSize="14" 
+                                       TextColor="#614D0A"/>
+
+                                    <Label Text="{Binding RetailPrice, StringFormat='Price: {0:N2}'}" 
+                                       FontSize="14" 
+                                       TextColor="#614D0A"/>
+
+                                    <Label Text="{Binding ServingSize, StringFormat='Size: {0}'}" 
+                                       FontSize="14" 
+                                       TextColor="#614D0A"/>
+
+                                    <Label Text="Takeaway" 
+                                           FontSize="14" 
+                                           IsVisible="{Binding MinQty}"
+                                           TextColor="#614D0A"/>
+                                    
+                                </HorizontalStackLayout>
+
+                                <!-- Note Entry -->
+                                <Entry Placeholder="Instructions"
+                                   Text="{Binding Description}"
+                                   TextColor="Black"
+                                    PlaceholderColor="Gray"
+                                    BackgroundColor="#F5F5F5"
+                                    HeightRequest="45"
+                                   MaxLength="255"/>
+                                
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <VerticalStackLayout>
+                <Editor Placeholder="Note"
+                        Text="{Binding BillNote, Mode=TwoWay}"
+                        TextColor="Black"
+                        PlaceholderColor="Gray"
+                        BackgroundColor="#F5F5F5"
+                        AutoSize="TextChanges"
+                        MaxLength="255"
+                        Margin="5"
+                        HeightRequest="120"
+                        />
+            </VerticalStackLayout>
+
+
+            <Button Text="Place Order" 
+                    BackgroundColor="#005B99"
+                    TextColor="White"
+                    HeightRequest="50"
+                    FontSize="16"
+                    FontAttributes="Bold"
+                    FontFamily="Roboto"
+                    CornerRadius="10"
+                    Clicked="OnPlaceOrderClicked"/>
+            
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

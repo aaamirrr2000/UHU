@@ -1,0 +1,199 @@
+﻿@page "/TypeCodePage"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="row">
+    <MyModelDialog Width="30%" Height="70%" @ref="_myDialog" Title="TypeCode Managment">
+
+        <HeaderContent>
+            <div class="text-center" style="overflow-x: hidden;">
+                <p></p>
+            </div>
+        </HeaderContent>
+
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <div class="row">
+                        <div class="col-sm-6 mb-3">
+                            <MudNumericField Label="OrganizationId" @bind-Value="record.OrganizationId" placeholder="OrganizationId" readonly="@isReadOnly" Format="#,##0.00" style="text-align: right; padding-right: 25px; direction: rtl;"></MudNumericField>
+                            <ValidationMessage For="@(() => record.OrganizationId)" />
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <label style="font-size:12px;">Listname</label>
+                            <MudInput id="ListName" @bind-Value="record.ListName" placeholder="ListName" readonly="@isReadOnly" Class="w-100"></MudInput>
+                            <ValidationMessage For="@(() => record.ListName)" />
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <label style="font-size:12px;">Listvalue</label>
+                            <MudInput id="ListValue" @bind-Value="record.ListValue" placeholder="ListValue" readonly="@isReadOnly" Class="w-100"></MudInput>
+                            <ValidationMessage For="@(() => record.ListValue)" />
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <MudNumericField Label="ParentId" @bind-Value="record.ParentId" placeholder="ParentId" readonly="@isReadOnly" Format="#,##0.00" style="text-align: right; padding-right: 25px; direction: rtl;"></MudNumericField>
+                            <ValidationMessage For="@(() => record.ParentId)" />
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <MudNumericField Label="SeqNo" @bind-Value="record.SeqNo" placeholder="SeqNo" readonly="@isReadOnly" Format="#,##0.00" style="text-align: right; padding-right: 25px; direction: rtl;"></MudNumericField>
+                            <ValidationMessage For="@(() => record.SeqNo)" />
+                        </div>
+
+                    </div>
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+
+        <FooterContent>
+            <div class="mt-5 text-center">
+                @if (!isReadOnly)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save"
+                               Class="px-4 py-2">
+                        @(isNew == 1 ? "Save" : "Update")
+                    </MudButton>
+                }
+            </div>
+        </FooterContent>
+    </MyModelDialog>
+
+    @if (data == null)
+    {
+        <p>Loading ...</p>
+    }
+    else
+    {
+        <div class="row">
+            <MudDataGrid T="TypeCodeModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple"
+                         Filterable="true" Hideable="true" RowsPerPage="10">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">TypeCode Managment</MudText>
+                    <MudSpacer />
+                    <MudIconButton Icon="@Icons.Material.Outlined.Add" Size="MudBlazor.Size.Small" OnClick="@(() => Clear())" />
+                </ToolBarContent>
+
+                <Columns>
+                    <TemplateColumn Title="Actions" CellStyle="width: 120px; min-width: 120px;">
+                        <CellTemplate Context="row">
+                            <MudIconButton Icon="@Icons.Material.Outlined.Visibility" Size="MudBlazor.Size.Small" OnClick="@(() => View(row.Item.Id))" />
+                            <MudIconButton Icon="@Icons.Material.Outlined.Edit" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.Id))" />
+                            <MudIconButton Icon="@Icons.Material.Outlined.Delete" Size="MudBlazor.Size.Small" OnClick="@(() => Delete(row.Item.Id))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="x => x.ListName" Title="ListName" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.ListValue" Title="ListValue" Sortable="true" Filterable="true" />
+
+                </Columns>
+
+                <PagerContent>
+                    <MudDataGridPager T="TypeCodeModel" />
+                </PagerContent>
+            </MudDataGrid>
+        </div>
+    }
+</div>
+
+@code
+{
+    static List<TypeCodeModel> data = new();
+    static TypeCodeModel record = new();
+
+    int isNew = 1;
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    public MyModelDialog? _myDialog;
+
+    protected override async Task OnInitializedAsync()
+    {
+        LoadingPanel = true;
+        data = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search", true) ?? new List<TypeCodeModel>();
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<TypeCodeModel>($"TypeCode/Get?Id={id}", true) ?? new TypeCodeModel();
+        LoadingPanel = false;
+    }
+
+    protected void Clear()
+    {
+        isNew = 1;
+        record = new TypeCodeModel();
+        isReadOnly = false;
+        _myDialog!.Show();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        isReadOnly = true;
+        _myDialog!.Show();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        isNew = 2;
+        isReadOnly = false;
+        _myDialog!.Show();
+    }
+
+    protected async Task Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        isNew = 3;
+        await Get(id);
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+
+        //Add Mandatory Fields Here
+
+        string InsertUpdateDelete = "Insert";
+
+        if (isNew == 1)
+            InsertUpdateDelete = "Insert";
+        else if (isNew == 2)
+            InsertUpdateDelete = "Update";
+        else if (isNew == 3)
+            InsertUpdateDelete = $"SoftDelete";
+        else if (isNew == 4)
+            InsertUpdateDelete = $"Delete";
+        else
+        {
+            SnackbarService.Add($"Not a valid option selected.", Severity.Warning);
+            return;
+        }
+
+        var result = await Functions.PostAsync<TypeCodeModel>($"TypeCode/{InsertUpdateDelete}", record, true);
+        if (result.Success)
+        {
+            SnackbarService.Add($"Record Not {InsertUpdateDelete}", Severity.Error);
+        }
+        else
+        {
+            SnackbarService.Add($"Record {InsertUpdateDelete} Successfully", Severity.Success);
+            record = new();
+            isReadOnly = true;
+        }
+
+        data = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search", true) ?? new List<TypeCodeModel>();
+        LoadingPanel = false;
+        _myDialog!.Hide();
+
+    }
+}
+

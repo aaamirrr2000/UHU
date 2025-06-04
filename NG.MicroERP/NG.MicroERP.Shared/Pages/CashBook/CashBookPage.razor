@@ -1,0 +1,413 @@
+﻿@page "/CashBookPage/{Action}/{CurrentRecord?}"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject FileUploadService FileUploadService
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+
+    <div class="text-end" style="margin-top:10px;">
+        @if (Action != "VIEW")
+        {
+            <MudButton Variant="Variant.Filled" OnClick="Save" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                @(Action == "INSERT" ? "Save" : "Update")
+            </MudButton>
+            
+            <MudButton Variant="Variant.Filled" OnClick="Print" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                Print
+            </MudButton>
+
+            @if (Action == "UPDATE")
+            {
+                <MudButton Variant="Variant.Filled" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                    Delete
+                </MudButton>
+            }
+        }
+    </div>
+
+    <br />
+
+    <MudExpansionPanels MultiExpansion="true">
+        <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
+            <div class="row" style="width:100%; display: flex;">
+                <div class="col-6 mb-3">
+
+                    <MudSelect T="string"
+                               @bind-Value="record.TranType"
+                               Label="Tranaction Type"
+                               Variant="Variant.Filled"
+                               Dense="true"
+                               Placeholder="Tranaction Type"
+                               HelperText="Select Tranaction Type"
+                               HelperTextOnFocus="true"
+                               Clearable="true"
+                               @bind-Value:after="OnTransactionTypeChanged">
+
+                        @if (Tra != null && Tra.Any())
+                        {
+                            if (string.IsNullOrWhiteSpace(record.TranType))
+                            {
+                                record.TranType = Tra.First().ListValue;
+                            }
+
+                            foreach (var i in Tra)
+                            {
+                                <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+
+                    <ValidationMessage For="@(() => record.TranType)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudTextField Label="Transaction #" id="SeqNo" @bind-Value="record.SeqNo" Variant="Variant.Filled" placeholder="Transaction #" ReadOnly="true"></MudTextField>
+                    <ValidationMessage For="@(() => record.SeqNo)" />
+                </div>
+                <div class="col-6 mb-3">
+
+                    <MudSelect @bind-Value="record.LocationId"
+                               Label="Location"
+                               Variant="Variant.Filled"
+                               Dense="true"
+                               Placeholder="Location"
+                               HelperText="Select Location"
+                               HelperTextOnFocus="true"
+                               Clearable="true">
+
+                        @if (Loc != null && Loc.Any())
+                        {
+                            if (record.LocationId == 0)
+                            {
+                                record.LocationId = Loc.First().Id;
+                            }
+
+                            foreach (var i in Loc)
+                            {
+                                <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                    <ValidationMessage For="@(() => record.LocationId)" />
+                </div>
+                <div class="col-6 mb-3">
+
+                    <MudSelect @bind-Value="record.PartyId"
+                               @key="record.PartyId"
+                               Label="@filterParties.Replace("'", "").Replace("partytype=", "")"
+                               Variant="Variant.Filled"
+                               Dense="true"
+                               Placeholder="@filterParties.Replace("'", "").Replace("partytype=", "")"
+                               HelperText="@filterParties.Replace("'", "").Replace("partytype=", "")"
+                               HelperTextOnFocus="true"
+                               Clearable="true">
+
+                        @if (Par != null && Par.Any())
+                        {
+                            foreach (var i in Par)
+                            {
+                                <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                    <ValidationMessage For="@(() => record.PartyId)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudDatePicker Label="Tranaction Date" @bind-Value="record.TranDate" Format="yyyy-MM-dd" Variant="Variant.Filled" placeholder="Tranaction Date" ReadOnly="@isReadOnly"></MudDatePicker>
+                    <ValidationMessage For="@(() => record.TranDate)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudTextField Label="Description" id="Description" @bind-Value="record.Description" Variant="Variant.Filled" placeholder="Description" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.Description)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudNumericField Label="Amount" @bind-Value="record.Amount" Variant="Variant.Filled" placeholder="Amount" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
+                    <ValidationMessage For="@(() => record.Amount)" />
+                </div>
+                <div class="col-6 mb-3">
+
+                    <MudSelect @bind-Value="record.AccountId"
+                               @key="record.AccountId"
+                               Label="@filterCOA.Replace("'", "").Replace("InterfaceType=", "")"
+                               Variant="Variant.Filled"
+                               Dense="true"
+                               Placeholder="@filterCOA.Replace("'", "").Replace("InterfaceType=", "")"
+                               HelperText="@filterCOA.Replace("'", "").Replace("InterfaceType=", "")"
+                               HelperTextOnFocus="true"
+                               Clearable="true">
+
+                        @if (Acc != null && Acc.Any())
+                        {
+                            foreach (var i in Acc)
+                            {
+                                <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                    <ValidationMessage For="@(() => record.AccountId)" />
+                </div>
+             
+                <div class="col-6 mb-3">
+                    <MudSelect T="string"
+                               @bind-Value="record.PaymentMethod"
+                               Label="Payment Method"
+                               Variant="Variant.Filled"
+                               Dense="true"
+                               Placeholder="Payment Method"
+                               HelperText="Select Payment Method"
+                               HelperTextOnFocus="true"
+                               Clearable="true">
+
+                        @if (pm != null && pm.Any())
+                        {
+                            if (string.IsNullOrWhiteSpace(record.PaymentMethod))
+                            {
+                                record.PaymentMethod = pm.First().ListValue;
+                            }
+
+                            foreach (var i in pm)
+                            {
+                                <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+
+                    <ValidationMessage For="@(() => record.PaymentMethod)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudTextField Label="Reference #" id="RefNo" @bind-Value="record.RefNo" Variant="Variant.Filled" placeholder="Reference #" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.RefNo)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudTextField Label="TranRef" id="Bill Transaction Reference" @bind-Value="record.TranRef" Variant="Variant.Filled" placeholder="Bill Transaction Reference" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.TranRef)" />
+                </div>
+                <div class="col-12 mb-3">
+                    <div class="mt-2">
+                        <InputFile class="form-control" OnChange="OnFileInputChanged" />
+                        <a href=@record.FileAttachment download class="btn btn-link" style="font-size: 12px;">
+                            @record.FileAttachment
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+
+</div>
+
+@code
+{
+    static CashBookModel record = new();
+    List<LocationsModel> Loc = new();
+    List<PartiesModel> Par = new();
+    List<ChartOfAccountsModel> Acc = new();
+    List<TypeCodeModel> Tra = null!;
+    List<TypeCodeModel> pm = null!;
+
+    public bool isReportVisible { get; set; } = false;
+    public int Report_id { get; set; }
+    public string filterCOA { get; set; } = string.Empty;
+    public string filterParties { get; set; } = string.Empty;
+
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        Loc = await Functions.GetAsync<List<LocationsModel>>($"Locations/Search", true) ?? new List<LocationsModel>();
+        Tra = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/CASHBOOK TRAN TYPE", true) ?? new List<TypeCodeModel>();
+        pm = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PAYMENT METHOD", true) ?? new List<TypeCodeModel>();
+
+
+        if (Action == "INSERT")
+        {
+            Clear();
+            GetDefaultValues();
+            isReadOnly = false;
+        }
+        else
+        {
+            await Get(CurrentRecord);
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected void GetDefaultValues()
+    {
+
+        if (Acc != null && Acc.Any() && record.AccountId == 0)
+        {
+            record.AccountId = Acc.First().Id;
+
+        }
+
+        if (Par != null && Par.Any() && record.PartyId == 0)
+        {
+            record.PartyId = Par.First().Id;
+
+        }
+
+        StateHasChanged();
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<CashBookModel>($"CashBook/Get?Id={id}", true) ?? new CashBookModel();
+        await OnTransactionTypeChanged();
+        LoadingPanel = false;
+    }
+
+    protected async void Clear()
+    {
+        Action = "INSERT";
+        record = new CashBookModel();
+        isReadOnly = false;
+        record.TranType = "RECEIPT";
+        record.LocationId = Globals.User.LocationId;
+        record.TranDate = DateTime.Now;
+        await OnTransactionTypeChanged();
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        isReadOnly = true;
+        await OnTransactionTypeChanged();
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+        await OnTransactionTypeChanged();
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedFrom = Functions.GetComputerDetails();
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = Functions.GetComputerDetails();
+
+        string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+        var result = await Functions.PostAsync<CashBookModel>($"CashBook/{url}", record, true);
+        if (result.Success == false)
+        {
+            SnackbarService.Add($"Record {Action} Fail.", Severity.Error);
+        }
+        else
+        {
+            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+            record = new();
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+        await _drawer.CloseDrawer();
+
+    }
+
+    protected void Print()
+    {
+        var url = $"/CashBookReport/{record.Id}";
+        JSRuntime.InvokeVoidAsync("open", url, "_blank");
+    }
+
+    private async Task OnFileInputChanged(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var result = await Functions.FileUpload(e, FileUploadService, 25);
+
+            if (result.Item1 == true)
+            {
+                record.FileAttachment = result.Item2;
+            }
+            else
+            {
+                SnackbarService.Add($"Error: {result.Item2}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Exception: {ex.Message}", Severity.Error);
+            record.FileAttachment = null;
+        }
+    }
+
+    private async Task OnTransactionTypeChanged()
+    {
+        LoadingPanel = true;
+
+        switch (record.TranType)
+        {
+            case "RECEIPT":
+                filterCOA = "InterfaceType='Revenue'";
+                filterParties = "partytype='Customer'";
+                break;
+
+            case "PAYMENT":
+                filterCOA = "InterfaceType='Expense'";
+                filterParties = "partytype='Supplier'";
+                break;
+
+            default:
+                filterCOA = "InterfaceType='Bank'";
+                filterParties = "partytype='Bank'";
+                break;
+        }
+
+        Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/{filterCOA.ToUpper()}", true) ?? new List<ChartOfAccountsModel>();
+        Par = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search/{filterParties.ToUpper()}", true) ?? new List<PartiesModel>();
+
+        LoadingPanel = false;
+    }
+
+}
+

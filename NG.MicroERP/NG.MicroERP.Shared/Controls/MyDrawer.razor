@@ -1,0 +1,112 @@
+﻿@using MudBlazor
+
+<MudDrawer @bind-Open="Open"
+           Width="900px"
+           Anchor="Anchor.Right"
+           Elevation="1"
+           Variant="DrawerVariant.Temporary"
+           Style="height: 100vh; overflow: hidden;">
+
+    <div class="d-flex justify-between align-center px-4 py-2" style="flex-shrink: 0;">
+        @if (!string.IsNullOrEmpty(FaIcon))
+        {
+            <i class="@FaIcon" style="margin-right: 8px;"></i>
+        }
+        <MudText Typo="Typo.h6">@(Title.ToUpper())</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Inherit" OnClick="CloseDrawer" />
+    </div>
+
+    <div class="flex-grow-1 overflow-auto px-4 py-2" style="max-height: calc(100vh - 140px);">
+        @ChildContent
+    </div>
+
+    <div class="d-flex justify-end gap-2 px-4 py-2" style="flex-shrink: 0;">
+        @FooterContent
+    </div>
+</MudDrawer>
+
+@code {
+    [Parameter] public bool Open { get; set; } = false;
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string FaIcon { get; set; } = string.Empty;
+    [Parameter] public RenderFragment HeaderContent { get; set; } = null!;
+    [Parameter] public RenderFragment ChildContent { get; set; } = null!;
+    [Parameter] public RenderFragment FooterContent { get; set; } = null!;
+    private bool _hasRenderHandle = false;
+    [Parameter] public EventCallback OnClose { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        Console.WriteLine("Component Initialized");
+        await Task.Delay(50);
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Task.Delay(50);
+            await InvokeAsync(StateHasChanged); // Ensures UI updates correctly
+        }
+    }
+
+
+    public async Task OpenDrawer()
+    {
+        Open = true;
+        await Task.Delay(50);
+        await OpenChanged.InvokeAsync(Open);
+        //await InvokeAsync(StateHasChanged); // Ensures UI updates correctly
+    }
+
+    public async Task CloseDrawer()
+    {
+        try
+        {
+            Open = false;
+            await Task.Delay(50);
+            await OpenChanged.InvokeAsync(Open);
+            if (_hasRenderHandle)
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+
+        }
+        catch (Exception ex)
+        {
+
+            Console.WriteLine($"CloseDrawer exception: {ex.Message}");
+        }
+    }
+
+    
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _hasRenderHandle = true;
+        }
+    }
+
+
+    public async Task OpenDrawerAsync()
+    {
+        await CloseDrawer();
+        await Task.Delay(50);
+        await OpenDrawer();
+    }
+}
+
+<style>
+    .soft-drawer {
+        background-color: #f9fafb !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+        border-left: 2px solid #e0e0e0 !important;
+        border-bottom: 2px solid #e0e0e0 !important;
+        transition: all 0.3s ease-in-out !important;
+    }
+</style>

@@ -1,0 +1,282 @@
+﻿@page "/ChartOfAccountsPage"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="row">
+    <MyModelDialog Width="30%" Height="70%" @ref="_myDialog" Title="ChartOfAccounts Managment">
+
+        <HeaderContent>
+            <div class="text-start" style="overflow-x: hidden;">
+                <span>...</span>
+            </div>
+        </HeaderContent>
+
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <div class="row" style="width:100%">
+                        <div class="col-lg-6 col-md-12 col-sm-12 mb-3">
+                            <label class="custom-label">Organization</label>
+                            <MudSelect T="int" @bind-Value="record.OrganizationId" Disabled="@isReadOnly" Class="custom-select">
+                                @if (Organizations != null)
+                                {
+                                    @foreach (var a in Organizations)
+                                    {
+                                        <MudSelectItem T="int" Value="@a.Id">@a.Name</MudSelectItem>
+                                    }
+                                }
+                            </MudSelect>
+
+                            <ValidationMessage For="@(() => record.OrganizationId)" />
+                        </div>
+                        <div class="col-lg-6 col-md-12 col-sm-12 mb-3">
+                            <label style="height: 10px; font-size: 12px; font-weight: 200; color: #333;" for="Code">Code</label>
+                            <MudInput id="Code" @bind-Value="record.Code" placeholder="Code" readonly="@isReadOnly" style="height: 30px; font-size: 12px; color: #333;" Class="w-100"></MudInput>
+                            <ValidationMessage For="@(() => record.Code)" />
+                        </div>
+                        <div class="col-lg-6 col-md-12 col-sm-12 mb-3">
+                            <label style="height: 10px; font-size: 12px; font-weight: 200; color: #333;" for="Name">Name</label>
+                            <MudInput id="Name" @bind-Value="record.Name" placeholder="Name" readonly="@isReadOnly" style="height: 30px; font-size: 12px; color: #333;" Class="w-100"></MudInput>
+                            <ValidationMessage For="@(() => record.Name)" />
+                        </div>
+                        <div class="col-lg-6 col-md-12 col-sm-12 mb-3">
+                            <label style="height: 10px; font-size: 12px; font-weight: 200; color: #333;" for="Type">Type</label>
+                            <MudSelect T="string" @bind-Value="record.Type" Disabled="@isReadOnly" Class="custom-select">
+                                @if (AccountType != null)
+                                {
+                                    foreach (var ind in AccountType)
+                                    {
+                                        <MudSelectItem T="string" Value="@ind.ListValue">@ind.ListValue</MudSelectItem>
+                                    }
+                                }
+
+                            </MudSelect>
+
+                            <ValidationMessage For="@(() => record.Type)" />
+                        </div>
+                        <div class="col-lg-6 col-md-12 col-sm-12 mb-3">
+                            <label style="height: 10px; font-size: 12px; font-weight: 200; color: #333;" for="InterfaceType">Interfacetype</label>
+                            <MudSelect T="string" @bind-Value="record.InterfaceType" Disabled="@isReadOnly" Class="custom-select">
+                                @if (InterfaceType != null)
+                                {
+                                    foreach (var ind in InterfaceType)
+                                    {
+                                        <MudSelectItem T="string" Value="@ind.ListValue">@ind.ListValue</MudSelectItem>
+                                    }
+                                }
+
+                            </MudSelect>
+
+                            <ValidationMessage For="@(() => record.InterfaceType)" />
+                        </div>
+                        <div class="col-lg-6 col-md-12 col-sm-12 mb-3">
+                            <label style="height: 10px; font-size: 12px; font-weight: 200; color: #333;" for="Description">Description</label>
+                            <MudInput id="Description" @bind-Value="record.Description" placeholder="Description" readonly="@isReadOnly" style="height: 30px; font-size: 12px; color: #333;" Class="w-100"></MudInput>
+                            <ValidationMessage For="@(() => record.Description)" />
+                        </div>
+                        <div class="col-lg-6 col-md-12 col-sm-12 mb-3">
+                            <label style="height: 10px; font-size: 12px; font-weight: 200; color: #333;" for="ParentId">Parentid</label>
+                            <MudSelect T="int" @bind-Value="record.ParentId" Disabled="@isReadOnly" Class="custom-select">
+                                @if (data != null)
+                                {
+                                    foreach (var item in data)
+                                    {
+                                        <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+                                    }
+                                }
+                            </MudSelect>
+
+                            <ValidationMessage For="@(() => record.ParentId)" />
+                        </div>
+                        <div class="col-lg-6 col-md-12 col-sm-12 mb-3">
+                            <label style="height: 10px; font-size: 12px; font-weight: 200; color: #333;" for="OpeningBalance">Openingbalance</label>
+                            <MudNumericField @bind-Value="record.OpeningBalance" placeholder="OpeningBalance" readonly="@isReadOnly" Format="#,##0.00" style="height: 30px; font-size: 12px; color: #333;"></MudNumericField>
+                            <ValidationMessage For="@(() => record.OpeningBalance)" />
+                        </div>
+                        <div class="col-lg-6 col-md-12 col-sm-12 mb-3">
+                            <label class="custom-label">Activation Status</label>
+                            <MudSelect T="int" @bind-Value="record.IsActive" Class="custom-select">
+                                <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                                <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                            </MudSelect>
+                            <ValidationMessage For="@(() => record.IsActive)" />
+                        </div>
+
+                    </div>
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+
+        <FooterContent>
+            <div class="text-center">
+                @if (!isReadOnly)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="Save" Class="px-2 py-2 mt-1 mr-2" Style="height:30px;">
+                        @(isNew == 1 ? "Save" : "Update")
+                    </MudButton>
+                }
+            </div>
+        </FooterContent>
+    </MyModelDialog>
+
+    @if (data == null)
+    {
+        <p>Loading ...</p>
+    }
+    else
+    {
+        <div class="row">
+            <MudDataGrid T="ChartOfAccountsModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Class="custom-grid">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">ChartOfAccounts Managment</MudText>
+                    <MudSpacer />
+                    <MudIconButton Icon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" OnClick="@(() => Clear())" />
+                </ToolBarContent>
+
+                <Columns>
+                    <TemplateColumn Title="Actions" CellStyle="width: 120px; min-width: 120px;">
+                        <CellTemplate Context="row">
+                            <MudIconButton Icon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" OnClick="@(() => View(row.Item.Id))" />
+                            <MudIconButton Icon="@Icons.Material.TwoTone.Save" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.Id))" />
+                            <MudIconButton Icon="@Icons.Material.TwoTone.DeleteSweep" Size="MudBlazor.Size.Small" OnClick="@(() => Delete(row.Item.Id))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="x => x.Code" Title="Code" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Name" Title="Name" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Type" Title="Type" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.InterfaceType" Title="InterfaceType" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Description" Title="Description" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.CreatedOn" Title="CreatedOn" Sortable="true" Filterable="true" Format="dd-MMM-yyy" />
+                    <PropertyColumn Property="x => x.CreatedFrom" Title="CreatedFrom" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.UpdatedOn" Title="UpdatedOn" Sortable="true" Filterable="true" Format="dd-MMM-yyy" />
+                    <PropertyColumn Property="x => x.UpdatedFrom" Title="UpdatedFrom" Sortable="true" Filterable="true" />
+
+
+                </Columns>
+
+                <PagerContent>
+                    <MudDataGridPager T="ChartOfAccountsModel" />
+                </PagerContent>
+            </MudDataGrid>
+        </div>
+    }
+</div>
+
+@code
+{
+    static List<ChartOfAccountsModel> data = new();
+    static ChartOfAccountsModel record = new();
+    static List<TypeCodeModel> InterfaceType = new();
+    static List<TypeCodeModel> AccountType = new();
+    static List<OrganizationsModel> Organizations = new();
+
+    int isNew = 1;
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    public MyModelDialog? _myDialog;
+
+    protected override async Task OnInitializedAsync()
+    {
+        LoadingPanel = true;
+        InterfaceType = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/ListName/INTERFACE TYPE", true) ?? new List<TypeCodeModel>();
+        Organizations = await Functions.GetAsync<List<OrganizationsModel>>($"Organizations/Search", true) ?? new List<OrganizationsModel>();
+        AccountType = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/ListName/ACCOUNT TYPE", true) ?? new List<TypeCodeModel>();
+        data = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search", true) ?? new List<ChartOfAccountsModel>();
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<ChartOfAccountsModel>($"ChartOfAccounts/Get?Id={id}", true) ?? new ChartOfAccountsModel();
+        LoadingPanel = false;
+    }
+
+    protected void Clear()
+    {
+        isNew = 1;
+        record = new ChartOfAccountsModel();
+        record.IsActive = 1;
+        isReadOnly = false;
+        _myDialog!.Show();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        isReadOnly = true;
+        _myDialog!.Show();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        isNew = 2;
+        isReadOnly = false;
+        _myDialog!.Show();
+    }
+
+    protected async Task Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        isNew = 3;
+        await Get(id);
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+
+        //Add Mandatory Fields Here
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedFrom = "";
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = "";
+
+        string InsertUpdateDelete = "Insert";
+
+        if (isNew == 1)
+            InsertUpdateDelete = "Insert";
+        else if (isNew == 2)
+            InsertUpdateDelete = "Update";
+        else if (isNew == 3)
+            InsertUpdateDelete = $"SoftDelete";
+        else if (isNew == 4)
+            InsertUpdateDelete = $"Delete";
+        else
+        {
+            SnackbarService.Add($"Not a valid option selected.", Severity.Warning);
+            return;
+        }
+
+        var result = await Functions.PostAsync<ChartOfAccountsModel>($"ChartOfAccounts/{InsertUpdateDelete}", record, true);
+        if (result.Success)
+        {
+            SnackbarService.Add($"Record Not {InsertUpdateDelete.Replace("Soft", "")}", Severity.Error);
+        }
+        else
+        {
+            SnackbarService.Add($"Record {InsertUpdateDelete.Replace("Soft", "")} Successfully", Severity.Success);
+            record = new();
+            isReadOnly = true;
+        }
+
+        data = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search", true) ?? new List<ChartOfAccountsModel>();
+        LoadingPanel = false;
+        _myDialog!.Hide();
+
+    }
+}
+

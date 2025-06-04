@@ -1,0 +1,209 @@
+﻿@page "/PermissionsDashboard"
+@inject IJSRuntime js
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+<div class="row">
+    <MyModelDialog Width="20%" Height="45%" @ref="_myDialog" Title="Permission">
+        <HeaderContent>
+            <div class="text-center" style="overflow-x: hidden;">
+                <p>A Permissions Management System allows organizations to define and control user access to various system functionalities based on predefined permission levels. This ensures that users can only perform actions that align with their roles and responsibilities, enhancing security and operational efficiency.</p>
+            </div>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <MudSelect T="string" Label="Permission" @bind-Value="Permission" class="w-100">
+                        <MudSelectItem T="string" Value=@("NO ACCESS")>NO ACCESS</MudSelectItem>
+                        <MudSelectItem T="string" Value=@("VIEW ONLY")>VIEW ONLY</MudSelectItem>
+                        <MudSelectItem T="string" Value=@("FULL ACCESS")>FULL ACCESS</MudSelectItem>
+                    </MudSelect>
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+            <div class="mt-5 text-center">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save" Class="px-4 py-2">
+                    Save
+                </MudButton>
+            </div>
+        </FooterContent>
+    </MyModelDialog>
+    @if (data == null)
+    {
+        <p>Loading ...</p>
+    }
+    else
+    {
+        <div class="row">
+            <MudDataGrid T="GroupMenuModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple"
+            Filterable="true" Hideable="true" RowsPerPage="12">
+                <ToolBarContent>
+                    <div class="row w-100">
+                        <div class="col-md-4"><MudText Typo="Typo.h6">Permissions</MudText></div>
+                        <div class="col-md-6"></div>
+                        <div class="col-md-2">
+                            <MudSelect T="int" @bind-Value="selectedGroup">
+                                @if (gp != null)
+                                {
+                                    @foreach (var a in gp)
+                                    {
+                                        <MudSelectItem T="int" Value="@a.Id">@a.Name</MudSelectItem>
+                                    }
+                                }
+                            </MudSelect>
+                        </div>
+                    </div>
+                </ToolBarContent>
+                <Columns>
+                    <TemplateColumn Title="Actions" Style="width: 40px; min-width: 40px;">
+                        <CellTemplate Context="row">
+                            @if (!@isReadOnly)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Outlined.Edit" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.MenuId))" />
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.MenuCaption" Title="Page" Sortable="true" Filterable="true" />
+                    <TemplateColumn Title="Permission" Style="width: 80px; min-width: 80px;">
+                        <CellTemplate Context="row">
+                            <div style="display: flex; align-items: center;">
+                                @if (row.Item.My_Privilege == "NO ACCESS")
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Block" Style="font-size: 1rem;" Color="Color.Secondary" Title="No Access" />
+                                }
+                                else if (row.Item.My_Privilege == "VIEW ONLY")
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Visibility" Style="font-size: 1rem;" Color="Color.Secondary" Title="View Only" />
+                                }
+                                else if (row.Item.My_Privilege == "FULL ACCESS")
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.LockOpen" Style="font-size: 1rem;" Color="Color.Secondary" Title="Full Access" />
+                                }
+                                else
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.HelpOutline" Style="font-size: 1rem;" Color="Color.Secondary" Title="Undefined" />
+                                }
+                                <span style="margin-left: 8px;">@row.Item.My_Privilege</span>
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <PagerContent>
+                    <MudDataGridPager T="GroupMenuModel" />
+                </PagerContent>
+            </MudDataGrid>
+        </div>
+    }
+</div>
+
+@code {
+    private bool LoadingPanel { get; set; } = false;
+    private static List<GroupMenuModel>? data = null;
+    private static GroupMenuModel? gridrow = null;
+    private static PermissionsModel record = new();
+    public List<string> toolbar = ["Search"];
+    private static List<GroupsModel> gp = new();
+    private int selectedGroup = 2;
+    private int selectedOrg = 1;
+    private int menu_id = 0;
+    [CascadingParameter]
+    private bool isReadOnly { get; set; }
+    public MyModelDialog? _myDialog;
+    private string Permission = "";
+    private readonly bool isVisible = false;
+    protected override async Task OnInitializedAsync()
+    {
+        LoadingPanel = true;
+        gp = await Functions.GetAsync<List<GroupsModel>>($"Groups/Search", true) ?? new List<GroupsModel>();
+        await GetData();
+        LoadingPanel = false;
+    }
+
+    protected async Task GetData()
+    {
+        data = await Functions.GetAsync<List<GroupMenuModel>>($"Permissions/SearchGroupMenu/{selectedOrg}/{selectedGroup}", true) ?? new List<GroupMenuModel>();
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        var res = await Functions.GetAsync<List<GroupMenuModel>>($"Permissions/SearchGroupMenu/{selectedOrg}/{selectedGroup}", true) ?? new List<GroupMenuModel>();
+        if (res != null)
+        {
+            if (res.Count > 0)
+            {
+                gridrow = res.FirstOrDefault();
+                selectedGroup = gridrow!.GroupId;
+            }
+        }
+
+        LoadingPanel = false;
+    }
+    protected void Edit(int id)
+    {
+        _myDialog!.Show();
+        menu_id = id;
+    }
+    protected async Task ReadWrite(int id)
+    {
+        await Get(id);
+    }
+    protected async Task Visibility(int id)
+    {
+        await Get(id);
+    }
+
+    protected async Task Save()
+    {
+        _myDialog!.Hide();
+
+        LoadingPanel = true;
+
+        List<GroupMenuModel> pre = data!.Where(x => x.GroupId == selectedGroup && x.MenuId == menu_id).ToList();
+        if (pre != null)
+        {
+            if (pre.Count > 0)
+            {
+                GroupMenuModel? this_Record = pre.FirstOrDefault();
+                PermissionsModel MyPre = new()
+                    {
+                        GroupId = this_Record!.GroupId,
+                        MenuId = this_Record.MenuId,
+                        Privilege = Permission
+                    };
+
+                     var result = await Functions.PostAsync<PermissionsModel>($"Permissions/Post", record, true);
+                    if (result.Success == false)
+                    {
+                        SnackbarService.Add($"Record Save Fail.", Severity.Error);
+                    }
+                    else
+                    {
+                        SnackbarService.Add($"Record Saved Successfully", Severity.Success);
+                        record = new();
+                        isReadOnly = true;
+                    }
+
+                // (bool, PermissionsModel, string) rec = await PermissionService.Post(MyPre);
+
+                // if (rec.Item1 == false)
+                // {
+                //     SnackbarService.Add(rec.Item3, Severity.Error);
+                // }
+                // else
+                // {
+                //     await GetData();
+                //     record = new();
+                //     SnackbarService.Add("Record Saved Successfully", Severity.Success);
+                // }
+            }
+        }
+        LoadingPanel = false;
+    }
+
+   
+}

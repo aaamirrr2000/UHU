@@ -1,0 +1,344 @@
+﻿@page "/StockReceivingPage"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject FileUploadService FileUploadService
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="row">
+    <MyModelDialog Width="30%" Height="70%" @ref="_myDialog" Title="StockReceiving Managment">
+
+        <HeaderContent>
+            <div class="text-start" style="overflow-x: hidden;">
+                <span>...</span>
+            </div>
+        </HeaderContent>
+
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <div class="row" style="width:100%">
+                        <div class="col-lg-4 col-md-6 col-sm-12 mb-3">
+                            <label class="custom-label">Organization</label>
+                            <MudSelect T="int" @bind-Value="record.OrganizationId" Disabled="@isReadOnly" Class="custom-select">
+                                @if (Organizations != null)
+                                {
+                                    @foreach (var a in Organizations)
+                                    {
+                                        <MudSelectItem T="int" Value="@a.Id">@a.Name</MudSelectItem>
+                                    }
+                                }
+                            </MudSelect>
+
+                            <ValidationMessage For="@(() => record.OrganizationId)" />
+                        </div>
+
+                         <div>
+                            <label class="small fw-bold mb-2 text-uppercase">Organization Logo</label>
+
+                            @if (!string.IsNullOrEmpty(record.FileAttachment))
+                            {
+                                <img src="@record.FileAttachment" class="img-fluid rounded" alt="Company Logo" style="max-width: 100%; max-height: 150px; object-fit: cover;" />
+                            }
+                            else
+                            {
+                                <div class="d-flex align-items-center justify-content-center bg-secondary rounded-circle" style="width: 120px; height: 120px;">
+                                    <i class="fas fa-image text-white fs-3"></i>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrEmpty(record.FileAttachment))
+                            {
+                                <p class="mt-2" style="font-size: xx-small;">@record.FileAttachment</p>
+                            }
+
+                            <div class="mt-2">
+                                <InputFile class="form-control" OnChange="OnFileInputChanged" />
+                            </div>
+                        </div>
+
+
+                        <div class="col-lg-4 col-md-6 col-sm-12 mb-3">
+                            <label style="height: 10px; font-size: 12px; font-weight: 200; color: #333;" for="TranDate">Trandate</label>
+                            <InputDate @bind-Value="record.TranDate" Format="yyyy-MM-dd" placeholder="TranDate" style="height: 30px; font-size: 12px; color: #333;" class="w-100" readonly="@isReadOnly"></InputDate>
+                            <ValidationMessage For="@(() => record.TranDate)" />
+                        </div>
+                        <div class="col-lg-4 col-md-6 col-sm-12 mb-3">
+                            <label style="height: 10px; font-size: 12px; font-weight: 200; color: #333;" for="ItemId">Itemid</label>
+                            <MudSelect T="int" @bind-Value="record.ItemId" Disabled="@isReadOnly" Class="custom-select">
+                                @if (Items != null)
+                                {
+                                    @foreach (var a in Items)
+                                    {
+                                        <MudSelectItem T="int" Value="@a.Id">@a.Name</MudSelectItem>
+                                    }
+                                }
+
+                            </MudSelect>
+
+                            <ValidationMessage For="@(() => record.ItemId)" />
+                        </div>
+                        <div class="col-lg-4 col-md-6 col-sm-12 mb-3">
+                            <label class="custom-label">Stock Condition</label>
+                            <MudSelect T="string" @bind-Value="record.StockCondition" Disabled="@isReadOnly" Class="custom-select">
+                                @if (StockCondition != null)
+                                {
+                                    foreach (var ind in StockCondition)
+                                    {
+                                        <MudSelectItem T="string" Value="@ind.ListValue">@ind.ListValue</MudSelectItem>
+                                    }
+                                }
+
+                            </MudSelect>
+
+                            <ValidationMessage For="@(() => record.StockCondition)" />
+
+                        </div>
+                        <div class="col-lg-4 col-md-6 col-sm-12 mb-3">
+                            <label style="height: 10px; font-size: 12px; font-weight: 200; color: #333;" for="Qty">Qty</label>
+                            <MudNumericField @bind-Value="record.Qty" placeholder="Qty" readonly="@isReadOnly" Format="#,##0.00" style="height: 30px; font-size: 12px; color: #333;"></MudNumericField>
+                            <ValidationMessage For="@(() => record.Qty)" />
+                        </div>
+                        <div class="col-lg-4 col-md-6 col-sm-12 mb-3">
+                            <label style="height: 10px; font-size: 12px; font-weight: 200; color: #333;" for="Price">Price</label>
+                            <MudNumericField @bind-Value="record.Price" placeholder="Price" readonly="@isReadOnly" Format="#,##0.00" style="height: 30px; font-size: 12px; color: #333;"></MudNumericField>
+                            <ValidationMessage For="@(() => record.Price)" />
+                        </div>
+                        <div class="col-lg-4 col-md-6 col-sm-12 mb-3">
+                            <label style="height: 10px; font-size: 12px; font-weight: 200; color: #333;" for="Description">Description</label>
+                            <MudInput id="Description" @bind-Value="record.Description" placeholder="Description" readonly="@isReadOnly" style="height: 30px; font-size: 12px; color: #333;" Class="w-100"></MudInput>
+                            <ValidationMessage For="@(() => record.Description)" />
+                        </div>
+                        <div class="col-lg-4 col-md-6 col-sm-12 mb-3">
+                            <label style="height: 10px; font-size: 12px; font-weight: 200; color: #333;" for="ExpDate">Expdate</label>
+                            <InputDate @bind-Value="record.ExpDate" Format="yyyy-MM-dd" placeholder="ExpDate" style="height: 30px; font-size: 12px; color: #333;" class="w-100" readonly="@isReadOnly"></InputDate>
+                            <ValidationMessage For="@(() => record.ExpDate)" />
+                        </div>
+                        <div class="col-lg-4 col-md-6 col-sm-12 mb-3">
+                            <label class="custom-label">Location</label>
+                            <MudSelect T="int" @bind-Value="record.PartyId" Disabled="@isReadOnly" Class="custom-select">
+                                @if (parties != null)
+                                {
+                                    @foreach (var a in parties)
+                                    {
+                                        <MudSelectItem T="int" Value="@a.Id">@a.Name</MudSelectItem>
+                                    }
+                                }
+                            </MudSelect>
+                            <ValidationMessage For="@(() => record.PartyId)" />
+                        </div>
+                        <div class="col-lg-4 col-md-6 col-sm-12 mb-3">
+                            <label class="custom-label">Location</label>
+                            <MudSelect T="int" @bind-Value="record.LocationId" Disabled="@isReadOnly" Class="custom-select">
+                                @if (locations != null)
+                                {
+                                    @foreach (var a in locations)
+                                    {
+                                        <MudSelectItem T="int" Value="@a.Id">@a.Name</MudSelectItem>
+                                    }
+                                }
+                            </MudSelect>
+                            <ValidationMessage For="@(() => record.LocationId)" />
+                        </div>
+
+                    </div>
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+
+        <FooterContent>
+            <div class="text-center">
+                @if (!isReadOnly)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="Save" Class="px-2 py-2 mt-1 mr-2" Style="height:30px;">
+                        @(isNew == 1 ? "Save" : "Update")
+                    </MudButton>
+                }
+            </div>
+        </FooterContent>
+    </MyModelDialog>
+
+    @if (data == null)
+    {
+        <p>Loading ...</p>
+    }
+    else
+    {
+        <div class="row">
+            <MudDataGrid T="StockReceivingModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Class="custom-grid">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">StockReceiving Managment</MudText>
+                    <MudSpacer />
+                    <MudIconButton Icon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" OnClick="@(() => Clear())" />
+                </ToolBarContent>
+
+                <Columns>
+                    <TemplateColumn Title="Actions" CellStyle="width: 120px; min-width: 120px;">
+                        <CellTemplate Context="row">
+                            <MudIconButton Icon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" OnClick="@(() => View(row.Item.Id))" />
+                            <MudIconButton Icon="@Icons.Material.TwoTone.Save" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.Id))" />
+                            <MudIconButton Icon="@Icons.Material.TwoTone.DeleteSweep" Size="MudBlazor.Size.Small" OnClick="@(() => Delete(row.Item.Id))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="x => x.TranDate" Title="TranDate" Sortable="true" Filterable="true" Format="dd-MMM-yyy" />
+                    <PropertyColumn Property="x => x.StockCondition" Title="StockCondition" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Description" Title="Description" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.ExpDate" Title="ExpDate" Sortable="true" Filterable="true" Format="dd-MMM-yyy" />
+                    <PropertyColumn Property="x => x.CreatedOn" Title="CreatedOn" Sortable="true" Filterable="true" Format="dd-MMM-yyy" />
+                    <PropertyColumn Property="x => x.CreatedFrom" Title="CreatedFrom" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.UpdatedOn" Title="UpdatedOn" Sortable="true" Filterable="true" Format="dd-MMM-yyy" />
+                    <PropertyColumn Property="x => x.UpdatedFrom" Title="UpdatedFrom" Sortable="true" Filterable="true" />
+
+                </Columns>
+
+                <PagerContent>
+                    <MudDataGridPager T="StockReceivingModel" />
+                </PagerContent>
+            </MudDataGrid>
+        </div>
+    }
+</div>
+
+@code
+{
+    static List<StockReceivingModel> data = new();
+    static StockReceivingModel record = new();
+    static List<OrganizationsModel> Organizations = new();
+     static List<LocationsModel> locations = new();
+    static List<PartiesModel> parties = new();
+    List<TypeCodeModel> StockCondition = null!;
+	List<ItemsModel> Items = null!;
+
+
+    int isNew = 1;
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    public MyModelDialog? _myDialog;
+
+    protected override async Task OnInitializedAsync()
+    {
+        LoadingPanel = true;
+        StockCondition = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/ListName/STOCK CONDITION", true) ?? new List<TypeCodeModel>();
+        locations = await Functions.GetAsync<List<LocationsModel>>($"Locations/Search", true) ?? new List<LocationsModel>();
+        parties = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search", true) ?? new List<PartiesModel>();
+        Organizations = await Functions.GetAsync<List<OrganizationsModel>>($"Organizations/Search", true) ?? new List<OrganizationsModel>();
+        Items = await Functions.GetAsync<List<ItemsModel>>($"Items/Search", true) ?? new List<ItemsModel>();
+        data = await Functions.GetAsync<List<StockReceivingModel>>($"StockReceiving/Search", true) ?? new List<StockReceivingModel>();
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<StockReceivingModel>($"StockReceiving/Get?Id={id}", true) ?? new StockReceivingModel();
+        LoadingPanel = false;
+    }
+
+    protected void Clear()
+    {
+        isNew = 1;
+        record = new StockReceivingModel();
+        isReadOnly = false;
+        _myDialog!.Show();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        isReadOnly = true;
+        _myDialog!.Show();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        isNew = 2;
+        isReadOnly = false;
+        _myDialog!.Show();
+    }
+
+    protected async Task Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        isNew = 3;
+        await Get(id);
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+
+        //Add Mandatory Fields Here
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedFrom = "";
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = "";
+
+        string InsertUpdateDelete = "Insert";
+
+        if (isNew == 1)
+            InsertUpdateDelete = "Insert";
+        else if (isNew == 2)
+            InsertUpdateDelete = "Update";
+        else if (isNew == 3)
+            InsertUpdateDelete = $"SoftDelete";
+        else if (isNew == 4)
+            InsertUpdateDelete = $"Delete";
+        else
+        {
+            SnackbarService.Add($"Not a valid option selected.", Severity.Warning);
+            return;
+        }
+
+        var result = await Functions.PostAsync<StockReceivingModel>($"StockReceiving/{InsertUpdateDelete}", record, true);
+        if (result.Success)
+        {
+            SnackbarService.Add($"Record Not {InsertUpdateDelete.Replace("Soft", "")}", Severity.Error);
+        }
+        else
+        {
+            SnackbarService.Add($"Record {InsertUpdateDelete.Replace("Soft", "")} Successfully", Severity.Success);
+            record = new();
+            isReadOnly = true;
+        }
+
+        data = await Functions.GetAsync<List<StockReceivingModel>>($"StockReceiving/Search", true) ?? new List<StockReceivingModel>();
+        LoadingPanel = false;
+        _myDialog!.Hide();
+
+    }
+
+    private async Task OnFileInputChanged(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var result = await Functions.FileUpload(e, FileUploadService, 25);
+
+            if (result.Item1 == true)
+            {
+                record.FileAttachment = result.Item2;
+                SnackbarService.Add("File uploaded successfully!", Severity.Success);
+            }
+            else
+            {
+                SnackbarService.Add($"Error: {result.Item2}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Exception: {ex.Message}", Severity.Error);
+            record.FileAttachment = null!;
+        }
+    }
+}
+

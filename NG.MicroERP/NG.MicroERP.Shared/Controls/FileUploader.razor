@@ -1,0 +1,135 @@
+﻿@using System.Text.Json
+@inject HttpClient Http
+@using System.IO
+
+<div class="file-upload-container">
+    <!-- Hide the label -->
+    <label class="file-upload-label">@Label</label>
+
+    <!-- Custom file upload button -->
+    <label for="fileInput" class="file-upload-button">
+        Choose a file
+    </label>
+
+    <InputFile id="fileInput" class="d-none" OnChange="OnFileInputChanged" />
+
+    @if (!string.IsNullOrEmpty(FileUrl))
+    {
+        @if (IsImageFile(FileUrl))
+        {
+            <div class="file-preview">
+                <img src="@FileUrl" alt="Uploaded Image" class="file-image" />
+            </div>
+        }
+
+        <div class="file-info">
+            <i class="fas fa-file-alt"></i> <span>@Path.GetFileName(FileUrl)</span>
+        </div>
+    }
+
+    <div class="mt-2">
+        <!-- Hidden input file element -->
+        <InputFile class="form-control" OnChange="OnFileInputChanged" />
+    </div>
+</div>
+
+
+@code {
+    [Parameter] public string? FileUrl { get; set; }
+    [Parameter] public string Label { get; set; } = "Upload File";
+    [Parameter] public EventCallback<string> FileChanged { get; set; }
+    [Parameter] public string UploadUrl { get; set; } = "https://your-api.com/api/FileUpload";
+
+    private async Task OnFileInputChanged(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file is null) return;
+
+        var content = new MultipartFormDataContent();
+        using var fileStream = file.OpenReadStream();
+        var fileContent = new StreamContent(fileStream);
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+        content.Add(fileContent, "file", file.Name);
+
+        var response = await Http.PostAsync(UploadUrl, content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var result = await response.Content.ReadFromJsonAsync<JsonElement>();
+            if (result.TryGetProperty("fileUrl", out var fileUrlElement))
+            {
+                FileUrl = fileUrlElement.GetString();
+                await FileChanged.InvokeAsync(FileUrl);
+            }
+        }
+    }
+
+    private bool IsImageFile(string filePath)
+    {
+        var imageExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
+        var extension = Path.GetExtension(filePath).ToLower();
+        return imageExtensions.Contains(extension);
+    }
+}
+
+<style>
+    .file-upload-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 10px;
+        border: 0px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        background-color: #fff;
+        width: 200px;
+    }
+
+    .file-upload-label {
+        display: none; /* Hide the label */
+    }
+
+    .file-upload-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border: 2px dashed #007bff;
+        padding: 20px;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+        width: 250px;
+        margin: 0 auto;
+    }
+
+    .file-upload-button {
+        display: inline-block;
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        text-transform: uppercase;
+        transition: background-color 0.3s;
+    }
+
+        .file-upload-button:hover {
+            background-color: #0056b3;
+        }
+
+    .file-info {
+        margin-top: 10px;
+        font-size: 14px;
+        color: #555;
+        text-align: center;
+    }
+
+    .file-preview img {
+        max-width: 100%;
+        height: auto;
+        margin-top: 10px;
+        border-radius: 5px;
+    }
+
+</style>

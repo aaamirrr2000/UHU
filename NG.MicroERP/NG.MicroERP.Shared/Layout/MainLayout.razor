@@ -1,0 +1,129 @@
+﻿@inherits LayoutComponentBase
+@inject ISnackbar SnackbarService
+
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       OnClick="@(() => DrawerToggle())" />
+
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <img src="@Globals.Organization.Logo" class="company-logo" />
+            <span style="margin-left:5px; font-size: 24px; color: white; letter-spacing:2px;">
+                @Globals.Organization.Name
+            </span>
+        </MudHidden>
+
+        <MudSpacer />
+
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+            <a href="/@(Globals.User.Dashboard)" class="nav-link"><i class="fas fa-home"></i></a>
+            <a href="/ChangePasswordPage" class="nav-link"><i class="fas fa-key"></i></a>
+            <a href="/" class="nav-link"><i class="fas fa-power-off"></i> </a>
+        </MudHidden>
+
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <a href="/@(Globals.User.Dashboard)" class="nav-link"><i class="fas fa-home"></i> Home</a>
+            <a href="/ChangePasswordPage" class="nav-link"><i class="fas fa-key"></i> Change Password</a>
+            @* <a href="/" class="nav-link"><i class="fa-solid fa-code-merge"></i> @Globals.Version</a> *@
+            <a href="/" class="nav-link"><i class="fas fa-power-off"></i> Log Out</a>
+        </MudHidden>
+
+        <MudThemeProvider @bind-IsDarkMode="@Globals._isDarkMode" Theme="_theme" />
+        <MudSwitch Value="@Globals._isDarkMode"
+                   ValueChanged="Save"
+                   Color="Color.Primary"
+                   Class="ma-4"
+                   T="bool"
+                   Label="Theme" />
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="@_drawerOpen">
+        <MyNavMenu/>
+    </MudDrawer>
+    <MudMainContent>
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+<style>
+    .company-logo
+    {
+        width: 40px;
+        height:40px;
+        border-radius: 5px;
+    }
+</style>
+
+@code {
+    bool _drawerOpen = true;
+    private MudTheme _theme = new();
+    // private bool _isDarkMode;
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Globals.User == null)
+            return;
+
+        if (Globals.User.DarKLightTheme == 1)
+        {
+            Globals._isDarkMode = false;
+        }
+        else
+        {
+            Globals._isDarkMode = true;
+        }
+    }
+
+    protected async Task Save()
+    {
+        int theme = 0;
+        var theme_name = "LIGHT";
+        if (Globals._isDarkMode)
+        {
+            theme = 1;
+            Globals._isDarkMode = false;
+            theme_name = "LIGHT";
+        }
+        else
+        {
+            theme = 0;
+            Globals._isDarkMode = true;
+            theme_name = "DARK";
+        }
+
+        var result = await Functions.PostAsync<UsersModel>($"Users/SetTheme/{Globals.User.Id}/{theme}", null, true);
+        if (!result.Success)
+        {
+            SnackbarService.Add($"Theme not Updated.", Severity.Error);
+        }
+        else
+        {
+            Globals.User.DarKLightTheme = theme;
+        }
+    }
+}
+
+<style>
+    .nav-link {
+        margin: 10px;
+        color: white;
+        text-decoration: none;
+    }
+
+    .company-logo {
+        height: 40px;
+    }
+
+</style>

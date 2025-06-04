@@ -1,0 +1,702 @@
+﻿@page "/BillPage/{Action}/{CurrentRecord?}"
+@layout BlankLayout
+@inject IDialogService dialogService
+@inject ISnackbar SnackbarService
+@inject IJSRuntime JS
+
+@using MudBlazor
+@using System.Text.Json
+
+
+<Loading IsLoading="@LoadingPanel" />
+
+
+<title>@DateTime.Now.ToString("dd-MMM-yyy HH:mm:ss tt")</title>
+<MudPaper Class="p-3" Elevation="3" style="height: calc(100vh); overflow-y: hidden;">
+
+    <!-- Top Row: Toolbar, Dropdowns, Search -->
+    <MudGrid Class="mb-3">
+        <MudItem xs="12">
+            <div class="d-flex flex-wrap align-items-end gap-2 p-2 rounded" style="background-color: black; color: white;">
+
+                <MudTooltip Text="Add Item"><MudIconButton Icon="@Icons.Material.Filled.AddBox" Color="Color.Secondary" OnClick="AddItemDialogShow" /></MudTooltip>
+
+                <!-- Toolbar Buttons (KEEP AS-IS) -->
+                    <div class="d-flex align-items-center flex-wrap me-3 gap-1">
+                          <!-- Bill Type Dropdown -->
+                    <div class="form-wrapper">
+                        <select class="form-select custom-select" @bind="billType">
+                            <option value="SALE">SALE</option>
+                            <option value="SALE RETURN">SALE RETURN</option>
+                            <option value="QUOTATION">QUOTATION</option>
+                        </select>
+                    </div>
+
+                    <!-- Customer Dropdown -->
+                    <div class="form-wrapper">
+                        <select class="form-select custom-select" @bind="SelectedParty">
+                            @foreach (var customer in Parties)
+                            {
+                                <option value="@customer.Id">@customer.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <MudTooltip Text="New"><MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Success" /></MudTooltip>
+                    <MudTooltip Text="Save"><MudIconButton Icon="@Icons.Material.Filled.Save" Color="Color.Success" /></MudTooltip>
+                    <MudTooltip Text="Delete"><MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" /></MudTooltip>
+                    
+                    <!-- Search -->
+                    <div class="form-wrapper input-icon-container">
+                        <input type="text" class="form-control custom-select" placeholder="Search item..." @bind="searchText" />
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
+
+                    <!-- Search -->
+                    <div class="form-wrapper input-icon-container">
+                        <input type="text" class="form-control custom-select" placeholder="Bill #" @bind="searchText" />
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
+
+                    <MudTooltip Text="Customer"><MudIconButton Icon="@Icons.Material.Filled.Person" Color="Color.Info" OnClick="AddParty" /></MudTooltip>
+                    <MudTooltip Text="Print"><MudIconButton Icon="@Icons.Material.Filled.Print" Color="Color.Info" OnClick="Report"/></MudTooltip>
+                </div>
+
+            </div>
+        </MudItem>
+    </MudGrid>
+
+
+    <!-- Table and Summary Section -->
+    <MudGrid>
+        <!-- Items Table -->
+        <MudItem xs="12" md="6">
+            <!-- Item Table -->
+            <div style="overflow-y: auto; height: calc(100vh - 100px);">
+                <div style="height: calc(100vh - 200px); display: flex; flex-direction: column; border: 1px solid #ddd; border-radius: 4px;">
+                    <table class="table table-hover table-striped table-sm w-100" style="border-collapse: separate;">
+                        <thead style="display: table-header-group; background-color: #f8f9fa;">
+                            <tr>
+                                <th style="width: 40px;"></th>
+                                <th style="width: 300px;">Item</th>
+                                <th style="text-align: right; width: 100px;">Qty</th>
+                                <th style="text-align: right; width: 100px;">Price</th>
+                                <th style="text-align: right; width: 100px;">Discount</th>
+                                <th style="text-align: right; width: 100px;">Amount</th>
+                            </tr>
+                        </thead>
+                    </table>
+
+                    <div style="flex-grow: 1; overflow-y: auto;">
+                        <table class="table table-hover table-striped table-sm w-100" style="margin-bottom: 0; border-collapse: separate;">
+                            <tbody>
+                                @foreach (var item in POSItems)
+                                {
+                                    <tr>
+                                        <td style="width: 40px; text-align: center;">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                           Color="Color.Error"
+                                                           Size="Size.Small"
+                                                           OnClick="@(() => DeleteItem(item))" />
+                                        </td>
+                                        <td style="width: 300px;">@item.ItemName</td>
+                                        <td style="text-align: right; width: 100px;">@item.Qty</td>
+                                        <td style="text-align: right; width: 100px;">@item.UnitPrice.ToString("#,##0.00")</td>
+                                        <td style="text-align: right; width: 100px;">@item.ItemDiscount.ToString("#,##0.00")</td>
+                                        <td style="text-align: right; width: 100px;">@item.Amount.ToString("#,##0.00")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <table class="table table-striped table-sm w-100" style="margin-bottom: 0; border-collapse: separate;">
+                        <tfoot style="display: table-header-group; background-color: #f8f9fa;">
+                            <tr>
+                                <td style="text-align: right; width: 40px;"><strong></strong></td>
+                                <td style="text-align: right; width: 300px;"><strong>Total</strong></td>
+                               @*  <td style="text-align: right; width: 100px;"><strong>@Quantity.Sum(i => i.Quantity).ToString("#,##0.00")</strong></td>
+                                <td style="text-align: right; width: 100px;"><strong></strong></td>
+                                <td style="text-align: right; width: 100px;"><strong>@Discount.Sum(i => i.Discount).ToString("#,##0.00")</strong></td>
+                                <td style="text-align: right; width: 100px;"><strong>@Amount.Sum(i => i.Amount).ToString("#,##0.00")</strong></td> *@
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+            
+
+            <!-- Summary Section -->
+            <div class="mt-3 p-2" style="border: 0; border-radius: 4px; display: flex; gap: 1rem; flex-wrap: nowrap;">
+                <div style="flex: 1 1 0; min-width: 150px; display: flex; flex-direction: column;">
+                    <label for="taxInput" class="form-label">Tax</label>
+                        <input id="taxInput" type="number" class="form-control form-control-sm" @bind="tax" style="text-align: right;" />
+                </div>
+                <div style="flex: 1 1 0; min-width: 150px; display: flex; flex-direction: column;">
+                    <label for="discountInput" class="form-label">Discount</label>
+                        <input id="discountInput" type="number" class="form-control form-control-sm" @bind="overallDiscount" style="text-align: right;" />
+                </div>
+                <div style="flex: 1 1 0; min-width: 150px; display: flex; flex-direction: column;">
+                    <label for="paymentMethodSelect" class="form-label">Payment Method</label>
+                    @if (PaymentMethod!=null)
+                    {
+                        <select id="SelectedPaymentMethod" class="form-select form-select-sm" @bind="SelectedPaymentMethod">
+                                @foreach (var pm in PaymentMethod)
+                            {
+                                <option value="@pm.ListValue">@pm.ListValue</option>
+                            } 
+                        </select>
+                    }
+                </div>
+                <div style="flex: 1 1 0; min-width: 150px; display: flex; flex-direction: column;">
+                    <label for="paymentRefInput" class="form-label">Payment Ref</label>
+                    <input id="paymentRefInput" type="text" class="form-control form-control-sm" @bind="paymentReference" />
+                </div>
+                <div style="flex: 1 1 0; min-width: 150px; display: flex; flex-direction: column;">
+                    <label class="form-label">Net Amount</label>
+                        <input type="text" class="form-control form-control-sm" value="@NetAmount.ToString("#,##0.00")" readonly style="text-align: right;" />
+                </div>
+            </div>
+            </div>
+        </MudItem>
+
+        <!-- Favorite Items -->
+        <MudItem xs="12" md="6">
+            <label style="font-size: 16px;">Favourate Top 12 Items</label>
+            <MudGrid GutterSize="GutterSize.Small">
+                @foreach (var fav in FavItemsData)
+                {
+                    <MudItem xs="6" sm="4" md="3" lg="2" xl="2">
+                        <MudPaper Class="fav-block" Elevation="1" OnClick="@(() => AddToBill(fav))" Style="cursor:pointer;">
+                            <img src="@fav.Pic" alt="@fav.Name" class="fav-img" />
+                            <div class="fav-info">
+                                <MudText Typo="Typo.subtitle2">@fav.Name</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    @fav.RetailPrice.ToString("#,##0.00")
+                                </MudText>
+                            </div>
+                        </MudPaper>
+                    </MudItem>
+                }
+            </MudGrid>
+
+            <label style="font-size: 16px; margin-top: 10px;">Recently Used Top 12 Items</label>
+            <MudGrid GutterSize="GutterSize.Small">
+                @foreach (var fav in FavItemsData)
+                {
+                   <MudItem xs="6" sm="4" md="3" lg="2" xl="2">
+                        <MudPaper Elevation="1"
+                                  OnClick="@(() => AddToBill(fav))"
+                                  Style="cursor:pointer; text-align:center; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 180px;">
+        
+                            <!-- Image -->
+                            <img src="@fav.Pic"
+                                 alt="@fav.Name"
+                                 style="width: 100%; max-height: 100px; object-fit: contain; display: block; margin-bottom: 8px;" />
+
+                            <!-- Text -->
+                            <div style="margin-top: auto;">
+                                <MudText Typo="Typo.subtitle2">@fav.Name</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    @fav.RetailPrice.ToString("#,##0.00")
+                                </MudText>
+                            </div>
+
+                        </MudPaper>
+                    </MudItem>
+                }
+            </MudGrid>
+        </MudItem>
+
+
+    </MudGrid>
+</MudPaper>
+
+@* ---------------------------------------------------------------- Select Item ---------------------------------------------------------------- *@
+
+<MyModelDialog Width="90%" Height="90%" @ref="_myDialogItemSelection" Title="Add Item to Bill">
+
+    <HeaderContent>
+
+    </HeaderContent>
+
+    <ChildContent>
+        <div class="row">
+
+            <div class="col-12 mb-3" style="margin: 5px; padding: 5px; width:99%;">
+                <div class="row">
+                    <!-- Block 1: Image and Item Info -->
+                  <div class="col-md-4" style="background-color: #F9FAFB; border: 0px gray solid; padding: 20px;">
+                    <div class="row h-100">
+                        <!-- Item Image (full area) -->
+                        <div class="col-4 p-0 d-flex align-items-center justify-content-center">
+                            <img src="@(string.IsNullOrEmpty(BillItems.Pic) ? "/images/noimage.jpg" : BillItems.Pic)"
+                                 alt="Item Image"
+                                 style="width: 120px; height: 120px; object-fit: cover; border-radius: 5px;" />
+                        </div>
+
+                        <!-- Item Info -->
+                        <div class="col-8 d-flex flex-column justify-content-center">
+                            <div class="text-danger fw-semibold fs-5" style="font-size: 72px;">@BillItems.Item</div>
+                            <div class="text-success fw-semibold fs-5 mt-2">@BillItems.Item_Amount.ToString("#,##0.00")</div>
+                        </div>
+                    </div>
+                </div>
+
+
+                    <!-- Block 2: Inputs -->
+                    <div class="col-md-8" style="background-color: #F0F1F3; border: 0px gray solid; padding: 10px;">
+                        <!-- Row 1: Stock Condition & Serving Size (placeholder even if hidden) -->
+                        <div class="row">
+                            <!-- Stock Condition -->
+
+                            @if (ServiceSizeEnableDisable && ServingSizeOptions != null)
+                                {
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Stock Condition</label>
+                                <select class="form-select" @bind="SelectedStockCondition">
+                                    <option disabled selected value="">Select...</option>
+                                    @if (StockCondition != null)
+                                    {
+                                        @foreach (var a in StockCondition)
+                                        {
+                                            <option value="@a.ListValue">@a.ListValue</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Serving Size OR Placeholder -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Serving Size</label>
+                                <select class="form-select" @onchange="OnServingSizeChanged">
+                                    <option disabled selected value="">Select...</option>
+                                    @foreach (var option in ServingSizeOptions)
+                                    {
+                                        <option value="@option.Size">@($"{option.Size} - {option.Price:N2}")</option>
+                                    }
+                                </select>
+                            </div>
+                            }
+                        </div>
+
+                        <!-- Row 2: Quantity, Price, Discount, Final Amount, Add Button -->
+                        <div class="row mt-3">
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">Qty</label>
+                                <input type="number" class="form-control text-end"
+                                       @bind-Value="BillItems.Qty"
+                                       @bind-Value:event="oninput"
+                                       step="0.01"
+                                       readonly="@QtyEnableDisable" />
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">Price</label>
+                                <input type="number" class="form-control text-end"
+                                       @bind-Value="BillItems.UnitPrice"
+                                       @bind-Value:event="oninput"
+                                       step="0.01"
+                                       readonly="@PriceEnableDisable" />
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">Discount</label>
+                                <input type="number" class="form-control text-end"
+                                       @bind-Value="BillItems.DiscountAmount"
+                                       @bind-Value:event="oninput"
+                                       step="0.01" />
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Final Amount</label>
+                                <input type="text" class="form-control text-end bg-light fw-bold"
+                                       value="@BillItems.Item_Amount.ToString("0.00")"
+                                       readonly />
+                            </div>
+
+                            <div class="col-md-3 d-grid">
+                                <label class="form-label invisible">Add</label>
+                                <button type="button" class="btn btn-primary w-100" @onclick="AddItem">
+                                    <i class="fas fa-plus"></i> Add
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- BOTTOM: Data Grid -->
+            <div class="col-12">
+                <MudDataGrid T="ItemsModel" MultiSelection="false" Items="@ItemsData"
+                             SortMode="SortMode.Multiple" Filterable="true" Hideable="true"
+                             RowsPerPage="15" Dense="true">
+                    <Columns>
+                        <TemplateColumn Title="Actions" Style="width: 50px; min-width: 50px;">
+                            <CellTemplate Context="row">
+                                <MudIconButton Icon="@Icons.Material.Outlined.ArrowForward"
+                                               Size="Size.Small"
+                                               OnClick="@(() => Select(row.Item.Id))"
+                                               Color="Color.Success" />
+                            </CellTemplate>
+                        </TemplateColumn>
+
+                        <TemplateColumn Title="Image">
+                            <CellTemplate Context="row">
+                                <img src="@(string.IsNullOrEmpty(row.Item.Pic) ? "/images/noimage.jpg" : row.Item.Pic)"
+                                     alt="Item Image" style="width: 18px; height: 18px;" />
+                            </CellTemplate>
+                        </TemplateColumn>
+
+                        <PropertyColumn Property="x => x.Code" Title="Code" Sortable="true" Filterable="true" />
+                        <PropertyColumn Property="x => x.Name" Title="Item/SKU" />
+                        <PropertyColumn Property="x => x.Description" Title="Description" />
+                        <PropertyColumn Property="x => x.Discount" Title="Discount" Format="#,##0.00" CellStyle="text-align: right;" />
+                        <PropertyColumn Property="x => x.RetailPrice" Title="Price" Format="#,##0.00" CellStyle="text-align: right;" />
+                        <PropertyColumn Property="x => x.CategoriesId" Title="Category" />
+                        <PropertyColumn Property="x => x.IsInventoryItem" Title="Item/Service">
+                            <CellTemplate Context="row">
+                                @((row.Item.IsInventoryItem != 0) ? "Item" : "Service")
+                            </CellTemplate>
+                        </PropertyColumn>
+                    </Columns>
+
+                    <PagerContent>
+                        <MudDataGridPager T="ItemsModel" />
+                    </PagerContent>
+                </MudDataGrid>
+            </div>
+
+        </div>
+    </ChildContent>
+
+
+
+    <FooterContent>
+        
+    </FooterContent>
+
+</MyModelDialog>
+
+@* ---------------------------------------------------------------- Add Party ---------------------------------------------------------------- *@
+
+ <MyDrawer @ref="_drawerReport" Title="Customer" FaIcon="fas fa-address-book">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+        <EditForm Model="Parties" >
+            <MudForm>
+                <NG.MicroERP.Shared.Pages.Parties.PartiesPage Action="INSERT" CurrentRecord="1"/>
+            </MudForm>
+         </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+@* ---------------------------------------------------------------- Show Report ---------------------------------------------------------------- *@
+
+<MyDrawer @ref="_drawerReport" Title="Report" FaIcon="fas fa-address-book">
+    <HeaderContent>
+    </HeaderContent>
+    <ChildContent>
+        <EditForm Model="Parties">
+            <MudForm>
+                <NG.MicroERP.Shared.Pages.Bill.BillReport id="3"/>
+            </MudForm>
+        </EditForm>
+    </ChildContent>
+    <FooterContent>
+    </FooterContent>
+</MyDrawer>
+
+
+@code {
+    [Parameter] public string? Action { get; set; }
+    [Parameter] public string? CurrentRecord { get; set; }
+    Bill_And_Bill_Detail_Model Bill = new();
+    BillDetailModel BillItems = new();
+
+    //Other Variables
+    private string billType = "SALE";
+
+    private string reference = "";
+    private string paymentReference = "";
+    private string searchText = "";
+
+    //Select Item Window
+    public MyModelDialog? _myDialogItemSelection;
+    static List<ItemsModel> Items = new();
+    public int SelectedItem { get; set; } = 0;
+    public bool QtyEnableDisable { get; set; } = true;
+    public bool PriceEnableDisable { get; set; } = true;
+
+    //Select Parties
+    private MyDrawer _drawer = new();
+    static List<PartiesModel> Parties = new();
+    private int SelectedParty = 0;
+
+    //Select Report
+    private MyDrawer? _drawerReport;
+
+    [CascadingParameter]
+    private bool isReadOnly { get; set; }
+    private bool LoadingPanel { get; set; } = false;
+
+    //TypeCode Data
+    List<TypeCodeModel> PaymentMethod = new();
+    public string? SelectedPaymentMethod { get; set; } = string.Empty;
+
+    List<TypeCodeModel> StockCondition = new();
+    public string? SelectedStockCondition { get; set; } = string.Empty;
+
+
+    //Items
+    static List<ItemsModel> ItemsData = new();
+    static List<ItemsModel> FavItemsData = new();
+    static ObservableCollection<BillReportModel> POSItems = new();
+
+    //Serving Size
+    public string? ServingSizes { get; set; } = string.Empty;
+    public string? SelectedServingSize { get; set; } = string.Empty;
+    public bool ServiceSizeEnableDisable { get; set; } = true;
+    private List<ServingSizeModel>? ServingSizeOptions { get; set; } = null;
+
+
+    private double NetAmount => POSItems.Sum(i => i.BillAmount) + tax - overallDiscount;
+    private double tax = 0;
+    private double overallDiscount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        Parties = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search?PARTYTYPE=CUSTOMER", true) ?? new List<PartiesModel>();
+        PaymentMethod = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PAYMENT METHOD", true) ?? new List<TypeCodeModel>();
+        StockCondition = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/STOCK CONDITION", true) ?? new List<TypeCodeModel>();
+        ItemsData = await Functions.GetAsync<List<ItemsModel>>($"Items/Search", true) ?? new List<ItemsModel>();
+        FavItemsData = ItemsData;
+        LoadingPanel = false;
+    }
+
+    private void DeleteItem(BillReportModel item)
+    {
+        POSItems.Remove(item);
+    }
+
+    private void AddToBill(ItemsModel fav)
+    {
+        POSItems.Add(new BillReportModel
+        {
+            Id = Items.Count + 1,
+            ItemName = fav.Name,
+            Qty = 1,
+            UnitPrice = fav.RetailPrice,
+            ItemDiscount = 0
+        });
+    }
+
+
+    private void Print(int id)
+    {
+        var url = $"/BillReport/{id}";
+        JS.InvokeVoidAsync("open", url, "_blank");
+    }
+
+    // ---------------------------------------------------------------- Select Item ----------------------------------------------------------------
+
+    private void AddItemDialogShow()
+    {
+        SelectedStockCondition = "NEW";
+        _myDialogItemSelection!.Show();
+    }
+
+    private void OnQtyChange()
+    {
+        /*
+        double calculatedAmount = Calculate_Item_Amount();
+        Itemamount = calculatedAmount;
+        */
+                                                                                        StateHasChanged();
+    }
+
+    private void AddItem()
+    {
+        /*
+        billItem.item_id = Selected_Item;
+        if (billItem.item_id != 0 && billItem.Item.Length>0)
+        {
+            billDetails.Add(new BillDetailViewModel
+            {
+                item_id = billItem.item_id,
+                Item = billItem.Item,
+                qty = billItem.qty,
+                unitprice = billItem.unitprice,
+                discount_amount = billItem.discount_amount,
+                tax_amount = billItem.tax_amount,
+                bill_id = billItem.bill_id,
+                stockcondition = condition,
+                IsSelected=false
+                });
+            CalculateTotals();
+            _myDialogItemSelection!.Hide();
+            billItem = new BillDetailViewModel();
+            Selected_Item = 0;
+            }
+        else
+            SnackbarService.Add("Please Select Item.", Severity.Warning);
+
+        */
+    }
+
+    private void Select(int id)
+    {
+        if (id <= 0) return;
+
+        SelectedItem = id;
+        ItemsModel item = ItemsData.FirstOrDefault(x => x.Id == id)!;
+
+        BillDetailModel New_Item = new()
+        {
+            Qty = 1,
+            UnitPrice = item.RetailPrice,
+            DiscountAmount = item.Discount,
+            Item = item.Name!,
+            Pic = item.Pic
+        };
+
+        BillItems = New_Item;
+
+        PriceEnableDisable = item.IsInventoryItem == 1; 
+        QtyEnableDisable = item.IsInventoryItem != 1;  
+
+        ServingSizeOptions = null;
+        ServiceSizeEnableDisable = false;
+        SelectedServingSize = null;
+
+        if (!string.IsNullOrWhiteSpace(item.ServingSize))
+        {
+            try
+            {
+                ServingSizeOptions = JsonSerializer.Deserialize<List<ServingSizeModel>>(item.ServingSize);
+                if (ServingSizeOptions != null && ServingSizeOptions.Count > 0)
+                {
+                    ServiceSizeEnableDisable = true;
+                }
+            }
+            catch
+            {
+                ServiceSizeEnableDisable = false;
+            }
+        }
+
+        StateHasChanged();
+    }
+
+    private void OnServingSizeChanged(ChangeEventArgs e)
+    {
+        var selectedSize = e.Value?.ToString();
+        SelectedServingSize = selectedSize!;
+
+        var selectedOption = ServingSizeOptions?.FirstOrDefault(s => s.Size == selectedSize);
+        if (selectedOption != null)
+        {
+            BillItems.UnitPrice = selectedOption.Price;
+        }
+
+        StateHasChanged();
+    }
+
+
+    // ---------------------------------------------------------------- Add Parties ----------------------------------------------------------------
+
+    protected async Task AddParty()
+    {
+        await _drawer.OpenDrawerAsync();
+    }
+
+     // ---------------------------------------------------------------- Select Item ----------------------------------------------------------------
+
+    private async void Report()
+    {
+        await _drawerReport!.OpenDrawerAsync();
+    }
+}
+
+<style>
+
+    .form-wrapper {
+        min-width: 150px;
+    }
+
+    .custom-select {
+        background-color: black;
+        color: white;
+        border: 1px solid #555;
+        height: 38px;
+        font-size: 0.9rem;
+    }
+
+    .input-icon-container {
+        position: relative;
+        display: inline-block;
+        width: 200px;
+    }
+
+        .input-icon-container input {
+            padding-right: 30px;
+        }
+
+    .search-icon {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: white;
+        pointer-events: none;
+    }
+
+
+    .fav-block {
+        display: flex;
+        align-items: center;
+        padding: 10px 14px; /* moderate padding */
+        height: 130px; /* reduced height */
+        border-radius: 6px;
+        gap: 12px; /* spacing between image and info */
+        cursor: pointer;
+    }
+
+    .fav-img {
+        width: 90px; /* smaller image */
+        height: 90px;
+        object-fit: cover;
+        border-radius: 6px;
+        flex-shrink: 0;
+    }
+
+    .fav-info {
+        padding-left: 10px;
+        overflow: hidden;
+        white-space: nowrap;
+        color: #222; /* dark text */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+        flex-grow: 1;
+    }
+
+        .fav-info .mud-typography-caption {
+            color: #555 !important; /* darker gray for price */
+        }
+
+
+
+</style>
