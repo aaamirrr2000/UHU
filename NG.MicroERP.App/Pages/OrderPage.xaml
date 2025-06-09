@@ -28,45 +28,56 @@
                 </Border.Shadow>
 
                 <VerticalStackLayout>
-                    <Grid ColumnDefinitions="2*,Auto" Padding="5">
-                        <!-- Table name label -->
-                        <Label x:Name="TableNameLabel"
-               Grid.Column="0"
-               FontSize="22"
-               FontAttributes="Bold"
-               TextColor="#333333"
-               VerticalOptions="Center"
-               Text="Table A1" />
+                    <Grid ColumnDefinitions="2*" Padding="5">
 
-                        <!-- Cart button with badge -->
-                        <Grid Grid.Column="1">
-                            <!-- Cart image button -->
-                            <ImageButton Source="cart.png"
-                         Clicked="OnViewCartClicked"
-                         CommandParameter="{Binding}"
-                         CornerRadius="3"
-                         HeightRequest="44"
-                         WidthRequest="44"
-                         BackgroundColor="Transparent" />
+                        <VerticalStackLayout Grid.Column="0" Spacing="2">
+                            <Label x:Name="TableNameLabel"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="#333333"
+                               VerticalOptions="Center"
+                               Text="" />
 
-                            <!-- Notification badge -->
-                            <Border BackgroundColor="Red"
-                                    StrokeShape="RoundRectangle, 50"
-                                    StrokeThickness="0"
-                                    HeightRequest="20"
-                                    WidthRequest="20"
-                                    HorizontalOptions="End"
-                                    VerticalOptions="Start"
-                                    Margin="0,-5,-5,0">
-                                <Label x:Name="lblCount"
-                                       Text="3"
-                                       FontSize="12"
-                                       FontAttributes="Bold"
-                                       TextColor="White"
-                                       HorizontalOptions="Center"
-                                       VerticalOptions="Center" />      
-                            </Border>
-                        </Grid>
+                            <Label x:Name="lblServiceType"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="#333333"
+                               VerticalOptions="Center"
+                               Text="" />
+
+                        </VerticalStackLayout>
+
+                        <HorizontalStackLayout Grid.Column="1" Spacing="10" HorizontalOptions="End">
+                            <Grid>
+                                <!-- Cart image button -->
+                                <ImageButton Source="cart.png"
+                                             Clicked="OnViewCartClicked"
+                                             CommandParameter="{Binding}"
+                                             CornerRadius="3"
+                                             HeightRequest="44"
+                                             WidthRequest="44"
+                                             BackgroundColor="Transparent" />
+
+                                <!-- Notification badge -->
+                                <Border BackgroundColor="Red"
+                                        StrokeShape="RoundRectangle, 50"
+                                        StrokeThickness="0"
+                                        HeightRequest="20"
+                                        WidthRequest="20"
+                                        HorizontalOptions="End"
+                                        VerticalOptions="Start"
+                                        Margin="0,-5,-5,0">
+
+                                    <Label x:Name="lblCount"
+                                           Text="3"
+                                           FontSize="12"
+                                           FontAttributes="Bold"
+                                           TextColor="White"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center" />
+                                </Border>
+                            </Grid>
+                        </HorizontalStackLayout>
                     </Grid>
                 </VerticalStackLayout>
 
@@ -180,10 +191,10 @@
                                     </HorizontalStackLayout>
 
 
-                                    <HorizontalStackLayout Padding="10" Spacing="20" Grid.Column="1">
+                                    <!--<HorizontalStackLayout Padding="10" Spacing="20" Grid.Column="1">
                                         <Label Text="Takeaway?" VerticalOptions="Center" TextColor="#D00000" FontFamily="Roboto" />
                                         <Switch  HorizontalOptions="Start" Toggled="OnSwitchToggled"/>
-                                    </HorizontalStackLayout>
+                                    </HorizontalStackLayout>-->
 
                                     <Button Text="Order"
                                             Clicked="OnAddItemClicked"

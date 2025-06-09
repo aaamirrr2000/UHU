@@ -10,6 +10,12 @@ using System.Threading.Tasks;
 
 namespace NG.MicroERP.API.Services;
 
+public interface IDineinOrderStatusService
+{
+    Task<(bool, List<DineinOrderStatusModel>)>? Search(string Criteria = "");
+}
+
+
 public class DineinOrderStatusService : IDineinOrderStatusService
 {
     DapperFunctions dapper = new DapperFunctions();

@@ -17,14 +17,19 @@ public partial class OrderPage : ContentPage
     private ObservableCollection<ItemsModel> _menuItems= new ObservableCollection<ItemsModel>();
     private ObservableCollection<ItemsModel> _cart = new ObservableCollection<ItemsModel>();
     private List<ServingSizeModel> servingSizes = new List<ServingSizeModel>();
+    private readonly string _serviceType;
 
-    public OrderPage(RestaurantTablesModel table)
+    public OrderPage(RestaurantTablesModel table, string serviceType)
     {
         InitializeComponent();
 
         _selectedTable = table;
-        TableNameLabel.Text = $"Table: {_selectedTable.TableNumber}";
+        _serviceType = serviceType;
+
+        TableNameLabel.Text = $"{_selectedTable.TableNumber}";
         lblCount.Text = "0";
+        lblServiceType.Text = _serviceType;
+
         _menuItems = new ObservableCollection<ItemsModel>();
         ItemsCollectionView.ItemsSource = _menuItems;
         BindingContext = this;
@@ -98,7 +103,7 @@ public partial class OrderPage : ContentPage
 
     private async void OnViewCartClicked(object sender, EventArgs e)
     {
-        await Navigation.PushAsync(new CartPage(_cart, _selectedTable));
+        await Navigation.PushAsync(new CartPage(_cart, _selectedTable, _serviceType));
     }
 
     private void OnIncreaseQty(object sender, EventArgs e)
@@ -175,18 +180,21 @@ public partial class OrderPage : ContentPage
 
         foreach (var item in fetchedItems)
         {
-            servingSizes = JsonSerializer.Deserialize<List<ServingSizeModel>>(item.ServingSize)!;
+            if (item.ServingSize != null)
+            {
+                servingSizes = JsonSerializer.Deserialize<List<ServingSizeModel>>(item.ServingSize)!;
 
-            ItemsModel items = new ItemsModel();
-            items.Id=item.Id;
-            items.Name = item.Name;
-            items.Description = "";
-            items.MaxQty = 1; 
-            items.RetailPrice = item.RetailPrice;
-            items.ServingSizes = servingSizes;
-            items.ServingSize = servingSizes.FirstOrDefault()?.Size ?? "Medium"; 
+                ItemsModel items = new ItemsModel();
+                items.Id = item.Id;
+                items.Name = item.Name;
+                items.Description = "";
+                items.MaxQty = 1;
+                items.RetailPrice = item.RetailPrice;
+                items.ServingSizes = servingSizes;
+                items.ServingSize = servingSizes.FirstOrDefault()?.Size ?? "Medium";
 
-            _menuItems.Add(items);
+                _menuItems.Add(items);
+            }
         }
 
 

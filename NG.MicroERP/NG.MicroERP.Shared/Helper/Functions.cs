@@ -17,9 +17,6 @@ namespace NG.MicroERP.Shared.Helper;
 
 public class Functions
 {
-
-   
-
     public static async Task<T?> GetAsync<T>(string url, bool useTokenAuthorize = false)
     {
         try

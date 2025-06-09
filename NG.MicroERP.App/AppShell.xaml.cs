@@ -9,11 +9,13 @@ namespace NG.MicroERP.App
             InitializeComponent();
             Routing.RegisterRoute(nameof(MainPage), typeof(MainPage));
             Routing.RegisterRoute(nameof(LoginPage), typeof(LoginPage));
-            Routing.RegisterRoute(nameof(ClientPage), typeof(ClientPage));
-            Routing.RegisterRoute(nameof(ExecutionPage), typeof(ExecutionPage));
             Routing.RegisterRoute(nameof(OrderPage), typeof(OrderPage));
-            Routing.RegisterRoute(nameof(LogoutPage), typeof(LogoutPage));
-            Routing.RegisterRoute(nameof(MenuPage), typeof(MenuPage));
+            Routing.RegisterRoute(nameof(OrdersPage), typeof(OrdersPage));
+            Routing.RegisterRoute(nameof(BillPrintPage), typeof(BillPrintPage));
+            Routing.RegisterRoute(nameof(CartPage), typeof(CartPage));
+            Routing.RegisterRoute(nameof(DineinOrdersPage), typeof(DineinOrdersPage));
+            Routing.RegisterRoute(nameof(KitchenOrderPage), typeof(KitchenOrderPage));
+            Routing.RegisterRoute(nameof(TablesPage), typeof(TablesPage));
         }
     }
 }

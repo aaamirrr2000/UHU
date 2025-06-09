@@ -7,8 +7,18 @@ using NG.MicroERP.Shared.Helper;
 using NG.MicroERP.Shared.Models;
 using NG.MicroERP.API.Services;
 using NG.MicroERP.API.Helper;
+
 namespace NG.MicroERP.API.Services;
 
+public interface IChartOfAccountsService
+{
+    Task<(bool, List<ChartOfAccountsModel>)>? Search(string Criteria = "");
+    Task<(bool, ChartOfAccountsModel?)>? Get(int id);
+    Task<(bool, ChartOfAccountsModel, string)> Post(ChartOfAccountsModel obj);
+    Task<(bool, string)> Put(ChartOfAccountsModel obj);
+    Task<(bool, string)> Delete(int id);
+    Task<(bool, string)> SoftDelete(ChartOfAccountsModel obj);
+}
 
 public class ChartOfAccountsService : IChartOfAccountsService
 {

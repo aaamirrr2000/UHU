@@ -23,6 +23,7 @@
     PaymentAmount       DECIMAL(16, 2)   NULL DEFAULT NULL,
     Description         VARCHAR(50)      NOT NULL,
     Status              VARCHAR(50)      NULL,
+    ServiceType         VARCHAR(50)      NULL,
 	CreatedBy           INT             NULL DEFAULT NULL,
 	CreatedOn           DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	CreatedFrom         VARCHAR(255)    NULL DEFAULT NULL,

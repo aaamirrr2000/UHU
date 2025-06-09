@@ -17,6 +17,7 @@
 	Unit				  VARCHAR(50),
 	ServingSize			  VARCHAR(Max),
 	IsInventoryItem		  INT			   DEFAULT 1,
+	IsFavItem			  INT			   DEFAULT 0,
 	IsActive              SMALLINT         NOT NULL DEFAULT 1,
 	CreatedBy           INT             NULL DEFAULT NULL,
 	CreatedOn           DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,

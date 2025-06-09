@@ -14,7 +14,8 @@ namespace NG.MicroERP.API.Services;
 
 public interface IItemsService
 {
-    Task<(bool, List<ItemsModel>)>? Search(string Criteria = "");
+    Task<(bool, List<ItemsModel>)>? Search(string Criteria = "", string TopN = "");
+    Task<(bool, List<ItemsModel>)>? SearchRecent(string TopN = "");
     Task<(bool, ItemsModel?)>? Get(int id);
     Task<(bool, ItemsModel, string)> Post(ItemsModel obj);
     Task<(bool, string)> Put(ItemsModel obj);
@@ -27,14 +28,97 @@ public class ItemsService : IItemsService
 {
     DapperFunctions dapper = new DapperFunctions();
 
-    public async Task<(bool, List<ItemsModel>)>? Search(string Criteria = "")
+    public async Task<(bool, List<ItemsModel>)>? Search(string Criteria = "", string TopN="")
     {
-        string SQL = $@"SELECT * FROM Items Where IsSoftDeleted=0";
+        string SQL = $@"SELECT
+                            {TopN}
+                            Items.Id,
+                            Items.OrganizationId,
+                            Items.Pic,
+                            Items.Code,
+                            Items.Name,
+                            Items.Description,
+                            Items.MinQty,
+                            Items.MaxQty,
+                            Items.Discount,
+                            Items.CostPrice,
+                            Items.RetailPrice,
+                            Items.CategoriesId,
+                            Categories.Code as CategoryCode,
+                            Categories.Name as CategoryName,
+                            Items.StockType,
+                            Items.Unit,
+                            Items.ServingSize,
+                            Items.IsFavItem,
+                            Items.IsActive,
+                            Items.CreatedBy,
+                            Items.CreatedOn,
+                            Items.CreatedFrom,
+                            Items.UpdatedBy,
+                            Items.UpdatedOn,
+                            Items.UpdatedFrom,
+                            Items.IsInventoryItem
+                    FROM Items
+                    LEFT JOIN Categories on Categories.Id=Items.CategoriesId
+                    Where Items.IsSoftDeleted=0
+
+                ";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;
 
-        SQL += " Order by Id Desc";
+        SQL += " order by Items.IsFavItem desc, Items.Id";
+
+        List<ItemsModel> result = (await dapper.SearchByQuery<ItemsModel>(SQL)) ?? new List<ItemsModel>();
+
+        if (result == null || result.Count == 0)
+            return (false, null!);
+        else
+            return (true, result);
+    }
+
+    public async Task<(bool, List<ItemsModel>)>? SearchRecent(string TopN = "")
+    {
+        string SQL = $@"SELECT 
+                          {TopN}
+                          Items.Id,
+                          Items.OrganizationId,
+                          Items.Pic,
+                          Items.Code,
+                          Items.Name,
+                          Items.Description,
+                          Items.MinQty,
+                          Items.MaxQty,
+                          Items.Discount,
+                          Items.CostPrice,
+                          Items.RetailPrice,
+                          Items.CategoriesId,
+                          Categories.Code as CategoryCode,
+                          Categories.Name as CategoryName,
+                          Items.StockType,
+                          Items.Unit,
+                          Items.ServingSize,
+                          Items.IsFavItem,
+                          Items.IsActive,
+                          Items.CreatedBy,
+                          Items.CreatedOn,
+                          Items.CreatedFrom,
+                          Items.UpdatedBy,
+                          Items.UpdatedOn,
+                          Items.UpdatedFrom,
+                          Items.IsInventoryItem,
+                          ISNULL(Itm.Quantity, 0) as Quantity
+                    FROM Items
+                    LEFT JOIN Categories ON Categories.Id = Items.CategoriesId
+                    LEFT JOIN (
+                        SELECT ItemId, SUM(qty) as Quantity 
+                        FROM BillDetail 
+                        GROUP BY ItemId
+                    ) as Itm ON Itm.ItemId = Items.Id
+                    WHERE Items.IsSoftDeleted = 0
+                    ORDER BY ISNULL(Itm.Quantity, 0) DESC, Items.IsFavItem DESC, Items.Id;
+
+                ";
 
         List<ItemsModel> result = (await dapper.SearchByQuery<ItemsModel>(SQL)) ?? new List<ItemsModel>();
 

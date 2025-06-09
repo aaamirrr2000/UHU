@@ -86,8 +86,8 @@ public partial class LoginPage : ContentPage
                         await Navigation.PushAsync(new MainMenuPage());
                     else if (Globals.User.UserType.ToUpper() == "KITCHEN")
                         await Navigation.PushAsync(new DineinOrdersPage());
-                    else if (Globals.User.UserType.ToUpper() == "CUSTOMER")
-                        await Navigation.PushAsync(new ClientPage());
+                    //else if (Globals.User.UserType.ToUpper() == "CUSTOMER")
+                    //    await Navigation.PushAsync(new ClientPage());
                 }
 
             }

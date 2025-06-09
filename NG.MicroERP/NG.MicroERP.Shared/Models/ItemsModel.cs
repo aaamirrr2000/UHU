@@ -23,7 +23,9 @@ public class ItemsModel
     public int CategoriesId { get; set; } = 0;
     public string? StockType { get; set; } = string.Empty;
     public string? Unit { get; set; } = string.Empty;
-    public int IsInventoryItem { get; set; } = 0;
+    public string? ServingSize { get; set; }
+    public int IsInventoryItem { get; set; } = 1;
+    public int IsFavItem { get; set; } = 0;
     public int IsActive { get; set; } = 0;
     public int CreatedBy { get; set; } = 0;
     public DateTime CreatedOn { get; set; } = DateTime.Today;
@@ -36,13 +38,16 @@ public class ItemsModel
     public int Recent_Sales_Volume { get; set; } = 0;
 
     //
-    public double BasePrice { get; set; } // Used for recalculating price
-    public string? ServingSize { get; set; } // Serialized string from DB
+    public double BasePrice { get; set; } 
+    
     public List<ServingSizeModel> ServingSizes { get; set; } = new();
+    public string CategoryCode { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
 }
 
 public class ServingSizeModel
 {
-    public string Size { get; set; }
-    public double Price { get; set; }
+    public string Size { get; set; } = String.Empty;
+    public double Price { get; set; }= 0;
+    public string Pic { get; set; } = String.Empty;
 }

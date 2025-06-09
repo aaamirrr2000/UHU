@@ -7,8 +7,18 @@ using NG.MicroERP.Shared.Helper;
 using NG.MicroERP.Shared.Models;
 using NG.MicroERP.API.Services;
 using NG.MicroERP.API.Helper;
+
 namespace NG.MicroERP.API.Services;
 
+public interface IEmployeesDevicesService
+{
+    Task<(bool, List<EmployeesDevicesModel>)>? Search(string Criteria = "");
+    Task<(bool, EmployeesDevicesModel?)>? Get(int id);
+    Task<(bool, EmployeesDevicesModel, string)> Post(EmployeesDevicesModel obj);
+    Task<(bool, string)> Put(EmployeesDevicesModel obj);
+    Task<(bool, string)> Delete(int id);
+    Task<(bool, string)> SoftDelete(EmployeesDevicesModel obj);
+}
 public class EmployeesDevicesService : IEmployeesDevicesService
 {
     DapperFunctions dapper = new DapperFunctions();

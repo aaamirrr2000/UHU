@@ -4,6 +4,7 @@ using NG.MicroERP.Shared.Models;
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Data.SqlTypes;
 using System.Linq;
 using System.Text;
@@ -83,15 +84,37 @@ public class BillService : IBillService
             return (true, result);
     }
 
-    public async Task<(bool, Bill_And_Bill_Detail_Model?)>? Get(int id)
-    {
-        Bill_And_Bill_Detail_Model res = new Bill_And_Bill_Detail_Model();
 
-        var BillResult = Search($"Bill.Id = {id}");
-        var BillDetailResult = Search($"Bill.Id = {id}");
+    public async Task<(bool, Bill_And_Bill_Detail_Model?)> Get(int id)
+    {
+        var res = new Bill_And_Bill_Detail_Model();
+        BillDetailService billDetailService = new BillDetailService();
+
+
+        var billResult = await Search($"Bill.Id = {id}")!;
+        if (billResult.Item1 == false)
+            return (false, null);
+
+        res.Bill = billResult.Item2.FirstOrDefault()!;
+
+        var billDetailResult = await billDetailService.Search($"BillDetail.BillId = {id}")!;
+        if (billDetailResult.Item1)
+        {
+            if (billDetailResult.Item1 && billDetailResult.Item2 != null)
+            {
+                res.BillDetails.Clear();
+
+                foreach (var item in billDetailResult.Item2)
+                {
+                    res.BillDetails.Add(item);
+                }
+            }
+        }
 
         return (true, res);
     }
+
+
 
     public async Task<(bool, List<BillReportModel>)>? GetBillReport(int id)
     {
@@ -131,7 +154,9 @@ public class BillService : IBillService
 									PaymentMethod, 
 									PaymentRef, 
 									PaymentAmount, 
-									Description, 
+									Description,
+									Status,
+									ServiceType,
 									CreatedBy, 
 									CreatedOn, 
 									CreatedFrom, 
@@ -158,7 +183,9 @@ public class BillService : IBillService
 									'{obj.Bill.PaymentMethod!.ToUpper()}', 
 									'{obj.Bill.PaymentRef!.ToUpper()}', 
 									{obj.Bill.PaymentAmount},
-									'{obj.Bill.Description!.ToUpper()}', 
+									'{obj.Bill.Description!.ToUpper()}',
+									'{obj.Bill.Status!.ToUpper()}',
+									'{obj.Bill.ServiceType!.ToUpper()}',
 									{obj.Bill.CreatedBy},
 									'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
 									'{obj.Bill.CreatedFrom!.ToUpper()}', 
@@ -192,12 +219,12 @@ public class BillService : IBillService
 								(
 									{sql.ItemId},
 									'{sql.StockCondition!.ToUpper()}', 
-									'{sql.ServingSize!.ToUpper()}', 
+									'{sql.ServingSize}', 
 									{sql.Qty},
 									{sql.UnitPrice},
 									{sql.DiscountAmount},
 									{sql.TaxAmount},
-									{InsertedId},
+									{res.Item2},
 									'{sql.Description!.ToUpper()}', 
 									'{sql.Status!.ToUpper()}', 
 									{sql.IsTakeAway},
@@ -242,7 +269,9 @@ public class BillService : IBillService
 					PaymentMethod = '{obj.Bill.PaymentMethod!.ToUpper()}', 
 					PaymentRef = '{obj.Bill.PaymentRef!.ToUpper()}', 
 					PaymentAmount = {obj.Bill.PaymentAmount}, 
-					Description = '{obj.Bill.Description!.ToUpper()}', 
+					Description = '{obj.Bill.Description!.ToUpper()}',
+					Status = '{obj.Bill.Status!.ToUpper()}',
+					ServiceType = '{obj.Bill.ServiceType!.ToUpper()}',
 					UpdatedBy = {obj.Bill.UpdatedBy}, 
 					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedFrom = '{obj.Bill.UpdatedFrom!.ToUpper()}', 
@@ -315,6 +344,6 @@ public class BillService : IBillService
 					IsSoftDeleted = 1 
 				WHERE Id = {obj.Id};";
 
-        return await dapper.Update(SQLUpdate);
+        return await dapper.Update(SQLUpdate)!;
     }
 }

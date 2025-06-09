@@ -11,7 +11,7 @@
             <GradientStop Color="#FFFFFF" Offset="1.0" />
         </LinearGradientBrush>
     </ContentPage.Background>
-    
+
     <ScrollView>
         <Grid Padding="10">
 
@@ -21,106 +21,113 @@
                     BackgroundColor="White"
                     HorizontalOptions="Fill"
                     StrokeShape="RoundRectangle 15">
+
                 <Border.Shadow>
-                    <Shadow Brush="#20000000" Offset="0,5" Radius="10" Opacity="0.3" />
+                    <Shadow Brush="#20000000"
+                            Offset="0,5"
+                            Radius="10"
+                            Opacity="0.3" />
                 </Border.Shadow>
-                
+
                 <VerticalStackLayout Spacing="20">
+
                     <Label Text="Tables"
-                       FontSize="28"
-                       FontAttributes="Bold"
-                       HorizontalOptions="Center"
-                       TextColor="#333"
-                       FontFamily="Orbitron" />
+                           FontSize="28"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center"
+                           TextColor="#333"
+                           FontFamily="Orbitron" />
 
                     <ActivityIndicator x:Name="LoadingIndicator"
-                                     IsVisible="False"
-                                     IsRunning="False"
-                                     Color="#00C4B4"
-                                     HeightRequest="40" />
+                                       IsVisible="False"
+                                       IsRunning="False"
+                                       Color="#00C4B4"
+                                       HeightRequest="40" />
 
-                    <RefreshView x:Name="refreshView" IsRefreshing="False" Refreshing="OnRefresh">
-
+                    <RefreshView x:Name="refreshView"
+                                 IsRefreshing="False"
+                                 Refreshing="OnRefresh">
 
                         <CollectionView x:Name="TablesPageRef"
-                                ItemsSource="{Binding Tables}"
-                                SelectionMode="Single"
-                                SelectionChanged="TablesCollectionView_SelectionChanged">
-                        
-                        <CollectionView.ItemsLayout>
-                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="2" />
-                        </CollectionView.ItemsLayout>
+                                        ItemsSource="{Binding Tables}"
+                                        SelectionMode="Single"
+                                        SelectionChanged="TablesCollectionView_SelectionChanged">
 
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <Border StrokeThickness="0"
-                                        Margin="10"
-                                        Padding="20"
-                                        BackgroundColor="#F0F1F3"
-                                        HorizontalOptions="Fill"
-                                        StrokeShape="RoundRectangle 15">
+                            <CollectionView.ItemsLayout>
+                                <LinearItemsLayout Orientation="Vertical"
+                                                   ItemSpacing="2" />
+                            </CollectionView.ItemsLayout>
 
-                                    <Grid ColumnDefinitions="*, Auto"
-                                      RowDefinitions="Auto"
-                                      ColumnSpacing="10"
-                                      VerticalOptions="Center"
-                                      HorizontalOptions="Fill"
-                                      Padding="0">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border StrokeThickness="0"
+                                            Margin="10"
+                                            Padding="20"
+                                            BackgroundColor="#F0F1F3"
+                                            HorizontalOptions="Fill"
+                                            StrokeShape="RoundRectangle 15">
 
-                                        <HorizontalStackLayout Grid.Column="0"
-                                                           Spacing="10"
-                                                           VerticalOptions="Center"
-                                                           HorizontalOptions="Start">
+                                        <Grid ColumnDefinitions="*, Auto"
+                                              RowDefinitions="Auto, Auto"
+                                              ColumnSpacing="10"
+                                              RowSpacing="10"
+                                              Padding="0">
 
-                                            <Image Source="{Binding TableImage}"
-                                               WidthRequest="36"
-                                               VerticalOptions="Center" />
-
-                                            <VerticalStackLayout Spacing="2"
-                                                             VerticalOptions="Center"
-                                                             HorizontalOptions="Start">
-                                                
-                                                <Label Text="{Binding TableNumber}"
+                                            <!-- Row 0: Table Name and Capacity -->
+                                            <Label Grid.Row="0" Grid.Column="0"
+                                                   Text="{Binding TableNumber}"
                                                    FontAttributes="Bold"
                                                    TextColor="Black"
-                                                   CharacterSpacing="2"
-                                                   FontSize="16"/>
+                                                   FontSize="16"
+                                                   VerticalOptions="Center"
+                                                   HorizontalOptions="Start" />
 
-                                                <Label Text="{Binding Capacity, StringFormat='Capacity: {0} Persons'}"
+                                            <Label Grid.Row="0" Grid.Column="1"
+                                                   Text="{Binding Capacity, StringFormat='Capacity: {0} Persons'}"
                                                    FontSize="13"
-                                                   TextColor="Gray"/>
+                                                   TextColor="Gray"
+                                                   VerticalOptions="Center"
+                                                   HorizontalOptions="End" />
 
-                                                <!--<Label Text="{Binding AvailableStatus}"
-                                                   FontSize="13"
-                                                   TextColor="Black" />-->
-                                            </VerticalStackLayout>
+                                            <!-- Row 1: Buttons -->
+                                            <HorizontalStackLayout Grid.Row="1" Grid.ColumnSpan="2"
+                                                                   Spacing="10"
+                                                                   HorizontalOptions="Center"
+                                                                   VerticalOptions="Center">
+                                                <Button Text="Dine-In"
+                                                        ClassId="DineIn"
+                                                        Clicked="ServiceTypeButton_Clicked"
+                                                        CommandParameter="{Binding .}" />
 
-                                        </HorizontalStackLayout>
+                                                <Button Text="Takeaway"
+                                                        ClassId="Takeaway"
+                                                        Clicked="ServiceTypeButton_Clicked"
+                                                        CommandParameter="{Binding .}" />
 
-                                        <!-- Right side: Buttons -->
-                                        <HorizontalStackLayout Grid.Column="1"
-                                                           Spacing="10"
-                                                           VerticalOptions="Center"
-                                                           HorizontalOptions="End">
+                                                <Button Text="Parcel"
+                                                        ClassId="Parcel"
+                                                        Clicked="ServiceTypeButton_Clicked"
+                                                        CommandParameter="{Binding .}" />
+                                            </HorizontalStackLayout>
+                                        </Grid>
 
-                                        </HorizontalStackLayout>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding BindingContext.TableTappedCommand, Source={x:Reference TablesPageRef}}"
+                                                                  CommandParameter="{Binding .}" />
+                                        </Border.GestureRecognizers>
 
-                                    </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
 
-                                    <Border.GestureRecognizers>
-                                        <TapGestureRecognizer
-                                        Command="{Binding BindingContext.TableTappedCommand, Source={x:Reference TablesPageRef}}"
-                                        CommandParameter="{Binding .}" />
-                                    </Border.GestureRecognizers>
-
-                                </Border>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
-                    </CollectionView>
                     </RefreshView>
 
                 </VerticalStackLayout>
+
             </Border>
+
         </Grid>
     </ScrollView>
+
 </ContentPage>

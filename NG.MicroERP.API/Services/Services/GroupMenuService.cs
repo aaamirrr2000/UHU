@@ -12,6 +12,13 @@ using NG.MicroERP.API.Helper;
 namespace NG.MicroERP.API.Services;
 
 
+public interface IGroupMenuService
+{
+    Task<(bool, List<GroupMenuModel>)>? Search(string Criteria = "");
+    Task<(bool, GroupMenuModel?)>? Get(int id);
+    Task<(bool, List<GroupMenuModel>)>? SearchGroupMenu(string Criteria = "");
+}
+
 public class GroupMenuService : IGroupMenuService
 {
     DapperFunctions dapper = new DapperFunctions();

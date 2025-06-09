@@ -1,0 +1,198 @@
+﻿@page "/ServingSizeControl/{id?}"
+@using System.Text.Json
+
+<div class="col-12 mb-3" style="margin: 5px; padding: 5px; width:99%;">
+    <div class="row">
+        <!-- Block 1: Image and Item Info -->
+        <div class="col-md-4" style="background-color: #F9FAFB; border: 0px gray solid; padding: 20px;">
+            <div class="row h-100">
+                <div class="col-4 p-0 d-flex align-items-center justify-content-center">
+                    <img src="@(string.IsNullOrEmpty(@BillItems.Pic) ? "/images/noimage.jpg" : @BillItems.Pic)"
+                         alt="Item Image"
+                         style="width: 120px; height: 120px; object-fit: cover; border-radius: 5px;" />
+                </div>
+
+                <div class="col-8 d-flex flex-column justify-content-center">
+                    <div class="text-danger fw-semibold" style="font-size: 22px;">@BillItems.Item</div>
+                    <div class="text-success fw-semibold mt-2">@BillItems.Item_Amount.ToString("#,##0.00")</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Block 2: Inputs -->
+        <div class="col-md-8" style="background-color: #F0F1F3; padding: 10px;">
+            <div class="row">
+                @if (ServiceSizeEnableDisable && ServingSizeOptions?.Any() == true)
+                {
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Stock Condition</label>
+                       <select class="form-select" @bind="SelectedStockCondition">
+                            <option disabled selected value="">Select...</option>
+                            @foreach (var a in StockCondition)
+                            {
+                                <option value="@a.ListValue">@a.ListValue</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Serving Size</label>
+                         <select class="form-select" @onchange="OnServingSizeChanged">
+                            <option disabled selected value="">Select...</option>
+                            @foreach (var option in ServingSizeOptions)
+                            {
+                                <option value="@option.Size">@($"{option.Size} - {option.Price:N2}")</option>
+                            }
+                        </select>
+                    </div>
+                }
+            </div>
+
+            <!-- Qty, Price, Discount, Final Amount, Add Button -->
+            <div class="row mt-3">
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Qty</label>
+                    <input type="number" class="form-control text-end"
+                           @bind="BillItems.Qty"
+                           @bind:event="oninput"
+                           step="0.01"
+                           readonly="@QtyEnableDisable" />
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Price</label>
+                    <input type="number" class="form-control text-end"
+                            @bind-Value="BillItems.UnitPrice"
+                            @bind-Value:event="oninput"
+                            step="0.01"
+                            readonly="@PriceEnableDisable" />
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Discount</label>
+                    <input type="number" class="form-control text-end"
+                           @bind="BillItems.DiscountAmount"
+                           @bind:event="oninput"
+                           step="0.01" />
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Final Amount</label>
+                    <input type="text" class="form-control text-end bg-light fw-bold"
+                           value="@BillItems.Item_Amount.ToString("0.00")"
+                           readonly />
+                </div>
+
+                <div class="col-md-3 d-grid">
+                    <label class="form-label invisible">Add</label>
+                    <button type="button" class="btn btn-primary w-100" @onclick="AddItem">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    [Parameter] public EventCallback<BillDetailModel> OnAddItem { get; set; }
+
+
+
+    static ItemsModel ItemData = new();
+    List<TypeCodeModel> StockCondition = new();
+    List<ServingSizeModel> ServingSizeOptions = new();
+    public string? SelectedServingSize { get; set; } = string.Empty;
+
+    BillDetailModel BillItems = new();
+    public string? SelectedStockCondition { get; set; } = string.Empty;
+
+    private bool QtyEnableDisable = false;
+    private bool PriceEnableDisable = false;
+    private bool ServiceSizeEnableDisable = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadItemDetails(Id);
+    }
+
+    private async Task LoadItemDetails(int id)
+    {
+        ItemData = await Functions.GetAsync<ItemsModel>($"Items/Get/{id}", true) ?? new ItemsModel();
+        StockCondition = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/STOCK CONDITION", true) ?? new List<TypeCodeModel>();
+        Select(id);
+    }
+
+    private async void Select(int id)
+    {
+        if (id <= 0) return;
+
+        BillItems = new()
+        {
+            Qty = 1,
+            UnitPrice = ItemData.RetailPrice,
+            DiscountAmount = ItemData.Discount,
+            Item = ItemData.Name!,
+            Pic = ItemData.Pic
+        };
+
+        PriceEnableDisable = ItemData.IsInventoryItem == 1;
+        QtyEnableDisable = ItemData.IsInventoryItem != 1;
+
+        ServingSizeOptions = null;
+        ServiceSizeEnableDisable = false;
+        SelectedServingSize = null;
+
+        if (!string.IsNullOrWhiteSpace(ItemData.ServingSize))
+        {
+            try
+            {
+                ServingSizeOptions = JsonSerializer.Deserialize<List<ServingSizeModel>>(ItemData.ServingSize)!;
+                if (ServingSizeOptions != null && ServingSizeOptions.Count > 0)
+                {
+                    ServiceSizeEnableDisable = true;
+                }
+            }
+            catch
+            {
+                ServiceSizeEnableDisable = false;
+            }
+        }
+
+        StateHasChanged();
+    }
+
+
+   private void OnServingSizeChanged(ChangeEventArgs e)
+    {
+        var selectedSize = e.Value?.ToString();
+        SelectedServingSize = selectedSize!;
+
+        var selectedOption = ServingSizeOptions?.FirstOrDefault(s => s.Size == selectedSize);
+        if (selectedOption != null)
+        {
+            BillItems.UnitPrice = selectedOption.Price;
+            BillItems.Pic = selectedOption.Pic;
+        }
+
+        StateHasChanged();
+    }
+
+
+    private void OnStockConditionChanged(ChangeEventArgs e)
+    {
+        SelectedStockCondition = e.Value?.ToString();
+        BillItems.StockCondition = SelectedStockCondition;
+    }
+
+
+    private async void AddItem()
+    {
+       if (OnAddItem.HasDelegate)
+        {
+            await OnAddItem.InvokeAsync(BillItems);
+        }
+    }
+
+}

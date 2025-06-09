@@ -32,6 +32,7 @@ public class BillModel
     public double PaymentAmount { get; set; } = 0;
     public string? Description { get; set; } = string.Empty;
     public string? Status { get; set; } = string.Empty;
+    public string ServiceType { get; set; } = string.Empty;
     public int CreatedBy { get; set; } = 0;
     public DateTime CreatedOn { get; set; } = DateTime.Today;
     public string? CreatedFrom { get; set; } = string.Empty;

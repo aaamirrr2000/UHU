@@ -8,19 +8,6 @@
 <Loading IsLoading="@LoadingPanel" />
 
 <div class="row" style="margin: 2px; height: 90vh; display: flex;">
-   @*  <MyDrawer @ref="_drawer" Title="Bill" FaIcon="fas fa-address-book">
-        <HeaderContent>
-        </HeaderContent>
-        <ChildContent>
-            <EditForm Model="record" OnSubmit="Save">
-                <MudForm>
-                     <BillPage Action="@Action" CurrentRecord="record.Id" /> 
-                </MudForm>
-            </EditForm>
-        </ChildContent>
-        <FooterContent>
-        </FooterContent>
-    </MyDrawer> *@
 
     @if (data == null)
     {
@@ -31,32 +18,42 @@
         <div class="row">
             <MudDataGrid T="BillModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
                 <ToolBarContent>
-                    <MudText Typo="Typo.h6">Bill Managment</MudText>
+                    <MudText Typo="Typo.h6">Bill</MudText>
                     <MudSpacer />
                     <MudIconButton Icon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" OnClick="@(() => Clear())" />
-                    <MudIconButton Icon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" OnClick="@(() => Refresh())" />
-                    <InputDate @bind-Value="startDate" Label="Start Date" Format="yyyy-MM-dd" @bind-Value:after="GetAll" class="InputDateStyle" />
-                    <InputDate @bind-Value="endDate" Label="End Date" Format="yyyy-MM-dd" @bind-Value:after="GetAll" class="InputDateStyle" />
+                    <MudIconButton Icon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" OnClick="@(() => GetAll())" />
                     <MudIconButton Icon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" OnClick="@(() => GetAll())" />
+                    <MudDateRangePicker @bind-DateRange="_dateRange"
+                                        AutoClose="true"
+                                        Variant="Variant.Text"
+                                        Margin="Margin.Dense"
+                                        DateFormat="dd.MMMM.yyyy"
+                                        TitleDateFormat="dd MMMM"
+                                        Modal="false"
+                                        Style="width:320px;"
+                                        PlaceholderStart="Start Date"
+                                        PlaceholderEnd="End Date"
+                                        MinDate=@(Globals.Organization.CreatedOn)
+                                        MaxDate=@(Globals.Organization.Expiry) />
                 </ToolBarContent>
 
                 <Columns>
-                    <TemplateColumn Title="Actions" Style="width: 50px; min-width: 50px;">
+                    <TemplateColumn Title="Actions" Style="width: 150px; min-width: 150px;">
                         <CellTemplate Context="row">
                             <MudIconButton Icon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" OnClick="@(() => View(row.Item.Id))" />
                             <MudIconButton Icon="@Icons.Material.TwoTone.Save" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.Id))" />
                             <MudIconButton Icon="@Icons.Material.TwoTone.DeleteSweep" Size="MudBlazor.Size.Small" OnClick="@(() => Delete(row.Item.Id))" />
+                            <MudIconButton Icon="@Icons.Material.TwoTone.Print" Size="MudBlazor.Size.Small" OnClick="@(() => Print(row.Item.Id))" />
                         </CellTemplate>
                     </TemplateColumn>
 
                     <PropertyColumn Property="x => x.SeqNo" Title="Bill#" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.TranDate" Title="Tranaction Date" Sortable="true" Filterable="true" Format="dd-MMM-yyy" />
                     <PropertyColumn Property="x => x.BillType" Title="Bill Type" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.Source" Title="Source" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.PartyName" Title="Customer" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.TranDate" Title="Tranaction Date" Sortable="true" Filterable="true" Format="dd-MMM-yyy" />
                     <PropertyColumn Property="x => x.PaymentMethod" Title="Payment Method" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.PaymentRef" Title="Payment Ref" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.Description" Title="Description" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.Status" Title="Status" Sortable="true" Filterable="true" />
 
                 </Columns>
@@ -74,14 +71,18 @@
     static List<BillModel> data = new();
     static BillModel record = new();
 
-    public DateTime startDate { get; set; } = DateTime.Today;
-    public DateTime endDate { get; set; } = DateTime.Today;
-
     public string Action { get; set; } = "INSERT";
 
     bool isReadOnly = true;
     private bool LoadingPanel { get; set; } = false;
     private MyDrawer _drawer = new();
+
+    private DateRange _dateRange { get; set; } = new DateRange(DateTime.Now.Date, DateTime.Now.AddDays(5).Date);
+
+    private void OnValueChanged(PickerVariant variant)
+    {
+        _dateRange = null;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -90,18 +91,28 @@
 
     protected async Task GetAll()
     {
-        var formattedStartDate = startDate.ToString("yyyy-MM-dd");
-        var formattedEndDate = endDate.ToString("yyyy-MM-dd");
-        string Criteria = string.Empty;
+        var formattedStartDate = _dateRange.Start?.ToString("yyyy-MM-dd") ?? string.Empty;
+        var formattedEndDate = _dateRange.End?.ToString("yyyy-MM-dd") ?? string.Empty;
+
+
+        string criteria = string.Empty;
 
         LoadingPanel = true;
+
         if (Globals.User.GroupId != 1)
         {
-            Criteria = $" and LocationId = {Globals.User.LocationId}";
+            criteria = $" AND LocationId = {Globals.User.LocationId}";
         }
 
-        Criteria = $"CAST(TranDate as DATE) >= '{formattedStartDate}' and CAST(TranDate as DATE) <= '{formattedEndDate}' {Criteria}"!;
-        data = await Functions.GetAsync<List<BillModel>>($"Bill/Search/{Criteria}", true) ?? new List<BillModel>();
+        // Ensure proper SQL formatting and avoid unnecessary string interpolation
+        if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate))
+        {
+            criteria = $"CAST(TranDate AS DATE) >= '{formattedStartDate}' AND CAST(TranDate AS DATE) <= '{formattedEndDate}' {criteria}";
+        }
+
+        // Fetch data asynchronously with proper null handling
+        data = await Functions.GetAsync<List<BillModel>>($"Bill/Search/{criteria}", true) ?? new List<BillModel>();
+
         LoadingPanel = false;
 
         await InvokeAsync(StateHasChanged);
@@ -131,14 +142,14 @@
     {
         await Get(id);
         isReadOnly = true;
-        NewBill("VIEW", 0);
+        NewBill("VIEW", id);
     }
 
     protected async Task Edit(int id)
     {
         await Get(id);
         isReadOnly = false;
-        NewBill("UPDATE", 0);
+        NewBill("UPDATE", id);
     }
 
     protected async Task Delete(int id)
@@ -152,19 +163,15 @@
         await Save();
     }
 
+    protected async Task Print(int id)
+    {
+        var url = $"/BillReport/{id}";
+        JSRuntime.InvokeVoidAsync("open", url, "_blank");
+    }
+
     protected void NewBill(string Action, int Id)
     {
-        var url = string.Empty;
-
-        if(Action == "INSERT")
-        {
-            url = $"/BillPage/{Action}";
-        }
-        else
-        {
-            url = $"/BillPage/{Action}/{Id}";
-        }
-        
+        var url = $"/BillPage/{Id}";
         JSRuntime.InvokeVoidAsync("open", url, "_blank");
     }
 

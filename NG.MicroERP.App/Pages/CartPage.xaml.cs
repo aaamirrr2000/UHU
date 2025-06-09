@@ -1,3 +1,4 @@
+
 using NG.MicroERP.Shared.Helper;
 using NG.MicroERP.Shared.Models;
 using NG.MicroERP.Shared.Services;
@@ -12,12 +13,15 @@ public partial class CartPage : ContentPage
     private ObservableCollection<ItemsModel> _cartItems;
     public string BillNote { get; set; } = string.Empty;
     RestaurantTablesModel tbl = new RestaurantTablesModel();
+    private readonly string _serviceType;
 
-    public CartPage(ObservableCollection<ItemsModel> cart, RestaurantTablesModel table)
+    public CartPage(ObservableCollection<ItemsModel> cart, RestaurantTablesModel table, string ServiceType)
     {
         InitializeComponent();
 
         _cartItems = cart;
+        _serviceType = ServiceType;
+
         Cart.ItemsSource = _cartItems;
         tbl = table;
         BindingContext = this;
@@ -77,6 +81,7 @@ public partial class CartPage : ContentPage
             SalesId = Globals.User.EmpId,
             PartyId = 1,
             TranDate = tranDate,
+            ServiceType = _serviceType,
             CreatedBy = Globals.User.Id,
             CreatedOn = tranDate,
             CreatedFrom = Functions.GetComputerDetails(),

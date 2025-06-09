@@ -28,6 +28,7 @@ SELECT
 	f.ServingSize,
 	f.StockCondition,
 	f.Description as Instructions,
+	a.ServiceType,
 	f.Qty,
 	f.UnitPrice,
 	f.DiscountAmount as ItemDiscount,

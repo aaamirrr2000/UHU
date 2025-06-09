@@ -28,10 +28,8 @@
     </Shell.FlyoutBackdrop>
 
     <Shell.FlyoutHeader>
-        <Grid 
-                BackgroundColor="Black">
-            <Image 
-                    Aspect="AspectFill" 
+        <Grid BackgroundColor="Black">
+            <Image Aspect="AspectFill" 
                     Source="logo.png" 
                     Opacity="0.3" 
                     HeightRequest="100"/>
@@ -107,27 +105,16 @@
              Route="OrderPage" 
              Icon="home.png"/>
 
-        <ShellContent
-            Title="Orders"
-            ContentTemplate="{DataTemplate pages:ExecutionPage}"
-            Route="ExecutionPage" 
-            Icon="orders.png"/>
-
-        <ShellContent
-            Title="Orders"
-            ContentTemplate="{DataTemplate pages:ClientPage}"
-            Route="ClientPage" 
-            Icon="orders.png"/>
 
     </FlyoutItem>
 
     <FlyoutItem FlyoutDisplayOptions="AsMultipleItems">
 
-        <ShellContent
+        <!--<ShellContent
             Title="Logout"
             ContentTemplate="{DataTemplate pages:LogoutPage}"
             Route="LogoutPage" 
-            Icon="exit.png" />
+            Icon="exit.png" />-->
     </FlyoutItem>
 
 

@@ -4,10 +4,10 @@ using NG.MicroERP.App.Pages;
 using NG.MicroERP.Shared.Helper;
 using NG.MicroERP.Shared.Models;
 
+using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
+using System.Linq;
 using System.Threading.Tasks;
-using System.Windows.Input;
 
 namespace NG.MicroERP.App.Pages;
 
@@ -16,7 +16,7 @@ public partial class TablesPage : ContentPage
     public ObservableCollection<RestaurantTablesModel> Tables { get; } = new();
 
     public TablesPage()
-	{
+    {
         InitializeComponent();
         BindingContext = this;
         ListOfTables();
@@ -24,19 +24,27 @@ public partial class TablesPage : ContentPage
 
     public async void ListOfTables()
     {
-        LoadingIndicator.IsRunning = true;
-        LoadingIndicator.IsVisible = true;
-        var data = await Functions.GetAsync<List<RestaurantTablesModel>>("RestaurantTables/Search", true) ?? new List<RestaurantTablesModel>();
-
-        Tables.Clear();
-        foreach (var table in data)
+        try
         {
-            table.TableImage = table.IsAvailable == 1 ? "table.png" : "table.png";
-            table.AvailableStatus = table.IsAvailable == 1 ? "Busy" : "Available";
-            Tables.Add(table);
+            LoadingIndicator.IsRunning = true;
+            LoadingIndicator.IsVisible = true;
+
+            var data = await Functions.GetAsync<List<RestaurantTablesModel>>("RestaurantTables/Search", true)
+                       ?? new List<RestaurantTablesModel>();
+
+            Tables.Clear();
+            foreach (var table in data)
+            {
+                table.TableImage = table.IsAvailable == 1 ? "table.png" : "table.png";
+                table.AvailableStatus = table.IsAvailable == 1 ? "Busy" : "Available";
+                Tables.Add(table);
+            }
         }
-        LoadingIndicator.IsRunning = false;
-        LoadingIndicator.IsVisible = false;
+        finally
+        {
+            LoadingIndicator.IsRunning = false;
+            LoadingIndicator.IsVisible = false;
+        }
     }
 
     private async void OnRefresh(object sender, EventArgs e)
@@ -45,13 +53,21 @@ public partial class TablesPage : ContentPage
         refreshView.IsRefreshing = false;
     }
 
-
     private async void TablesCollectionView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        var selectedTable = e.CurrentSelection.FirstOrDefault() as RestaurantTablesModel;
-        if (selectedTable != null)
+        if (e.CurrentSelection.FirstOrDefault() is RestaurantTablesModel selectedTable)
         {
-            await Navigation.PushAsync(new OrderPage(selectedTable));
+            string serviceType = "Dine-In"; // Default
+            await Navigation.PushAsync(new OrderPage(selectedTable, serviceType));
+        }
+    }
+
+    private async void ServiceTypeButton_Clicked(object sender, EventArgs e)
+    {
+        if (sender is Button button && button.CommandParameter is RestaurantTablesModel selectedTable)
+        {
+            string serviceType = button.ClassId; // "Dine-In", "Takeaway", "Parcel"
+            await Navigation.PushAsync(new OrderPage(selectedTable, serviceType));
         }
     }
 
@@ -59,15 +75,16 @@ public partial class TablesPage : ContentPage
     {
         if (sender is Button button && button.CommandParameter is RestaurantTablesModel table)
         {
-            await Navigation.PushAsync(new OrderPage(table));
+            string serviceType = button.Text; // e.g., "Dine-In", "Takeaway"
+            await Navigation.PushAsync(new OrderPage(table, serviceType));
         }
     }
 
-    private void OnOrderClicked(object sender, EventArgs e)
+    private async void OnOrderClicked(object sender, EventArgs e)
     {
         if (sender is Button button && button.CommandParameter is RestaurantTablesModel table)
         {
-            DisplayAlert("Order", $"Placing order for table {table.TableNumber}", "OK");
+            await DisplayAlert("Order", $"Placing order for table {table.TableNumber}", "OK");
         }
     }
 }

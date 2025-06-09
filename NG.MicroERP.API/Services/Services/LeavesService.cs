@@ -9,6 +9,17 @@ using NG.MicroERP.API.Services;
 using NG.MicroERP.API.Helper;
 
 namespace NG.MicroERP.API.Services;
+
+public interface ILeavesService
+{
+    Task<(bool, List<LeavesModel>)>? Search(string Criteria = "");
+    Task<(bool, LeavesModel?)>? Get(int id);
+    Task<(bool, LeavesModel, string)> Post(LeavesModel obj);
+    Task<(bool, string)> Put(LeavesModel obj);
+    Task<(bool, string)> Delete(int id);
+    Task<(bool, string)> SoftDelete(LeavesModel obj);
+}
+
 public class LeavesService : ILeavesService
 {
     DapperFunctions dapper = new DapperFunctions();

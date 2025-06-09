@@ -13,10 +13,20 @@ public class ItemsController : ControllerBase
 {
     ItemsService Srv = new ItemsService();
 
-    [HttpGet("Search/{Criteria?}")]
-    public async Task<IActionResult> Search(string Criteria = "")
+    [HttpGet("Search/{Criteria?}/{TopN?}")]
+    public async Task<IActionResult> Search(string Criteria = "", string TopN="")
     {
-        var result = await Srv.Search(Criteria)!;
+        var result = await Srv.Search(Criteria, TopN)!;
+        if (result.Item1 == false)
+            return NotFound("Record Not Found");
+
+        return Ok(result.Item2);
+    }
+
+    [HttpGet("SearchRecent/{TopN?}")]
+    public async Task<IActionResult> SearchRecent(string TopN = "")
+    {
+        var result = await Srv.SearchRecent(TopN)!;
         if (result.Item1 == false)
             return NotFound("Record Not Found");
 

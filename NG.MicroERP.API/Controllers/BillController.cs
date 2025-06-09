@@ -50,7 +50,7 @@ public class BillController : ControllerBase
     {
         var result = await Srv.Post(obj)!;
         if (result.Item1 == true)
-            return Ok(result.Item3);
+            return Ok(result.Item2);
         else
             return BadRequest(result.Item3);
     }
