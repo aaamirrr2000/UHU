@@ -171,7 +171,7 @@
 
     protected void NewBill(string Action, int Id)
     {
-        var url = $"/BillPage/{Id}";
+        var url = $"/BillPage/{Action}/{Id}";
         JSRuntime.InvokeVoidAsync("open", url, "_blank");
     }
 

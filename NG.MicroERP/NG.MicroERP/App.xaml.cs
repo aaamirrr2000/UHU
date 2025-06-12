@@ -1,5 +1,6 @@
 ﻿
 using NG.MicroERP.Shared.Pages;
+using NG.MicroERP.Shared;
 
 namespace NG.MicroERP
 {

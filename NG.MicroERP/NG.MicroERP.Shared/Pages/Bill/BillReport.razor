@@ -1,4 +1,4 @@
-﻿@page "/BillReport/{id:int}"
+﻿@page "/BillReport/{ServingSize:int}/{id:int}"
 @inject NavigationManager NavManager
 @inject IJSRuntime JSRuntime
 @layout BlankLayout
@@ -50,7 +50,12 @@
             <thead>
                 <tr>
                     <th class="text-left">Item Name</th>
-                    <th class="text-left">ServingSize</th>
+                    <th class="text-left">
+                        @if (ServingSize == 1)
+                        {
+                            <p>ServingSize</p>
+                        }
+                    </th>
                     <th>Quantity</th>
                     <th>Unit Price</th>
                     <th>Discount</th>
@@ -63,13 +68,20 @@
                     <tr class="table-row-hover">
                         @if (@item.StockCondition != "NEW")
                         {
-                            <td class="text-left">@item.ItemName (@item.StockCondition)</td>
+                            <td class="text-left">@item.ItemName @item.StockCondition</td>
                         }
                         else
                         {
                             <td class="text-left">@item.ItemName</td>
                         }
-                        <td class="text-left">@item.ServingSize</td>
+
+                        <td class="text-left">
+                            @if (ServingSize == 1)
+                            {
+
+                                @item.ServingSize
+                            }
+                        </td>
                         <td class="text-right">@item.Qty.ToString("N2")</td>
                         <td class="text-right">@item.UnitPrice.ToString("N2")</td>
                         <td class="text-right">@item.ItemDiscount.ToString("N2")</td>
@@ -117,7 +129,8 @@ else
 
 
 @code {
-    [Parameter] public int id { get; set; }
+    [Parameter] public int id { get; set; } = 0;
+    [Parameter] public int ServingSize { get; set; } = 1;
     private decimal totalAmount;
     private DateTime currentDate = DateTime.Now;
     private string userFullName = "";
