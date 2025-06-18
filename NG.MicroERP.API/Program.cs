@@ -1,11 +1,18 @@
-using System.Text;
+using DinkToPdf;
+using DinkToPdf.Contracts;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+
 using NG.MicroERP.API.Helper;
 using NG.MicroERP.API.Services;
+using NG.MicroERP.API.Services.Services;
+
 using Serilog;
 using Serilog.Events;
+
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -76,6 +83,8 @@ Log.Logger = new LoggerConfiguration()
             .CreateLogger();
 
 builder.Services.AddSingleton<DatabaseMigrator>();
+builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+builder.Services.AddSingleton<PdfService>();
 
 var app = builder.Build();
 

@@ -1,0 +1,158 @@
+﻿@page "/ClientFeedbackPage/{id:int}"
+@using System.ComponentModel.DataAnnotations
+@layout MyMenuLayout
+
+<EditForm Model="@feedback">
+    <div class="p-3">
+        <h4 class="text-primary mb-3">Client Feedback</h4>
+
+        <div class="form-group mb-2">
+            <label>Name</label>
+            <InputText class="form-control" @bind-Value="feedback.Name" />
+            <ValidationMessage For="@(() => feedback.Name)" />
+        </div>
+
+        <div class="form-group mb-2">
+            <label>Phone</label>
+            <InputText class="form-control" @bind-Value="feedback.Phone" />
+            <ValidationMessage For="@(() => feedback.Phone)" />
+        </div>
+
+        <div class="form-group mb-2">
+            <label>Email</label>
+            <InputText class="form-control" @bind-Value="feedback.Email" />
+            <ValidationMessage For="@(() => feedback.Email)" />
+        </div>
+
+        <div class="form-group mb-2">
+            <label>Overall Rating</label>
+            <div class="d-flex gap-1">
+                
+                @for (int i = 1; i <= 5; i++)
+                {
+                    var ratingValue = i;
+                    <span @onclick="@(() => SetRating(ratingValue))"
+                          style="cursor: pointer; font-size: 24px; color: @(i <= rating ? "gold" : "#ccc")">
+                        &#9733;
+                    </span>
+                }
+            </div>
+            <p>Selected: @rating</p>
+        </div>
+
+        <div class="form-group mb-2">
+            <label>Comments</label>
+            <InputTextArea class="form-control" @bind-Value="feedback.Comments" Rows="4" />
+        </div>
+
+        <h5 class="text-secondary mt-4">Item-wise Feedback</h5>
+        @if (BillDetail?.Any() == true)
+        {
+            @foreach (var item in BillDetail)
+            {
+                <div class="border rounded p-2 my-2 bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <strong>@item.Item</strong>
+                        <div class="d-flex gap-1">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                var ratingValue = i;
+                                <span @onclick="@(() => SetItemRating(item, ratingValue))"
+                                      style="cursor: pointer; font-size: 20px; color: @(ratingValue <= item.Rating ? "gold" : "#ccc")">
+                                    &#9733;
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+        }
+
+        <button class="btn btn-success w-100" @onclick="() => Save()">
+            <i class="fas fa-cart-plus me-1"></i> Save
+        </button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter] public int id { get; set; }
+
+    private FeedbackModel feedback = new();
+    private List<BillDetailModel> BillDetail = new();
+
+    private int rating = 3;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetBillDetail();
+    }
+
+    private async Task GetBillDetail()
+    {
+        if (id > 0)
+        {
+            var result = await Functions.GetAsync<List<BillDetailModel>>($"BillDetail/Search/BillId={id}", true);
+            if (result != null)
+            {
+                BillDetail = result.Select(r => { r.Rating = 5; return r; }).ToList();
+            }
+            else
+            {
+                await Application.Current.MainPage.DisplayAlert("Error", "Failed to load bill details.", "OK");
+            }
+        }
+    }
+
+
+
+    private void SetRating(int r)
+    {
+        rating = r;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void SetItemRating(BillDetailModel item, int rating)
+    {
+        item.Rating = rating;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task Save()
+    {
+        Bill_And_Bill_Detail_Model MyBill = new();
+
+        MyBill.Bill.Id = id;
+        MyBill.Bill.PartyName = feedback.Name.ToUpper();
+        MyBill.Bill.PartyEmail = feedback.Email;
+        MyBill.Bill.PartyPhone = feedback.Phone;
+        MyBill.Bill.Rating = rating;
+        MyBill.Bill.ClientComments = feedback.Comments;
+        //MyBill.Bill.Rating = rating;
+
+        MyBill.BillDetails = new ObservableCollection<BillDetailModel>(BillDetail);
+
+        var result = await Functions.PostAsync<Bill_And_Bill_Detail_Model>("Bill/ClientComments", MyBill, true);
+
+        if (!result.Success)
+            await Application.Current.MainPage.DisplayAlert("Save", "Record Not Saved.", "OK");
+        else
+            await Application.Current.MainPage.DisplayAlert("Save", "Record Saved Successfully.", "OK");
+    }
+
+    public class FeedbackModel
+    {
+        [Required]
+        public string Name { get; set; } = string.Empty;
+
+        public string Phone { get; set; } = string.Empty;
+
+        [EmailAddress(ErrorMessage = "Invalid email format.")]
+        public string Email { get; set; } = string.Empty;
+
+        [Range(1, 5)]
+        public int Rating { get; set; } = 5;
+
+        public string Comments { get; set; } = string.Empty;
+    }
+}

@@ -1,17 +1,24 @@
-﻿using System.Net.NetworkInformation;
-using System.Net;
+﻿using Azure;
+
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using MudBlazor;
-using System.Net.Http.Headers;
-using Newtonsoft.Json;
-using System.Text;
-using NG.MicroERP.Shared.Models;
-using Serilog;
 using Microsoft.VisualBasic;
+
+using MudBlazor;
+
+using Newtonsoft.Json;
+
+using NG.MicroERP.Shared.Models;
+
+using Serilog;
+
+using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Mail;
+using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace NG.MicroERP.Shared.Helper;
 
@@ -71,32 +78,20 @@ public class Functions
             string jsonData = data != null ? JsonConvert.SerializeObject(data) : string.Empty;
             StringContent content = new(jsonData, Encoding.UTF8, "application/json");
 
-            HttpResponseMessage response = await httpClient.PostAsync(uri, content).ConfigureAwait(false);
-            string resultMessage = await response.Content.ReadAsStringAsync();
+            HttpResponseMessage resultMessage = await httpClient.PostAsync(uri, content).ConfigureAwait(false);
+            //string resultMessage = await response.Content.ReadAsStringAsync();
 
-            if (response.IsSuccessStatusCode)
+            if (resultMessage.IsSuccessStatusCode)
             {
-                try
-                {
-                    if (resultMessage==null || resultMessage==string.Empty)
-                    {
-                        return (true, default);
-                    }
-                    else
-                    {
-                        T? resultObj = JsonConvert.DeserializeObject<T>(resultMessage);
-                        return (true, resultObj);
-                    }
-                    
-                }
-                catch
-                {
-                    return (false, default);
-                }
+                string response = await resultMessage.Content.ReadAsStringAsync();
+                T? result = JsonConvert.DeserializeObject<T>(response);
+                return (true, result);
             }
             else
             {
-                return (false, default);
+                string response = await resultMessage.Content.ReadAsStringAsync();
+                T? resultObj = JsonConvert.DeserializeObject<T>(response);
+                return (true, resultObj);
             }
         }
         catch (Exception)

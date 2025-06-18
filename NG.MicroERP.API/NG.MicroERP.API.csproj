@@ -40,6 +40,7 @@
   </ItemGroup>
 
   <ItemGroup>
+	  <PackageReference Include="DinkToPdf" Version="1.0.8" />
 	  <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.3" />
 	  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.3" />
 	  <PackageReference Include="Swashbuckle.AspNetCore" Version="8.0.0" />
@@ -50,6 +51,10 @@
   <ItemGroup>
     <ProjectReference Include="..\NG.MicroERP.Aspire\NG.MicroERP.Aspire.ServiceDefaults\NG.MicroERP.Aspire.ServiceDefaults.csproj" />
     <ProjectReference Include="..\NG.MicroERP\NG.MicroERP.Shared\NG.MicroERP.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="logs\" />
   </ItemGroup>
 
 </Project>

@@ -1,7 +1,9 @@
 ﻿
 using NG.MicroERP.Shared.Models;
+using NG.MicroERP.Shared.Services;
 
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -19,12 +21,76 @@ public class Globals
     public static string Version = "1.0p";
     public static bool _tabsInitialized = false;
     public static bool _isDarkMode;
+
+    public static List<ItemsModel> _cart { get; set; } = new();
+    public static RestaurantTablesModel? _selectedTable { get; set; } = new();
+    public static string _serviceType { get; set; } = string.Empty;
+    public static ServiceChargeModel? ServiceCharge { get; set; } = new();
+    public static double GST { get; set; } = 0;
+    public static string PageTitle { get; set; } = "";
     public static OrganizationsModel Organization { get; set; } = null!;
     //public static EmployeesModel Emp { get; set; } = null!;
     public static UsersModel User { get; set; } = null!;
     public static List<MyMenuModel>? menu { get; set; } = null;
     public static bool isVisible { get; set; } = true;
     public static string seletctedMenuItem { get; set; } = string.Empty;
+
+    public static async Task<(double ServiceCharges, double GST, double NetAmount)> CalculateBillAmounts(int BillId)
+    {
+        Bill_And_Bill_Detail_Model Bills = new();
+        ObservableCollection<BillDetailModel> BillDetails = new();
+        var res = await Functions.GetAsync<List<BillModel>>($"Bill/Search/bill.Id={BillId}", true);
+        if (res is { Count: > 0 })
+        {
+            Bills.Bill = res.First();
+
+            var detailRes = await Functions.GetAsync<List<BillDetailModel>>($"BillDetail/Search/BillDetail.BillId={BillId}", true);
+            if (detailRes != null)
+            {
+                BillDetails.Clear();
+                foreach (var item in detailRes)
+                {
+                    BillDetails.Add(item);
+                }
+            }
+        }
+
+        double subTotal = 0;
+        foreach (var item in BillDetails)
+        {
+            subTotal += item.Item_Amount;
+        }
+
+        //Calcualte Service Charges
+        ServiceChargeCalculationService _serviceChargeService = new();
+        await _serviceChargeService.InitializeAsync();
+        Globals.ServiceCharge!.ServiceChargeType = _serviceChargeService.ServiceChargeType;
+        Globals.ServiceCharge.ServiceCharge = _serviceChargeService.ServiceCharge;
+
+        //Get GST
+        TaxCalculationService _gst = new();
+        await _gst.InitializeAsync();
+        Globals.GST = _gst.GST;
+        
+        double discount = Bills.Bill?.DiscountAmount ?? 0;
+
+        double serviceCharge = 0;
+        if (Globals.ServiceCharge!.ServiceChargeType == "PERCENTAGE")
+        {
+            serviceCharge = (Globals.ServiceCharge.ServiceCharge / 100) * subTotal;
+        }
+        else if (Globals.ServiceCharge.ServiceChargeType == "AMOUNT")
+        {
+            serviceCharge = Globals.ServiceCharge.ServiceCharge;
+        }
+
+        double taxAmount = (subTotal + serviceCharge - discount) * Globals.GST / 100;
+
+        double netAmount = subTotal + serviceCharge + taxAmount - discount;
+
+        return (serviceCharge, taxAmount, subTotal);
+
+    }
 
     public static string Encrypt(string text)
     {

@@ -48,10 +48,10 @@ public class BillDetailController : ControllerBase
         }
     }
 
-    [HttpPost("BillItemStatus/{Id}/{Status}")]
-    public async Task<IActionResult> BillItemStatus(int Id, string Status)
+    [HttpPost("BillItemStatus/{Id}/{Status}/{SoftDelete?}")]
+    public async Task<IActionResult> BillItemStatus(int Id, string Status, int SoftDelete=0)
     {
-        var result = await Srv.BillItemStatus(Id, Status)!;
+        var result = await Srv.BillItemStatus(Id, Status, SoftDelete)!;
         if (result.Item1 == true)
             return Ok(result.Item2);
         else

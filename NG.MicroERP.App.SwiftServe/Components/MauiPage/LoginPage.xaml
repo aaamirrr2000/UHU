@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="NG.MicroERP.App.SwiftServe.Components.MauiPage.LoginPage"
+              NavigationPage.HasNavigationBar="False"
+             BackgroundColor="Transparent"
+             Title="">
+
+    <ContentPage.Background>
+        <LinearGradientBrush EndPoint="0,1">
+            <GradientStop Color="#E6F0FA" Offset="0.0" />
+            <GradientStop Color="#FFFFFF" Offset="1.0" />
+        </LinearGradientBrush>
+    </ContentPage.Background>
+
+    <ScrollView>
+        <Grid Padding="30">
+
+            <VerticalStackLayout Spacing="20">
+<Image Source="settings.png" />
+
+                <ImageButton Source="settings.png"
+                      WidthRequest="30"
+                      HeightRequest="30"
+                      HorizontalOptions="End"
+                      VerticalOptions="Start"
+                      BackgroundColor="Transparent"
+                      Clicked="OnSettingsClicked" 
+                      x:Name="btnSettings"/>
+
+                <Image Source="waiter.png"
+                            WidthRequest="72"
+                            HeightRequest="72"
+                            Margin="10,0"
+                            HorizontalOptions="Center"/>
+
+                <Label Text="Swift Serve"
+                        FontSize="28"
+                        FontAttributes="Bold"
+                        HorizontalOptions="Center"
+                        TextColor="#333" 
+                       CharacterSpacing="2"
+                        FontFamily="Orbitron"/>
+
+                <Label Text="Welcome" FontAttributes="Bold" FontSize="24" CharacterSpacing="2"
+                        HorizontalOptions="Center" TextColor="Black" FontFamily="Orbitron"/>
+
+                <Grid ColumnDefinitions="*,10*" Padding="5">
+                    <Image Source="user.png"
+                           WidthRequest="36"
+                           HeightRequest="36"
+                           Margin="10,0"
+                           VerticalOptions="Center" 
+                           Grid.Column="0"/>
+
+                    <Entry x:Name="UsernameEntry"
+                           Placeholder="Username"
+                           TextColor="#333333"
+                           PlaceholderColor="#999999"
+                           BackgroundColor="#F8F9FA"
+                           HeightRequest="50"
+                           FontSize="16"
+                           FontFamily="Roboto"
+                           Margin="0,5"
+                           Keyboard="Email"
+                               Grid.Column="1">
+
+                    </Entry>
+                </Grid>
+                <Grid ColumnDefinitions="*,10*" Padding="5">
+                    <Image Source="password.png"
+                           WidthRequest="36"
+                           HeightRequest="36"
+                           Margin="10,0"
+                           VerticalOptions="Center" 
+                           Grid.Column="0"/>
+
+                    <Entry x:Name="PasswordEntry"
+                           Placeholder="Password"
+                           IsPassword="True"
+                           TextColor="#333333"
+                           PlaceholderColor="#999999"
+                           BackgroundColor="#F8F9FA"
+                           HeightRequest="50"
+                           FontSize="16"
+                           FontFamily="Roboto"
+                           Margin="0,5"
+                           Grid.Column="1">
+
+                    </Entry>
+                </Grid>
+                <ActivityIndicator x:Name="LoginSpinner"
+                                      IsVisible="False"
+                                      IsRunning="False"
+                                      Color="#00C4B4"
+                                      HeightRequest="40" />
+
+                <Button Text="Login"
+                            BackgroundColor="#005B99"
+                            TextColor="White"
+                            HeightRequest="50"
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            FontFamily="Roboto"
+                            CornerRadius="10"
+                            Clicked="OnLoginClicked">
+
+                </Button>
+
+                <Image Source="food.png"
+                            WidthRequest="72"
+                            HeightRequest="72"
+                            Margin="10,0"
+                            HorizontalOptions="Center"/>
+
+                <Label Text="A Project by NexGen Tech Studios"
+                           FontSize="12"
+                           HorizontalOptions="Center"
+                           TextColor="#666666"
+                           FontFamily="Orbitron"
+                           CharacterSpacing="1.5"
+                           Margin="0,10,0,0">
+
+                </Label>
+
+
+            </VerticalStackLayout>
+        </Grid>
+    </ScrollView>
+</ContentPage>

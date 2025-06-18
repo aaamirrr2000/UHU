@@ -30,44 +30,73 @@ public class ItemsService : IItemsService
 
     public async Task<(bool, List<ItemsModel>)>? Search(string Criteria = "", string TopN="")
     {
-        string SQL = $@"SELECT
-                            {TopN}
-                            Items.Id,
-                            Items.OrganizationId,
-                            Items.Pic,
-                            Items.Code,
-                            Items.Name,
-                            Items.Description,
-                            Items.MinQty,
-                            Items.MaxQty,
-                            Items.Discount,
-                            Items.CostPrice,
-                            Items.RetailPrice,
-                            Items.CategoriesId,
-                            Categories.Code as CategoryCode,
-                            Categories.Name as CategoryName,
-                            Items.StockType,
-                            Items.Unit,
-                            Items.ServingSize,
-                            Items.IsFavItem,
-                            Items.IsActive,
-                            Items.CreatedBy,
-                            Items.CreatedOn,
-                            Items.CreatedFrom,
-                            Items.UpdatedBy,
-                            Items.UpdatedOn,
-                            Items.UpdatedFrom,
-                            Items.IsInventoryItem
-                    FROM Items
-                    LEFT JOIN Categories on Categories.Id=Items.CategoriesId
-                    Where Items.IsSoftDeleted=0
-
-                ";
-
+        string SQL = string.Empty;
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;
 
-        SQL += " order by Items.IsFavItem desc, Items.Id";
+        SQL = $@"SELECT
+                    Items.Id,
+                    Items.OrganizationId,
+                    Items.Pic,
+                    Items.Code,
+                    Items.Name,
+                    Items.Description,
+                    Items.MinQty,
+                    Items.MaxQty,
+                    Items.Discount,
+                    Items.CostPrice,
+                    Items.RetailPrice,
+                    Items.CategoriesId,
+                    Categories.Code AS CategoryCode,
+                    Categories.Name AS CategoryName,
+                    Items.StockType,
+                    Items.Unit,
+                    Items.ServingSize,
+                    Items.IsFavItem,
+                    Items.IsActive,
+                    Items.CreatedBy,
+                    Items.CreatedOn,
+                    Items.CreatedFrom,
+                    Items.UpdatedBy,
+                    Items.UpdatedOn,
+                    Items.UpdatedFrom,
+                    Items.IsInventoryItem,
+                    AVG(BillDetail.Rating) AS Rating
+                FROM Items
+                LEFT JOIN Categories ON Categories.Id = Items.CategoriesId
+                LEFT JOIN BillDetail ON Items.Id = BillDetail.ItemId
+                WHERE Items.IsSoftDeleted = 0 {SQL}
+                GROUP BY
+                    Items.Id,
+                    Items.OrganizationId,
+                    Items.Pic,
+                    Items.Code,
+                    Items.Name,
+                    Items.Description,
+                    Items.MinQty,
+                    Items.MaxQty,
+                    Items.Discount,
+                    Items.CostPrice,
+                    Items.RetailPrice,
+                    Items.CategoriesId,
+                    Categories.Code,
+                    Categories.Name,
+                    Items.StockType,
+                    Items.Unit,
+                    Items.ServingSize,
+                    Items.IsFavItem,
+                    Items.IsActive,
+                    Items.CreatedBy,
+                    Items.CreatedOn,
+                    Items.CreatedFrom,
+                    Items.UpdatedBy,
+                    Items.UpdatedOn,
+                    Items.UpdatedFrom,
+                    Items.IsInventoryItem
+            ";
+
+
+        SQL += " Order by Items.IsFavItem desc, Items.Name";
 
         List<ItemsModel> result = (await dapper.SearchByQuery<ItemsModel>(SQL)) ?? new List<ItemsModel>();
 

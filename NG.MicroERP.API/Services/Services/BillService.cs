@@ -21,6 +21,8 @@ public interface IBillService
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(BillModel obj);
 	Task<(bool, List<BillReportModel>)>? GetBillReport(int id);
+	Task<(bool, string)> ClientComments(Bill_And_Bill_Detail_Model obj);
+    Task<(bool, string)> GenerateBill(BillModel obj);
 }
 
 
@@ -33,41 +35,67 @@ public class BillService : IBillService
         string SQL = $@"
 
 					SELECT
-						bill.ID,
-						bill.seqno,
-						bill.billtype,
-						bill.source,
-						bill.salesid,
-						employees.Fullname,
-						bill.tableid,
-						RestaurantTables.TableNumber as TableName,
-						bill.locationid,
-						locations.name as location,
-						bill.partyid,
-						parties.name as party,
-						bill.partyname,
-						bill.partyphone,
-						bill.partyemail,
-						bill.partyaddress,
-						bill.trandate,
-						bill.DiscountAmount,
-						bill.taxamount,
-						bill.billamount,
-						bill.paymentmethod,
-						bill.paymentref,
-						bill.paymentamount,
-						bill.Description,
-						bill.CreatedBy,
-						bill.CreatedOn,
-						bill.Status,
-						users.username
-					FROM bill
-					LEFT JOIN locations on locations.id=bill.locationid
-					LEFT JOIN parties on parties.id=bill.partyid
-					LEFT JOIN users on users.id=bill.CreatedBy
-					LEFT JOIN employees on employees.id=users.empid
-					LEFT JOIN RestaurantTables on RestaurantTables.id=bill.tableid
-					Where bill.IsSoftDeleted=0
+                        bill.ID,
+                        bill.seqno,
+                        bill.billtype,
+                        bill.source,
+                        bill.salesid,
+                        employees.Fullname,
+                        bill.tableid,
+                        RestaurantTables.TableNumber AS TableName,
+                        bill.locationid,
+                        locations.name AS location,
+                        bill.partyid,
+                        parties.name AS party,
+                        bill.partyname,
+                        bill.partyphone,
+                        bill.partyemail,
+                        bill.partyaddress,
+                        bill.trandate,
+                        bill.ServiceCharge,
+                        bill.DiscountAmount,
+                        bill.taxamount,
+
+                        ROUND(
+                            (
+                                ISNULL(ItemTotals.TotalItemAmount, 0)
+                                + (ISNULL(ItemTotals.TotalItemAmount, 0) * ISNULL(bill.ServiceCharge, 0) / 100)
+                                + (ISNULL(ItemTotals.TotalItemAmount, 0) * ISNULL(bill.taxamount, 0) / 100)
+                                - ISNULL(bill.DiscountAmount, 0)
+                            ), 2
+                        ) AS billamount,
+
+                        bill.paymentmethod,
+                        bill.paymentref,
+                        bill.paymentamount,
+                        bill.Description,
+                        bill.CreatedBy,
+                        bill.CreatedOn,
+                        bill.Status,
+                        users.username,
+                        bill.ClientComments
+
+                    FROM bill
+                    LEFT JOIN locations ON locations.id = bill.locationid
+                    LEFT JOIN parties ON parties.id = bill.partyid
+                    LEFT JOIN users ON users.id = bill.CreatedBy
+                    LEFT JOIN employees ON employees.id = users.empid
+                    LEFT JOIN RestaurantTables ON RestaurantTables.id = bill.tableid
+
+                    LEFT JOIN (
+                        SELECT
+                            billid,
+                            SUM(
+                                (ISNULL(qty, 0) * ISNULL(unitprice, 0)) 
+                                - ISNULL(DiscountAmount, 0) 
+                                + ISNULL(TaxAmount, 0)
+                            ) AS TotalItemAmount
+                        FROM BillDetail
+                        WHERE IsSoftDeleted = 0
+                        GROUP BY billid
+                    ) AS ItemTotals ON ItemTotals.billid = bill.ID
+
+                    WHERE bill.IsSoftDeleted = 0
 
 					";
 
@@ -148,9 +176,9 @@ public class BillService : IBillService
 									PartyAddress, 
 									TableId, 
 									TranDate, 
+									ServiceCharge,
 									DiscountAmount, 
 									TaxAmount, 
-									BillAmount, 
 									PaymentMethod, 
 									PaymentRef, 
 									PaymentAmount, 
@@ -177,9 +205,9 @@ public class BillService : IBillService
 									'{obj.Bill.PartyAddress!.ToUpper()}', 
 									{obj.Bill.TableId},
 									'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+									{obj.Bill.ServiceCharge},
 									{obj.Bill.DiscountAmount},
 									{obj.Bill.TaxAmount},
-									{obj.Bill.BillAmount},
 									'{obj.Bill.PaymentMethod!.ToUpper()}', 
 									'{obj.Bill.PaymentRef!.ToUpper()}', 
 									{obj.Bill.PaymentAmount},
@@ -211,7 +239,7 @@ public class BillService : IBillService
 									BillId, 
 									Description, 
 									Status,
-									IsTakeAway,
+									Person,
 									TranDate, 
 									IsSoftDeleted
 								) 
@@ -227,7 +255,7 @@ public class BillService : IBillService
 									{res.Item2},
 									'{sql.Description!.ToUpper()}', 
 									'{sql.Status!.ToUpper()}', 
-									{sql.IsTakeAway},
+									{sql.Person},
 									'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
 									{sql.IsSoftDeleted}
 								)";
@@ -263,9 +291,9 @@ public class BillService : IBillService
 					PartyAddress = '{obj.Bill.PartyAddress!.ToUpper()}', 
 					TableId = {obj.Bill.TableId},
 					TranDate = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					ServiceCharge = {obj.Bill.ServiceCharge},
 					DiscountAmount = {obj.Bill.DiscountAmount}, 
 					TaxAmount = {obj.Bill.TaxAmount}, 
-					BillAmount = {obj.Bill.BillAmount}, 
 					PaymentMethod = '{obj.Bill.PaymentMethod!.ToUpper()}', 
 					PaymentRef = '{obj.Bill.PaymentRef!.ToUpper()}', 
 					PaymentAmount = {obj.Bill.PaymentAmount}, 
@@ -296,7 +324,7 @@ public class BillService : IBillService
 					BillId = {sql.BillId}, 
 					Description = '{sql.Description!.ToUpper()}', 
 					Status = '{sql.Status!.ToUpper()}', 
-					IsTakeaway = {sql.IsTakeAway},
+					Person = {sql.Person},
 					TranDate = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					IsSoftDeleted = {sql.IsSoftDeleted}  
 				WHERE Id = {sql.Id};";
@@ -331,6 +359,36 @@ public class BillService : IBillService
         }
     }
 
+    public async Task<(bool, string)> ClientComments(Bill_And_Bill_Detail_Model obj)
+    {
+        try
+        {
+            string SQLUpdate = $@"UPDATE Bill SET 
+					PartyName = '{obj.Bill.PartyName!.ToUpper()}', 
+					PartyPhone = '{obj.Bill.PartyPhone!.ToUpper()}', 
+					PartyEmail = '{obj.Bill.PartyEmail!}', 
+					PartyAddress = '{obj.Bill.PartyAddress!.ToUpper()}', 
+					ClientComments = '{obj.Bill.ClientComments}',
+					Rating = {obj.Bill.Rating}
+				WHERE Id = {obj.Bill.Id};";
+            var res = await dapper.Update(SQLUpdate);
+
+
+			foreach(var i in obj.BillDetails)
+			{
+                SQLUpdate = $@"UPDATE BillDetail SET Rating = {i.Rating} WHERE BillId = {obj.Bill.Id} and ItemId={i.ItemId};";
+                var res1 = await dapper.Update(SQLUpdate);
+
+            }
+
+            return (true, "OK");
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.Message);
+        }
+    }
+
     public async Task<(bool, string)> Delete(int id)
     {
         return await dapper.Delete("Bill", id);
@@ -339,11 +397,32 @@ public class BillService : IBillService
     public async Task<(bool, string)> SoftDelete(BillModel obj)
     {
         string SQLUpdate = $@"UPDATE Bill SET 
-					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
-					UpdatedBy = {obj.UpdatedBy!},
-					IsSoftDeleted = 1 
-				WHERE Id = {obj.Id};";
+								UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+								UpdatedBy = {obj.UpdatedBy!},
+								IsSoftDeleted = 1 
+							WHERE Id = {obj.Id};";
 
         return await dapper.Update(SQLUpdate)!;
+    }
+
+    public async Task<(bool, string)> GenerateBill(BillModel obj)
+    {
+        try
+        {
+            string SQLUpdate = $@"UPDATE Bill SET 
+					ServiceCharge = {obj.ServiceCharge},
+					DiscountAmount = {obj.DiscountAmount}, 
+					TaxAmount = {obj.TaxAmount},
+                    Status = 'COMPLETE'
+				WHERE Id = {obj.Id};";
+
+            var res = await dapper.Update(SQLUpdate);
+
+            return (true, "OK");
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.Message);
+        }
     }
 }

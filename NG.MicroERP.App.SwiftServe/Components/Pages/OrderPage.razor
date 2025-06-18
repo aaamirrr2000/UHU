@@ -1,0 +1,272 @@
+﻿@page "/OrderPage"
+@using System.Collections.ObjectModel
+@inject NavigationManager NavManager
+@inject CartStateService CartState
+@layout MyMenuLayout
+@using Microsoft.AspNetCore.WebUtilities
+@using System.Text
+@using static System.Net.WebRequestMethods
+
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap px-2">
+    <div class="d-flex align-items-center gap-3">
+        <h5 class="mb-0">🪑  <span class="fw-bold">@(Globals._selectedTable?.TableNumber)</span></h5>
+        <h5 class="mb-0">🍽️ <span class="fw-bold text-primary">@Globals._serviceType</span></h5>
+    </div>
+
+    <div>
+       @*  <button class="btn btn-outline-dark position-relative" @onclick="ViewCart">
+            <i class="fas fa-shopping-cart fa-lg"></i>
+            @if (Globals._cart.Count > 0)
+            {
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    @Globals._cart.Count
+                    <span class="visually-hidden">items in cart</span>
+                </span>
+            }
+        </button> *@
+    </div>
+</div>
+
+<div class="mb-3">
+    @foreach (var category in _categories)
+    {
+        <button class="btn btn-outline-primary m-1" @onclick="() => LoadItemsByCategory(category)">
+            @category.Name
+        </button>
+    }
+</div>
+
+@if (_isLoading)
+{
+    <p>Loading...</p>
+}
+else
+{
+   <div class="row">
+    @foreach (var item in _menuItems)
+    {
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body d-flex flex-column">
+
+                    <!-- Item Name and Price -->
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="card-title text-truncate mb-0">@item.Name</h5>
+                        <span class="fw-bold text-success">@item.RetailPrice.ToString("N")</span>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex gap-1">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <span style="font-size: 18px; color: @(i <= item.Rating ? "gold" : "#ccc")">&#9733;</span>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Quantity Selector -->
+                    <div class="mb-3">
+                        <label class="fw-semibold d-block mb-1">Quantity:</label>
+                        <div class="input-group" style="max-width: 180px;">
+                            <button class="btn btn-sm btn-outline-secondary" @onclick="() => DecreaseQty(item)">-</button>
+                            <input type="text" class="form-control text-center" value="@item.MaxQty" readonly />
+                            <button class="btn btn-sm btn-outline-secondary" @onclick="() => IncreaseQty(item)">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Serving Size Selector -->
+                    <div class="mb-3">
+                        <label class="fw-semibold d-block mb-1">Serving Size:</label>
+                        <div class="btn-group flex-wrap gap-1" role="group">
+                            @foreach (var size in item.ServingSizes)
+                            {
+                                <button class="btn btn-sm @(item.ServingSize == size.Size ? "btn-primary" : "btn-outline-primary")"
+                                        @onclick="@(() => OnServingSizeChanged(size.Size, item))">
+                                    @size.Size
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Chair Selector -->
+                    @if (Globals._selectedTable?.Capacity > 0)
+                    {
+                        <div class="mb-3">
+                            <label class="fw-semibold d-block mb-1">Person:</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                @for (int i = 1; i <= Globals._selectedTable.Capacity; i++)
+                                {
+                                    var chairNumber = i; // LOCAL COPY FIX
+                                    <button class="btn @(chairNumber == item.Person ? "btn-dark" : "btn-outline-dark") rounded-circle"
+                                            style="width: 36px; height: 36px; padding: 0;"
+                                            @onclick="() => SelectChairForItem(item, chairNumber)">
+                                        @chairNumber
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Add to Cart Button -->
+                    <div class="mt-auto pt-2">
+                        <button class="btn btn-success w-100" @onclick="() => AddItemToCart(item)">
+                            <i class="fas fa-cart-plus me-1"></i> Add to Cart
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+}
+
+@code {
+    [Parameter]
+    public RestaurantTablesModel? Table { get; set; }
+    
+    private string _serviceType = "";
+    private List<CategoriesModel> _categories = new();
+    private List<ItemsModel> _menuItems = new();
+
+    private bool _isLoading = false;
+    private int _selectedChair = 0;
+
+    private void SelectChairForItem(ItemsModel item, int chairNumber)
+    {
+        item.Person = chairNumber;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        //Globals.PageTitle = "Place Order";
+        //StateHasChanged();
+        var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
+        var queryParams = QueryHelpers.ParseQuery(uri.Query);
+
+        if (queryParams.TryGetValue("tableId", out var tableIdStr) && int.TryParse(tableIdStr, out var tableId))
+        {
+            
+            Globals._selectedTable  =await Functions.GetAsync<RestaurantTablesModel>($"RestaurantTables/Get?id={tableId}", true);
+        }
+
+        await LoadCategories();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (_selectedChair == 0 && Globals._selectedTable?.Capacity > 0)
+        {
+            _selectedChair = 1; 
+        }
+    }
+
+
+    private async Task LoadCategories()
+    {
+        _categories = await Functions.GetAsync<List<CategoriesModel>>("Categories/Search", true) ?? new();
+        if (_categories.Any())
+        {
+            await LoadItemsByCategory(_categories[0]);
+        }
+    }
+
+    private async Task LoadItemsByCategory(CategoriesModel category)
+    {
+        _isLoading = true;
+        _menuItems.Clear();
+
+        var fetchedItems = await Functions.GetAsync<List<ItemsModel>>($"Items/Search/CategoriesId={category.Id}", true) ?? new();
+
+        foreach (var item in fetchedItems)
+        {
+            if (!string.IsNullOrWhiteSpace(item.ServingSize))
+            {
+                var sizes = JsonSerializer.Deserialize<List<ServingSizeModel>>(item.ServingSize);
+                if (sizes != null)
+                {
+                    _menuItems.Add(new ItemsModel
+                    {
+                        Id = item.Id,
+                        Name = item.Name,
+                        MaxQty = 1,
+                        RetailPrice = item.RetailPrice,
+                        ServingSizes = sizes,
+                        ServingSize = sizes.FirstOrDefault()?.Size ?? "Medium",
+                        Rating = item.Rating
+                    });
+                }
+            }
+        }
+
+        _isLoading = false;
+    }
+
+    private void IncreaseQty(ItemsModel item)
+    {
+        item.MaxQty++;
+        UpdateItemPrice(item);
+    }
+
+    private void DecreaseQty(ItemsModel item)
+    {
+        if (item.MaxQty > 1)
+        {
+            item.MaxQty--;
+            UpdateItemPrice(item);
+        }
+    }
+
+    private void OnServingSizeChanged(string selectedSize, ItemsModel item)
+    {
+        item.ServingSize = selectedSize;
+        UpdateItemPrice(item);
+    }
+
+    private void UpdateItemPrice(ItemsModel item)
+    {
+        var selectedSize = item.ServingSizes?.FirstOrDefault(s => s.Size == item.ServingSize);
+        if (selectedSize != null)
+        {
+            item.RetailPrice = Convert.ToDouble(selectedSize.Price) * item.MaxQty;
+        }
+    }
+
+    private async Task AddItemToCart(ItemsModel item)
+    {
+        var newItem = new ItemsModel
+        {
+            Id = item.Id,
+            Name = item.Name,
+            MaxQty = item.MaxQty,
+            Unit = item.Unit,
+            RetailPrice = item.RetailPrice,
+            ServingSize = item.ServingSize,
+            Person = item.Person
+        };
+        Globals._cart.Add(newItem);
+        await Task.Delay(0);
+    }
+
+}
+
+<style>
+    .card-title {
+        font-size: 1.1rem;
+    }
+
+    .btn-group .btn {
+        min-width: 50px;
+        font-weight: 500;
+    }
+
+    .card-body {
+        font-size: 0.95rem;
+    }
+
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+    }
+
+</style>

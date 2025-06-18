@@ -1,0 +1,164 @@
+﻿@page "/OrderDetailsPage/{Action}/{id:int}"
+@layout MyMenuLayout
+
+<h2 class="text-center mb-4 text-dark" style="font-family: 'Orbitron', sans-serif; font-size: 30px;">
+    <i class="fas fa-receipt text-secondary me-2"></i> 
+    
+    @if(Action == "ORDER")
+    {
+        <span>Order Summary</span>
+    }    
+    else
+    {
+        <span>Table Summary</span>
+    }
+</h2>
+
+@if (Bills.Bill != null)
+{
+    <div class="mb-3 text-center fw-bold">
+        Order #: @Bills.Bill?.SeqNo &nbsp;|&nbsp;
+        Table #: @Bills.Bill?.TableName &nbsp;|&nbsp;
+        Total Items: @BillDetails.Count
+    </div>
+
+   @foreach (var group in BillDetails.GroupBy(x => x.Person))
+    {
+        <div class="mb-4">
+            <h5 class="text-primary">
+                <i class="fas fa-chair me-2"></i> Person/Chair: @group.Key
+            </h5>
+
+            @foreach (var item in group)
+            {
+                <div class="border rounded shadow-sm p-3 mb-3 bg-light">
+                    <div class="row">
+                        <!-- Left Column: Item info -->
+                        <div class="col-md-8">
+                            <div class="mb-1">
+                                    <strong>Item:</strong> <span style="color: green;">@item.Item</span> <spanstyle ="color: blue;">@item.ServingSize</spanstyle>
+                            </div>
+                            <div class="mb-1">
+                                @item.Qty x @item.UnitPrice.ToString("N2") = @item.Item_Amount.ToString("N2")
+                            </div>
+                            <div class="mb-1">
+                                <strong>Status:</strong>
+                                @if (item.Status == "COMPLETE")
+                                {
+                                    <span class="badge bg-success">Completed</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                }
+                            </div>
+                        </div>
+
+                       <!-- Right Column: Buttons (side by side) -->
+                        <div class="col-md-4 mt-2 mt-md-0">
+                            <div class="d-flex justify-content-start gap-2">
+                            
+                                @if (item.Status != "COMPLETE")
+                                {
+                                    <button class="btn btn-danger flex-fill" @onclick="@(() => CancelOrder(item))">
+                                        <i class="fas fa-times-circle me-1"></i> Cancel
+                                    </button>
+                                }
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+@*     <div class="mt-4 text-end fw-bold">
+        <i class="fas fa-calculator me-2 text-primary"></i> Total Amount: @GetTotal()
+    </div> *@
+}
+else
+{
+    <div class="text-muted text-center">Loading order details...</div>
+}
+
+@code {
+    [Parameter] public int id { get; set; }
+    [Parameter] public string Action { get; set; } = "ORDER";
+    private Bill_And_Bill_Detail_Model Bills = new();
+    private ObservableCollection<BillDetailModel> BillDetails = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Globals.PageTitle = "Order View";
+        await LoadBills(id);
+    }
+
+    private async Task LoadBills(int Id)
+    {
+        string bill_url = string.Empty;
+        string billDetail_url = string.Empty;
+        if (Action == "ORDER")
+        {
+            bill_url = $"Bill/Search/bill.Id={Id}";
+            billDetail_url = $"BillDetail/Search/BillDetail.BillId={Id}";
+        }
+        else if (Action == "TABLE")
+        {
+            bill_url = $"Bill/Search/bill.TableId={Id}";
+            billDetail_url = $"BillDetail/Search/Bill.TableId={Id} AND BillDetail.Status!='COMPLETE' and Bill.Status!='COMPLETE'";
+        }
+
+
+        var res = await Functions.GetAsync<List<BillModel>>(bill_url, true);
+        if (res != null && res.Count > 0)
+        {
+            Bills.Bill = res.First();
+
+            var res1 = await Functions.GetAsync<List<BillDetailModel>>(billDetail_url, true);
+            if (res1 != null)
+            {
+                BillDetails.Clear();
+                foreach (var item in res1)
+                {
+                    BillDetails.Add(item);
+                }
+            }
+        }
+    }
+
+    private string GetTotal() => BillDetails.Sum(x => x.Item_Amount).ToString("N2");
+
+
+    // private async void MarkCompleted(BillDetailModel item)
+    // {
+    //     var res = await Functions.PostAsync<BillDetailModel>($"BillDetail/BillItemStatus/{item.Id}/COMPLETE", null, true);
+    //     if (res.Success)
+    //     {
+    //         await Application.Current.MainPage.DisplayAlert("Item Status", "Item Status marked COMPLETE Successfully.", "OK");
+    //         //item.Status = "COMPLETE";
+    //         await LoadBills(id);
+    //         StateHasChanged();
+    //     }
+    //     else
+    //         await Application.Current.MainPage.DisplayAlert("Item Status Error", "Could not Mark Item Status COMPLETE.", "OK");
+
+    // }
+
+    private async void CancelOrder(BillDetailModel item)
+    {
+        bool confirm = await App.Current.MainPage.DisplayAlert("Delete", $"Delete Bill ID: {item.SeqNo}?", "Yes", "No");
+        if (!confirm)
+            return;
+
+        var res = await Functions.PostAsync<BillDetailModel>($"BillDetail/BillItemStatus/{item.Id}/CANCEL/1", null, true);
+        if (!res.Success)
+            await Application.Current.MainPage.DisplayAlert("Item Status", "Item Status marked CANCEL Successfully.", "OK");
+        else
+            await Application.Current.MainPage.DisplayAlert("Item Status Error", "Could not Mark Item Status COMPLETE.", "OK");
+
+        await LoadBills(id);
+        StateHasChanged();
+        BillDetails.Remove(item);
+    }
+}

@@ -24,6 +24,7 @@ public class BillModel
     public string? PartyEmail { get; set; } = string.Empty;
     public string? PartyAddress { get; set; } = string.Empty;
     public DateTime TranDate { get; set; } = DateTime.Today;
+    public double ServiceCharge { get; set; } = 0;
     public double DiscountAmount { get; set; } = 0;
     public double TaxAmount { get; set; } = 0;
     public double BillAmount { get; set; } = 0;
@@ -33,6 +34,8 @@ public class BillModel
     public string? Description { get; set; } = string.Empty;
     public string? Status { get; set; } = string.Empty;
     public string ServiceType { get; set; } = string.Empty;
+    public string ClientComments { get; set; } = string.Empty;
+    public int Rating { get; set; } = 0;
     public int CreatedBy { get; set; } = 0;
     public DateTime CreatedOn { get; set; } = DateTime.Today;
     public string? CreatedFrom { get; set; } = string.Empty;
@@ -68,7 +71,8 @@ public class BillDetailModel
     public int IsSoftDeleted { get; set; } = 0;
     public string Description { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
-    public int IsTakeAway { get; set; } = 0;
+    public int Person { get; set; } = 0;
+    public int Rating { get; set; } = 0;
 
     public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
 
@@ -85,6 +89,15 @@ public class BillDetailModel
     public string? PartyName { get; set; } = string.Empty;
     public string? Pic { get; set; } = string.Empty;
 
+    public int TableId { get; set; } = 0;
+    public string? TableName { get; set; } = string.Empty;
+
+    public string? TableLocation { get; set; } = string.Empty;
+
+    public string? BillStatus { get; set; } = string.Empty;
+
+    public string? BillDetailStatus { get; set; } = string.Empty;
+
     public BillDetailModel()
     {
         Id = lastUsedId++;
@@ -98,6 +111,9 @@ public class BillDetailModel
         }
     }
 
+
+
+
 }
 
 
@@ -105,16 +121,6 @@ public class Bill_And_Bill_Detail_Model
 {
     public BillModel Bill { get; set; } = new BillModel();
     public ObservableCollection<BillDetailModel> BillDetails { get; set; } = new();
-}
-
-public class POSItems
-{
-    public int Id { get; set; }
-    public string Item { get; set; }
-    public int Quantity { get; set; }
-    public decimal Price { get; set; }
-    public decimal Discount { get; set; }
-    public decimal Amount => (Quantity * Price) - Discount;
 }
 
 public class BillReportModel

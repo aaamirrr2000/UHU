@@ -1,0 +1,258 @@
+﻿@page "/CartPage"
+@using System.Collections.ObjectModel
+@inject NavigationManager Nav
+@inject CartStateService CartState
+@inject IJSRuntime JS
+@layout MyMenuLayout
+
+<div class="container mt-4">
+<div class="d-flex flex-wrap align-items-center gap-4 mb-3">
+    <h2 class="cart-header mb-0">🛒 Cart</h2>
+    <h4 class="cart-header mb-0">@CartState.SelectedTable?.TableNumber</h4>
+    <h4 class="cart-header mb-0">🍽️ @CartState.ServiceType</h4>
+</div>
+
+<button class="btn btn-outline-primary rounded-pill px-4 py-2 shadow-sm" @onclick="GoBackToOrderPage">
+    <i class="fas fa-arrow-left me-2"></i> Back to Order
+</button>
+
+    @if (CartState.CartItems?.Any() == true)
+    {
+        @foreach (var item in CartState.CartItems)
+        {
+            <div class="cart-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4>@item.Name</h4>
+                    <button class="btn btn-outline-danger mt-2" @onclick="() => RemoveItem(item)">Remove</button>
+                </div>
+               <div class="d-flex flex-column mt-2">
+                    <!-- Row 1: Quantity -->
+                    <div class="input-group mb-2" style="width: 120px;">
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => DecreaseQty(item)">-</button>
+                        <input type="text" class="form-control text-center" value="@item.MaxQty" readonly />
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => IncreaseQty(item)">+</button>
+                    </div>
+
+                    <!-- Row 2: Size, Price, Person -->
+                    <div class="d-flex flex-wrap gap-3">
+                        <div><small>Size: @item.ServingSize</small></div>
+                        <div><small>Price: @item.RetailPrice.ToString("N2")</small></div>
+                        @if (item.Person > 0)
+                        {
+                            <div><small>Chair: @item.Person</small></div>
+                        }
+                    </div>
+                </div>
+
+                <input class="form-control mt-2" placeholder="Instructions" maxlength="255" @bind="item.Description" />
+            </div>
+        }
+    }
+    else
+    {
+        <p class="text-center text-muted">Cart is empty.</p>
+    }
+
+    <textarea class="form-control mt-3" placeholder="Note" rows="4" maxlength="255" @bind="CartState.BillNote"></textarea>
+
+    <div class="cart-footer">
+        <div class="summary-row">
+            <span>Sub Total:</span>
+            <span>@TotalAmount.ToString("N2")</span>
+        </div>
+
+        @{
+            double serviceAmount = 0;
+            if (Globals.ServiceCharge.ServiceChargeType == "PERCENTAGE")
+            {
+                serviceAmount = (Globals.ServiceCharge.ServiceCharge / 100) * TotalAmount;
+            }
+            else if (Globals.ServiceCharge.ServiceChargeType == "AMOUNT")
+            {
+                serviceAmount = Globals.ServiceCharge.ServiceCharge;
+            }
+
+            var taxableAmount = TotalAmount + serviceAmount;
+            var gstAmount = (Globals.GST / 100) * taxableAmount;
+            var grandTotal = taxableAmount + gstAmount;
+        }
+
+        @if (Globals.ServiceCharge.ServiceChargeType == "AMOUNT")
+        {
+            <div class="summary-row">
+                <span>Service Charges:</span>
+                <span>@serviceAmount.ToString("N2")</span>
+            </div>
+        }
+        else if (Globals.ServiceCharge.ServiceChargeType == "PERCENTAGE")
+        {
+            <div class="summary-row">
+                <span>Service Charges @Globals.ServiceCharge.ServiceCharge.ToString("N2")%:</span>
+                <span>@serviceAmount.ToString("N2")</span>
+            </div>
+        }
+
+        <div class="summary-row">
+            <span>GST @Globals.GST.ToString("N2")%:</span>
+            <span>@gstAmount.ToString("N2")</span>
+        </div>
+
+        <div class="summary-row grand-total">
+            <span>Grand Total:</span>
+            <span>@grandTotal.ToString("N2")</span>
+        </div>
+    </div>
+
+
+    <button class="btn btn-outline-primary mt-2" @onclick="PlaceOrder">Place Order</button>
+
+   
+</div>
+
+@code {
+    private double TotalAmount => CartState.CartItems?.Sum(i => i.RetailPrice * i.MaxQty) ?? 0;
+
+    private void RemoveItem(ItemsModel item)
+    {
+        CartState.CartItems.Remove(item);
+    }
+
+    private async Task PlaceOrder()
+    {
+        var tranDate = DateTime.Now;
+        var billDetails = CartState.CartItems.Select(item => new BillDetailModel
+        {
+            ItemId = item.Id,
+            StockCondition = "NEW",
+            Qty = item.MaxQty,
+            UnitPrice = item.RetailPrice,
+            TranDate = tranDate,
+            Description = item.Description,
+            Status = "PENDING",
+            ServingSize = item.ServingSize,
+            Person = item.Person
+        }).ToList();
+
+        var bill = new BillModel
+        {
+            OrganizationId = Globals.Organization.Id,
+            BillType = "BILL",
+            Source = "POS",
+            TableId = CartState.SelectedTable?.Id ?? 0,
+            SalesId = Globals.User.EmpId,
+            PartyId = 1,
+            TranDate = tranDate,
+            ServiceType = CartState.ServiceType,
+            CreatedBy = Globals.User.Id,
+            CreatedOn = tranDate,
+            CreatedFrom = Functions.GetComputerDetails(),
+            LocationId = Globals.User.LocationId,
+            Description = CartState.BillNote,
+            BillAmount = billDetails.Sum(d => d.Qty * Convert.ToDouble(d.UnitPrice))
+        };
+
+        var request = new Bill_And_Bill_Detail_Model
+        {
+            Bill = bill,
+            BillDetails = new ObservableCollection<BillDetailModel>(billDetails)
+        };
+
+        var result = await Functions.PostAsync<Bill_And_Bill_Detail_Model>("Bill/Insert", request, true);
+
+        if (!result.Success)
+        {
+            await Application.Current.MainPage.DisplayAlert("Save", "Record Not Saved.", "OK");
+        }
+        else
+        {
+            await Application.Current.MainPage.DisplayAlert("Save", "Record Saved Successfully.", "OK");
+            CartState.Clear();
+            Globals._cart.Clear();
+        }
+    }
+
+    private void IncreaseQty(ItemsModel item)
+    {
+        item.MaxQty++;
+        StateHasChanged(); // To update UI
+    }
+
+    private void DecreaseQty(ItemsModel item)
+    {
+        if (item.MaxQty > 1)
+        {
+            item.MaxQty--;
+            StateHasChanged(); // To update UI
+        }
+    }
+
+    private void GoBackToOrderPage()
+    {
+        var tableId = CartState.SelectedTable?.Id ?? 0;
+        var serviceType = CartState.ServiceType ?? "Dine-In";
+
+        Nav.NavigateTo($"/OrderPage?tableId={tableId}");
+    }
+}
+
+
+<style>
+    .cart-header {
+        text-align: center;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .cart-item {
+        background-color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin: 10px;
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+    }
+
+        .cart-item h4 {
+            margin: 0;
+            font-weight: bold;
+        }
+
+        .cart-item small {
+            color: #614D0A;
+        }
+
+   
+    .input-group {
+    max-width: 120px;
+}
+
+.input-group .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+.input-group input {
+    height: 32px;
+    padding: 0;
+}
+
+    .cart-footer {
+        font-size: 0.9rem;
+        max-width: 400px;
+        margin-left: auto;
+        padding: 10px;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 0;
+        border-bottom: 0px solid #e0e0e0;
+    }
+
+    .grand-total {
+        font-weight: bold;
+        font-size: 1rem;
+        border-top: 2px solid #333;
+        margin-top: 8px;
+        padding-top: 6px;
+    }
+</style>

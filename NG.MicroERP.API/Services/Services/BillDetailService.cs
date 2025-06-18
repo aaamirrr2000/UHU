@@ -8,7 +8,7 @@ public interface IBillDetailService
     Task<(bool, List<BillDetailModel>)>? Search(string Criteria = "");
     Task<(bool, BillDetailModel?)>? Get(int id);
     Task<(bool, string)> Delete(int id);
-    Task<(bool, string)> BillItemStatus(int BillDetailId, string Status);
+    Task<(bool, string)> BillItemStatus(int BillDetailId, string Status, int SoftDelete=0);
 }
 
 public class BillDetailService : IBillDetailService
@@ -26,6 +26,9 @@ public class BillDetailService : IBillDetailService
                           Parties.Name as PartyName,
                           Bill.LocationId,
                           Locations.Name as LocationName,
+                          Bill.TableId,
+                          RestaurantTables.TableNumber,
+                          RestaurantTables.TableLocation,
                           BillDetail.Id,
                           BillDetail.ItemId,
                           Items.Name as Item,
@@ -38,18 +41,21 @@ public class BillDetailService : IBillDetailService
                           Items.StockType,
                           BillDetail.Description,
                           BillDetail.ServingSize,
-                          BillDetail.Status,
-                          BillDetail.IsTakeAway
+                          Bill.Status as BillStatus,
+                          BillDetail.Status as BillDetailStatus,
+                          BillDetail.Person
                         FROM BillDetail
                         LEFT JOIN Items on Items.id=BillDetail.itemid
                         LEFT JOIN Bill on Bill.id=BillDetail.billid
                         LEFT JOIN Parties on Parties.id=Bill.PartyId
                         LEFT JOIN Locations on Locations.id=Bill.LocationId
+                        LEFT JOIN RestaurantTables on RestaurantTables.id=Bill.TableId
+                        WHERE BillDetail.IsSoftDeleted = 0
 
                     ";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
-            SQL += " where " + Criteria;
+            SQL += " and " + Criteria;
 
         SQL += " Order by BillDetail.Id Desc";
 
@@ -75,14 +81,15 @@ public class BillDetailService : IBillDetailService
         return await dapper.Delete("BillDetail", id);
     }
 
-    public async Task<(bool, string)> BillItemStatus(int BillDetailId, string Status)
+    public async Task<(bool, string)> BillItemStatus(int BillDetailId, string Status, int SoftDelete=0)
     {
         try
         {
             string SQLUpdate = $@"UPDATE BillDetail SET 
-					Status = '{Status!.ToUpper()}', 
-					TranDate = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}'
-				WHERE Id = {BillDetailId};";
+					                Status = '{Status!.ToUpper()}', 
+					                TranDate = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+                                    IsSoftDeleted = {SoftDelete}
+				                WHERE Id = {BillDetailId};";
 
             return await dapper.Update(SQLUpdate);
         }

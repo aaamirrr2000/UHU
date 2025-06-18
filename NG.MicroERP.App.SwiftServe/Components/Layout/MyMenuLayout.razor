@@ -1,0 +1,332 @@
+﻿@inherits LayoutComponentBase
+@inject CartStateService CartState
+@inject NavigationManager Nav
+@inject INavigationService NavigationService
+
+<div class="app-container">
+    <nav class="sidebar @(isCollapsed ? "collapsed" : "")">
+        <button class="sidebar-toggle btn btn-link p-0 me-3" @onclick="ToggleSidebar" style="border: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
+                 viewBox="0 0 24 24" stroke="White" stroke-width="2">
+                <line x1="4" y1="6" x2="20" y2="6" />
+                <line x1="4" y1="12" x2="20" y2="12" />
+                <line x1="4" y1="18" x2="20" y2="18" />
+            </svg>
+        </button>
+
+        <div class="sidebar-header" hidden="@isCollapsed">
+            <img src="@Globals.Organization.Logo" alt="Profile" class="profile-img" />
+            <div class="profile-info">
+                <div style="font-size: 16px; letter-spacing: 2px; font-weight: bold; text-transform: uppercase;">@Globals.Organization.Name</div>
+                <div class="employee-name">@Globals.User.FullName</div>
+                <div class="organization-name">@Globals.User.GroupName</div>
+            </div>
+        </div>
+
+        @foreach (var group in MenuGroups)
+        {
+            <div class="menu-group">
+                @if (!isCollapsed)
+                {
+                    <div class="menu-group-title">@group.GroupName</div>
+                }
+
+                @foreach (var item in group.Items)
+                {
+                    <div class="menu-item" @onclick="@(() => Navigate(item.Url))">
+                        <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            @((MarkupString)item.Icon)
+                        </svg>
+
+                        @if (!isCollapsed)
+                        {
+                            <span class="menu-label">@item.Text</span>
+                        }
+                    </div>
+                }
+
+                <div class="menu-separator"></div>
+            </div>
+        }
+    </nav>
+
+    <main class="main-content">
+        <div class="top-bar px-3 py-2 d-flex justify-content-between align-items-center">
+            <!-- Left: Hamburger menu -->
+@*             <button class="sidebar-toggle btn btn-link p-0 me-3" @onclick="ToggleSidebar" style="border: none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
+                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <line x1="4" y1="6" x2="20" y2="6" />
+                    <line x1="4" y1="12" x2="20" y2="12" />
+                    <line x1="4" y1="18" x2="20" y2="18" />
+                </svg>
+            </button> *@
+
+            <h1 style="letter-spacing: 2px;">
+                @Globals.PageTitle.ToUpper()
+            </h1>
+
+            <!-- Right: Table number and cart icon -->
+            <div class="d-flex align-items-center gap-4">
+                <h5 class="mb-0"><span class="fw-bold"><i class="fas fa-chair text-secondary me-2"></i> @Globals._selectedTable?.TableNumber</span></h5>
+
+                <div class="position-relative">
+                    <button class="sidebar-toggle btn btn-link p-0 me-3" @onclick="ViewCart" style="border: none;">
+                    <!-- SVG Cart Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                         class="bi bi-cart" viewBox="0 0 16 16">
+                        <path d="M0 1.5A.5.5 0 0 1 .5 1h1a.5.5 0 0 1 .485.379L2.89 5H14.5a.5.5 0 0 1 .49.598l-1.5 7A.5.5 0 0 1 13 13H4a.5.5 0 0 1-.49-.402L1.61 2H.5a.5.5 0 0 1-.5-.5zM3.14 6l1.25 5h8.223l1.25-5H3.14z" />
+                        <path d="M5.5 14a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm6 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
+                    </svg>
+
+                    @if (Globals._cart.Count > 0)
+                    {
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            @Globals._cart.Count
+                            <span class="visually-hidden">items in cart</span>
+                        </span>
+                    }
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="page-body">
+            @Body
+        </div>
+    </main>
+
+</div>
+
+@code {
+    private bool isCollapsed = true;
+    private void ToggleSidebar() => isCollapsed = !isCollapsed;
+
+    private void Navigate(string url)
+    {
+        isCollapsed = true;
+        if (url == "/logout")
+            Nav.NavigateTo("/loginPage", true);
+        else
+            Nav.NavigateTo(url);
+
+        Globals.PageTitle = url.Replace("/","").Replace("Page","");
+    }
+
+    private void ViewCart()
+    {
+        CartState.CartItems = new ObservableCollection<ItemsModel>(Globals._cart);
+        CartState.SelectedTable = Globals._selectedTable;
+        CartState.ServiceType = Globals._serviceType;
+        Nav.NavigateTo("/CartPage");
+    }
+
+
+    public class MenuItem
+    {
+        public string Text { get; set; }
+        public string Url { get; set; }
+        public string Icon { get; set; }
+        public Func<Task>? Action { get; set; } 
+    }
+
+    public class MenuGroup
+    {
+        public string GroupName { get; set; }
+        public List<MenuItem> Items { get; set; }
+    }
+
+    private List<MenuGroup> MenuGroups = new()
+    {
+        new MenuGroup
+        {
+            GroupName = "Main",
+            Items = new()
+            {
+                new MenuItem
+                {
+                    Text = "Orders",
+                    Url = "/OrdersPage",
+                    Icon = "<path d='M9 3h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1V4a1 1 0 0 1 1-1z' /><path d='M9 12h6M9 16h6M9 8h6' />"
+                },
+                new MenuItem
+                {
+                    Text = "Place Order",
+                    Url = "/TablesPage",
+                    Icon = "<path d='M20 21v-2a4 4 0 0 0-3-3.87' /><path d='M4 21v-2a4 4 0 0 1 3-3.87' /><circle cx='12' cy='7' r='4' />"
+                }
+            }
+        },
+        new MenuGroup
+        {
+            GroupName = "Settings",
+            Items = new()
+            {
+                new MenuItem
+                {
+                    Text = "Log Out",
+                    Url = "../MauiPage/LoginPage",
+                    Icon = "<path d='M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4' /><polyline points='16 17 21 12 16 7' /><line x1='21' y1='12' x2='9' y2='12' />"
+                }
+            }
+        }
+    };
+}
+
+<style>
+    .app-container {
+        display: flex;
+        height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #eef1f6;
+    }
+
+    .sidebar {
+        width: 240px;
+        background-color: #1e2b3a;
+        color: #ffffff;
+        display: flex;
+        flex-direction: column;
+        transition: width 0.3s ease-in-out;
+        box-shadow: 3px 0 6px rgba(0, 0, 0, 0.1);
+    }
+
+        .sidebar.collapsed {
+            width: 70px;
+        }
+
+    .sidebar-header {
+        text-align: center;
+        padding: 16px 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .profile-img {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .profile-info {
+        margin-top: 10px;
+    }
+
+    .employee-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: #ffffff;
+    }
+
+    .organization-name {
+        font-size: 12px;
+        color: #ccc;
+    }
+
+    .menu-group {
+        padding: 6px 10px;
+    }
+
+    .menu-group-title {
+        margin: 10px 0 6px 12px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #a0b2c8;
+        text-transform: uppercase;
+    }
+
+    .menu-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 14px;
+        margin: 2px 0;
+        border-radius: 6px;
+        cursor: pointer;
+        color: #e6ecf3;
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+        .menu-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
+    .menu-icon {
+        width: 22px;
+        height: 22px;
+        stroke: #ffffff;
+        flex-shrink: 0;
+    }
+
+    .menu-label {
+        margin-left: 12px;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    .sidebar.collapsed .menu-icon {
+        margin: 0 auto;
+    }
+
+    .menu-separator {
+        height: 1px;
+        background-color: rgba(255, 255, 255, 0.1);
+        margin: 10px 0;
+    }
+
+    .main-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background-color: #f5f8fb;
+    }
+
+    .top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 12px 20px;
+        border-bottom: 1px solid #e2e6ea;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        backdrop-filter: blur(10px);
+    }
+
+    .sidebar-toggle {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 6px;
+        display: flex;
+        align-items: center;
+        color: #495057;
+        transition: color 0.2s;
+    }
+
+        .sidebar-toggle:hover {
+            color: #000;
+        }
+
+    .page-body {
+        padding: 20px;
+        overflow-y: auto;
+        height: 100%;
+    }
+
+    .badge {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 8px;
+    }
+
+    h5 {
+        font-weight: 500;
+        color: #333;
+    }
+
+
+</style>

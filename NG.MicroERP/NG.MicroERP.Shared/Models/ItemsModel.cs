@@ -27,6 +27,7 @@ public class ItemsModel
     public int IsInventoryItem { get; set; } = 1;
     public int IsFavItem { get; set; } = 0;
     public int IsActive { get; set; } = 0;
+    public int Rating { get; set; } = 0;
     public int CreatedBy { get; set; } = 0;
     public DateTime CreatedOn { get; set; } = DateTime.Today;
     public string? CreatedFrom { get; set; } = string.Empty;
@@ -43,6 +44,8 @@ public class ItemsModel
     public List<ServingSizeModel> ServingSizes { get; set; } = new();
     public string CategoryCode { get; set; } = string.Empty;
     public string CategoryName { get; set; } = string.Empty;
+    public double Qty { get; set; } = 0;
+    public int Person { get; set; } = 0;
 }
 
 public class ServingSizeModel

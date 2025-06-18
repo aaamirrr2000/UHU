@@ -56,5 +56,7 @@ INSERT INTO TypeCode (ListName, ListValue, ParentId, SeqNo) VALUES
 ('SERVICE TYPE', 'PARCEL', 0, 1),
 ('BILL STATUS', 'PENDING', 0, 1),
 ('BILL STATUS', 'READY', 0, 1),
-('BILL STATUS', 'COMPLETE', 0, 1);
+('BILL STATUS', 'COMPLETE', 0, 1),
+('SERVICE CHARGES', '10%', 0, 1),
+('GST', '16%', 0, 1);
 

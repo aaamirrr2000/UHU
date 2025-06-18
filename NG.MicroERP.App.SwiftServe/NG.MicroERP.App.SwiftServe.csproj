@@ -1,0 +1,123 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <TargetFrameworks>net9.0-android;net9.0-ios;net9.0-maccatalyst</TargetFrameworks>
+        <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>
+        <!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
+        <!-- <TargetFrameworks>$(TargetFrameworks);net9.0-tizen</TargetFrameworks> -->
+
+        <!-- Note for MacCatalyst:
+            The default runtime is maccatalyst-x64, except in Release config, in which case the default is maccatalyst-x64;maccatalyst-arm64.
+            When specifying both architectures, use the plural <RuntimeIdentifiers> instead of the singular <RuntimeIdentifier>.
+            The Mac App Store will NOT accept apps with ONLY maccatalyst-arm64 indicated;
+            either BOTH runtimes must be indicated or ONLY macatalyst-x64. -->
+        <!-- For example: <RuntimeIdentifiers>maccatalyst-x64;maccatalyst-arm64</RuntimeIdentifiers> -->
+
+        <OutputType>Exe</OutputType>
+        <RootNamespace>NG.MicroERP.App.SwiftServe</RootNamespace>
+        <UseMaui>true</UseMaui>
+        <SingleProject>true</SingleProject>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <EnableDefaultCssItems>false</EnableDefaultCssItems>
+        <Nullable>enable</Nullable>
+
+        <!-- Display name -->
+        <ApplicationTitle>NG.MicroERP.App.SwiftServe</ApplicationTitle>
+
+        <!-- App Identifier -->
+        <ApplicationId>com.companyname.ng.microerp.app.swiftserve</ApplicationId>
+
+        <!-- Versions -->
+        <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+        <ApplicationVersion>1</ApplicationVersion>
+
+        <!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->
+        <WindowsPackageType>None</WindowsPackageType>
+
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
+        <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- App Icon -->
+        <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
+
+        <!-- Splash Screen -->
+        <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
+
+        <!-- Images -->
+        <MauiImage Include="Resources\Images\*" />
+
+        <!-- Custom Fonts -->
+        <MauiFont Include="Resources\Fonts\*" />
+
+        <!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
+        <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="Helper\PdfHelper.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <MauiFont Remove="Resources\Fonts\FiraSansExtraCondensed.ttf" />
+      <MauiFont Remove="Resources\Fonts\OpenSans-Semibold.ttf" />
+      <MauiFont Remove="Resources\Fonts\Orbitron.ttf" />
+      <MauiFont Remove="Resources\Fonts\RubikScribble.ttf" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <MauiImage Remove="Resources\Images\add.png" />
+        <MauiImage Remove="Resources\Images\cart.png" />
+        <MauiImage Remove="Resources\Images\customer.png" />
+        <MauiImage Remove="Resources\Images\delete.png" />
+        <MauiImage Remove="Resources\Images\details.png" />
+        <MauiImage Remove="Resources\Images\dotnet_bot.png" />
+        <MauiImage Remove="Resources\Images\dotnet_bot.svg" />
+        <MauiImage Remove="Resources\Images\food.png" />
+        <MauiImage Remove="Resources\Images\next.png" />
+        <MauiImage Remove="Resources\Images\ok.png" />
+        <MauiImage Remove="Resources\Images\password.png" />
+        <MauiImage Remove="Resources\Images\search.png" />
+        <MauiImage Remove="Resources\Images\settings.png" />
+        <MauiImage Remove="Resources\Images\table.png" />
+        <MauiImage Remove="Resources\Images\user.png" />
+        <MauiImage Remove="Resources\Images\view.png" />
+        <MauiImage Remove="Resources\Images\waiter.png" />
+        <MauiImage Remove="Resources\Images\waiter1.png" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.6" />
+        <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.3" />
+        <PackageReference Include="MudBlazor" Version="8.7.0" />
+	</ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\NG.MicroERP\NG.MicroERP.Shared\NG.MicroERP.Shared.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <MauiXaml Update="Components\MauiPage\LoginPage.xaml">
+        <Generator>MSBuild:Compile</Generator>
+      </MauiXaml>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Resources\Images\dotnet_bot.svg" BaseSize="168,208" />
+      <None Update="Resources\Images\waiter.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Helper\" />
+    </ItemGroup>
+
+</Project>

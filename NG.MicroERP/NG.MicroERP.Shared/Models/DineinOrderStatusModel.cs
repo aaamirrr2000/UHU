@@ -26,7 +26,7 @@ public class DineinOrderStatusModel
     public string? LocationName { get; set; } = string.Empty;
     public string? ItemsInstruction { get; set; } = string.Empty;
     public string? Status { get; set; } = string.Empty;
-    public int IsTakeAway { get; set; } = 0;
+    public int Person { get; set; } = 0;
     public string TakeAway { get; set; } = string.Empty;
     public DateTime TranDate { get; set; } = DateTime.Today;
     public int CreatedBy { get; set; } = 0;

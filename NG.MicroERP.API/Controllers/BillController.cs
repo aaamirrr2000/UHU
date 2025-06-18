@@ -1,8 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using NG.MicroERP.Shared.Models;
+
 using NG.MicroERP.API.Services;
+using NG.MicroERP.Shared.Models;
+
+using static MudBlazor.CategoryTypes;
 
 namespace NG.MicroERP.API.Controllers;
 
@@ -93,6 +96,26 @@ public class BillController : ControllerBase
     public async Task<IActionResult> SoftDelete(BillModel obj)
     {
         var result = await Srv.SoftDelete(obj)!;
+        if (result.Item1 == true)
+            return Ok(result.Item2);
+        else
+            return BadRequest(result.Item2);
+    }
+
+    [HttpPost("ClientComments")]
+    public async Task<IActionResult> ClientComments(Bill_And_Bill_Detail_Model obj)
+    {
+        var result = await Srv.ClientComments(obj)!;
+        if (result.Item1 == true)
+            return Ok(result.Item2);
+        else
+            return BadRequest(result.Item2);
+    }
+
+    [HttpPost("GenerateBill")]
+    public async Task<IActionResult> GenerateBill(BillModel obj)
+    {
+        var result = await Srv.GenerateBill(obj)!;
         if (result.Item1 == true)
             return Ok(result.Item2);
         else

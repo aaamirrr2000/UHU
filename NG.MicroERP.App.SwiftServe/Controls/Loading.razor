@@ -1,0 +1,92 @@
+﻿@if (IsLoading)
+{
+    <div class="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner-border text-light" role="status"></div>
+            <span class="loading-text">Loading... @ElapsedSeconds s</span>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _isLoading;
+    private int ElapsedSeconds = 0;
+    private System.Timers.Timer? Timer;
+
+    [Parameter]
+    public bool IsLoading
+    {
+        get => _isLoading;
+        set
+        {
+            if (_isLoading != value)
+            {
+                _isLoading = value;
+
+                if (_isLoading)
+                {
+                    StartTimer();
+                }
+                else
+                {
+                    StopTimer();
+                }
+
+                StateHasChanged(); // Force UI update when IsLoading changes
+            }
+        }
+    }
+
+    private void StartTimer()
+    {
+        ElapsedSeconds = 0; // Reset counter
+        Timer = new System.Timers.Timer(1000); // 1-second interval
+        Timer.Elapsed += (sender, e) =>
+        {
+            ElapsedSeconds++;
+            InvokeAsync(StateHasChanged); // Update UI
+        };
+        Timer.AutoReset = true;
+        Timer.Start();
+    }
+
+    private void StopTimer()
+    {
+        Timer?.Stop();
+        Timer?.Dispose();
+        Timer = null;
+        ElapsedSeconds = 0; // Reset counter
+    }
+}
+
+<style>
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5); /* Darker background */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1050;
+    }
+
+    .loading-content {
+        display: flex;
+        flex-direction: column; /* Stack spinner and text */
+        align-items: center;
+        gap: 10px; /* Adds spacing between spinner and text */
+    }
+
+    .loading-text {
+        font-size: 18px;
+        font-weight: bold;
+        color: white; /* Text is now white for visibility */
+    }
+
+    .main-content {
+        position: relative;
+    }
+</style>
