@@ -5,105 +5,175 @@
 @layout MyMenuLayout
 @inject NavigationManager Nav
 @inject Globals Globals
-@* @inject JSRuntime JS
-@inject HttpClient Http *@
+@implements IDisposable
+
+<div class="row g-2 align-items-end mb-3">
+    <!-- Date Input -->
+    <div class="col-4 col-md-4 col-sm-6">
+        <label class="form-label fw-semibold text-muted">Date</label>
+        <input type="date" class="form-control form-control-sm"
+               @bind="FromDate" @bind:event="oninput" />
+    </div>
+
+    <!-- Search Input -->
+    <div class="col-5 col-md-6 col-sm-6">
+        <label class="form-label fw-semibold text-muted">Search</label>
+        <input type="text" class="form-control form-control-sm"
+               placeholder="Search"
+               @bind="SearchQuery" @bind:event="oninput" />
+    </div>
+
+    <!-- Refresh Button -->
+    <div class="col-1 col-md-1">
+        <button class="btn btn-info" @onclick="LoadBills"> <i class="fas fa-search m-2"></i></button>
+    </div>
+</div>
+
 
 <div class="orders-container">
-    <div class="form-group">
-        <label>Date</label>
-        <input type="date" class="form-control" @bind="FromDate" @bind:event="oninput" />
-    </div>
 
-    <div class="form-group">
-        <label>Search</label>
-        <input type="text" class="form-control" placeholder="Search" @bind="SearchQuery" @bind:event="oninput" />
-    </div>
-
-    <div class="form-group">
-        <button class="btn btn-outline-info " @onclick="LoadBills">Refresh</button>
-    </div>
 
     @if (FilteredBills?.Any() == true)
     {
         @foreach (var bill in FilteredBills)
         {
-            <div class="bill-card p-3 border rounded shadow-sm mb-3 bg-white">
-                <div class="bill-row d-flex flex-wrap justify-content-between mb-2">
-                    <div class="bill-col"><strong>Table:</strong> @bill.TableName</div>
-                    <div class="bill-col"><strong>Bill:</strong> @bill.SeqNo</div>
-                    <div class="bill-col"><strong>Customer:</strong> @bill.PartyName</div>
-                    <div class="bill-col"><strong>Amount:</strong> @bill.BillAmount.ToString("#,##0.00")</div>
-                    <div class="bill-col"><strong>Status:</strong> @bill.Status</div>
-                </div>
+            <div class="bill-card p-3 border rounded shadow-sm mb-4 bg-white">
+                <div class="d-flex justify-content-between align-items-stretch">
+                    <!-- Left Column: Bill Info -->
+                    <div class="pe-3 flex-grow-1 d-flex flex-column justify-content-between">
+                      <div>
 
-                <div class="bill-actions d-flex flex-wrap gap-2">
-                    <!-- View Button -->
-                    <button class="btn w-100 px-3 py-3 text-center service-button"
-                            style="background-color: #17a2b8; color: white;"
-                            @onclick="() => EditBill(bill)">
-                        <div class="mb-1">
-                            <i class="fas fa-eye fa-2x"></i>
-                        </div>
-                        <div class="fw-semibold small">View</div>
-                    </button>
-
-                    @if (bill.IsDeleteVisible)
-                    {
-                        <!-- Delete Button -->
-                        <button class="btn w-100 px-3 py-3 text-center service-button"
-                                style="background-color: #dc3545; color: white;"
-                                @onclick="() => DeleteBill(bill)">
-                            <div class="mb-1">
-                                <i class="fas fa-trash fa-2x"></i>
+                            <div class="pb-2 mb-2 border-bottom text-muted small d-flex align-items-center" style="font-size: 16px;">
+                                <i class="fas fa-chair text-primary me-2"></i>
+                                <strong class="text-dark me-1">Table:</strong> @bill.TableName
+                                <div class="pb-2 ml-5 d-flex align-items-center" style="font-size: 16px;">
+                                    @* <i class="fas fa-flag text-warning me-2"></i> *@
+                                    @if (bill.Status == "COMPLETE")
+                                    {
+                                        <span class="badge rounded-pill bg-success px-3 py-1">Completed</span>
+                                    }
+                                    else if (bill.Status == "CANCEL")
+                                    {
+                                        <span class="badge rounded-pill bg-danger px-3 py-1">Cancelled</span>
+                                    }
+                                    else if (bill.Status == "READY")
+                                    {
+                                        <span class="badge rounded-pill bg-info px-3 py-1">Ready</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge rounded-pill bg-warning text-dark px-3 py-1">Pending</span>
+                                    }
+                                </div>
                             </div>
-                            <div class="fw-semibold small">Delete</div>
+
+                            <div class="pb-2 mb-2 border-bottom text-muted small d-flex align-items-center" style="font-size: 16px;">
+                                <i class="fas fa-utensils text-primary me-2"></i>
+                                <strong class="text-dark me-1">Service:</strong> @bill.ServiceType
+                            </div>
+
+
+                            <div class="pb-2 mb-2 border-bottom text-muted small d-flex align-items-center" style="font-size: 16px;">
+                                <i class="fas fa-file-invoice text-info me-2"></i>
+                                <strong class="text-dark me-1">Bill:</strong> @bill.SeqNo
+                            </div>
+
+                            @if(@bill.PartyName != string.Empty)
+                            {
+                                <div class="pb-2 mb-2 border-bottom text-muted small d-flex align-items-center" style="font-size: 16px;">
+                                    <i class="fas fa-user text-secondary me-2"></i>
+                                    <strong class="text-dark me-1">Customer:</strong> @bill.PartyName
+                                </div>
+                            }
+
+                            <div class="pb-2 mb-2 border-bottom text-muted small d-flex align-items-center" style="font-size: 16px;">
+                                <i class="fas fa-dollar-sign text-success me-2"></i>
+                                <strong class="text-dark me-1">Amount:</strong> @bill.BillAmount.ToString("#,##0.00")
+                            </div>
+
+                            @if (bill.Status != "COMPLETE")
+                            {
+                                <div class="pb-2 mb-2 border-bottom text-muted small d-flex align-items-center" style="font-size: 16px;">
+                                    <i class="far fa-clock text-primary me-2"></i>
+                                    <strong class="me-1" style="color: red;">Waiting Time: @bill.ElapsedTime</strong> 
+                                </div>
+                            }
+                            <div class="pb-2 mb-2 border-bottom text-muted small d-flex align-items-center" style="font-size: 16px;">
+                                <i class="fas fa-user text-primary me-2"></i>
+                                <strong class="text-dark me-1">Nico:</strong> @Globals.User.FullName
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <!-- Common Button Style: Icon on Top, Label Below -->
+                    <div class="d-flex flex-column align-items-center gap-2">
+
+                        <!-- View Button -->
+                        <button class="btn btn-info btn-sm" @onclick="@(() => EditBill(bill))">
+                            <i class="fas fa-eye fa-sm me-1"></i> View
                         </button>
-                    }
 
-                    <!-- Generate Bill Button -->
-                    <button class="btn w-100 px-3 py-3 text-center service-button"
-                            style="background-color: #ffc107; color: #212529;"
-                            @onclick="() => OnGenerateBill(bill)">
-                        <div class="mb-1">
-                            <i class="fas fa-file-invoice fa-2x"></i>
-                        </div>
-                        <div class="fw-semibold small">@((bill.Status != "COMPLETE") ? "Gen. Bill" : "Bill")</div>
-                    </button>
+                        @if (Globals.User.UserType == "WAITER")
+                        {
+                            @if (bill.Status != "COMPLETE" && bill.Status != "READY")
+                            {
+                                <!-- Delete Button -->
+                                <button class="btn btn-danger btn-sm" @onclick="@(() => DeleteBill(bill))">
+                                    <i class="fas fa-trash fa-sm me-1"></i> Delete
+                                </button>
+                            }
 
-                    <!-- Comments Button -->
-                    <button class="btn w-100 px-3 py-3 text-center service-button"
-                            style="background-color: #28a745; color: white;"
-                            @onclick="() => ClientComments(bill)">
-                        <div class="mb-1">
-                            <i class="fas fa-comment-dots fa-2x"></i>
-                        </div>
-                        <div class="fw-semibold small">Notes</div>
-                    </button>
+                            <!-- Generate Bill Button -->
+                            <button class="btn btn-success btn-sm" @onclick="@(() => DeleteBill(bill))">
+                                <i class="fas fa-file-invoice fa-sm me-1"></i> @(bill.Status != "COMPLETE" ? "Gen. Bill" : "Bill")
+                            </button>
+
+                            <!-- Notes Button -->
+                            <button class="btn btn-primary btn-sm" @onclick="@(() => ClientComments(bill))">
+                                <i class="fas fa-comment-dots fa-sm me-1"></i> Notes
+                            </button>
+
+                        }
+                        else if (Globals.User.UserType == "KITCHEN")
+                        {
+                            @if (bill.Status != "READY")
+                            {
+                                <!-- Ready Button -->
+                                <button class="btn btn-info btn-sm" @onclick="@(() => OrderStatusUpdate(bill, "READY"))">
+                                    <i class="fas fa-check-circle me-1"></i> Ready
+                                </button>
+                            }
+                        }
+                    </div>
+
                 </div>
-
-
             </div>
+
         }
     }
     else
     {
-        <p>No bills found.</p>
+        <p class="text-muted fst-italic">No bills found.</p>
     }
-</div>
 
+</div>
 
 @code {
     private DateTime FromDate = DateTime.Today;
     private string SearchQuery = string.Empty;
+    private string status = "READY";
 
     private List<BillModel> AllBills = new();
     private List<BillModel> FilteredBills = new();
+    private System.Timers.Timer? _refreshTimer;
 
     protected override async Task OnInitializedAsync()
     {
         Globals.PageTitle = "Orders";
-        StateHasChanged();
         await LoadBills();
+        StartTimer();
     }
 
     private async Task LoadBills()
@@ -118,8 +188,7 @@
 
             foreach (var item in AllBills)
             {
-                item.IsDeleteVisible = item.TranDate.Date == DateTime.Today && item.Status != "COMPLETE";
-                item.IsStatusVisible = item.Status != "COMPLETE";
+                item.ElapsedTime = GetElapsedTime(item.CreatedOn);
             }
 
             ApplySearch();
@@ -161,20 +230,41 @@
         }
     }
 
-    // private async Task MarkComplete(BillModel bill)
-    // {
-    //     var res = await Functions.PostAsync<List<BillModel>>($"Bill/StatusUpdate/COMPLETE", bill, true);
-    //     if (res.Success)
-    //     {
-    //         await App.Current.MainPage.DisplayAlert("Status Update", "Order marked as complete.", "OK");
-    //     }
-    //     else
-    //     {
-    //         await App.Current.MainPage.DisplayAlert("Error", $"Could not update status of Bill {bill.SeqNo}", "OK");
-    //     }
+    string GetElapsedTime(DateTime? created)
+    {
+        if (created == null) return "N/A";
 
-    //     await LoadBills();
-    // }
+        var span = DateTime.UtcNow - created.Value;
+
+        return $"{(int)span.TotalHours:00}:{span.Minutes:00}:{span.Seconds:00}";
+    }
+
+    private void StartTimer()
+    {
+        _refreshTimer = new System.Timers.Timer(1000); // 1 second
+        _refreshTimer.Elapsed += RefreshElapsedTime;
+        _refreshTimer.AutoReset = true;
+        _refreshTimer.Start();
+    }
+
+    private async void RefreshElapsedTime(object sender, System.Timers.ElapsedEventArgs e)
+    {
+        await InvokeAsync(() =>
+        {
+            foreach (var item in AllBills)
+            {
+                item.ElapsedTime = GetElapsedTime(item.CreatedOn);
+            }
+
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        _refreshTimer?.Stop();
+        _refreshTimer?.Dispose();
+    }
 
     private async Task ClientComments(BillModel bill)
     {
@@ -191,28 +281,20 @@
         Nav.NavigateTo($"/GenerateBillPage/{bill.Id}");
     }
 
-
-    public async Task DownloadPdfAsync()
+     private async void OrderStatusUpdate(BillModel item, string Status)
     {
-        // var html = "<h1>Hello PDF</h1><p>This is a test.</p>";
+        bool confirm = await App.Current.MainPage.DisplayAlert("Status", $"Update Bill Status ID: {item.SeqNo}?", "Yes", "No");
+        if (!confirm)
+            return;
 
-        // var requestPayload = new { Html = html };
-        // var json = JsonSerializer.Serialize(requestPayload);
-        // var content = new StringContent(json, Encoding.UTF8, "application/json");
+        var res = await Functions.PostAsync<BillModel>($"Bill/BillStatus/{item.Id}/{Status}/0", null, true);
+        if (res.Success)
+           await Application.Current.MainPage.DisplayAlert("✅ Done", $"The item status is now set to {Status}.", "Great!");
+        else
+            await Application.Current.MainPage.DisplayAlert("❌ Status Update Failed", $"Unable to mark the item as {Status}. Please try again.", "OK");
 
-        // var response = await Http.PostAsync("https://localhost:7019/api/GeneratePDF", content);
-
-        // if (response.IsSuccessStatusCode)
-        // {
-        //     var pdfBytes = await response.Content.ReadAsByteArrayAsync();
-        //     var base64 = Convert.ToBase64String(pdfBytes);
-        //     var url = $"data:application/pdf;base64,{base64}";
-        //     await JS.InvokeVoidAsync("open", url, "_blank");
-        // }
-        // else
-        // {
-        //     Console.WriteLine("PDF generation failed.");
-        // }
+        await LoadBills();
+        StateHasChanged();
     }
 }
 
@@ -322,6 +404,25 @@
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
+    }
+
+    .service-button {
+        border-radius: 0.5rem;
+        transition: transform 0.2s;
+    }
+
+        .service-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+
+    .form-label {
+        font-size: 0.9rem;
+    }
+
+    input.form-control-sm {
+        border-radius: 0.375rem;
+        font-size: 0.9rem;
     }
 
 </style>

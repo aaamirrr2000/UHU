@@ -1,6 +1,6 @@
 ﻿@page "/OrderPage"
 @using System.Collections.ObjectModel
-@inject NavigationManager NavManager
+@inject NavigationManager Nav
 @inject CartStateService CartState
 @layout MyMenuLayout
 @using Microsoft.AspNetCore.WebUtilities
@@ -10,21 +10,16 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap px-2">
     <div class="d-flex align-items-center gap-3">
-        <h5 class="mb-0">🪑  <span class="fw-bold">@(Globals._selectedTable?.TableNumber)</span></h5>
+        <button class="btn btn-outline-primary rounded-pill px-3 py-2"
+                @onclick="GoBack"
+                title="Back to Order">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        @if (Globals._selectedTable is not null)
+        {
+            <h5 class="mb-0">🪑  <span class="fw-bold">@(Globals._selectedTable?.TableNumber)</span></h5>
+        }
         <h5 class="mb-0">🍽️ <span class="fw-bold text-primary">@Globals._serviceType</span></h5>
-    </div>
-
-    <div>
-       @*  <button class="btn btn-outline-dark position-relative" @onclick="ViewCart">
-            <i class="fas fa-shopping-cart fa-lg"></i>
-            @if (Globals._cart.Count > 0)
-            {
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                    @Globals._cart.Count
-                    <span class="visually-hidden">items in cart</span>
-                </span>
-            }
-        </button> *@
     </div>
 </div>
 
@@ -89,12 +84,12 @@ else
                     </div>
 
                     <!-- Chair Selector -->
-                    @if (Globals._selectedTable?.Capacity > 0)
+                        @if (Globals._selectedTable?.Capacity > 0)
                     {
                         <div class="mb-3">
                             <label class="fw-semibold d-block mb-1">Person:</label>
                             <div class="d-flex flex-wrap gap-2">
-                                @for (int i = 1; i <= Globals._selectedTable.Capacity; i++)
+                                    @for (int i = 1; i <= Globals._selectedTable.Capacity; i++)
                                 {
                                     var chairNumber = i; // LOCAL COPY FIX
                                     <button class="btn @(chairNumber == item.Person ? "btn-dark" : "btn-outline-dark") rounded-circle"
@@ -123,9 +118,8 @@ else
 }
 
 @code {
-    [Parameter]
-    public RestaurantTablesModel? Table { get; set; }
-    
+    [Parameter] public RestaurantTablesModel? Table { get; set; }
+    [CascadingParameter] private List<ItemsModel> _cart  { get; set; } 
     private string _serviceType = "";
     private List<CategoriesModel> _categories = new();
     private List<ItemsModel> _menuItems = new();
@@ -140,15 +134,16 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        //Globals.PageTitle = "Place Order";
-        //StateHasChanged();
-        var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
         var queryParams = QueryHelpers.ParseQuery(uri.Query);
 
         if (queryParams.TryGetValue("tableId", out var tableIdStr) && int.TryParse(tableIdStr, out var tableId))
         {
-            
-            Globals._selectedTable  =await Functions.GetAsync<RestaurantTablesModel>($"RestaurantTables/Get?id={tableId}", true);
+            Globals._selectedTable = await Functions.GetAsync<RestaurantTablesModel>($"RestaurantTables/Get?id={tableId}", true);
+        }
+        else
+        {
+            Console.WriteLine("tableId not found in query.");
         }
 
         await LoadCategories();
@@ -245,8 +240,13 @@ else
             ServingSize = item.ServingSize,
             Person = item.Person
         };
-        Globals._cart.Add(newItem);
+        _cart.Add(newItem);
         await Task.Delay(0);
+    }
+
+     private void GoBack()
+    {
+        Nav.NavigateTo($"/TablesPage");
     }
 
 }

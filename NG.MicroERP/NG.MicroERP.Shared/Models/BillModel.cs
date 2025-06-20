@@ -51,8 +51,9 @@ public class BillModel
     public string UserName { get; set; } = string.Empty;
     public string Fullname { get; set; } = string.Empty;
     public string TableName { get; set; } = string.Empty;
-    public bool IsDeleteVisible { get; set; } = false;
-    public bool IsStatusVisible { get; set; } = false;
+    //public bool IsDeleteVisible { get; set; } = false;
+    //public bool IsStatusVisible { get; set; } = false;
+    public string ElapsedTime { get; set; } = "";
 }
 
 public class BillDetailModel

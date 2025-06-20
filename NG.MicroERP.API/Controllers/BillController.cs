@@ -68,15 +68,15 @@ public class BillController : ControllerBase
             return BadRequest(result.Item2);
     }
 
-    [HttpPost("StatusUpdate/{Status}")]
-    public async Task<IActionResult> StatusUpdate(BillModel bill, string Status)
-    {
-        var result = await Srv.PutStatus(bill, Status)!;
-        if (result.Item1 == true)
-            return Ok(result.Item2);
-        else
-            return BadRequest(result.Item2);
-    }
+    //[HttpPost("StatusUpdate/{Status}")]
+    //public async Task<IActionResult> StatusUpdate(BillModel bill, string Status)
+    //{
+    //    var result = await Srv.PutStatus(bill, Status)!;
+    //    if (result.Item1 == true)
+    //        return Ok(result.Item2);
+    //    else
+    //        return BadRequest(result.Item2);
+    //}
 
     [HttpPost("Delete")]
     public async Task<IActionResult> Delete(int id)
@@ -116,6 +116,16 @@ public class BillController : ControllerBase
     public async Task<IActionResult> GenerateBill(BillModel obj)
     {
         var result = await Srv.GenerateBill(obj)!;
+        if (result.Item1 == true)
+            return Ok(result.Item2);
+        else
+            return BadRequest(result.Item2);
+    }
+
+    [HttpPost("BillStatus/{Id}/{Status}/{SoftDelete?}")]
+    public async Task<IActionResult> BillStatus(int Id, string Status, int SoftDelete = 0)
+    {
+        var result = await Srv.BillStatus(Id, Status, SoftDelete)!;
         if (result.Item1 == true)
             return Ok(result.Item2);
         else

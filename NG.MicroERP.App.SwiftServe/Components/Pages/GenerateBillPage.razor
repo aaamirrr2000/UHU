@@ -77,6 +77,7 @@
 
 @code {
     [Parameter] public int id { get; set; }
+    [CascadingParameter] private List<ItemsModel> _cart { get; set; }
 
     private Bill_And_Bill_Detail_Model Bills = new();
     private ObservableCollection<BillDetailModel> BillDetails = new();
@@ -176,12 +177,12 @@
 
         if (!result.Success)
         {
-            await Application.Current.MainPage.DisplayAlert("Save", "Cannot Generate Bill.", "OK");
+            await Application.Current.MainPage.DisplayAlert("⚠️ Billing Error", "Unable to generate the bill. Please check the order details and try again.", "OK");
         }
         else
         {
-            await Application.Current.MainPage.DisplayAlert("Save", "Bill Generated Successfully.", "OK");
-            Globals._cart.Clear();
+            await Application.Current.MainPage.DisplayAlert("✅ Done", "Bill generated and ready to go!", "Great");
+            _cart.Clear();
         }
     }
 

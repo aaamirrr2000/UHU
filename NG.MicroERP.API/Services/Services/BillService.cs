@@ -23,6 +23,7 @@ public interface IBillService
 	Task<(bool, List<BillReportModel>)>? GetBillReport(int id);
 	Task<(bool, string)> ClientComments(Bill_And_Bill_Detail_Model obj);
     Task<(bool, string)> GenerateBill(BillModel obj);
+    Task<(bool, string)> BillStatus(int BillId, string Status, int SoftDelete = 0);
 }
 
 
@@ -52,6 +53,7 @@ public class BillService : IBillService
                         bill.partyemail,
                         bill.partyaddress,
                         bill.trandate,
+                        bill.ServiceType,
                         bill.ServiceCharge,
                         bill.DiscountAmount,
                         bill.taxamount,
@@ -423,6 +425,23 @@ public class BillService : IBillService
         catch (Exception ex)
         {
             return (false, ex.Message);
+        }
+    }
+
+    public async Task<(bool, string)> BillStatus(int BillId, string Status, int SoftDelete = 0)
+    {
+        try
+        {
+            string SQLUpdate = $@"UPDATE Bill SET 
+					                Status = '{Status!.ToUpper()}',
+                                    IsSoftDeleted = {SoftDelete}
+				                WHERE Id = {BillId};";
+
+            return await dapper.Update(SQLUpdate);
+        }
+        catch (Exception ex)
+        {
+            return (true, ex.Message);
         }
     }
 }

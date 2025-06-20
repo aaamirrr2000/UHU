@@ -1,10 +1,20 @@
 ﻿@page "/ClientFeedbackPage/{id:int}"
 @using System.ComponentModel.DataAnnotations
 @layout MyMenuLayout
+@inject NavigationManager Nav
 
 <EditForm Model="@feedback">
     <div class="p-3">
-        <h4 class="text-primary mb-3">Client Feedback</h4>
+        <div class="d-flex align-items-center justify-content-start gap-3 mb-3">
+            <button class="btn btn-outline-primary rounded-pill px-3 py-2 shadow-sm"
+                    @onclick="GoBack"
+                    title="Back to Order">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+
+            <h4 class="text-primary mb-0 fw-semibold">Feedback</h4>
+        </div>
+
 
         <div class="form-group mb-2">
             <label>Name</label>
@@ -77,7 +87,7 @@
 
 @code {
     [Parameter] public int id { get; set; }
-
+   
     private FeedbackModel feedback = new();
     private List<BillDetailModel> BillDetail = new();
 
@@ -99,7 +109,7 @@
             }
             else
             {
-                await Application.Current.MainPage.DisplayAlert("Error", "Failed to load bill details.", "OK");
+                await Application.Current.MainPage.DisplayAlert("❌ Something went wrong", "We weren’t able to load the bill details. You can try again shortly.", "OK");
             }
         }
     }
@@ -135,9 +145,15 @@
         var result = await Functions.PostAsync<Bill_And_Bill_Detail_Model>("Bill/ClientComments", MyBill, true);
 
         if (!result.Success)
-            await Application.Current.MainPage.DisplayAlert("Save", "Record Not Saved.", "OK");
+            await Application.Current.MainPage.DisplayAlert("⚠️ Save Failed", "Unable to save your changes. Please try again.", "OK");
         else
-            await Application.Current.MainPage.DisplayAlert("Save", "Record Saved Successfully.", "OK");
+            await Application.Current.MainPage.DisplayAlert("✅ All Set", "Your changes have been saved.", "Great!");
+    }
+
+    private void GoBack()
+    {
+        //Nav.NavigateTo($"/OrderPage?tableId={Globals._selectedTable}");
+        Nav.NavigateTo($"/OrdersPage");
     }
 
     public class FeedbackModel

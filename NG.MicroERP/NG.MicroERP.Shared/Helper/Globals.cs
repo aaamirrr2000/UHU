@@ -22,7 +22,7 @@ public class Globals
     public static bool _tabsInitialized = false;
     public static bool _isDarkMode;
 
-    public static List<ItemsModel> _cart { get; set; } = new();
+    //public static List<ItemsModel> _cart { get; set; } = new();
     public static RestaurantTablesModel? _selectedTable { get; set; } = new();
     public static string _serviceType { get; set; } = string.Empty;
     public static ServiceChargeModel? ServiceCharge { get; set; } = new();

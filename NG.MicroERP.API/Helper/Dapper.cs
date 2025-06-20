@@ -27,7 +27,7 @@ public class DapperFunctions
 
             using IDbConnection connection = new SqlConnection(DBConnection);
             IEnumerable<T> result = await connection.QueryAsync<T>(SQL, new DynamicParameters());
-            Log.Information("Command Executed: " + SQL);
+            //Log.Information("Command Executed: " + SQL);
             return result.FirstOrDefault();
         }
         catch (Exception ex)
@@ -45,7 +45,7 @@ public class DapperFunctions
         {
             using IDbConnection cnn = new SqlConnection(DBConnection);
             IEnumerable<T> result = await cnn.QueryAsync<T>(SQL, new DynamicParameters());
-            Log.Information("Command Executed: " + SQL);
+            //Log.Information("Command Executed: " + SQL);
             return result.ToList();
         }
         catch (Exception ex)
@@ -62,7 +62,7 @@ public class DapperFunctions
         {
             using IDbConnection cnn = new SqlConnection(DBConnection);
             _ = await cnn.ExecuteAsync(SQL);
-            Log.Information("Command Executed: " + SQL);
+            //Log.Information("Command Executed: " + SQL);
             return (true, "OK");
         }
         catch (Exception ex)
@@ -87,7 +87,7 @@ public class DapperFunctions
             using IDbConnection cnn = new SqlConnection(DBConnection);
             string sql = SQLInsert + "SELECT CAST(SCOPE_IDENTITY() as int)";
             int insertedId = await cnn.ExecuteScalarAsync<int>(sql);
-            Log.Information("Command Executed: " + SQLInsert);
+            //Log.Information("Command Executed: " + SQLInsert);
             return (true, insertedId, null);
         }
         catch (Exception ex)
@@ -111,7 +111,7 @@ public class DapperFunctions
 
             using IDbConnection cnn = new SqlConnection(DBConnection);
             int affectedRows = await cnn.ExecuteAsync(SQLUpdate);
-            //Log.Information("Command Executed: " + SQLUpdate);
+            ////Log.Information("Command Executed: " + SQLUpdate);
             return affectedRows > 0 ? (true, null) : (false, "Record Not Saved.");
         }
         catch (Exception ex)
@@ -128,7 +128,7 @@ public class DapperFunctions
             using IDbConnection cnn = new SqlConnection(DBConnection);
             string SQLDelete = $"DELETE FROM {Table} WHERE Id = {id}";
             int affectedRows = await cnn.ExecuteAsync(SQLDelete);
-            Log.Information("Command Executed: " + SQLDelete);
+            //Log.Information("Command Executed: " + SQLDelete);
             return affectedRows == 0 ? (false, "Record already in Use.") : (true, "OK");
         }
         catch (Exception ex)

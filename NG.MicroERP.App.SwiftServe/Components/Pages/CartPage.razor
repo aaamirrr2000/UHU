@@ -6,15 +6,33 @@
 @layout MyMenuLayout
 
 <div class="container mt-4">
-<div class="d-flex flex-wrap align-items-center gap-4 mb-3">
-    <h2 class="cart-header mb-0">🛒 Cart</h2>
-    <h4 class="cart-header mb-0">@CartState.SelectedTable?.TableNumber</h4>
-    <h4 class="cart-header mb-0">🍽️ @CartState.ServiceType</h4>
-</div>
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 mb-3 rounded shadow-sm"
+         style="background-color: #f8f9fa; border: 1px solid #e0e0e0;">
 
-<button class="btn btn-outline-primary rounded-pill px-4 py-2 shadow-sm" @onclick="GoBackToOrderPage">
-    <i class="fas fa-arrow-left me-2"></i> Back to Order
-</button>
+        <div class="d-flex align-items-center justify-content-start gap-4 flex-nowrap mb-3 p-2 rounded"
+             style="background-color: #f8f9fa; border: 0px solid #dee2e6;">
+
+            <button class="btn btn-outline-primary rounded-pill px-3 py-2"
+                    @onclick="GoBackToOrderPage"
+                    title="Back to Order">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+
+            <h5 class="mb-0 text-dark d-flex align-items-center">
+                <i class="fas fa-shopping-cart text-primary me-2"></i> Cart
+            </h5>
+
+            <h6 class="mb-0 text-secondary d-flex align-items-center">
+                <i class="fas fa-chair me-2"></i> @CartState.SelectedTable?.TableNumber
+            </h6>
+
+            <h6 class="mb-0 text-secondary d-flex align-items-center">
+                <i class="fas fa-concierge-bell me-2"></i> @CartState.ServiceType
+            </h6>
+        </div>
+
+    </div>
+
 
     @if (CartState.CartItems?.Any() == true)
     {
@@ -23,7 +41,7 @@
             <div class="cart-item">
                 <div class="d-flex justify-content-between align-items-center">
                     <h4>@item.Name</h4>
-                    <button class="btn btn-outline-danger mt-2" @onclick="() => RemoveItem(item)">Remove</button>
+                    <button class="btn btn-danger mt-2" @onclick="() => RemoveItem(item)">Remove</button>
                 </div>
                <div class="d-flex flex-column mt-2">
                     <!-- Row 1: Quantity -->
@@ -55,7 +73,7 @@
 
     <textarea class="form-control mt-3" placeholder="Note" rows="4" maxlength="255" @bind="CartState.BillNote"></textarea>
 
-    <div class="cart-footer">
+    <div class="cart-footer mt-3">
         <div class="summary-row">
             <span>Sub Total:</span>
             <span>@TotalAmount.ToString("N2")</span>
@@ -103,14 +121,47 @@
         </div>
     </div>
 
+    @if (Globals._serviceType.ToUpper() == "PARCEL")
+    {
+        <div class="cart-item mt-4 p-4 rounded shadow-sm" style="background-color: #ffffff; border: 1px solid #e3e3e3;">
+            <h5 class="text-primary fw-semibold mb-4">
+                <i class="fas fa-box-open me-2"></i> Parcel Delivery Details
+            </h5>
 
-    <button class="btn btn-outline-primary mt-2" @onclick="PlaceOrder">Place Order</button>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-muted">Name</label>
+                    <InputText class="form-control form-control-sm" @bind-Value="party.PartyName" />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-muted">Phone</label>
+                    <InputText class="form-control form-control-sm" @bind-Value="party.PartyPhone" />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-muted">Email</label>
+                    <InputText class="form-control form-control-sm" @bind-Value="party.PartyEmail" />
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fw-semibold text-muted">Address</label>
+                    <InputText class="form-control form-control-sm" @bind-Value="party.PartyAddress" />
+                </div>
+            </div>
+        </div>
+    }
+
+
+    <button class="btn btn-primary mt-2" @onclick="PlaceOrder">Place Order</button>
 
    
 </div>
 
 @code {
     private double TotalAmount => CartState.CartItems?.Sum(i => i.RetailPrice * i.MaxQty) ?? 0;
+    public BillModel party { get; set; } = new();
+    [CascadingParameter] private List<ItemsModel> _cart { get; set; }
 
     private void RemoveItem(ItemsModel item)
     {
@@ -127,7 +178,7 @@
             Qty = item.MaxQty,
             UnitPrice = item.RetailPrice,
             TranDate = tranDate,
-            Description = item.Description,
+            Description = item.Description!,
             Status = "PENDING",
             ServingSize = item.ServingSize,
             Person = item.Person
@@ -141,6 +192,10 @@
             TableId = CartState.SelectedTable?.Id ?? 0,
             SalesId = Globals.User.EmpId,
             PartyId = 1,
+            PartyName = party.PartyName ?? "",
+            PartyPhone = party.PartyPhone ?? "",
+            PartyEmail = party.PartyEmail ?? "",
+            PartyAddress = party.PartyAddress ?? "",
             TranDate = tranDate,
             ServiceType = CartState.ServiceType,
             CreatedBy = Globals.User.Id,
@@ -161,13 +216,14 @@
 
         if (!result.Success)
         {
-            await Application.Current.MainPage.DisplayAlert("Save", "Record Not Saved.", "OK");
+            await Application.Current.MainPage.DisplayAlert("❌ Save Failed", "Record not saved.", "OK");
         }
         else
         {
-            await Application.Current.MainPage.DisplayAlert("Save", "Record Saved Successfully.", "OK");
+            await Application.Current.MainPage.DisplayAlert("✅ Save", "Record saved successfully.", "OK");
             CartState.Clear();
-            Globals._cart.Clear();
+            _cart.Clear();
+            Nav.NavigateTo($"/OrdersPage");
         }
     }
 
@@ -198,61 +254,81 @@
 
 <style>
     .cart-header {
-        text-align: center;
+        font-weight: 600;
+        font-size: 1.2rem;
         color: #333;
-        margin-bottom: 10px;
+        margin-bottom: 0;
     }
 
     .cart-item {
-        background-color: white;
-        border-radius: 15px;
-        padding: 20px;
-        margin: 10px;
-        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+        background-color: #fff;
+        border-radius: 0.5rem;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        transition: box-shadow 0.2s ease;
     }
 
+        .cart-item:hover {
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+        }
+
         .cart-item h4 {
-            margin: 0;
+            margin: 0 0 0.5rem 0;
             font-weight: bold;
+            font-size: 1rem;
+            color: #222;
         }
 
         .cart-item small {
             color: #614D0A;
+            font-size: 0.875rem;
         }
 
-   
     .input-group {
-    max-width: 120px;
-}
+        max-width: 120px;
+        margin-top: 0.5rem;
+    }
 
-.input-group .btn {
-    padding: 0.25rem 0.5rem;
-}
+        .input-group .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.85rem;
+        }
 
-.input-group input {
-    height: 32px;
-    padding: 0;
-}
+        .input-group input {
+            height: 32px;
+            padding: 0 0.5rem;
+            font-size: 0.9rem;
+        }
 
     .cart-footer {
         font-size: 0.9rem;
-        max-width: 400px;
+        max-width: 450px;
         margin-left: auto;
-        padding: 10px;
+        background-color: #f8f9fa;
+        padding: 1rem 1.25rem;
+        border-radius: 0.5rem;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
     }
 
     .summary-row {
         display: flex;
         justify-content: space-between;
-        padding: 4px 0;
-        border-bottom: 0px solid #e0e0e0;
+        align-items: center;
+        padding: 6px 0;
+        font-size: 0.95rem;
+        color: #444;
+        border-bottom: 1px solid #e6e6e6;
     }
 
     .grand-total {
         font-weight: bold;
-        font-size: 1rem;
-        border-top: 2px solid #333;
-        margin-top: 8px;
-        padding-top: 6px;
+        font-size: 1.05rem;
+        color: #000;
+        border-top: 2px solid #555;
+        margin-top: 10px;
+        padding-top: 8px;
     }
+
 </style>

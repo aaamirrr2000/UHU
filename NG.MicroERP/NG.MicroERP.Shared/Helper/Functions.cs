@@ -57,7 +57,7 @@ public class Functions
         catch (Exception ex)
         {
             _ = ex.Message;
-            return default;
+           return default;
         }
     }
 
@@ -84,8 +84,21 @@ public class Functions
             if (resultMessage.IsSuccessStatusCode)
             {
                 string response = await resultMessage.Content.ReadAsStringAsync();
-                T? result = JsonConvert.DeserializeObject<T>(response);
-                return (true, result);
+                try
+                {
+                    T? result = JsonConvert.DeserializeObject<T>(response);
+                    return (resultMessage.IsSuccessStatusCode, result);
+                }
+                catch (JsonException)
+                {
+                    if (typeof(T) == typeof(string))
+                    {
+                        object plainText = response;
+                        return (resultMessage.IsSuccessStatusCode, (T)plainText);
+                    }
+                    return (false, default);
+                }
+
             }
             else
             {

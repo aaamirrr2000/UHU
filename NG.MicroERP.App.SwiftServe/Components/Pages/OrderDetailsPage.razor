@@ -1,7 +1,15 @@
 ﻿@page "/OrderDetailsPage/{Action}/{id:int}"
 @layout MyMenuLayout
+@inject NavigationManager Nav
 
 <h2 class="text-center mb-4 text-dark" style="font-family: 'Orbitron', sans-serif; font-size: 30px;">
+    
+    <button class="btn btn-outline-primary rounded-pill px-3 py-2"
+            @onclick="GoBack"
+            title="Back to Order">
+        <i class="fas fa-arrow-left"></i>
+    </button>
+
     <i class="fas fa-receipt text-secondary me-2"></i> 
     
     @if(Action == "ORDER")
@@ -32,20 +40,30 @@
             @foreach (var item in group)
             {
                 <div class="border rounded shadow-sm p-3 mb-3 bg-light">
-                    <div class="row">
-                        <!-- Left Column: Item info -->
+                    <div class="row align-items-center">
+                        <!-- Left Column: Item Info -->
                         <div class="col-md-8">
                             <div class="mb-1">
-                                    <strong>Item:</strong> <span style="color: green;">@item.Item</span> <spanstyle ="color: blue;">@item.ServingSize</spanstyle>
+                                <strong>Item:</strong>
+                                <span class="text-success">@item.Item</span>
+                                <span class="text-primary ms-2">@item.ServingSize</span>
                             </div>
                             <div class="mb-1">
-                                @item.Qty x @item.UnitPrice.ToString("N2") = @item.Item_Amount.ToString("N2")
+                                @item.Qty x @item.UnitPrice.ToString("N2") = <strong>@item.Item_Amount.ToString("N2")</strong>
                             </div>
                             <div class="mb-1">
                                 <strong>Status:</strong>
-                                @if (item.Status == "COMPLETE")
+                                @if (item.BillDetailStatus == "COMPLETE")
                                 {
                                     <span class="badge bg-success">Completed</span>
+                                }
+                                else if (item.BillDetailStatus == "CANCEL")
+                                {
+                                    <span class="badge bg-danger text-dark">Cancel</span>
+                                }
+                                else if (item.BillDetailStatus == "READY")
+                                {
+                                    <span class="badge bg-info text-dark">Ready</span>
                                 }
                                 else
                                 {
@@ -54,28 +72,31 @@
                             </div>
                         </div>
 
-                       <!-- Right Column: Buttons (side by side) -->
-                        <div class="col-md-4 mt-2 mt-md-0">
-                            <div class="d-flex justify-content-start gap-2">
-                            
-                                @if (item.Status != "COMPLETE")
+                        <!-- Right Column: Buttons -->
+                        <div class="col-md-4 text-md-end text-start">
+                            <div class="d-flex justify-content-md-end justify-content-start gap-2">
+                                @if (item.BillDetailStatus != "COMPLETE" && item.BillDetailStatus != "READY" && Globals.User.UserType != "KITCHEN")
                                 {
-                                    <button class="btn btn-danger flex-fill" @onclick="@(() => CancelOrder(item))">
+                                    <button class="btn btn-danger btn-sm" @onclick="@(() => OrderStatus(item, "CANCEL", 1))">
                                         <i class="fas fa-times-circle me-1"></i> Cancel
+                                    </button>
+                                }
+
+                                @if (Globals.User.UserType == "KITCHEN" && item.BillDetailStatus=="PENDING")
+                                {
+                                    <button class="btn btn-info btn-sm" @onclick="@(() => OrderStatus(item, "READY"))">
+                                        <i class="fas fa-check-circle me-1"></i> Ready
                                     </button>
                                 }
                             </div>
                         </div>
-
                     </div>
                 </div>
+
+
             }
         </div>
     }
-
-@*     <div class="mt-4 text-end fw-bold">
-        <i class="fas fa-calculator me-2 text-primary"></i> Total Amount: @GetTotal()
-    </div> *@
 }
 else
 {
@@ -106,7 +127,8 @@ else
         else if (Action == "TABLE")
         {
             bill_url = $"Bill/Search/bill.TableId={Id}";
-            billDetail_url = $"BillDetail/Search/Bill.TableId={Id} AND BillDetail.Status!='COMPLETE' and Bill.Status!='COMPLETE'";
+            //billDetail_url = $"BillDetail/Search/Bill.TableId={Id} AND BillDetail.Status!='COMPLETE' and Bill.Status!='COMPLETE'";
+            billDetail_url = $"BillDetail/Search/Bill.TableId={Id} and Bill.Status!='COMPLETE'";
         }
 
 
@@ -130,35 +152,25 @@ else
     private string GetTotal() => BillDetails.Sum(x => x.Item_Amount).ToString("N2");
 
 
-    // private async void MarkCompleted(BillDetailModel item)
-    // {
-    //     var res = await Functions.PostAsync<BillDetailModel>($"BillDetail/BillItemStatus/{item.Id}/COMPLETE", null, true);
-    //     if (res.Success)
-    //     {
-    //         await Application.Current.MainPage.DisplayAlert("Item Status", "Item Status marked COMPLETE Successfully.", "OK");
-    //         //item.Status = "COMPLETE";
-    //         await LoadBills(id);
-    //         StateHasChanged();
-    //     }
-    //     else
-    //         await Application.Current.MainPage.DisplayAlert("Item Status Error", "Could not Mark Item Status COMPLETE.", "OK");
-
-    // }
-
-    private async void CancelOrder(BillDetailModel item)
+    private async void OrderStatus(BillDetailModel item, string Status, int IsSoftDelete=0)
     {
-        bool confirm = await App.Current.MainPage.DisplayAlert("Delete", $"Delete Bill ID: {item.SeqNo}?", "Yes", "No");
+        bool confirm = await App.Current.MainPage.DisplayAlert("Item Status", $"{Status} Item: {item.Item}?", "Yes", "No");
         if (!confirm)
             return;
 
-        var res = await Functions.PostAsync<BillDetailModel>($"BillDetail/BillItemStatus/{item.Id}/CANCEL/1", null, true);
-        if (!res.Success)
-            await Application.Current.MainPage.DisplayAlert("Item Status", "Item Status marked CANCEL Successfully.", "OK");
+        var res = await Functions.PostAsync<BillDetailModel>($"BillDetail/BillItemStatus/{item.Id}/{Status}/{IsSoftDelete}", null, true);
+        if (res.Success)
+            await Application.Current.MainPage.DisplayAlert("✅ Done", $"The item status is now set to {Status}.", "Great!");
         else
-            await Application.Current.MainPage.DisplayAlert("Item Status Error", "Could not Mark Item Status COMPLETE.", "OK");
+            await Application.Current.MainPage.DisplayAlert("❌ Status Update Failed", $"Unable to mark item as {Status}. Please try again.", "OK");
 
         await LoadBills(id);
         StateHasChanged();
         BillDetails.Remove(item);
+    }
+
+    private void GoBack()
+    {
+        Nav.NavigateTo($"/OrdersPage");
     }
 }

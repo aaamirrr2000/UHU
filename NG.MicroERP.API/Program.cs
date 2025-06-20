@@ -82,12 +82,23 @@ Log.Logger = new LoggerConfiguration()
             .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
             .CreateLogger();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 builder.Services.AddSingleton<DatabaseMigrator>();
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
 builder.Services.AddSingleton<PdfService>();
 
 var app = builder.Build();
 
+app.UseCors("AllowAll");
 app.MapDefaultEndpoints();
 
 // Configure the HTTP request pipeline.

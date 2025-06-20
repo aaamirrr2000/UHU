@@ -22,10 +22,10 @@
         <Nullable>enable</Nullable>
 
         <!-- Display name -->
-        <ApplicationTitle>NG.MicroERP.App.SwiftServe</ApplicationTitle>
+        <ApplicationTitle>Swift Serve</ApplicationTitle>
 
         <!-- App Identifier -->
-        <ApplicationId>com.companyname.ng.microerp.app.swiftserve</ApplicationId>
+        <ApplicationId>com.microerp.swiftserve</ApplicationId>
 
         <!-- Versions -->
         <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
@@ -42,6 +42,11 @@
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
     </PropertyGroup>
 
+	<!--<PropertyGroup Condition="'$(Configuration)'=='Debug'">
+      <AndroidDebugSymbols>true</AndroidDebugSymbols>
+      <AndroidLinkMode>None</AndroidLinkMode>
+    </PropertyGroup>-->
+		
     <ItemGroup>
         <!-- App Icon -->
         <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
@@ -71,24 +76,28 @@
     </ItemGroup>
 
     <ItemGroup>
-        <MauiImage Remove="Resources\Images\add.png" />
-        <MauiImage Remove="Resources\Images\cart.png" />
-        <MauiImage Remove="Resources\Images\customer.png" />
-        <MauiImage Remove="Resources\Images\delete.png" />
-        <MauiImage Remove="Resources\Images\details.png" />
-        <MauiImage Remove="Resources\Images\dotnet_bot.png" />
-        <MauiImage Remove="Resources\Images\dotnet_bot.svg" />
-        <MauiImage Remove="Resources\Images\food.png" />
-        <MauiImage Remove="Resources\Images\next.png" />
-        <MauiImage Remove="Resources\Images\ok.png" />
-        <MauiImage Remove="Resources\Images\password.png" />
-        <MauiImage Remove="Resources\Images\search.png" />
-        <MauiImage Remove="Resources\Images\settings.png" />
-        <MauiImage Remove="Resources\Images\table.png" />
-        <MauiImage Remove="Resources\Images\user.png" />
-        <MauiImage Remove="Resources\Images\view.png" />
-        <MauiImage Remove="Resources\Images\waiter.png" />
-        <MauiImage Remove="Resources\Images\waiter1.png" />
+      <MauiImage Remove="Resources\Images\dotnet_bot.png" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Resources\Images\add.png" />
+      <None Remove="Resources\Images\cart.png" />
+      <None Remove="Resources\Images\customer.png" />
+      <None Remove="Resources\Images\delete.png" />
+      <None Remove="Resources\Images\details.png" />
+      <None Remove="Resources\Images\dotnet_bot.png" />
+      <None Remove="Resources\Images\dotnet_bot.svg" />
+      <None Remove="Resources\Images\food.png" />
+      <None Remove="Resources\Images\next.png" />
+      <None Remove="Resources\Images\ok.png" />
+      <None Remove="Resources\Images\password.png" />
+      <None Remove="Resources\Images\search.png" />
+      <None Remove="Resources\Images\settings.png" />
+      <None Remove="Resources\Images\table.png" />
+      <None Remove="Resources\Images\user.png" />
+      <None Remove="Resources\Images\view.png" />
+      <None Remove="Resources\Images\waiter.png" />
+      <None Remove="Resources\Images\waiter1.png" />
     </ItemGroup>
 
     <ItemGroup>
@@ -104,16 +113,63 @@
     </ItemGroup>
 
     <ItemGroup>
-      <MauiXaml Update="Components\MauiPage\LoginPage.xaml">
+      <MauiXaml Update="Components\MauiPages\LoginPage.xaml">
         <Generator>MSBuild:Compile</Generator>
       </MauiXaml>
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Resources\Images\dotnet_bot.svg" BaseSize="168,208" />
-      <None Update="Resources\Images\waiter.png">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
+      <MauiImage Update="Resources\Images\add.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </MauiImage>
+      <MauiImage Update="Resources\Images\cart.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </MauiImage>
+      <MauiImage Update="Resources\Images\customer.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </MauiImage>
+      <MauiImage Update="Resources\Images\delete.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </MauiImage>
+      <MauiImage Update="Resources\Images\details.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </MauiImage>
+      <MauiImage Update="Resources\Images\dotnet_bot.svg" BaseSize="168,208">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </MauiImage>
+      <MauiImage Update="Resources\Images\food.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </MauiImage>
+      <MauiImage Update="Resources\Images\next.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </MauiImage>
+      <MauiImage Update="Resources\Images\ok.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </MauiImage>
+      <MauiImage Update="Resources\Images\password.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </MauiImage>
+      <MauiImage Update="Resources\Images\search.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </MauiImage>
+      <MauiImage Update="Resources\Images\settings.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </MauiImage>
+      <MauiImage Update="Resources\Images\table.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </MauiImage>
+      <MauiImage Update="Resources\Images\user.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </MauiImage>
+      <MauiImage Update="Resources\Images\view.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </MauiImage>
+      <MauiImage Update="Resources\Images\waiter.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </MauiImage>
+      <MauiImage Update="Resources\Images\waiter1.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </MauiImage>
     </ItemGroup>
 
     <ItemGroup>

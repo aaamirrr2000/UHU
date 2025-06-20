@@ -6,7 +6,7 @@ using NG.MicroERP.Shared.Services;
 
 using Serilog;
 
-namespace NG.MicroERP.App.SwiftServe.Components.MauiPage;
+namespace NG.MicroERP.App.SwiftServe.Components.MauiPages;
 
 public partial class LoginPage : ContentPage
 {
@@ -30,6 +30,8 @@ public partial class LoginPage : ContentPage
             //await Login(UsernameEntry.Text, PasswordEntry.Text);
         }
 
+        if (Globals.BaseURI == null || Globals.BaseURI.Trim() == string.Empty)
+            lblURL.Text = Globals.BaseURI;
     }
 
     private async void OnLoginClicked(object sender, EventArgs e)
@@ -53,10 +55,16 @@ public partial class LoginPage : ContentPage
 
         try
         {
+
+            if (Globals.BaseURI == null || Globals.BaseURI.Trim() == string.Empty)
+                lblURL.Text = Globals.BaseURI;
+
             var res = await Functions.GetAsync<UsersModel>($"Login/Login/{userName}/{password}", false);
+            //Log.Information($"link {lblURL.Text}.");
+
             if (res != null)
             {
-                Log.Information($"User {userName} logged in.");
+                //Log.Information($"User {userName} logged in.");
 
                 Preferences.Set("Username", userName);
                 Preferences.Set("Password", password);
@@ -95,7 +103,7 @@ public partial class LoginPage : ContentPage
             }
             else
             {
-                Log.Information($"{userName} login failed.");
+                //Log.Information($"{userName} login failed.");
                 await DisplayAlert("Login Failed", "Invalid credentials.", "OK");
             }
         }
@@ -121,7 +129,7 @@ public partial class LoginPage : ContentPage
             initialValue: !string.IsNullOrEmpty(savedUrl) ? savedUrl : null,
             maxLength: 200,
             keyboard: Keyboard.Url,
-            placeholder: "https://192.168.0.1:8080/"
+            placeholder: "http://10.0.2.2:5000/"
         );
 
         if (!string.IsNullOrWhiteSpace(result))

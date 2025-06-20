@@ -1,4 +1,4 @@
-﻿using NG.MicroERP.App.SwiftServe.Components.MauiPage;
+﻿using NG.MicroERP.App.SwiftServe.Components.MauiPages;
 using NG.MicroERP.Shared.Helper;
 
 using System.Diagnostics;
