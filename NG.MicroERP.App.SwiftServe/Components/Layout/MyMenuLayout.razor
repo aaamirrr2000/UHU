@@ -5,15 +5,41 @@
 
 <div class="app-container">
     <nav class="sidebar @(isCollapsed ? "collapsed" : "")">
-        <!-- Sidebar content remains unchanged -->
-        <div class="sidebar-header" hidden="@isCollapsed">
-            <img src="@Globals.Organization.Logo" alt="Profile" class="profile-img" />
-            <div class="profile-info">
-                <div style="font-size: 16px; letter-spacing: 2px; font-weight: bold; text-transform: uppercase;">@Globals.Organization.Name</div>
-                <div class="employee-name">@Globals.User.FullName</div>
-                <div class="organization-name">@Globals.User.GroupName</div>
+       
+        <div class="sidebar-header p-3" hidden="@isCollapsed" style="background-color: transparent;">
+            <div class="d-flex align-items-start gap-3">
+               
+
+                <div class="profile-info text-start">
+
+                     <img src="@Globals.Organization.Logo" alt="Logo" class="rounded-circle" style="width: 60px; height: 60px;" />
+
+                    <div class="mb-2 text-uppercase fw-bold" style="font-size: 16px; letter-spacing: 1px;">
+                        @Globals.Organization.Name
+                    </div>
+
+                    <div class="mb-2 fw-semibold" style="font-size: 14px;">
+                        <i class="fas fa-user me-1 text-secondary"></i>@Globals.User.FullName
+                    </div>
+                    <div class="mb-2 text-muted small">
+                        <i class="fas fa-users me-1"></i>@Globals.User.GroupName
+                    </div>
+                    <div class="mb-2 text-muted small">
+                        <i class="fas fa-user-tag me-1"></i>@Globals.User.UserType
+                    </div>
+                    <div class="mb-2 text-muted small">
+                        <i class="fas fa-calendar-alt me-1"></i>@CurrentDateTime.ToString("dddd, MMM dd yyyy")
+                    </div>
+                    <div class="mb-2 text-muted small">
+                        <i class="fas fa-clock me-1"></i>@CurrentDateTime.ToString("hh:mm:ss tt")
+                    </div>
+                </div>
+
             </div>
         </div>
+
+
+
 
         @foreach (var group in MenuGroups)
         {
@@ -48,8 +74,8 @@
 
             <!-- Left-aligned: Hamburger + Title -->
             <div class="d-flex align-items-center gap-3">
-                <button class="sidebar-toggle btn btn-link p-0" @onclick="ToggleSidebar" style="border: none;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
+                <button class="sidebar-toggle btn p-0 m-0 d-flex align-items-center" @onclick="ToggleSidebar" style="border: none; width: 24px; height: 24px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none"
                          viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <line x1="4" y1="6" x2="20" y2="6" />
                         <line x1="4" y1="12" x2="20" y2="12" />
@@ -57,7 +83,8 @@
                     </svg>
                 </button>
 
-                <h1 class="m-0 text-uppercase" style="letter-spacing: 2px;">
+
+                <h1 class="m-0 text-uppercase" style="letter-spacing: 2px; font-size:18px;">
                     @Globals.PageTitle
                 </h1>
             </div>
@@ -109,7 +136,7 @@
     private void ToggleSidebar() => isCollapsed = !isCollapsed;
     private List<MenuGroup> MenuGroups = new();
     private List<ItemsModel> _cart { get; set; } = new();
-
+    private DateTime CurrentDateTime => DateTime.Now;
     private Timer? _refreshTimer;
 
 

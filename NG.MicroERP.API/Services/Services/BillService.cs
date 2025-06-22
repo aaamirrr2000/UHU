@@ -398,7 +398,8 @@ public class BillService : IBillService
 
     public async Task<(bool, string)> SoftDelete(BillModel obj)
     {
-        string SQLUpdate = $@"UPDATE Bill SET 
+        string SQLUpdate = $@"UPDATE Bill SET
+                                Status = 'DELETED',
 								UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
 								UpdatedBy = {obj.UpdatedBy!},
 								IsSoftDeleted = 1 

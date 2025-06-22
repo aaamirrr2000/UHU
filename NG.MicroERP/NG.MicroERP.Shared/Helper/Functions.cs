@@ -79,32 +79,32 @@ public class Functions
             StringContent content = new(jsonData, Encoding.UTF8, "application/json");
 
             HttpResponseMessage resultMessage = await httpClient.PostAsync(uri, content).ConfigureAwait(false);
-            //string resultMessage = await response.Content.ReadAsStringAsync();
+            string response = await resultMessage.Content.ReadAsStringAsync();
 
             if (resultMessage.IsSuccessStatusCode)
             {
-                string response = await resultMessage.Content.ReadAsStringAsync();
-                try
+                if (typeof(T) == typeof(string))
                 {
-                    T? result = JsonConvert.DeserializeObject<T>(response);
-                    return (resultMessage.IsSuccessStatusCode, result);
+                    object plainText = response;
+                    return (true, (T)plainText);
                 }
-                catch (JsonException)
+                else
                 {
-                    if (typeof(T) == typeof(string))
+                    try
                     {
-                        object plainText = response;
-                        return (resultMessage.IsSuccessStatusCode, (T)plainText);
+                        T? result = JsonConvert.DeserializeObject<T>(response);
+                        return (true, result);
                     }
-                    return (false, default);
+                    catch (JsonException)
+                    {
+                        return (false, default);
+                    }
                 }
-
             }
             else
             {
-                string response = await resultMessage.Content.ReadAsStringAsync();
-                T? resultObj = JsonConvert.DeserializeObject<T>(response);
-                return (true, resultObj);
+                // Optional: handle non-successful status code
+                return (false, default);
             }
         }
         catch (Exception)
@@ -112,6 +112,7 @@ public class Functions
             return (false, default);
         }
     }
+
 
     public static async Task<(int?, string?)> DeleteAsync(string url, bool Authorized = true)
     {

@@ -22,7 +22,11 @@
     FOREIGN KEY (EmpId) REFERENCES Employees(Id)
 );
 
-INSERT INTO Users (Username, Password, UserType, DarKLightTheme, EmpId, GroupId, LocationId, IsActive, CreatedBy, CreatedOn, CreatedFrom, UpdatedBy, UpdatedOn, UpdatedFrom, IsSoftDeleted) 
-VALUES ('admin', '12345', 'DESKTOP ADMIN', 1, 1, 1, 1, 1, NULL, '2024-06-09 12:21:43', NULL, NULL, '2024-06-09 12:21:43', NULL, 0),
-VALUES ('waiter', '12345', 'WAITER', 0, 1, 2, 2, 1, NULL, '2024-06-09 12:30:00', NULL, NULL, '2024-06-09 12:30:00', NULL, 0),
-VALUES ('kitchen', '12345', 'KITCHEN', 0, 1, 2, 2, 1, NULL, '2024-06-09 12:30:00.000', NULL, NULL, '2024-06-09 12:30:00.000', NULL, 0);
+INSERT INTO Users (
+    Username, Password, UserType, DarKLightTheme, EmpId, GroupId, LocationId,
+    IsActive, CreatedBy, CreatedOn, CreatedFrom, UpdatedBy, UpdatedOn, UpdatedFrom, IsSoftDeleted
+)
+VALUES
+    ('admin', '12345', 'DESKTOP ADMIN', 1, 1, 1, 1, 1, NULL, '2024-06-09 12:21:43', NULL, NULL, '2024-06-09 12:21:43', NULL, 0),
+    ('waiter', '12345', 'WAITER', 0, 1, 2, 2, 1, NULL, '2024-06-09 12:30:00', NULL, NULL, '2024-06-09 12:30:00', NULL, 0),
+    ('kitchen', '12345', 'KITCHEN', 0, 1, 2, 2, 1, NULL, '2024-06-09 12:30:00.000', NULL, NULL, '2024-06-09 12:30:00.000', NULL, 0);

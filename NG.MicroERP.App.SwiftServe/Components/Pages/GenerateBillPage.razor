@@ -66,7 +66,10 @@
     </section>
 
     <div class="invoice-actions">
-        <button class="btn btn-primary" @onclick="GenerateBill" disabled="@BillGenerated">Generate Bill</button>
+        @if (Bills.Bill.Status != "COMPLETE")
+        {
+            <button class="btn btn-primary" @onclick="GenerateBill" disabled="@BillGenerated">Generate Bill</button>
+        }
         <button class="btn btn-outline-secondary" @onclick="PrintInvoice">🖨️ Print</button>
     </div>
 
@@ -173,7 +176,7 @@
         };
 
 
-        var result = await Functions.PostAsync<BillModel>("Bill/GenerateBill", bill, true);
+        var result = await Functions.PostAsync<string>("Bill/GenerateBill", bill, true);
 
         if (!result.Success)
         {
@@ -183,6 +186,8 @@
         {
             await Application.Current.MainPage.DisplayAlert("✅ Done", "Bill generated and ready to go!", "Great");
             _cart.Clear();
+            Nav.NavigateTo($"/OrdersPage");
+
         }
     }
 

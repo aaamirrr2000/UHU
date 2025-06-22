@@ -18,6 +18,7 @@
     Industry            Varchar(255)    NULL,
     Website             Varchar(255)    NULL,
     TimeZone            Varchar(100)    NULL,
+    GMT                 DECIMAL(16,2)   DEFAULT 0,
     IsVerified          SMALLINT        DEFAULT 0 NOT NULL,
     Expiry              DATETIME        NULL DEFAULT NULL,
     ParentId            INT             NULL,
@@ -36,12 +37,12 @@
 
 INSERT INTO Organizations 
     (Guid, Code, EntraId, Logo, ThemeColor, MenuColor, Name, Description, Phone, Email, Address, 
-     MaxUsers, DbSize, LoginPic, Industry, Website, TimeZone, IsVerified, Expiry, ParentId, 
+     MaxUsers, DbSize, LoginPic, Industry, Website, TimeZone, GMT, IsVerified, Expiry, ParentId, 
      IsActive, CreatedBy, CreatedOn, CreatedFrom, CreatedSource, UpdatedBy, UpdatedOn, UpdatedFrom, 
      UpdatedSource, IsSoftDeleted) 
 VALUES 
     (NEWID(), 'ORG001', 'SomeEntraId', 'images/logo.jpg', '#333333', '#222222', 'TechCorp', 
      'Leading tech solutions provider', '03001234567', 'contact@techcorp.com', '123 Tech Street, Karachi', 
-     100, 500.0, 'images/loginpic.jpg', 'Software', 'https://techcorp.com', 'Asia/Karachi', 
+     100, 500.0, 'images/loginpic.jpg', 'Software', 'https://techcorp.com', 'Asia/Karachi', 5,
      1, '2025-12-31 23:59:59', NULL, 1, 101, CURRENT_TIMESTAMP, 'System', 'WebApp', NULL, 
      CURRENT_TIMESTAMP, 'System', 'WebApp', 0);

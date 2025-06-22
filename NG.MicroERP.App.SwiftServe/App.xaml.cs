@@ -8,6 +8,7 @@ namespace NG.MicroERP.App.SwiftServe
     public partial class App : Application
     {
         private Window _mainWindow;
+        private bool IsPhone = true;
 
         public App()
         {
@@ -23,16 +24,25 @@ namespace NG.MicroERP.App.SwiftServe
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            const int newWidth = 550;
-            const int newHeight = 1000;
+            int newWidth = 1280;
+            int newHeight = 800;
+            int X = 300;
+            int Y = 100;
+
+            if (IsPhone==true)
+            {
+                newWidth = 550;
+                newHeight = 1000;
+                X = 1375;
+                Y = 50;
+            }
 
             _mainWindow = new Window(new NavigationPage(new LoginPage()));
 
             if (Debugger.IsAttached)
             {
-                // Production (no debugger): Fixed size window
-                _mainWindow.X = 1375;
-                _mainWindow.Y = 5;
+                _mainWindow.X = X;
+                _mainWindow.Y = Y;
                 _mainWindow.Width = newWidth;
                 _mainWindow.Height = newHeight;
                 _mainWindow.MinimumWidth = newWidth;

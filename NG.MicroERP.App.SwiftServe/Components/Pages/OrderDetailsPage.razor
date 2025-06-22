@@ -3,19 +3,16 @@
 @inject NavigationManager Nav
 
 <h2 class="text-center mb-4 text-dark" style="font-family: 'Orbitron', sans-serif; font-size: 30px;">
-    
-    <button class="btn btn-outline-primary rounded-pill px-3 py-2"
+    <button class="btn btn-outline-primary rounded-pill px-3 py-2 me-2"
             @onclick="GoBack"
             title="Back to Order">
         <i class="fas fa-arrow-left"></i>
     </button>
-
-    <i class="fas fa-receipt text-secondary me-2"></i> 
-    
-    @if(Action == "ORDER")
+    <i class="fas fa-receipt text-secondary me-2"></i>
+    @if (Action == "ORDER")
     {
         <span>Order Summary</span>
-    }    
+    }
     else
     {
         <span>Table Summary</span>
@@ -24,42 +21,60 @@
 
 @if (Bills.Bill != null)
 {
-    <div class="mb-3 text-center fw-bold">
-        Order #: @Bills.Bill?.SeqNo &nbsp;|&nbsp;
-        Table #: @Bills.Bill?.TableName &nbsp;|&nbsp;
-        Total Items: @BillDetails.Count
+    <div class="container mb-4">
+        <div class="row justify-content-center mb-2">
+            <div class="col-6 col-md-4 col-lg-3 text-start">
+                <span><i class="fas fa-file-invoice me-1 text-info"></i><strong>Order #:</strong> @Bills.Bill.SeqNo</span>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3 text-start">
+                <span><i class="fas fa-chair me-1 text-primary"></i><strong>Table #:</strong> @Bills.Bill.TableName</span>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-6 col-md-4 col-lg-3 text-start">
+                <span><i class="fas fa-list-ol me-1 text-success"></i><strong># of Items:</strong> @BillDetails.Count</span>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3 text-start">
+                <span><i class="fas fa-boxes me-1 text-primary"></i><strong>Status:</strong> @Bills.Bill.Status</span>
+            </div>
+        </div>
     </div>
 
-   @foreach (var group in BillDetails.GroupBy(x => x.Person))
+
+    @foreach (var group in BillDetails.OrderBy(x => x.Person).GroupBy(x => x.Person))
     {
         <div class="mb-4">
-            <h5 class="text-primary">
-                <i class="fas fa-chair me-2"></i> Person/Chair: @group.Key
-            </h5>
+
+            @if (@group.Key != 0)
+            {
+                <h5 class="text-primary">
+                    <i class="fas fa-user-chair me-2"></i> Person: @group.Key
+                </h5>
+            }
 
             @foreach (var item in group)
             {
                 <div class="border rounded shadow-sm p-3 mb-3 bg-light">
-                    <div class="row align-items-center">
-                        <!-- Left Column: Item Info -->
-                        <div class="col-md-8">
-                            <div class="mb-1">
-                                <strong>Item:</strong>
-                                <span class="text-success">@item.Item</span>
+                    <div class="d-flex justify-content-between align-items-start flex-wrap">
+
+                        <!-- Left: Item Details -->
+                        <div class="flex-grow-1 pe-3">
+                            <div><strong><i class="fas fa-utensils text-primary me-1"></i>Item:</strong> 
+                                <span class="text-success">@item.Item</span> 
                                 <span class="text-primary ms-2">@item.ServingSize</span>
                             </div>
-                            <div class="mb-1">
-                                @item.Qty x @item.UnitPrice.ToString("N2") = <strong>@item.Item_Amount.ToString("N2")</strong>
+                            <div><strong><i class="fas fa-calculator text-secondary me-1"></i>Total:</strong> 
+                                @item.Qty x @item.UnitPrice.ToString("N2") = 
+                                <strong>@item.Item_Amount.ToString("N2")</strong>
                             </div>
-                            <div class="mb-1">
-                                <strong>Status:</strong>
+                            <div><strong><i class="fas fa-info-circle text-dark me-1"></i>Status:</strong>
                                 @if (item.BillDetailStatus == "COMPLETE")
                                 {
                                     <span class="badge bg-success">Completed</span>
                                 }
                                 else if (item.BillDetailStatus == "CANCEL")
                                 {
-                                    <span class="badge bg-danger text-dark">Cancel</span>
+                                    <span class="badge bg-danger text-dark">Cancelled</span>
                                 }
                                 else if (item.BillDetailStatus == "READY")
                                 {
@@ -72,9 +87,11 @@
                             </div>
                         </div>
 
-                        <!-- Right Column: Buttons -->
-                        <div class="col-md-4 text-md-end text-start">
-                            <div class="d-flex justify-content-md-end justify-content-start gap-2">
+                        <!-- Right: Action Buttons (fixed width for layout consistency) -->
+                        <div class="d-flex flex-column gap-2 text-end mt-2 mt-md-0">
+
+                            @if (item.BillStatus != "COMPLETE" && item.BillStatus != "READY")
+                            {
                                 @if (item.BillDetailStatus != "COMPLETE" && item.BillDetailStatus != "READY" && Globals.User.UserType != "KITCHEN")
                                 {
                                     <button class="btn btn-danger btn-sm" @onclick="@(() => OrderStatus(item, "CANCEL", 1))">
@@ -82,18 +99,17 @@
                                     </button>
                                 }
 
-                                @if (Globals.User.UserType == "KITCHEN" && item.BillDetailStatus=="PENDING")
+                                @if (Globals.User.UserType == "KITCHEN" && item.BillDetailStatus == "PENDING")
                                 {
                                     <button class="btn btn-info btn-sm" @onclick="@(() => OrderStatus(item, "READY"))">
                                         <i class="fas fa-check-circle me-1"></i> Ready
                                     </button>
                                 }
-                            </div>
+                            }
                         </div>
+
                     </div>
                 </div>
-
-
             }
         </div>
     }
@@ -119,6 +135,7 @@ else
     {
         string bill_url = string.Empty;
         string billDetail_url = string.Empty;
+
         if (Action == "ORDER")
         {
             bill_url = $"Bill/Search/bill.Id={Id}";
@@ -127,10 +144,8 @@ else
         else if (Action == "TABLE")
         {
             bill_url = $"Bill/Search/bill.TableId={Id}";
-            //billDetail_url = $"BillDetail/Search/Bill.TableId={Id} AND BillDetail.Status!='COMPLETE' and Bill.Status!='COMPLETE'";
             billDetail_url = $"BillDetail/Search/Bill.TableId={Id} and Bill.Status!='COMPLETE'";
         }
-
 
         var res = await Functions.GetAsync<List<BillModel>>(bill_url, true);
         if (res != null && res.Count > 0)
@@ -149,20 +164,20 @@ else
         }
     }
 
-    private string GetTotal() => BillDetails.Sum(x => x.Item_Amount).ToString("N2");
-
-
-    private async void OrderStatus(BillDetailModel item, string Status, int IsSoftDelete=0)
+    private async void OrderStatus(BillDetailModel item, string Status, int IsSoftDelete = 0)
     {
         bool confirm = await App.Current.MainPage.DisplayAlert("Item Status", $"{Status} Item: {item.Item}?", "Yes", "No");
-        if (!confirm)
-            return;
+        if (!confirm) return;
 
         var res = await Functions.PostAsync<BillDetailModel>($"BillDetail/BillItemStatus/{item.Id}/{Status}/{IsSoftDelete}", null, true);
         if (res.Success)
+        {
             await Application.Current.MainPage.DisplayAlert("✅ Done", $"The item status is now set to {Status}.", "Great!");
+        }
         else
+        {
             await Application.Current.MainPage.DisplayAlert("❌ Status Update Failed", $"Unable to mark item as {Status}. Please try again.", "OK");
+        }
 
         await LoadBills(id);
         StateHasChanged();

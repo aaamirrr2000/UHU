@@ -34,6 +34,7 @@ public class BillModel
     public string? Description { get; set; } = string.Empty;
     public string? Status { get; set; } = string.Empty;
     public string ServiceType { get; set; } = string.Empty;
+    public TimeSpan PreparationTime { get; set; }
     public string ClientComments { get; set; } = string.Empty;
     public int Rating { get; set; } = 0;
     public int CreatedBy { get; set; } = 0;

@@ -25,6 +25,7 @@
     Description         VARCHAR(50)      NOT NULL,
     Status              VARCHAR(50)      NULL,
     ServiceType         VARCHAR(50)      NULL,
+    PreprationTime      INT,
     ClientComments      VARCHAR(255)     NULL DEFAULT NULL,
     Rating              INT              NULL,
 	CreatedBy           INT             NULL DEFAULT NULL,

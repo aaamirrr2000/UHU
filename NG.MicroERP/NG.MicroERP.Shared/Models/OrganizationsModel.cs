@@ -27,6 +27,7 @@ public class OrganizationsModel
     public string? Industry { get; set; } = string.Empty;
     public string? Website { get; set; } = string.Empty;
     public string? TimeZone { get; set; } = string.Empty;
+    public decimal GMT { get; set; } = 0;
     public int IsVerified { get; set; } = 0;
     public DateTime Expiry { get; set; } = DateTime.Today;
     public int ParentId { get; set; } = 0;

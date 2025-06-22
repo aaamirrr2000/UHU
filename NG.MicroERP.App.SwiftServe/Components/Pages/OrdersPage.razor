@@ -86,12 +86,7 @@
                                 </div>
                             }
 
-                            <div class="pb-2 mb-2 border-bottom text-muted small d-flex align-items-center" style="font-size: 16px;">
-                                <i class="fas fa-dollar-sign text-success me-2"></i>
-                                <strong class="text-dark me-1">Amount:</strong> @bill.BillAmount.ToString("#,##0.00")
-                            </div>
-
-                            @if (bill.Status != "COMPLETE")
+                            @if (bill.Status != "COMPLETE" && bill.Status != "READY")
                             {
                                 <div class="pb-2 mb-2 border-bottom text-muted small d-flex align-items-center" style="font-size: 16px;">
                                     <i class="far fa-clock text-primary me-2"></i>
@@ -126,7 +121,7 @@
                             }
 
                             <!-- Generate Bill Button -->
-                            <button class="btn btn-success btn-sm" @onclick="@(() => DeleteBill(bill))">
+                            <button class="btn btn-success btn-sm" @onclick="@(() => OnGenerateBill(bill))">
                                 <i class="fas fa-file-invoice fa-sm me-1"></i> @(bill.Status != "COMPLETE" ? "Gen. Bill" : "Bill")
                             </button>
 
@@ -178,8 +173,18 @@
 
     private async Task LoadBills()
     {
-        string date = FromDate.ToString("yyyy-MM-dd");
-        string criteria = $"CAST(bill.TranDate AS DATE)='{date}'";
+        // Use organization's GMT offset to convert local date to UTC range
+        double gmtOffset = Convert.ToDouble( Globals.Organization.GMT); // e.g., 5
+
+        var localStart = FromDate.Date;
+        var localEnd = localStart.AddDays(1);
+
+        // Convert from local to UTC using offset
+        var utcStart = localStart.AddHours(-gmtOffset);
+        var utcEnd = localEnd.AddHours(-gmtOffset);
+
+        // Create SQL-friendly range based on UTC
+        string criteria = $"bill.TranDate >= '{utcStart:yyyy-MM-dd HH:mm:ss}' AND bill.TranDate < '{utcEnd:yyyy-MM-dd HH:mm:ss}'";
 
         var res = await Functions.GetAsync<List<BillModel>>($"Bill/Search/{criteria}", true);
         if (res != null)
@@ -190,14 +195,13 @@
             {
                 item.ElapsedTime = GetElapsedTime(item.CreatedOn);
             }
-
-            ApplySearch();
         }
         else
         {
             AllBills.Clear();
-            ApplySearch();
         }
+
+        ApplySearch();
     }
 
     private void ApplySearch()
