@@ -26,11 +26,9 @@
     CreatedBy           INT             NULL DEFAULT NULL,
     CreatedOn           DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CreatedFrom         VARCHAR(255)    NULL DEFAULT NULL,
-    CreatedSource       VARCHAR(255)    NULL DEFAULT NULL,
     UpdatedBy           INT             NULL DEFAULT NULL,
     UpdatedOn           DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedFrom         VARCHAR(255)    NULL DEFAULT NULL,
-    UpdatedSource       VARCHAR(255)    NULL DEFAULT NULL,
     IsSoftDeleted       SMALLINT        NULL DEFAULT 0,
     RowVersion          ROWVERSION
 );
@@ -38,11 +36,10 @@
 INSERT INTO Organizations 
     (Guid, Code, EntraId, Logo, ThemeColor, MenuColor, Name, Description, Phone, Email, Address, 
      MaxUsers, DbSize, LoginPic, Industry, Website, TimeZone, GMT, IsVerified, Expiry, ParentId, 
-     IsActive, CreatedBy, CreatedOn, CreatedFrom, CreatedSource, UpdatedBy, UpdatedOn, UpdatedFrom, 
-     UpdatedSource, IsSoftDeleted) 
+     IsActive, CreatedBy, CreatedOn, CreatedFrom, UpdatedBy, UpdatedOn, UpdatedFrom, IsSoftDeleted) 
 VALUES 
     (NEWID(), 'ORG001', 'SomeEntraId', 'images/logo.jpg', '#333333', '#222222', 'TechCorp', 
      'Leading tech solutions provider', '03001234567', 'contact@techcorp.com', '123 Tech Street, Karachi', 
      100, 500.0, 'images/loginpic.jpg', 'Software', 'https://techcorp.com', 'Asia/Karachi', 5,
-     1, '2025-12-31 23:59:59', NULL, 1, 101, CURRENT_TIMESTAMP, 'System', 'WebApp', NULL, 
-     CURRENT_TIMESTAMP, 'System', 'WebApp', 0);
+     1, '2025-12-31 23:59:59', NULL, 1, 101, CURRENT_TIMESTAMP, 'System', NULL, 
+     CURRENT_TIMESTAMP, 'System', 0);

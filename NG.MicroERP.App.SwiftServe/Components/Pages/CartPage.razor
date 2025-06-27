@@ -81,13 +81,13 @@
 
         @{
             double serviceAmount = 0;
-            if (Globals.ServiceCharge.ServiceChargeType == "PERCENTAGE")
+            if (Globals.ServiceCharge.ChargeType == "PERCENTAGE")
             {
-                serviceAmount = (Globals.ServiceCharge.ServiceCharge / 100) * TotalAmount;
+                serviceAmount = (Globals.ServiceCharge.Amount / 100) * TotalAmount;
             }
-            else if (Globals.ServiceCharge.ServiceChargeType == "AMOUNT")
+            else if (Globals.ServiceCharge.ChargeType == "AMOUNT")
             {
-                serviceAmount = Globals.ServiceCharge.ServiceCharge;
+                serviceAmount = Globals.ServiceCharge.Amount;
             }
 
             var taxableAmount = TotalAmount + serviceAmount;
@@ -95,17 +95,17 @@
             var grandTotal = taxableAmount + gstAmount;
         }
 
-        @if (Globals.ServiceCharge.ServiceChargeType == "AMOUNT")
+        @if (Globals.ServiceCharge.ChargeType == "AMOUNT")
         {
             <div class="summary-row">
                 <span>Service Charges:</span>
                 <span>@serviceAmount.ToString("N2")</span>
             </div>
         }
-        else if (Globals.ServiceCharge.ServiceChargeType == "PERCENTAGE")
+        else if (Globals.ServiceCharge.ChargeType == "PERCENTAGE")
         {
             <div class="summary-row">
-                <span>Service Charges @Globals.ServiceCharge.ServiceCharge.ToString("N2")%:</span>
+                <span>Service Charges @Globals.ServiceCharge.Amount.ToString("N2")%:</span>
                 <span>@serviceAmount.ToString("N2")</span>
             </div>
         }

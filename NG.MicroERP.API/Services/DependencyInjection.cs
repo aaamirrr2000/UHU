@@ -1,14 +1,19 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+
+using MudBlazor;
+using MudBlazor.Services;
+
+using NG.MicroERP.API.Services.Services;
+using NG.MicroERP.Shared.Helper;
+
+using Serilog;
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using MudBlazor;
-using MudBlazor.Services;
-using NG.MicroERP.Shared.Helper;
-using Serilog;
 
 
 namespace NG.MicroERP.API.Services;
@@ -34,6 +39,8 @@ public static class DependencyInjection
         services.AddSingleton<IBillDetailService, BillDetailService>();
         services.AddSingleton<IRestaurantTablesService, RestaurantTablesService>();
         services.AddSingleton<IDineinOrderStatusService, DineinOrderStatusService>();
+        services.AddSingleton<IServiceChargesService, ServiceChargesService>();
+        services.AddSingleton<ITaxService, TaxService>();
 
         services.AddScoped<Globals>();
         services.AddScoped<FileUploadService>();

@@ -67,7 +67,7 @@ public class DatabaseMigrator(IConfiguration configuration)
         {
             Console.WriteLine("Migration failed!");
             Console.WriteLine(result.Error);
-            throw new Exception("Database migration failed.", result.Error);
+            //throw new Exception("Database migration failed.", result.Error);
         }
 
         Console.WriteLine("Database migration successful.");

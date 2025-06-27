@@ -12,7 +12,7 @@
 
                 <div class="profile-info text-start">
 
-                     <img src="@Globals.Organization.Logo" alt="Logo" class="rounded-circle" style="width: 60px; height: 60px;" />
+                     <img src="@Globals.User.Pic" alt="UserPic" class="rounded-circle" style="width: 60px; height: 60px;" />
 
                     <div class="mb-2 text-uppercase fw-bold" style="font-size: 16px; letter-spacing: 1px;">
                         @Globals.Organization.Name
@@ -37,9 +37,6 @@
 
             </div>
         </div>
-
-
-
 
         @foreach (var group in MenuGroups)
         {
@@ -83,6 +80,7 @@
                     </svg>
                 </button>
 
+                <img src="@Globals.Organization.Logo" alt="Logo" class="rounded-circle" style="width: 60px; height: 60px;" />
 
                 <h1 class="m-0 text-uppercase" style="letter-spacing: 2px; font-size:18px;">
                     @Globals.PageTitle

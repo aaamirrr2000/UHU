@@ -7,13 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Pages\Organizations\**" />
-    <Content Remove="Pages\Organizations\**" />
-    <EmbeddedResource Remove="Pages\Organizations\**" />
-    <None Remove="Pages\Organizations\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Remove="Pages\BillPage - Copy.razor" />
     <Content Remove="Pages\BillPage.razor" />
     <Content Remove="Pages\CashBookPage.razor" />

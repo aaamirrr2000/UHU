@@ -76,8 +76,8 @@ public partial class LoginPage : ContentPage
                 //Get Service Charges
                 ServiceChargeCalculationService _serviceChargeService = new();
                 await _serviceChargeService.InitializeAsync();
-                Globals.ServiceCharge!.ServiceChargeType = _serviceChargeService.ServiceChargeType;
-                Globals.ServiceCharge.ServiceCharge = _serviceChargeService.ServiceCharge;
+                Globals.ServiceCharge!.ChargeType = _serviceChargeService.ServiceChargeType;
+                Globals.ServiceCharge.Amount = _serviceChargeService.ServiceCharge;
 
                 //Get GST
                 TaxCalculationService _gst = new();

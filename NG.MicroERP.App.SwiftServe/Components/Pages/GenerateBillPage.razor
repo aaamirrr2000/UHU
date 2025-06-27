@@ -41,7 +41,7 @@
             <div class="readonly">@GetSubTotal().ToString("N2")</div>
         </div>
         <div class="total-row">
-            <label>Service Charges @@ @Globals.ServiceCharge.ServiceCharge%:</label>
+            <label>Service Charges @@ @Globals.ServiceCharge.Amount%:</label>
             <div class="readonly">@Bills.Bill!.ServiceCharge.ToString("N2")</div>
         </div>
         <div class="total-row">
@@ -133,13 +133,13 @@
 
         // ✅ Calculate Service Amount based on type
         double serviceAmount = 0;
-        if (Globals.ServiceCharge.ServiceChargeType == "PERCENTAGE")
+        if (Globals.ServiceCharge.ChargeType == "PERCENTAGE")
         {
-            serviceAmount = (Globals.ServiceCharge.ServiceCharge / 100) * subTotal;
+            serviceAmount = (Globals.ServiceCharge.Amount / 100) * subTotal;
         }
-        else if (Globals.ServiceCharge.ServiceChargeType == "AMOUNT")
+        else if (Globals.ServiceCharge.ChargeType == "AMOUNT")
         {
-            serviceAmount = Globals.ServiceCharge.ServiceCharge;
+            serviceAmount = Globals.ServiceCharge.Amount;
         }
 
         // ✅ Discount
@@ -170,7 +170,7 @@
         var bill = new BillModel
         {
             Id = id,
-            ServiceCharge = Globals.ServiceCharge!.ServiceCharge,
+            ServiceCharge = Globals.ServiceCharge!.Amount,
             TaxAmount = Globals.GST,
             DiscountAmount = Bills.Bill.DiscountAmount,
         };

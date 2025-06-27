@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Org.BouncyCastle.Asn1.Cms;
+
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -24,8 +26,11 @@ public class BillModel
     public string? PartyEmail { get; set; } = string.Empty;
     public string? PartyAddress { get; set; } = string.Empty;
     public DateTime TranDate { get; set; } = DateTime.Today;
+    public string ServiceChargeType { get; set; } = string.Empty;
+    public double ServiceChargeRate { get; set; } = 0;
     public double ServiceCharge { get; set; } = 0;
     public double DiscountAmount { get; set; } = 0;
+    public double TaxRate { get; set; } = 0;
     public double TaxAmount { get; set; } = 0;
     public double BillAmount { get; set; } = 0;
     public string? PaymentMethod { get; set; } = string.Empty;
