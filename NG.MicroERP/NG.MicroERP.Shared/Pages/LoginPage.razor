@@ -17,7 +17,7 @@
         <div class="login-header">
             <h2 style="font-size:16px;letter-spacing:2px;">NexGen Tech Studios</h2>
             <p>Welcome back! Please login to your account.</p>
-            <p id="expiry" style="font-size:12px;" class="expiry">Organization Expiry Date</p>
+            @* <p id="expiry" style="font-size:12px;" class="expiry">Organization Expiry Date</p> *@
         </div>
         <div class="login-form">
             <div class="form-group">
@@ -36,8 +36,8 @@
 </div>
 
 @code {
-    public string Username { get; set; } = "admin";
-    public string Password { get; set; } = "12345";
+    public string Username { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
     private bool LoadingPanel { get; set; } = false;
 
     private async Task Login()

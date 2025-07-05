@@ -14,7 +14,7 @@
         <ChildContent>
             <EditForm Model="record" OnSubmit="Save">
                 <MudForm>
-                    <ServiceChargesPage Action="@Action" CurrentRecord="record.Id"/>
+                    <ServiceChargesPage Action="@Action" CurrentRecord="record.Id" />
                 </MudForm>
             </EditForm>
         </ChildContent>
@@ -38,19 +38,22 @@
                 </ToolBarContent>
 
                 <Columns>
-                    <TemplateColumn Title="Actions" Style="width: 50px; min-width: 50px;">
+                    <TemplateColumn Title="Actions" CellStyle="width: 160px; min-width: 160px;">
                         <CellTemplate Context="row">
                             <MudIconButton Icon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" OnClick="@(() => View(row.Item.Id))" />
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Save" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.Id))" />
+                            <MudIconButton Icon="@Icons.Material.TwoTone.Edit" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.Id))" />
                             <MudIconButton Icon="@Icons.Material.TwoTone.DeleteSweep" Size="MudBlazor.Size.Small" OnClick="@(() => Delete(row.Item.Id))" />
                         </CellTemplate>
                     </TemplateColumn>
 
-                    				<PropertyColumn Property="x => x.ChargeName" Title="ChargeName" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.ChargeType" Title="ChargeType" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.AppliesTo" Title="AppliesTo" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.EffectiveFrom" Title="EffectiveFrom" Sortable="true" Filterable="true" Format="dd-MMM-yyy"/>
-				<PropertyColumn Property="x => x.EffectiveTo" Title="EffectiveTo" Sortable="true" Filterable="true" Format="dd-MMM-yyy"/>
+                    <PropertyColumn Property="x => x.ChargeName" Title="ChargeName" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.ChargeType" Title="ChargeType" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.EffectiveFrom" Title="EffectiveFrom" Sortable="true" Filterable="true" Format="dd-MMM-yyy" />
+                    <PropertyColumn Property="x => x.EffectiveTo" Title="EffectiveTo" Sortable="true" Filterable="true" Format="dd-MMM-yyy" />
+                    <PropertyColumn Property="x => x.CreatedOn" Title="CreatedOn" Sortable="true" Filterable="true" Format="dd-MMM-yyy" />
+                    <PropertyColumn Property="x => x.CreatedFrom" Title="CreatedFrom" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.UpdatedOn" Title="UpdatedOn" Sortable="true" Filterable="true" Format="dd-MMM-yyy" />
+                    <PropertyColumn Property="x => x.UpdatedFrom" Title="UpdatedFrom" Sortable="true" Filterable="true" />
 
 
                 </Columns>
@@ -118,7 +121,7 @@
     protected async Task Edit(int id)
     {
         await Get(id);
-        Action = "UPDATE"; 
+        Action = "UPDATE";
         isReadOnly = false;
         await _drawer.OpenDrawerAsync();
     }
@@ -137,7 +140,7 @@
     protected async Task Save()
     {
         LoadingPanel = true;
-         
+
         record.OrganizationId = Globals.User.OrganizationId;
         record.CreatedBy = Globals.User.Id;
         record.CreatedOn = DateTime.Now;
@@ -157,11 +160,11 @@
             record = new();
             isReadOnly = true;
         }
-    
+
         data = await Functions.GetAsync<List<ServiceChargesModel>>($"ServiceCharges/Search", true) ?? new List<ServiceChargesModel>();
         LoadingPanel = false;
         await _drawer.CloseDrawer();
-     
+
     }
 
 }

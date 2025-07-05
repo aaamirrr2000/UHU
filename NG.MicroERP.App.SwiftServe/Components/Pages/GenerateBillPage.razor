@@ -143,11 +143,12 @@
         }
 
         // ✅ Discount
-        double discount = Bills.Bill?.DiscountAmount ?? 0;
+        double discount = Convert.ToDouble(Bills.Bill?.DiscountAmount ?? 0);
+
 
         // ✅ Calculate tax and store it
         double tax = (subTotal + serviceAmount - discount) * Globals.GST / 100;
-        Bills.Bill!.TaxAmount = tax;
+        Bills.Bill!.TaxAmount = Convert.ToDecimal(tax);
 
         // ✅ Optional: Store service amount too
         Bills.Bill.ServiceCharge = serviceAmount;
@@ -171,7 +172,7 @@
         {
             Id = id,
             ServiceCharge = Globals.ServiceCharge!.Amount,
-            TaxAmount = Globals.GST,
+            TaxAmount = Convert.ToDecimal(Globals.GST),
             DiscountAmount = Bills.Bill.DiscountAmount,
         };
 

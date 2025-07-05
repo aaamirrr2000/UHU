@@ -12,7 +12,7 @@ public class ServiceChargesModel
     public string? ChargeName { get; set; } = string.Empty;
     public string? ChargeType { get; set; } = string.Empty;
     public double Amount { get; set; } = 0;
-    public string? AppliesTo { get; set; } = string.Empty;
+    public int? AppliesTo { get; set; } = 0;
     public DateTime EffectiveFrom { get; set; } = DateTime.Today;
     public DateTime EffectiveTo { get; set; } = DateTime.Today;
     public int OrganizationId { get; set; } = 0;

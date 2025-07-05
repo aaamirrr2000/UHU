@@ -20,7 +20,7 @@ public class BillModel
     public int SalesId { get; set; } = 0;
     public int TableId { get; set; } = 0;
     public int LocationId { get; set; } = 0;
-    public int? PartyId { get; set; } = 0;
+    public int PartyId { get; set; } = 0;
     public string? PartyName { get; set; } = string.Empty;
     public string? PartyPhone { get; set; } = string.Empty;
     public string? PartyEmail { get; set; } = string.Empty;
@@ -29,13 +29,13 @@ public class BillModel
     public string ServiceChargeType { get; set; } = string.Empty;
     public double ServiceChargeRate { get; set; } = 0;
     public double ServiceCharge { get; set; } = 0;
-    public double DiscountAmount { get; set; } = 0;
+    public decimal DiscountAmount { get; set; } = 0;
     public double TaxRate { get; set; } = 0;
-    public double TaxAmount { get; set; } = 0;
-    public double BillAmount { get; set; } = 0;
+    public decimal TaxAmount { get; set; } = 0;
+    public decimal BillAmount { get; set; } = 0;
     public string? PaymentMethod { get; set; } = string.Empty;
     public string? PaymentRef { get; set; } = string.Empty;
-    public double PaymentAmount { get; set; } = 0;
+    public decimal PaymentAmount { get; set; } = 0;
     public string? Description { get; set; } = string.Empty;
     public string? Status { get; set; } = string.Empty;
     public string ServiceType { get; set; } = string.Empty;
@@ -92,7 +92,7 @@ public class BillDetailModel
     public string? BillType { get; set; } = string.Empty;
     public int LocationId { get; set; } = 0;
     public string? LocationName { get; set; } = string.Empty;
-    public int? PartyId { get; set; } = 0;
+    public int PartyId { get; set; } = 0;
     public string? PartyName { get; set; } = string.Empty;
     public string? Pic { get; set; } = string.Empty;
 

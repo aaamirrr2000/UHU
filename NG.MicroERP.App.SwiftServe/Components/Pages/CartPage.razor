@@ -203,7 +203,7 @@
             CreatedFrom = Functions.GetComputerDetails(),
             LocationId = Globals.User.LocationId,
             Description = CartState.BillNote,
-            BillAmount = billDetails.Sum(d => d.Qty * Convert.ToDouble(d.UnitPrice))
+            BillAmount = Convert.ToDecimal(billDetails.Sum(d => d.Qty * Convert.ToDouble(d.UnitPrice)))
         };
 
         var request = new Bill_And_Bill_Detail_Model

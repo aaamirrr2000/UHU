@@ -71,7 +71,7 @@ public class ServiceChargesService : IServiceChargesService
 				'{obj.ChargeName!.ToUpper()}', 
 				'{obj.ChargeType!.ToUpper()}', 
 				{obj.Amount},
-				'{obj.AppliesTo!.ToUpper()}', 
+				{obj.AppliesTo},
 				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
 				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
 				{obj.OrganizationId},
@@ -109,7 +109,7 @@ public class ServiceChargesService : IServiceChargesService
 					ChargeName = '{obj.ChargeName!.ToUpper()}', 
 					ChargeType = '{obj.ChargeType!.ToUpper()}', 
 					Amount = {obj.Amount}, 
-					AppliesTo = '{obj.AppliesTo!.ToUpper()}', 
+					AppliesTo = {obj.AppliesTo}, 
 					EffectiveFrom = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					EffectiveTo = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					OrganizationId = {obj.OrganizationId}, 
@@ -117,7 +117,7 @@ public class ServiceChargesService : IServiceChargesService
 					UpdatedBy = {obj.UpdatedBy}, 
 					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
-					IsSoftDeleted = {obj.IsSoftDeleted}
+					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
 
             return await dapper.Update(SQLUpdate);

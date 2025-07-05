@@ -4,6 +4,7 @@ using NG.MicroERP.Shared.Services;
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -35,7 +36,38 @@ public class Globals
     public static bool isVisible { get; set; } = true;
     public static string seletctedMenuItem { get; set; } = string.Empty;
 
-   
+    public static async Task<(List<ServiceChargesModel> Charges, double TotalAmount)> GetServiceChargesAsync(DateTime today, double baseAmount)
+    {
+        var myDate = today.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        string criteria = $"CAST('{myDate}' AS DATE) BETWEEN CAST(EffectiveFrom AS DATE) AND CAST(EffectiveTo AS DATE) AND organization_id = {Globals.Organization.Id}";
+
+        // --- 2. Fetch rows ---------------------------------------------------
+        List<ServiceChargesModel> res = await Functions.GetAsync<List<ServiceChargesModel>>($"ServiceCharges/Search/{criteria}", true) ?? new List<ServiceChargesModel>();
+
+        // --- 3. Calculate total, honouring ChargeType -----------------------
+        double total = res.Sum(c => string.Equals(c.ChargeType, "Percentage", StringComparison.OrdinalIgnoreCase)
+                ? baseAmount * c.Amount / 100.0     // percentage
+                : c.Amount                          // flat
+        );
+
+        return (res, total);
+    }
+
+    public static async Task<(List<TaxModel> Taxes, double TotalTaxAmount)> GetTaxesAsync(DateTime today, double baseAmount)
+    {
+        string dateStr = today.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        string criteria = $"CAST('{dateStr}' AS DATE) BETWEEN CAST(EffectiveFrom AS DATE) AND CAST(EffectiveTo AS DATE) AND organization_id = {Globals.Organization.Id}";
+
+        List<TaxModel>? list = await Functions.GetAsync<List<TaxModel>>($"Tax/Search/{criteria}", true);
+
+        var taxes = list ?? new List<TaxModel>();
+
+        double totalTax = taxes.Sum(t => baseAmount * t.RatePercent / 100.0);
+
+        return (taxes, totalTax);
+    }
+
     public static string Encrypt(string text)
     {
         byte[] keyBytes = Encoding.UTF8.GetBytes(key);
@@ -87,7 +119,7 @@ public class Globals
                 return (0, 0, 0, 0, 0);
 
             var bill = billRes.First();
-            double discount = bill.DiscountAmount;
+            double discount = Convert.ToDouble( bill.DiscountAmount);
 
             // 🔄 Get Bill Details (for subtotal)
             var detailRes = await Functions.GetAsync<List<BillDetailModel>>($"BillDetail/Search/BillDetail.BillId={billId}", true);

@@ -69,9 +69,30 @@
                     <ValidationMessage For="@(() => record.Amount)" />
                 </div>
                 <div class="col-6 mb-3">
-                    <MudTextField Label="AppliesTo" id="AppliesTo" @bind-Value="record.AppliesTo" Variant="Variant.Filled" placeholder="AppliesTo" ReadOnly="@isReadOnly"></MudTextField>
+                    <MudSelect T="int?"
+                               @bind-Value="record.AppliesTo"
+                               Label="Applies To"
+                               Variant="Variant.Filled"
+                               Dense="true"
+                               Placeholder="Applies To"
+                               HelperText="Select Applies To"
+                               HelperTextOnFocus="true"
+                               Clearable="true">
+
+                        <MudSelectItem T="int?" Value="@((int?)0)">ALL</MudSelectItem>
+
+                        @if (cat?.Any() == true)
+                        {
+                            foreach (var i in cat)
+                            {
+                                <MudSelectItem T="int?" Value="@((int?)i.Id)">@i.Name</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+
                     <ValidationMessage For="@(() => record.AppliesTo)" />
                 </div>
+
                 <div class="col-6 mb-3">
                     <MudDatePicker Label="EffectiveFrom" @bind-Value="record.EffectiveFrom" Format="yyyy-MM-dd" Variant="Variant.Filled" placeholder="EffectiveFrom" ReadOnly="@isReadOnly"></MudDatePicker>
                     <ValidationMessage For="@(() => record.EffectiveFrom)" />
@@ -80,6 +101,7 @@
                     <MudDatePicker Label="EffectiveTo" @bind-Value="record.EffectiveTo" Format="yyyy-MM-dd" Variant="Variant.Filled" placeholder="EffectiveTo" ReadOnly="@isReadOnly"></MudDatePicker>
                     <ValidationMessage For="@(() => record.EffectiveTo)" />
                 </div>
+               
                 <div class="col-6 mb-3">
 
                     <MudSelect T="int"
@@ -103,7 +125,6 @@
 
                     <ValidationMessage For="@(() => record.IsActive)" />
                 </div>
-
             </div>
         </MudExpansionPanel>
     </MudExpansionPanels>
@@ -114,6 +135,7 @@
 {
     static ServiceChargesModel record = new();
     List<TypeCodeModel> Cha = null!;
+    static List<CategoriesModel> cat = new();
 
     [Parameter] public string Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
@@ -129,16 +151,19 @@
 
     protected override void OnAfterRender(bool firstRender)
     {
+        GetDefaultValues();
     }
 
     protected async Task GetAll()
     {
         LoadingPanel = true;
-        Cha = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/CHA TYPE", true) ?? new List<TypeCodeModel>();
+        Cha = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/CHARGES", true) ?? new List<TypeCodeModel>();
+        cat = await Functions.GetAsync<List<CategoriesModel>>($"Categories/Search", true) ?? new List<CategoriesModel>();
 
         if (Action == "INSERT")
         {
             Clear();
+            GetDefaultValues();
             record.IsActive = 1;
             isReadOnly = false;
         }
@@ -155,6 +180,12 @@
         LoadingPanel = true;
         record = await Functions.GetAsync<ServiceChargesModel>($"ServiceCharges/Get?Id={id}", true) ?? new ServiceChargesModel();
         LoadingPanel = false;
+    }
+
+    protected void GetDefaultValues()
+    {
+
+        StateHasChanged();
     }
 
     protected async void Clear()

@@ -131,18 +131,19 @@
                                HelperTextOnFocus="true"
                                Clearable="true">
 
-                        @if (Sto != null && Sto.Any())
+                        @if (Sto?.Any() == true)           
                         {
                             if (string.IsNullOrWhiteSpace(record.Unit))
-                            {
                                 record.Unit = Sto.First().ListValue;
-                            }
 
-                            foreach (var i in Unit)
+                            foreach (var i in Sto)
                             {
-                                <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                <MudSelectItem T="string" Value="@i.ListValue">
+                                    @i.ListValue
+                                </MudSelectItem>
                             }
                         }
+
                     </MudSelect>
 
                     <ValidationMessage For="@(() => record.Unit)" />

@@ -8,6 +8,8 @@
     RatePercent     DECIMAL(9,4)     NOT NULL,                 -- 17.0000  = 17 %
     IsCompound      BIT              NOT NULL DEFAULT 0,       -- 1 = applied on top of other tax
     AppliesTo       VARCHAR(20)      NOT NULL,                 -- “SERVICE”, “GOODS”, “ALL”
+    EffectiveFrom   DATE            NOT NULL,
+    EffectiveTo     DATE            NULL,
     IsActive        BIT              NOT NULL DEFAULT 1,
 
     CreatedBy       INT              NULL,
@@ -24,26 +26,26 @@
 
 /* 1)  General Sales Tax – standard 18 % */
 INSERT INTO dbo.Tax
-        (TaxName,      TaxCode, RatePercent, IsCompound, AppliesTo,
+        (TaxName,      TaxCode, RatePercent, IsCompound, AppliesTo, EffectiveFrom, EffectiveTo,
          IsActive,
-         CreatedBy,    CreatedOn,     CreatedFrom,
+         CreatedBy,    CreatedOn,     CreatedFrom, 
          UpdatedBy,    UpdatedOn,     UpdatedFrom,
          IsSoftDeleted)
-VALUES  ('GST (Pakistan)', 'GST', 18.0000, 0, 'ALL',
-         DEFAULT,                              -- IsActive (1)
+VALUES  ('GST (Pakistan)', 'GST', 18.0000, 0, 'ALL', '2025-01-01', '2025-12-31',
+         DEFAULT,         
          1,            DEFAULT,      '10.0.0.15',
          1,            DEFAULT,      '10.0.0.15',
-         DEFAULT);                            -- IsSoftDeleted (0)
+         DEFAULT);                       
 
 
 /* 2)  Provincial Services Tax – non-compound 15 % */
 INSERT INTO dbo.Tax
-        (TaxName,              TaxCode, RatePercent, IsCompound, AppliesTo,
+        (TaxName,              TaxCode, RatePercent, IsCompound, AppliesTo, EffectiveFrom, EffectiveTo,
          IsActive,
          CreatedBy,            CreatedOn,     CreatedFrom,
          UpdatedBy,            UpdatedOn,     UpdatedFrom,
          IsSoftDeleted)
-VALUES  ('Provincial Services Tax', 'PST', 15.0000, 0, 'SERVICE',
+VALUES  ('Provincial Services Tax', 'PST', 15.0000, 0, 'SERVICE', '2025-01-01', '2025-12-31',
          DEFAULT,
          2,                    DEFAULT,      '10.0.0.23',
          2,                    DEFAULT,      '10.0.0.23',

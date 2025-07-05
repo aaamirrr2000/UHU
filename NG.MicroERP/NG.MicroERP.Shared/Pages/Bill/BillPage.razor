@@ -1,554 +1,705 @@
 ﻿@page "/BillPage/{Act}/{Id:int?}"
-@layout BlankLayout
-@inject IDialogService dialogService
-@inject ISnackbar SnackbarService
+@page "/BillPage"
+@using System.Collections.ObjectModel
+@using System.Text.Json
+@inject NavigationManager NavManager
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
 @inject IJSRuntime JS
 
-@using MudBlazor
-@using System.Text.Json
+<MudLayout>
+    <!-- Top App Bar -->
+    <MudAppBar Elevation="2" Color="Color.Surface" Dense="true" Class="app-bar px-2 w-100" Fixed="false" Style="margin-left:0; border-top: 1px solid gray; padding:5px;">
+        <!-- Left‑aligned controls -->
+        @* <MudIconButton Icon="@Icons.Material.Filled.AddBox" Color="Color.Secondary" Size="Size.Medium" OnClick="@(async () => await AddBlankRow())" /> *@
 
-
-<Loading IsLoading="@LoadingPanel" />
-
-
-<title>@DateTime.Now.ToString("dd-MMM-yyy HH:mm:ss tt")</title>
-<MudPaper Class="p-3" Elevation="3" style="height: 100vh; overflow-y: hidden; overflow-x: auto;">
-    <EditForm Model="record" >
-        
-        <!-- Top Row: Toolbar, Dropdowns, Search -->
-        <MudGrid Class="mb-3">
-            <MudItem xs="12">
-                <div class="d-flex flex-wrap align-items-end gap-2 p-2"style="position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background-color: #0A4D61; color: white;">
-
-                   <MudTooltip Text="Add Item"><MudIconButton Icon="@Icons.Material.Filled.AddBox" Color="Color.Secondary" OnClick="@(async () => await AddItemDialogShow(0))" /></MudTooltip>
-                   
-                       <!-- Toolbar Buttons (KEEP AS-IS) -->
-                        <div class="d-flex align-items-center flex-wrap me-3 gap-1">
-                              <!-- Bill Type Dropdown -->
-                        <div class="form-wrapper input-icon-container">
-                            <select class="form-select form-select-sm" @bind="record.Bill.BillType">
-                                <option value="SALE" selected>SALE</option>
-                                <option value="SALE RETURN">SALE RETURN</option>
-                                <option value="QUOTATION">QUOTATION</option>
-                            </select>
-                        </div>
-
-                        <MudTooltip Text="Options"><MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Info" OnClick="@(()=>Options())"/></MudTooltip>
-                        <MudTooltip Text="New"><MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Success" OnClick="@(() => Clear())" /></MudTooltip>
-
-                        @if (Act != "VIEW")
-                        {
-                            <MudTooltip Text="Save"><MudIconButton Icon="@Icons.Material.Filled.Save" Color="Color.Success" OnClick="@(() => Save())" /></MudTooltip>
-                            <MudTooltip Text="Delete"><MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" /></MudTooltip>
-                        }
-
-                        @if (Id!=0)
-                        {
-                            <MudTooltip Text="Print"><MudIconButton Icon="@Icons.Material.Filled.Print" Color="Color.Info" OnClick="Print" /></MudTooltip>
-                        }
-                       
-                        <div class="form-wrapper input-icon-container">
-                            <input class="form-control form-control-sm" type="text" @bind="record.Bill.SeqNo" placeholder="Bill #." />
-                        </div>
-                        <MudTooltip Text="Customer"><MudIconButton Icon="@Icons.Material.Filled.Person" Color="Color.Info" OnClick="AddParty" /></MudTooltip>
-                    </div>
-
-                </div>
-            </MudItem>
-        </MudGrid>
-
-
-        <!-- Table and Summary Section -->
-        <MudGrid Style="margin-top:40px;">
-            <!-- Items Table -->
-            <MudItem xs="12" md="6">
-                <!-- Item Table -->
-                <div style="overflow-y: auto; height: calc(100vh - 100px);">
-                    <div style="height: calc(100vh - 200px); display: flex; flex-direction: column; border: 1px solid #ddd; border-radius: 4px;">
-                        <table class="table table-hover table-striped table-sm w-100" style="border-collapse: separate;">
-                            <thead style="display: table-header-group; background-color: #f8f9fa;">
-                                <tr>
-                                    <th style="width: 50px; text-align: center;">S.No</th>
-                                    <th style="width: 50px; text-align: center;">Actions</th>
-                                    <th style="width: 300px;">Item</th>
-                                    <th style="text-align: right; width: 100px;">Qty</th>
-                                    <th style="text-align: right; width: 100px;">Price</th>
-                                    <th style="text-align: right; width: 100px;">Discount</th>
-                                    <th style="text-align: right; width: 100px;">Amount</th>
-                                </tr>
-                            </thead>
-                        </table>
-
-                        <div style="flex-grow: 1; overflow-y: auto;">
-                            <table class="table table-hover table-striped table-sm w-100" style="margin-bottom: 0; border-collapse: separate;">
-                                <tbody>
-                                    @foreach (var entry in record.BillDetails.Select((item, index) => new { item, index }))
-                                    {
-                                        <tr>
-                                            <td style="width: 50px; text-align: center;">
-                                                @(entry.index + 1)
-                                            </td>
-                                            <td style="width: 50px; text-align: center;">
-                                                @if (Act != "VIEW")
-                                                {
-                                                    <MudTooltip Text="Delete">
-                                                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                                        Color="Color.Error"
-                                                        Size="Size.Small"
-                                                        OnClick="@(() => DeleteItem(entry.item))"/>
-                                                    </MudTooltip>
-                                                }
-                                                else
-                                                {
-                                                    <span>ReadOnly</span>
-                                                }
-                                            </td>
-                                            <td style="width: 300px;">@entry.item.Item @entry.item.ServingSize</td>
-                                            <td style="text-align: right; width: 100px;">@entry.item.Qty</td>
-                                            <td style="text-align: right; width: 100px;">@entry.item.UnitPrice.ToString("#,##0.00")</td>
-                                            <td style="text-align: right; width: 100px;">@entry.item.DiscountAmount.ToString("#,##0.00")</td>
-                                            <td style="text-align: right; width: 100px;">@entry.item.Item_Amount.ToString("#,##0.00")</td>
-                                        </tr>
-                                    }
-                                </tbody>
-
-                            </table>
-                        </div>
-
-                        <table class="table table-striped table-sm w-100" style="margin-bottom: 0; border-collapse: separate;">
-                            <tfoot style="display: table-header-group; background-color: #f8f9fa;">
-                                <tr>
-                                    <td style="text-align: right; width: 40px;"><strong></strong></td>
-                                    <td style="text-align: right; width: 300px;"><strong>Total</strong></td>
-                                    <td style="text-align: right; width: 100px;"><strong>@TotalQty.ToString("#,##0.00")</strong></td>
-                                    <td style="text-align: right; width: 100px;"><strong></strong></td>
-                                    <td style="text-align: right; width: 100px;"><strong>@TotalDiscountAmount.ToString("#,##0.00")</strong></td>
-                                    <td style="text-align: right; width: 100px;"><strong>@TotalBillAmount.ToString("#,##0.00")</strong></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-
-                <!-- Summary Section -->
-                <div class="mt-3 p-2" style="border: 0; border-radius: 4px; display: flex; gap: 1rem; flex-wrap: nowrap;">
-                    <div style="flex: 1 1 0; min-width: 150px; display: flex; flex-direction: column;">
-                        <label for="taxInput" class="form-label">Tax</label>
-                            <input id="taxInput" type="number" class="form-control form-control-sm"
-                                   @bind="record.Bill.TaxAmount"
-                                   @bind:event="oninput"
-                                   @onchange="CalculateTotalNetAmount"
-                                   style="text-align: right;"
-                                   disabled="@Disabled" />
-
-
-                    </div>
-                    <div style="flex: 1 1 0; min-width: 150px; display: flex; flex-direction: column;">
-                        <label for="discountInput" class="form-label">Discount</label>
-                            <input id="discountInput" type="number" class="form-control form-control-sm"
-                                   @bind="record.Bill.DiscountAmount"
-                                   @bind:event="oninput"
-                                   @onchange="CalculateTotalNetAmount"
-                                   style="text-align: right;"
-                                   disabled="@Disabled" />
-
-                    </div>
-                    <div style="flex: 1 1 0; min-width: 150px; display: flex; flex-direction: column;">
-                        <label for="paymentMethodSelect" class="form-label">Payment Method</label>
-                        @if (PaymentMethod!=null)
-                        {
-                                <select id="SelectedPaymentMethod" class="form-select form-select-sm" @bind="record.Bill.PaymentMethod" disabled="@Disabled">
-                                    @foreach (var pm in PaymentMethod)
-                                {
-                                    <option value="@pm.ListValue">@pm.ListValue</option>
-                                } 
-                            </select>
-                        }
-                    </div>
-                    <div style="flex: 1 1 0; min-width: 150px; display: flex; flex-direction: column;">
-                        <label for="paymentRefInput" class="form-label">Payment Ref</label>
-                            <input id="paymentRefInput" type="text" class="form-control form-control-sm" @bind="record.Bill.PaymentRef" disabled="@Disabled" />
-                    </div>
-                    <div style="flex: 1 1 0; min-width: 150px; display: flex; flex-direction: column;">
-                        <label class="form-label">Net Amount</label>
-                            <input type="text" class="form-control form-control-sm" value="@TotalNetAmount.ToString("#,##0.00")" style="text-align: right;" disabled="@Disabled" />
-                    </div>
-                </div>
-                </div>
-            </MudItem>
-
-            <!-- Favorite Items -->
-            
-                <MudItem xs="12" md="6">
-
-                    <div style="background-color: #B1D7B2; padding: 12px 20px; border-radius: 2px; margin-bottom: 10px;">
-                        <MudText Typo="Typo.h6" Class="text-white m-0">
-                            <i class="fas fa-star me-2"></i> Favorite Used - Top @MaxItems.ToString("#,##0") Items
-                        </MudText>
-                    </div>
-
-                    <MudGrid GutterSize="GutterSize.Small">
-                        @foreach (var fav in FavItemsData)
-                        {
-                            <MudItem xs="6" sm="4" md="3" lg="2" xl="2">
-                                 <div @onclick="@(async () => await AddItemDialogShow(fav.Id))" style="cursor:pointer;">
-                                    <MudPaper Elevation="2"
-                                              Class="hoverable-card"
-                                              Style="cursor:pointer; text-align:center; padding: 8px; display: flex; flex-direction: column; align-items: center; min-height: 150px; transition: box-shadow 0.2s ease-in-out; background-color: #F0EEE9;">
-
-                                        <!-- Image -->
-                                        <img src="@fav.Pic"
-                                             alt="@fav.Name"
-                                             style="width: 100%; max-height: 60px; object-fit: contain; margin-bottom: 6px;" />
-
-                                        <!-- Text -->
-                                        <div style="margin-top: auto;">
-                                            <MudText Typo="Typo.body2" Align="Align.Center" Class="text-truncate">@fav.Name</MudText>
-                                            <MudText Typo="Typo.overline" Color="Color.Secondary" Align="Align.Center">
-                                                @fav.RetailPrice.ToString("#,##0.00")
-                                            </MudText>
-                                        </div>
-                                    </MudPaper>
-                                </div>
-                            </MudItem>
-                        }
-                    </MudGrid>
-
-                    <div style="background-color: #B1D7B2; padding: 12px 20px; border-radius: 2px; margin-top: 20px; margin-bottom: 10px;">
-                        <MudText Typo="Typo.h6" Class="text-white m-0">
-                            <i class="fas fa-history me-2"></i> Recently Used - Top @MaxItems.ToString("#,##0") Items
-                        </MudText>
-                    </div>
-
-
-                    <MudGrid GutterSize="GutterSize.Small">
-                        @foreach (var fav in RecentItemsData)
-                        {
-                            <MudItem xs="6" sm="4" md="3" lg="2" xl="2">
-                                <div @onclick="@(async () => await AddItemDialogShow(fav.Id))" style="cursor:pointer;">
-                                    <MudPaper Elevation="2"
-                                              Class="hoverable-card"
-                                              Style="cursor:pointer; text-align:center; padding: 8px; display: flex; flex-direction: column; align-items: center; min-height: 150px; transition: box-shadow 0.2s ease-in-out; background-color: #F0EEE9;">
-
-                                        <!-- Image -->
-                                        <img src="@fav.Pic"
-                                             alt="@fav.Name"
-                                             style="width: 100%; max-height: 60px; object-fit: contain; margin-bottom: 6px;" />
-
-                                        <!-- Text -->
-                                        <div style="margin-top: auto;">
-                                            <MudText Typo="Typo.body2" Align="Align.Center" Class="text-truncate">@fav.Name</MudText>
-                                            <MudText Typo="Typo.overline" Color="Color.Secondary" Align="Align.Center">
-                                                @fav.RetailPrice.ToString("#,##0.00")
-                                            </MudText>
-                                        </div>
-                                    </MudPaper>
-                                </div>
-                            </MudItem>
-                        }
-                    </MudGrid>
-                </MudItem>
-            <style>
-                .hoverable-card:hover {
-                    box-shadow: 0px 0px 10px rgba(0,0,0,0.2) !important;
+        <!-- Bill‑type selector -->
+        <MudSelect Dense="true" T="string" @bind-Value="record.Bill.BillType" Disabled="@Disabled">
+            @if (BillType != null)
+            {
+                @foreach (var pm in BillType)
+                {
+                    <MudSelectItem Value="@pm.ListValue">@pm.ListValue</MudSelectItem>
                 }
-            </style>
+            }
+        </MudSelect>
 
-        </MudGrid>
-    </EditForm>
+        <!-- Standard toolbar buttons -->
+        <MudTooltip Text="Options"><MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Info" OnClick="Options" /></MudTooltip>
+        <MudTooltip Text="New"><MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Success" OnClick="Clear" /></MudTooltip>
+        @if (Act != "VIEW")
+        {
+            <MudTooltip Text="Save"><MudIconButton Icon="@Icons.Material.Filled.Save" Color="Color.Success" OnClick="Save" /></MudTooltip>
+            @* <MudTooltip Text="Delete"><MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="DeleteBill" /></MudTooltip> *@
+        }
+        @if (Id != 0)
+        {
+            <MudTooltip Text="Print"><MudIconButton Icon="@Icons.Material.Filled.Print" Color="Color.Info" OnClick="Print" /></MudTooltip>
+        }
 
+        <!-- Spacer pushes the next controls to the right -->
+        <MudSpacer />
 
-@* ---------------------------------------------------------------- Select Item ---------------------------------------------------------------- *@
+        <!-- Bill number + customer button -->
+        <MudTextField Class="me-2" Dense="true" Variant="Variant.Text" Placeholder="Bill #" T="string" Style="max-width:120px;" @bind-Value="record.Bill.SeqNo" />
+        <MudTooltip Text="Customer"><MudIconButton Icon="@Icons.Material.Filled.Person" Color="Color.Info" OnClick="AddParty" /></MudTooltip>
+    </MudAppBar>
 
-<MyModelDialog Width="60%" Height="80%" @ref="_myDialogItemSelection" Title="Add Item to Bill">
-    <HeaderContent>
-        <!-- Optional: Add title bar styling here -->
-    </HeaderContent>
+    <!-- Main content -->
+    <MudMainContent Class="p-4" Style="margin-left:0;">
+        <MudGrid>
+            <!-- Left: Items & summary -->
+            <MudItem xs="12" md="7">
+                <!-- Items table -->
+                <MudCard Elevation="1" Class="d-flex flex-column" Style="height:70vh; overflow:hidden;">
+                    <MudCardContent Class="p-0" Style="flex-grow: 1; overflow: hidden;">
+                        
+                        <div style="height: 100%; overflow-y: auto; padding-right: 4px;">
+                            <MudTable Items="record.BillDetails.OrderByDescending(x => x.Id)"
+                                        Hover="true"
+                                        Dense="true"
+                                        StickyHeader="true"
+                                        Elevation="0"
+                                        Bordered="true"
+                                        Breakpoint="Breakpoint.Xs"
+                                        Striped="false"
+                                        Class="billing-table">
 
-    <ChildContent>
-        <div class="container-fluid">
-
-            <!-- Item Entry Panel -->
-            <div class="row mb-4 shadow-sm rounded bg-white p-3">
-
-                <!-- Left Block: Image & Info -->
-                <div class="col-md-3 d-flex flex-column align-items-center justify-content-center bg-light border-end rounded-start p-4">
-                    <img src="@(string.IsNullOrEmpty(BillItems.Pic) ? "/images/noimage.jpg" : BillItems.Pic)"
-                         alt="Item Image"
-                         class="img-thumbnail mb-3"
-                         style="width: 120px; height: 120px; object-fit: cover; border-radius: 10px;" />
-
-                    <div class="text-center">
-                        <div class="text-danger fw-bold fs-3">@BillItems.Item</div>
-                        <div class="text-success fw-semibold fs-5 mt-2">@BillItems.Item_Amount.ToString("#,##0.00")</div>
-                    </div>
-                </div>
-
-                <!-- Right Block: Entry Form -->
-                <div class="col-md-9 bg-white rounded-end p-4">
-                    <div class="row g-3">
-                        @if (IsInventoryItem)
-                        {
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Stock Condition</label>
-                                <select class="form-select" @bind="SelectedStockCondition">
-                                    <option disabled selected value="">Select...</option>
-                                    @if (StockCondition != null)
-                                    {
-                                        @foreach (var a in StockCondition)
-                                        {
-                                            <option value="@a.ListValue">@a.ListValue</option>
-                                        }
-                                    }
-                                </select>
-                            </div>
-                        }
-
-                        @if (ServiceSizeEnableDisable && ServingSizeOptions != null)
-                        {
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Serving Size</label>
-                                <select class="form-select" @onchange="OnServingSizeChanged">
-                                    <option disabled selected value="">Select...</option>
-                                    @foreach (var option in ServingSizeOptions)
-                                    {
-                                        <option value="@option.Size">@($"{option.Size} - {option.Price:N2}")</option>
-                                    }
-                                </select>
-                            </div>
-                        }
-
-                        <div class="col-md-2">
-                            <label class="form-label fw-semibold">Qty</label>
-                            <input type="number" class="form-control text-end" step="1"
-                                   @bind-Value="BillItems.Qty"
-                                   @bind-Value:event="oninput"
-                                   readonly="@QtyEnableDisable" />
-                        </div>
-
-                        <div class="col-md-2">
-                            <label class="form-label fw-semibold">Price</label>
-                            <input type="number" class="form-control text-end" step="1"
-                                   @bind-Value="BillItems.UnitPrice"
-                                   @bind-Value:event="oninput"
-                                   readonly="@PriceEnableDisable" />
-                        </div>
-
-                        <div class="col-md-2">
-                            <label class="form-label fw-semibold">Discount</label>
-                            <input type="number" class="form-control text-end" step="1"
-                                   @bind-Value="BillItems.DiscountAmount"
-                                   @bind-Value:event="oninput" />
-                        </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">Final Amount</label>
-                            <input type="text" class="form-control text-end bg-light fw-bold"
-                                   value="@BillItems.Item_Amount.ToString("0.00")"
-                                   readonly />
-                        </div>
-
-                         @if (Act != "VIEW")
-                        {
-                            <div class="col-md-3 d-grid align-items-end">
-                                <label class="form-label invisible">Add</label>
-                                <button type="button" class="btn btn-primary" @onclick="AddItem">
-                                    <i class="fas fa-plus me-1"></i> Add
-                                </button>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <!-- Divider -->
-            <hr class="mb-4" />
-
-            <!-- Items Grid -->
-            <div class="row">
-                <div class="col-12">
-                    <MudTextField @bind-Value="searchText" Placeholder="Search..." Immediate="true" OnBlur="FilterItems" OnKeyUp="FilterItems" />
-                    @if (FilteredItems is not null && FilteredItems.Any())
-                    {
-                        <MudPaper Style="height: 500px; overflow-y: auto;">
-                               
-
-                                <MudTable T="ItemsModel" Items="@FilteredItems" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowClass="cursor-pointer" @bind-SelectedItem="SelectedItem" OnRowClick="OnRowClick">
                                 <HeaderContent>
-                                    @* <MudTh>Actions</MudTh> *@
+                                    <MudTh Width="5%" Align="Align.Center">#</MudTh>
+                                    <MudTh Width="5%" Align="Align.Center">(...)</MudTh>
                                     <MudTh>Item</MudTh>
-                                    <MudTh>Details</MudTh>
-                                    <MudTh class="text-end">Discount</MudTh>
-                                    <MudTh class="text-end">Price</MudTh>
+                                    <MudTh Width="10%" Align="Align.Right">Qty</MudTh>
+                                    <MudTh Width="10%" Align="Align.Right">Price</MudTh>
+                                    <MudTh Width="10%" Align="Align.Right">Discount</MudTh>
+                                    <MudTh Width="10%" Align="Align.Right">Amount</MudTh>
                                 </HeaderContent>
+
                                 <RowTemplate Context="row">
-                                        <MudTd>
-                                            <img src="@(string.IsNullOrEmpty(row.Pic) ? "/images/noimage.jpg" : row.Pic)"
-                                                 alt="Item Image"
-                                                 style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;" />
-                                        </MudTd>
-                                        <MudTd>
-                                            <div class="fw-semibold">@row.Name</div>
-                                            <div class="text-muted small">@row.Description</div>
-                                            <div class="text-primary small">@row.CategoryName</div>
-                                        </MudTd>
-                                        <MudTd class="text-end align-middle">
-                                            @row.Discount.ToString("#,##0.00")
-                                        </MudTd>
-                                        <MudTd class="text-end align-middle">
-                                            @row.RetailPrice.ToString("#,##0.00")
-                                        </MudTd>
+                                    @{
+                                        var idx = record.BillDetails.IndexOf(row) + 1;
+                                        var itemAmount = (row.Qty * row.UnitPrice) - row.DiscountAmount;
+                                    }
+
+                                    <MudTd Align="Align.Center">@idx</MudTd>
+
+                                    <MudTd Align="Align.Center">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                        Size="Size.Small"
+                                                        Color="Color.Error"
+                                                        OnClick="@(() => DeleteItem(row))" />
+                                    </MudTd>
+
+                                    <MudTd>
+                                        <MudText Typo="Typo.subtitle2" Class="fw-semibold" Color="Color.Primary">
+                                            @row.Item
+                                        </MudText>
+                                        <MudText Typo="Typo.caption" Class="text-muted" Color="Color.Error">
+                                            @row.ServingSize
+                                        </MudText>
+                                    </MudTd>
+
+                                    <MudTd Align="Align.Right">
+                                        <MudNumericField T="double"
+                                                            Dense="true"
+                                                            Min="0"
+                                                            HideSpinButtons="false"
+                                                            @bind-Value="row.Qty"
+                                                            InputClass="text-end no-bottom-border"
+                                                            ToStringFormat="#,##0.00"
+                                                            OnBlur="@(() => CalculateTotalNetAmountAsync())"
+                                                            Class="w-100" 
+                                                            Style="text-align:right;"/>
+                                    </MudTd>
+
+                                    <MudTd Style="text-align:right;">@row.UnitPrice.ToString("#,##0.00")</MudTd>
+                                    <MudTd Style="text-align:right;">@row.DiscountAmount.ToString("#,##0.00")</MudTd>
+                                    <MudTd Style="text-align:right;"><MudText Color="@(itemAmount < 0 ? Color.Error : Color.Default)">@itemAmount.ToString("#,##0.00")</MudText></MudTd>
                                 </RowTemplate>
+
+                                <FooterContent>
+                                    <MudTd ColSpan="3" Style="text-align:right;"><b>Total</b></MudTd>
+                                    <MudTd Style="text-align:right;"><b>@TotalQty.ToString("#,##0.00")</b></MudTd>
+                                    <MudTd />
+                                    <MudTd Style="text-align:right;"><b>@TotalDiscountAmount.ToString("#,##0.00")</b></MudTd>
+                                    <MudTd Style="text-align:right;"><b>@TotalBillAmount.ToString("#,##0.00")</b></MudTd>
+                                </FooterContent>
                             </MudTable>
-                        </MudPaper>
-                    }
-                    else
-                    {
-                        <MudProgressCircular Indeterminate="true" />
-                    }
+                        </div>
+                    </MudCardContent>
+                </MudCard>
+                    
+              <MudCard Class="mt-2" Elevation="1">
+                <MudCardContent>
 
-                </div>
-            </div>
+<div class="row summary-row">
+    <div class="col-4 summary-col">
+        <MudText Typo="Typo.caption" Class="summary-label">
+            <MudIconButton Icon="@Icons.Material.Outlined.RequestQuote"
+                           Color="Color.Secondary"
+                           Size="Size.Small"
+                           Class="summary-icon"
+                           OnClick="@(() => OpenChargesDialog())" />
+            Service Charges
+        </MudText>
+        <MudText Typo="Typo.subtitle2" Class="summary-value">
+            @ServiceChargesTotal.ToString("#,##0.00")
+        </MudText>
+    </div>
 
-        </div>
-    </ChildContent>
+    <div class="col-4 summary-col">
+        <MudText Typo="Typo.caption" Class="summary-label">
+            <MudIconButton Icon="@Icons.Material.Outlined.AccountBalance"
+                           Color="Color.Secondary"
+                           Size="Size.Small"
+                           Class="summary-icon"
+                           OnClick="@(() => OpenTaxDialog())" />
+            Tax
+        </MudText>
+        <MudText Typo="Typo.subtitle2" Class="summary-value">
+            @TaxTotal.ToString("#,##0.00")
+        </MudText>
+    </div>
 
-    <FooterContent>
-        <!-- Optional: Add footer actions -->
-    </FooterContent>
-</MyModelDialog>
+    <div class="col-4 summary-col">
+        <MudText Typo="Typo.caption" Class="summary-label">
+            <MudIconButton Icon="@Icons.Material.Outlined.LocalOffer"
+                           Color="Color.Secondary"
+                           Size="Size.Small"
+                           Class="summary-icon" />
+            Discount
+        </MudText>
+        <MudNumericField T="decimal"
+                         Dense="true"
+                         @bind-Value="record.Bill.DiscountAmount"
+                         Disabled="@Disabled"
+                         ToStringFormat="#,##0.00"
+                         Class="summary-value"
+                         HideSpinButtons="true" />
+    </div>
+
+   @*  <div class="col-3 summary-col">
+        <MudText Typo="Typo.caption" Class="summary-label">
+            <MudIconButton Icon="@Icons.Material.Outlined.Summarize"
+                           Color="Color.Secondary"
+                           Size="Size.Small"
+                           Class="summary-icon" />
+            Gross Amount
+        </MudText>
+        <MudText Typo="Typo.subtitle2" Class="summary-value">
+            @record.Bill.BillAmount.ToString("#,##0.00")
+        </MudText>
+    </div> *@
+</div>
+
+<div class="row summary-row">
+    <div class="col-4 summary-col">
+        <MudText Typo="Typo.caption" Class="summary-label">
+            <MudIconButton Icon="@Icons.Material.Outlined.Payment"
+                           Color="Color.Secondary"
+                           Size="Size.Small"
+                           Class="summary-icon" />
+            Payment Method
+        </MudText>
+        <MudSelect T="string"
+                   Dense="true"
+                   @bind-Value="record.Bill.PaymentMethod"
+                   Disabled="@Disabled"
+                   Class="summary-value">
+            @foreach (var pm in PaymentMethod)
+            {
+                <MudSelectItem Value="@pm.ListValue">@pm.ListValue</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
+
+    <div class="col-4 summary-col">
+        <MudText Typo="Typo.caption" Class="summary-label">
+            <MudIconButton Icon="@Icons.Material.Outlined.QrCode"
+                           Color="Color.Secondary"
+                           Size="Size.Small"
+                           Class="summary-icon" />
+            Payment Ref
+        </MudText>
+        <MudTextField T="string"
+                      Dense="true"
+                      @bind-Value="record.Bill.PaymentRef"
+                      Disabled="@Disabled"
+                      Class="summary-value" />
+    </div>
+
+    <div class="col-4 summary-col">
+        <MudText Typo="Typo.caption" Class="summary-label">
+            <MudIconButton Icon="@Icons.Material.Outlined.Calculate"
+                           Color="Color.Secondary"
+                           Size="Size.Small"
+                           Class="summary-icon" />
+            Net Amount
+        </MudText>
+        <MudText Typo="Typo.subtitle2" Class="summary-value">
+            @TotalNetAmount.ToString("#,##0.00")
+        </MudText>
+    </div>
+</div>
 
 
-@* ---------------------------------------------------------------- Add Party ---------------------------------------------------------------- *@
+                </MudCardContent>
+            </MudCard>
 
-    <MyModelDialog Width="30%" Height="45%" @ref="_myDialogParties" Title="Customer Details">
-    <HeaderContent>
-    </HeaderContent>
+            </MudItem>
 
-    <ChildContent>
-                <div class="mb-5">
-                    <label for="PartyName" class="form-label">Name</label>
-                <input id="PartyName" type="text" class="form-control form-control-sm" placeholder="Customer (Optional)" @bind="record.Bill.PartyName" disabled="@Disabled" />
-                </div>
+            <!-- Right: Favourites / Recent -->
+            <MudItem xs="12" md="5">
+                <MudTabs Rounded="true" Centered="false" Elevation="1" Class="mb-2" ScrollButtons="ScrollButtons.Auto"> 
+                    <MudTabPanel Text=@($"Items") Class="p-2">
+                        
+                        <div class="m-3">
+                            @foreach (var category in _categories)
+                            {
+                                <button class="btn btn-outline-primary m-1" @onclick="() => LoadItemsByCategory(category)">
+                                    @category.Name
+                                </button>
+                            }
+                        </div>
 
-                <div class="mb-5">
-                    <label for="PartyPhone" class="form-label">Phone</label>
-                <input id="PartyPhone" type="text" class="form-control form-control-sm" placeholder="Phone (Optional)" @bind="record.Bill.PartyPhone" disabled="@Disabled" />
-                </div>
+                        <MudTextField Dense="true" Class="mb-2 p-2" Placeholder="Search…" @bind-Value="ClickedItem.Name" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
 
-                <div class="mb-5">
-                    <label for="PartyEmail" class="form-label">Email</label>
-                <input id="PartyEmail" type="email" class="form-control form-control-sm" placeholder="Email (Optional)" style="text-transform: unset;" @bind="record.Bill.PartyEmail" disabled="@Disabled"/>
-                </div>
+                        <MudGrid GutterSize="GutterSize.Small">
+                            @foreach (var fav in SelectedItems.Where(f => string.IsNullOrWhiteSpace(ClickedItem.Name) || f.Name!.Contains(ClickedItem!.Name!, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                <MudItem xs="6" sm="4" md="3">
+                                    <MudCard Elevation="2" Class="item-card" Style="cursor:pointer;" @onclick="@(async () => await AddItemDialogShow(fav.Id))">
+                                        <MudCardMedia Image="@fav.Pic" Height="80" />
+                                        <MudCardContent>
+                                            <MudText Typo="Typo.subtitle2" Align="Align.Center" Class="truncate">@fav.Name</MudText>
+                                            <MudText Typo="Typo.caption" Align="Align.Center" Color="Color.Secondary">@fav.RetailPrice.ToString("#,##0.00")</MudText>
+                                        </MudCardContent>
+                                    </MudCard>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </MudTabPanel>
 
-                <div class="mb-5">
-                    <label for="PartyAddress" class="form-label">Address</label>
-                <input id="PartyAddress" type="text" class="form-control form-control-sm" placeholder="Address (Optional)" @bind="record.Bill.PartyAddress" disabled="@Disabled" />
-                </div>
+                    <MudTabPanel Text=@($"Favorites ({MaxItems:#,##0})") Class="p-2">
 
+                        <MudTextField Dense="true" Class="mb-2 p-2" Placeholder="Search…" @bind-Value="SelectedFavItem.Name" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
+                        
+                        <MudGrid GutterSize="GutterSize.Small">
+                            @foreach (var fav in FavItemsData.Where(f => string.IsNullOrWhiteSpace(SelectedFavItem.Name) || f.Name!.Contains(SelectedFavItem.Name, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                <MudItem xs="6" sm="4" md="3">
+                                    <MudCard Elevation="2" Class="item-card" Style="cursor:pointer;" @onclick="@(async () => await AddItemDialogShow(fav.Id))">
+                                        <MudCardMedia Image="@fav.Pic" Height="80" />
+                                        <MudCardContent>
+                                            <MudText Typo="Typo.subtitle2" Align="Align.Center" Class="truncate">@fav.Name</MudText>
+                                            <MudText Typo="Typo.caption" Align="Align.Center" Color="Color.Secondary">@fav.RetailPrice.ToString("#,##0.00")</MudText>
+                                        </MudCardContent>
+                                    </MudCard>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </MudTabPanel>
+                    <MudTabPanel Text=@($"Recent ({MaxItems:#,##0})") Class="p-2">
 
-                <MudButton Variant="Variant.Filled" OnClick="CloseParty" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
-                    <MudIcon Icon="@Icons.Material.Filled.Close" Class="mr-1" />
-                    Close
-                </MudButton>
+                        <MudTextField Dense="true" Class="mb-2 p-2" Placeholder="Search…" @bind-Value="SelectedRecentItem.Name" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
+                        
+                        <MudGrid GutterSize="GutterSize.Small">
 
-           
-
-    </ChildContent>
-
-    <FooterContent>
-    </FooterContent>
-</MyModelDialog>
-
-@* ---------------------------------------------------------------- More Options ---------------------------------------------------------------- *@
-<MyModelDialog Width="30%" Height="55%" @ref="_myDialogOptions" Title="Options">
-    <HeaderContent>
-    </HeaderContent>
-
+                            @foreach (var fav in RecentItemsData.Where(f => string.IsNullOrWhiteSpace(SelectedRecentItem.Name) || f.Name!.Contains(SelectedRecentItem.Name, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                <MudItem xs="6" sm="4" md="3">
+                                    <MudCard Elevation="2" Class="item-card" Style="cursor:pointer;" @onclick="@(async () => await AddItemDialogShow(fav.Id))">
+                                        <MudCardMedia Image="@fav.Pic" Height="80" />
+                                        <MudCardContent>
+                                            <MudText Typo="Typo.subtitle2" Align="Align.Center" Class="truncate">@fav.Name</MudText>
+                                            <MudText Typo="Typo.caption" Align="Align.Center" Color="Color.Secondary">@fav.RetailPrice.ToString("#,##0.00")</MudText>
+                                        </MudCardContent>
+                                    </MudCard>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </MudTabPanel>
+                </MudTabs>
+            </MudItem>
+        </MudGrid>
+    </MudMainContent>
+    @* Options ---------------------------------------------------------------------------------------------------------------------------------------- *@
+    <MyDrawer @ref="_drawer" Title="Options" FaIcon="fas fa-address-book">
+        <HeaderContent>
+        </HeaderContent>
         <ChildContent>
-            <div class="container">
-                <!-- Customer Dropdown -->
-                <div class="mb-5">
-                    <label for="SelectedParty" class="form-label">Customer</label>
-                    <select id="SelectedParty" class="form-select form-select-sm" @bind="record.Bill.PartyId" disabled="@Disabled">
-                        @if (Parties != null && Parties.Any())
-                        {
-                            foreach (var customer in Parties)
-                            {
-                                <option value="@customer.Id">@customer.Name</option>
-                            }
-                        }
-                    </select>
-                </div>
-
-                <!-- Service Type Dropdown -->
-                <div class="mb-5">
-                    <label for="SelectedServiceType" class="form-label">Service Type</label>
-                    <select id="SelectedServiceType" class="form-select form-select-sm" @bind="record.Bill.ServiceType" disabled="@Disabled">
-                        @if (ServiceTypes != null)
-                        {
-                            @foreach (var pm in ServiceTypes)
-                            {
-                                <option value="@pm.ListValue">@pm.ListValue</option>
-                            }
-                        }
-                    </select>
-                </div>
-
-                <!-- Bill Status Dropdown -->
-                <div class="mb-5">
-                    <label for="SelectedBillStatus" class="form-label">Bill Status</label>
-                    <select id="SelectedBillStatus" class="form-select form-select-sm" @bind="record.Bill.Status" disabled="@Disabled">
-                        @if (BillStatus != null)
-                        {
-                            @foreach (var pm in BillStatus)
-                            {
-                                <option value="@pm.ListValue">@pm.ListValue</option>
-                            }
-                        }
-                    </select>
-                </div>
-
-                <!-- Table Dropdown -->
-                <div class="mb-5">
-                    <label for="SelectedTable" class="form-label">Table</label>
-                    <select id="SelectedTable" class="form-select form-select-sm" @bind="record.Bill.TableId" disabled="@Disabled">
-                            @if (Tables != null)
-                            {
-                                @foreach (var option in Tables)
+                <MudForm>
+                    <MudPaper Class="p-4" Elevation="0">
+                        <!-- Customer Dropdown -->
+                        <MudItem Class="mb-5">
+                            <MudSelect T="int" @bind-Value="record.Bill.PartyId" Disabled="@Disabled" Label="Select Customer" Dense="true">
+                                @if (Parties != null)
                                 {
-                                    <option value="@option.Id">@($"{option.TableNumber} - {option.TableLocation}")</option>
+                                    @foreach (var customer in Parties)
+                                    {
+                                        <MudSelectItem T="int" Value="@customer.Id">@customer.Name</MudSelectItem>
+                                    }
                                 }
-                            }
-                        </select>
-                </div>
+                            </MudSelect>
+                        </MudItem>
 
-                <!-- Sales ID Dropdown -->
-                <div class="mb-2">
-                    <label for="SelectedSaleId" class="form-label">Sales ID</label>
-                    <select id="SelectedSaleId" class="form-select form-select-sm" @bind="record.Bill.SalesId" disabled="@Disabled">
-                        @if (SalesId != null)
-                        {
-                            @foreach (var option in SalesId)
+                        <!-- Service Type Dropdown -->
+                        <MudItem Class="mb-5">
+                            <MudSelect T="string" @bind-Value="record.Bill.ServiceType" Disabled="@Disabled" Label="Select Service Type" Dense="true">
+                                @if (ServiceTypes != null)
+                                {
+                                    @foreach (var pm in ServiceTypes)
+                                    {
+                                        <MudSelectItem T="string" Value="@pm.ListValue">@pm.ListValue</MudSelectItem>
+                                    }
+                                }
+                            </MudSelect>
+                        </MudItem>
+
+                        <!-- Bill Status Dropdown -->
+                        <MudItem Class="mb-5">
+                            <MudSelect T="string" @bind-Value="record.Bill.Status" Disabled="@Disabled" Label="Select Bill Status" Dense="true">
+                                @if (BillStatus != null)
+                                {
+                                    @foreach (var pm in BillStatus)
+                                    {
+                                        <MudSelectItem T="string" Value="@pm.ListValue">@pm.ListValue</MudSelectItem>
+                                    }
+                                }
+                            </MudSelect>
+                        </MudItem>
+
+                        <!-- Table Dropdown -->
+                        <MudItem Class="mb-5">
+                            <MudSelect T="int" @bind-Value="record.Bill.TableId" Disabled="@Disabled" Label="Select Table" Dense="true">
+                                @if (Tables != null)
+                                {
+                                    @foreach (var option in Tables)
+                                    {
+                                        <MudSelectItem T="int" Value="@option.Id">@($"{option.TableNumber} - {option.TableLocation}")</MudSelectItem>
+                                    }
+                                }
+                            </MudSelect>
+                        </MudItem>
+
+                        <!-- Sales ID Dropdown -->
+                        <MudItem Class="mb-5">
+                            <MudSelect T="int" @bind-Value="record.Bill.SalesId" Disabled="@Disabled" Label="Select Sales ID" Dense="true">
+                                @if (SalesId != null)
+                                {
+                                    @foreach (var option in SalesId)
+                                    {
+                                        <MudSelectItem T="int" Value="@option.Id">@option.Fullname</MudSelectItem>
+                                    }
+                                }
+                            </MudSelect>
+                        </MudItem>
+
+                       @*  <!-- Close Button -->
+                        <MudButton Variant="Variant.Filled" OnClick="CloseOptions" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                            <MudIcon Icon="@Icons.Material.Filled.Close" Class="mr-1" />
+                            Close
+                        </MudButton> *@
+                    </MudPaper>
+                </MudForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    @* Parties ---------------------------------------------------------------------------------------------------------------------------------------- *@
+    <MyDrawer @ref="_drawerParty" Title="Customer Details" FaIcon="fas fa-address-book">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+                <MudForm>
+                    <MudPaper Class="p-4" Elevation="0">
+
+                        <MudItem Class="mb-5">
+                            <MudText Typo="Typo.subtitle2">Name</MudText>
+                        <MudTextField T="string" Placeholder="Customer (Optional)" Label="Customer (Optional)" @bind-Value="record.Bill.PartyName" Disabled="@Disabled" Dense="true" />
+                        </MudItem>
+
+                        <MudItem Class="mb-5">
+                            <MudText Typo="Typo.subtitle2">Phone</MudText>
+                        <MudTextField T="string" Placeholder="Phone (Optional)" Label="Phone (Optional)" @bind-Value="record.Bill.PartyPhone" Disabled="@Disabled" Dense="true" />
+                        </MudItem>
+
+                        <MudItem Class="mb-5">
+                            <MudText Typo="Typo.subtitle2">Email</MudText>
+                        <MudTextField T="string" InputType="InputType.Email" Placeholder="Email (Optional)" Label="Email (Optional)" Style="text-transform: unset;" @bind-Value="record.Bill.PartyEmail" Disabled="@Disabled" Dense="true" />
+                        </MudItem>
+
+                        <MudItem Class="mb-5">
+                            <MudText Typo="Typo.subtitle2">Address</MudText>
+                        <MudTextField T="string" Placeholder="Address (Optional)" Label="Address (Optional)" @bind-Value="record.Bill.PartyAddress" Disabled="@Disabled" Dense="true" />
+                        </MudItem>
+
+                    </MudPaper>
+                </MudForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+     @* Items Selection ---------------------------------------------------------------------------------------------------------------------------------------- *@
+    <MudDialog @bind-Visible="_DialogItemsDetails" Options="_dialogOptions">
+
+        <TitleContent>
+            <MudGrid Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <MudItem xs="10">
+                    <MudText Typo="Typo.h6">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
+                        Item details
+                    </MudText>
+                </MudItem>
+
+                <MudItem xs="2" Class="d-flex justify-end">
+                    <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                   Size="Size.Small"
+                                   Color="Color.Error"
+                                   OnClick="OnCancel" />
+                </MudItem>
+            </MudGrid>
+        </TitleContent>
+
+        <DialogContent>
+
+            <MudGrid Class="w-100" Justify="Justify.Center" AlignItems="AlignItems.Start">
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="pa-4" Style="background-color: var(--mud-palette-surface); border-radius: 8px;">
+                        <!-- Header Section -->
+                        <MudGrid GutterSize="GutterSize.Small" Class="mb-4">
+                            <MudItem xs="12" sm="2" Class="d-flex justify-center">
+                                <img src="@SelectedItem.Pic"
+                                     alt="Item"
+                                     style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px;" />
+                            </MudItem>
+                            <MudItem xs="12" sm="7">
+                                <MudText Typo="Typo.h6" Class="fw-bold mb-1">@SelectedItem.Name</MudText>
+                            </MudItem>
+                            <MudItem xs="12" sm="3" Class="d-flex align-items-end justify-end">
+                                <MudText Typo="Typo.subtitle1" Color="Color.Success" Class="fw-bold">
+                                    @SelectedItem.RetailPrice.ToString("N")
+                                </MudText>
+                            </MudItem>
+                        </MudGrid>
+
+                        <!-- Quantity Controls -->
+                        <MudGrid Class="mb-4" Justify="Justify.Center" AlignItems="AlignItems.End">
+                            <MudItem xs="12" sm="6" Class="d-flex justify-center align-items-end" Style="gap: 0.5rem;">
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                           Size="Size.Medium" Style="min-width: 40px;"
+                                           OnClick="@(() => DecreaseQty(SelectedItem))">
+                                    <MudIcon Icon="@Icons.Material.Filled.Remove" />
+                                </MudButton>
+
+                                <MudTextField T="double"
+                                              Value="@SelectedItem.Qty"
+                                              ReadOnly="true"
+                                              Dense="true"
+                                              Class="text-center"
+                                              Style="width: 60px;" />
+
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                           Size="Size.Medium" Style="min-width: 40px;"
+                                           OnClick="@(() => IncreaseQty(SelectedItem))">
+                                    <MudIcon Icon="@Icons.Material.Filled.Add" />
+                                </MudButton>
+                            </MudItem>
+                        </MudGrid>
+
+                        <!-- Serving Size Selector -->
+                        <div class="mb-3">
+                            <label class="fw-semibold d-block mb-1">Varity:</label>
+
+                            @if (SelectedItem?.ServingSizes?.Any() == true)
                             {
-                                <option value="@option.Id">@option.Fullname</option>
+                                <div class="btn-group flex-wrap gap-1" role="group">
+                                    @foreach (var size in SelectedItem.ServingSizes)
+                                    {
+                                        <MudCard Style="width: 160px; cursor: pointer;"
+                                                 Elevation="@(SelectedItem.ServingSize == size.Size ? 6 : 1)"
+                                                 Class="text-center"
+                                                 @onclick="@(() => OnServingSizeChanged(size.Size, SelectedItem))">
+
+                                            <MudCardMedia Image="@size.Pic" Height="100" />
+
+                                            <MudCardContent>
+                                                <MudText Typo="Typo.subtitle2" Class="fw-semibold">
+                                                    @size.Size
+                                                </MudText>
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                                    @($"{size.Price:#,##0.00}")
+                                                </MudText>
+                                            </MudCardContent>
+
+                                        </MudCard>
+                                    }
+                                </div>
                             }
-                        }
-                    </select>
-                </div>
+                            else
+                            {
+                                <MudText Color="Color.Warning" Typo="Typo.caption">
+                                    No varity available for this item.
+                                </MudText>
+                            }
+                        </div>
+                        <!-- Add to Cart -->
+                        <MudDivider Class="my-2" />
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Success"
+                                   StartIcon="@Icons.Material.Filled.ShoppingCart"
+                                   Class="w-100 mt-2"
+                                   OnClick="@(() => AddToCart(SelectedItem))">
+                            Add to Cart
+                        </MudButton>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </DialogContent>
 
-                <MudButton Variant="Variant.Filled" OnClick="CloseOptions" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
-                    <MudIcon Icon="@Icons.Material.Filled.Close" Class="mr-1" />
-                    Close
-                </MudButton>
+        <DialogActions>
+           @*  <MudButton OnClick="OnCancel" Color="Color.Primary" Variant="Variant.Filled">Cancel</MudButton> *@
+        </DialogActions>
+    </MudDialog>
+
+     @* Service Charges ---------------------------------------------------------------------------------------------------------------------------------------- *@
+    <MudDialog @bind-Visible="_DialogServiceCharges" Options="_dialogOptions">
+
+
+        <TitleContent>
+            <MudGrid Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <MudItem xs="10">
+                    <MudText Typo="Typo.h6">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
+                        Service Charges
+                    </MudText>
+                </MudItem>
+
+                <MudItem xs="2" Class="d-flex justify-end">
+                    <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                   Size="Size.Small"
+                                   Color="Color.Error"
+                                   OnClick="OnCancel" />
+                </MudItem>
+            </MudGrid>
+        </TitleContent>
+
+        <DialogContent>
+            <div class="d-flex justify-center align-start" style="min-height: 60vh;">
+                <MudGrid GutterSize="GutterSize.Small"
+                            Class="px-2 py-2"
+                            Style="max-width: 600px; width: 100%;">
+
+                    @* ── Service Charges ── *@
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.subtitle2" Class="fw-bold">Service Charges</MudText>
+                    </MudItem>
+
+                    @foreach (var charge in ServiceCharges)
+                    {
+                        <MudItem xs="6" Class="text-end">
+                            <MudText Typo="Typo.subtitle2" Class="fw-semibold">
+                                @charge.ChargeName
+                                @if (charge.ChargeType == "PERCENTAGE")
+                                {
+                                    @($" @ {charge.Amount}%")
+                                }
+                                else if (charge.ChargeType == "FLAT")
+                                {
+                                    @($" {charge.Amount} per Bill")
+                                }
+                            </MudText>
+                        </MudItem>   
+                                            
+                        <MudItem xs="6" Class="text-end">
+                            @{
+                                var effectiveCharge = charge.ChargeType == "PERCENTAGE"
+                                    ? (charge.Amount / 100) * Convert.ToDouble(TotalNetAmount)
+                                    : charge.Amount;
+                            }
+                            <MudText Typo="Typo.subtitle2">
+                                @effectiveCharge.ToString("#,##0.00")
+                            </MudText>
+                        </MudItem>
+                    }
+
+                </MudGrid>
             </div>
+        </DialogContent>
 
-    </ChildContent>
+        <DialogActions>
 
-    <FooterContent>
-    </FooterContent>
-</MyModelDialog>
+        </DialogActions>
+    </MudDialog>
 
-</MudPaper>
+    @* Tax ---------------------------------------------------------------------------------------------------------------------------------------- *@
+    <MudDialog @bind-Visible="_DialogTax" Options="_dialogOptions">
+
+
+        <TitleContent>
+            <MudGrid Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <MudItem xs="10">
+                    <MudText Typo="Typo.h6">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
+                        Tax
+                    </MudText>
+                </MudItem>
+
+                <MudItem xs="2" Class="d-flex justify-end">
+                    <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                   Size="Size.Small"
+                                   Color="Color.Error"
+                                   OnClick="OnCancel" />
+                </MudItem>
+            </MudGrid>
+        </TitleContent>
+
+        <DialogContent>
+            <div class="d-flex justify-center align-start" style="min-height: 60vh;">
+                <MudGrid GutterSize="GutterSize.Small"
+                            Class="px-2 py-2"
+                            Style="max-width: 600px; width: 100%;">
+
+                   
+                    @* ── Taxes ── *@
+                    <MudItem xs="12" Class="mt-3">
+                        <MudText Typo="Typo.subtitle2" Class="fw-bold">Taxes</MudText>
+                    </MudItem>
+
+                    @if (Tax?.Any() == true)
+                    {
+                        @foreach (var tax in Tax)
+                        {
+                            <MudItem xs="6" Class="text-end">
+                                <MudText Typo="Typo.subtitle2" Class="fw-semibold">
+                                    @tax.TaxName @($"@ {tax.RatePercent}%")
+                                </MudText>
+                            </MudItem>
+
+                            <MudItem xs="6" Class="text-end">
+                                @{
+                                    var taxAmount = (tax.RatePercent / 100) * Convert.ToDouble(TotalNetAmount);
+                                }
+                                <MudText Typo="Typo.subtitle2">
+                                    @taxAmount.ToString("#,##0.00")
+                                </MudText>
+                            </MudItem>
+                        }
+                    }
+
+                </MudGrid>
+            </div>
+        </DialogContent>
+
+        <DialogActions>
+
+        </DialogActions>
+    </MudDialog>
+
+</MudLayout>
+
 
 @code {
     // =======================
@@ -568,7 +719,6 @@
     // =======================
     // 3. Selected Item & State Flags
     // =======================
-    public ItemsModel SelectedItem { get; set; } = new();
     public bool QtyEnableDisable { get; set; } = true;
     public bool PriceEnableDisable { get; set; } = true;
     public bool IsInventoryItem { get; set; } = true;
@@ -579,9 +729,17 @@
     // =======================
     // 4. Dialog Components (Drawers)
     // =======================
-    public MyModelDialog? _myDialogItemSelection;
-    public MyModelDialog? _myDialogParties;
-    public MyModelDialog? _myDialogOptions;
+    private MyDrawer _drawer = new();
+    private MyDrawer _drawerParty = new();
+    private bool _DialogServiceCharges;
+    private bool _DialogTax;
+    private bool _DialogItemsDetails;
+    private DialogOptions _dialogOptions = new()
+    {
+        CloseOnEscapeKey = true,
+        FullWidth = true,
+        MaxWidth = MaxWidth.Medium
+    };
 
     // =======================
     // 5. Supporting Lists
@@ -589,6 +747,7 @@
     private List<PartiesModel> Parties = new();
     private List<RestaurantTablesModel>? Tables { get; set; } = null;
     public List<EmployeesModel> SalesId { get; set; } = new();
+    private List<CategoriesModel> _categories = new();
 
     // =======================
     // 6. TypeCode Data
@@ -597,6 +756,7 @@
     private List<TypeCodeModel> StockCondition = new();
     private List<TypeCodeModel> ServiceTypes = new();
     private List<TypeCodeModel> BillStatus = new();
+    private List<TypeCodeModel> BillType = new();
     public string? SelectedStockCondition { get; set; } = "NEW";
 
     // =======================
@@ -607,6 +767,12 @@
     private List<ItemsModel> FavItemsData = new();
     private List<ItemsModel> RecentItemsData = new();
     public int MaxItems { get; set; } = 12;
+
+    public List<ItemsModel> SelectedItems { get; set; } = new();
+    public ItemsModel SelectedItem { get; set; } = new();
+    public ItemsModel ClickedItem { get; set; } = new();
+    public ItemsModel SelectedFavItem { get; set; } = new();
+    public ItemsModel SelectedRecentItem { get; set; } = new();
 
     // =======================
     // 8. Serving Sizes
@@ -621,8 +787,18 @@
     private double TotalQty => record.BillDetails.Sum(i => i.Qty);
     private double TotalTaxAmount => record.BillDetails.Sum(i => i.TaxAmount);
     private double TotalDiscountAmount => record.BillDetails.Sum(i => i.DiscountAmount);
-    private double TotalNetAmount = 0;
+    double TotalNetAmount =0;
     private double TotalBillAmount => record.BillDetails.Sum(i => i.Item_Amount);
+
+    // =======================
+    // 10. Tax & Service Charges
+    // =======================
+    List<ServiceChargesModel> ServiceCharges = new();
+    double ServiceChargesTotal = 0;
+
+    List<TaxModel> Tax = new();
+    double TaxTotal = 0;
+
 
 
     protected override async Task OnInitializedAsync()
@@ -634,6 +810,8 @@
     {
         LoadingPanel = true;
 
+        await LoadCategories();
+        ItemsData = await Functions.GetAsync<List<ItemsModel>>($"Items/Search", true) ?? new List<ItemsModel>();
         FavItemsData = await Functions.GetAsync<List<ItemsModel>>($"Items/Search/1=1/TOP {MaxItems}", true) ?? new List<ItemsModel>();
         RecentItemsData = await Functions.GetAsync<List<ItemsModel>>($"Items/SearchRecent/TOP {MaxItems}", true) ?? new List<ItemsModel>();
         Parties = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search?PARTYTYPE=CUSTOMER", true) ?? new List<PartiesModel>();
@@ -643,11 +821,32 @@
         BillStatus = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/BILL STATUS", true) ?? new List<TypeCodeModel>();
         Tables = await Functions.GetAsync<List<RestaurantTablesModel>>($"RestaurantTables/Search", true) ?? new List<RestaurantTablesModel>();
         SalesId = await Functions.GetAsync<List<EmployeesModel>>($"Employees/Search", true) ?? new List<EmployeesModel>();
+        BillType = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/BILL TYPE", true) ?? new List<TypeCodeModel>();
+        if (string.IsNullOrEmpty(record.Bill.PaymentMethod))
+        {
+            record.Bill.PaymentMethod = PaymentMethod.FirstOrDefault()?.ListValue ?? "CASH";
+        }
 
         Clear();
-        record = await Functions.GetAsync<Bill_And_Bill_Detail_Model>($"Bill/Get?Id={Id}", true) ?? new Bill_And_Bill_Detail_Model();
+        await GetTaskAsync(Id);
 
         LoadingPanel = false;
+    }
+
+    private async Task GetTaskAsync(int? id)
+    {
+        if (id != 0)
+        {
+            LoadingPanel = true;
+            record = await Functions.GetAsync<Bill_And_Bill_Detail_Model>($"Bill/Get?Id={id}", true) ?? new Bill_And_Bill_Detail_Model();
+            if (record.BillDetails == null)
+            {
+                record = new Bill_And_Bill_Detail_Model();
+            }
+
+            CalculateTotalNetAmountAsync();
+            LoadingPanel = false;
+        }
     }
 
     protected override void OnParametersSet()
@@ -655,6 +854,19 @@
         Clear();
     }
 
+    private async Task LoadCategories()
+    {
+        _categories = await Functions.GetAsync<List<CategoriesModel>>("Categories/Search", true) ?? new();
+        if (_categories.Any())
+        {
+            await LoadItemsByCategory(_categories[0]);
+        }
+    }
+
+    private async Task LoadItemsByCategory(CategoriesModel category)
+    {
+        SelectedItems = await Functions.GetAsync<List<ItemsModel>>($"Items/Search/CategoriesId={category.Id}", true) ?? new();
+    }
 
     private void Clear()
     {
@@ -677,43 +889,149 @@
 
     } 
 
-    private void CalculateTotalNetAmount()
+    private void OpenChargesDialog()
     {
-        double totalBillAmount = 0;
+        _DialogServiceCharges = true;
+    }
 
-        foreach (var item in record.BillDetails)
-        {
-            totalBillAmount += item.Item_Amount;
-        }
+    private void OpenTaxDialog()
+    {
+        _DialogTax = true;
+    }
 
-        TotalNetAmount = totalBillAmount + record.Bill.TaxAmount - record.Bill.DiscountAmount;
+    private void OnCancel()
+    {
+        _DialogItemsDetails = false;
+        _DialogServiceCharges = false;
+        _DialogTax = false;
+    }
+
+    private async Task CalculateTotalNetAmountAsync()
+    {
+        double totalBillAmount = record.BillDetails.Sum(item => item.Item_Amount);
+
+        // Apply Discount First
+        double baseAmount = totalBillAmount - Convert.ToDouble(record.Bill.DiscountAmount);
+
+        // Fetch Charges Based on Net of Discount
+        var resServiceCharges = await Globals.GetServiceChargesAsync(DateTime.Now, baseAmount);
+        var resTax = await Globals.GetTaxesAsync(DateTime.Now, baseAmount);
+
+        ServiceCharges = resServiceCharges.Charges;
+        ServiceChargesTotal = resServiceCharges.TotalAmount;
+
+        Tax = resTax.Taxes;
+        TaxTotal = resTax.TotalTaxAmount;
+
+        TotalNetAmount = baseAmount + ServiceChargesTotal + TaxTotal;
+
+        StateHasChanged();
     }
 
 
     private void DeleteItem(BillDetailModel item)
     {
         record.BillDetails.Remove(item);
-        CalculateTotalNetAmount();
+        CalculateTotalNetAmountAsync();
     }
 
 
     private void Print()
     {
-        var url = $"/BillReport/1/{Id}";                //If you want to show ServingSize column then add 1 otherwise 0 to the url
+        var url = $"/BillReport/1/{Id}";                
         JS.InvokeVoidAsync("open", url, "_blank");
     }
 
-    // ---------------------------------------------------------------- Select Item ----------------------------------------------------------------
+    // ---------------------------------------------------------------- Item Dialog ----------------------------------------------------------------
 
+
+    private void IncreaseQty(ItemsModel item)
+    {
+        item.Qty++;
+        UpdateItemPrice(item);
+    }
+
+    private void DecreaseQty(ItemsModel item)
+    {
+        if (item.Qty > 1)
+        {
+            item.Qty--;
+            UpdateItemPrice(item);
+        }
+    }
+
+    private void OnServingSizeChanged(string selectedSize, ItemsModel item)
+    {
+        item.ServingSize = selectedSize;
+        UpdateItemPrice(item);
+    }
+
+    private void UpdateItemPrice(ItemsModel item)
+    {
+        var selectedSize = item.ServingSizes?.FirstOrDefault(s => s.Size == item.ServingSize);
+        if (selectedSize != null)
+        {
+            item.RetailPrice = Convert.ToDouble(selectedSize.Price) * item.Qty;
+        }
+    }
+
+
+    // ---------------------------------------------------------------- Select Item ----------------------------------------------------------------
     private async Task AddItemDialogShow(int id)
     {
-        string routeSuffix = id != 0 ? $"/Items.Id={id}" : string.Empty;
-
-        ItemsData = await Functions.GetAsync<List<ItemsModel>>($"Items/Search{routeSuffix}", true) ?? new List<ItemsModel>();
         FilterItems();
+
+        string routeSuffix = id != 0 ? $"/Items.Id={id}" : string.Empty;
+        var itm = await Functions.GetAsync<List<ItemsModel>>($"Items/Search{routeSuffix}", true) ?? new List<ItemsModel>();
+
+        if (itm.Count == 0)
+        {
+            // Handle no item found
+            SelectedItem = null;
+            return;
+        }
+
+        SelectedItem = itm.FirstOrDefault()!;
+        SelectedItem.Qty = 1;
         SelectedStockCondition = "NEW";
         searchText = string.Empty;
-        _myDialogItemSelection!.Show();
+
+        // Clear previous serving sizes
+        SelectedItem.ServingSizes = new List<ServingSizeModel>();
+
+        if (!string.IsNullOrWhiteSpace(SelectedItem.ServingSize))
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(SelectedItem.ServingSize))
+                {
+                    var sizes = JsonSerializer.Deserialize<List<ServingSizeModel>>(SelectedItem.ServingSize);
+                    if (sizes?.Any() == true)
+                    {
+                        SelectedItem.ServingSizes = sizes;
+                        SelectedItem.ServingSize = sizes.FirstOrDefault()?.Size ?? "Medium";
+                    }
+                    else
+                    {
+                        SelectedItem.ServingSizes = new List<ServingSizeModel>();
+                        SelectedItem.ServingSize = "Medium"; 
+                    }
+                }
+                else
+                {
+                    SelectedItem.ServingSizes = new List<ServingSizeModel>();
+                    SelectedItem.ServingSize = "Medium"; 
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ServingSize deserialization failed: {ex.Message}");
+                SelectedItem.ServingSizes = new List<ServingSizeModel>();
+                SelectedItem.ServingSize = "Medium"; 
+            }
+        }
+
+        _DialogItemsDetails = true;
     }
 
     private void FilterItems()
@@ -733,8 +1051,63 @@
         }
 
         SelectedItem = FilteredItems.FirstOrDefault()!;
-        
+
     }
+
+    private async Task AddBlankRow()
+    {
+        var firstItem = ItemsData.FirstOrDefault();
+        if (firstItem == null) return;
+
+        record.BillDetails.Add(new BillDetailModel
+        {
+            ItemId = firstItem.Id,
+            Item = firstItem.Name!,
+            ServingSize = firstItem.ServingSize,
+            Qty = 1,
+            UnitPrice = firstItem.RetailPrice,
+            DiscountAmount = 0,
+            TaxAmount = 0
+        });
+
+        await Task.Delay(10);
+        StateHasChanged();
+    }
+
+    private void OnItemChanged(BillDetailModel row, int selectedItemId)
+    {
+        var item = ItemsData.FirstOrDefault(x => x.Id == selectedItemId);
+        if (item == null) return;
+
+        row.ItemId = item.Id;
+        row.Item = item.Name!;
+        row.UnitPrice = item.RetailPrice;
+        row.ServingSize = item.ServingSize;
+        row.TaxAmount = 0; 
+
+        CalculateTotalNetAmountAsync();
+    }
+
+    private void AddToCart(ItemsModel selectedItem)
+    {
+        if (selectedItem == null) return;
+
+        var row = new BillDetailModel
+        {
+            ItemId = selectedItem.Id,
+            Item = selectedItem.Name!,
+            UnitPrice = selectedItem.RetailPrice,
+            ServingSize = selectedItem.ServingSize,
+            Qty = selectedItem.Qty,
+            DiscountAmount = 0,
+            TaxAmount = 0
+        };
+
+        record.BillDetails.Add(row);
+        CalculateTotalNetAmountAsync();
+        _DialogItemsDetails = false;
+    }
+
 
     private void AddItem()
     {
@@ -758,9 +1131,9 @@
         BillItem.Status = "COMPLETE";
         record.BillDetails.Add(BillItem);
 
-        CalculateTotalNetAmount();
+        CalculateTotalNetAmountAsync();
         SelectedItem = null!;
-        _myDialogItemSelection!.Hide();
+        //_myDialogItemSelection!.Hide();
         StateHasChanged();
 
     }
@@ -840,29 +1213,18 @@
 
     // ---------------------------------------------------------------- Add Parties ----------------------------------------------------------------
 
-    protected void AddParty()
+    protected async Task AddParty()
     {
-        _myDialogParties!.Show();
-    }
-
-    private void CloseParty()
-    {
-        _myDialogParties!.Hide();
+        await _drawerParty.OpenDrawerAsync();
     }
 
     // ---------------------------------------------------------------- Options ----------------------------------------------------------------
 
-
-    private void Options()
+    private async Task Options()
     {
-        _myDialogOptions!.Show();
+        await _drawer.OpenDrawerAsync();
     }
 
-
-    private void CloseOptions()
-    {
-        _myDialogOptions!.Hide();
-    }
 
     // ---------------------------------------------------------------- Select Item ----------------------------------------------------------------
 
@@ -876,7 +1238,7 @@
 
         if (record.Bill.PartyId == 0 || record.Bill.SalesId == 0 || record.Bill.TableId == 0)
         {
-            SnackbarService.Add($"Cannot Save Record. Please check Selected Customer, Sales Id or Table", Severity.Error);
+            //SnackbarService.Add($"Cannot Save Record. Please check Selected Customer, Sales Id or Table", Severity.Error);
             return;
         }
 
@@ -902,12 +1264,12 @@
         if (result.Success == false)
         {
             LoadingPanel = false;
-            SnackbarService.Add($"Record Save Fail.", Severity.Error);
+            //SnackbarService.Add($"Record Save Fail.", Severity.Error);
         }
         else
         {
             LoadingPanel = false;
-            SnackbarService.Add($"Record Saved Successfully", Severity.Success);
+            //SnackbarService.Add($"Record Saved Successfully", Severity.Success);
             record.Bill.SeqNo = result.Result!.SeqNo;
             Id = result.Result.Id;
             Print();
@@ -916,74 +1278,85 @@
     }
 }
 
+
+
+<!-- Custom styling -->
 <style>
-
-    .form-wrapper {
-        min-width: 150px;
+    .app-bar {
+        height: 56px;
     }
 
-    .custom-select {
-        background-color: black;
-        color: white;
-        border: 1px solid #555;
-        height: 38px;
-        font-size: 0.9rem;
+    .billing-table .mud-table-cell {
+        font-size: 0.85rem;
+        padding-top: 0.3rem;
+        padding-bottom: 0.3rem;
+    }
+    .font-xs {
+        font-size: 0.85rem;
     }
 
-    .input-icon-container {
-        position: relative;
-        display: inline-block;
-        width: 200px;
+    .no-bottom-border input {
+        border-bottom: none !important;
+        box-shadow: none !important;
     }
 
-        .input-icon-container input {
-            padding-right: 30px;
-        }
-
-    .search-icon {
-        position: absolute;
-        right: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: white;
-        pointer-events: none;
+    .no-bottom-border input:focus {
+        outline: none;
     }
 
+    .summary-grid .mud-input-input {
+        text-align: right;
+    }
 
-    .fav-block {
+    .item-card:hover {
+        box-shadow: 0 0 10px rgba(0,0,0,.25);
+        transform: translateY(-2px);
+        transition: box-shadow .2s, transform .2s;
+    }
+
+    .truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .no-border input {
+        border: none !important;
+        background-color: transparent;
+    }
+
+    .summary-label {
+        white-space: nowrap;
         display: flex;
         align-items: center;
-        padding: 10px 14px; /* moderate padding */
-        height: 130px; /* reduced height */
-        border-radius: 6px;
-        gap: 12px; /* spacing between image and info */
-        cursor: pointer;
+        font-weight: 600;
     }
 
-    .fav-img {
-        width: 90px; /* smaller image */
-        height: 90px;
-        object-fit: cover;
-        border-radius: 6px;
-        flex-shrink: 0;
+    .summary-icon {
+        height: 24px;
+        width: 24px;
+        padding: 2px;
+        margin-right: 6px;
     }
 
-    .fav-info {
-        padding-left: 10px;
-        overflow: hidden;
-        white-space: nowrap;
-        color: #222; /* dark text */
+    .summary-row {
+        padding: 0px 8px;
+       /*  border: 0.5px solid lightgray; */
+    }
+
+    .summary-col {
         display: flex;
-        flex-direction: column;
-        justify-content: center;
-        gap: 4px;
-        flex-grow: 1;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        white-space: nowrap;
+        padding: 4px 8px;
+        border: 0.5px solid lightgray;
     }
 
-        .fav-info .mud-typography-caption {
-            color: #555 !important; /* darker gray for price */
-        }
-
-
+    .summary-value {
+        text-align: right;
+        width: 100%;
+    }
 
 </style>

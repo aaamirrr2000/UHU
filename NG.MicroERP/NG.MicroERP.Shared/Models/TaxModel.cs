@@ -15,6 +15,8 @@ public class TaxModel
     public double RatePercent { get; set; } = 0;
     public int IsCompound { get; set; } = 0;
     public string? AppliesTo { get; set; } = string.Empty;
+    public DateTime EffectiveFrom { get; set; } = DateTime.Today;
+    public DateTime EffectiveTo { get; set; } = DateTime.Today;
     public int IsActive { get; set; } = 0;
     public int CreatedBy { get; set; } = 0;
     public DateTime CreatedOn { get; set; } = DateTime.Today;

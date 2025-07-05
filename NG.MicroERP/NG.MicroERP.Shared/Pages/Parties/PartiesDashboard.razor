@@ -29,7 +29,7 @@
     else
     {
         <div class="row">
-            <MudDataGrid T="PartiesModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
+            <MudDataGrid T="PartiesModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Class="custom-grid">
                 <ToolBarContent>
                     <MudText Typo="Typo.h6">Parties Managment</MudText>
                     <MudSpacer />
@@ -38,10 +38,10 @@
                 </ToolBarContent>
 
                 <Columns>
-                    <TemplateColumn Title="Actions" Style="width: 150px; min-width: 150px;">
+                    <TemplateColumn Title="Actions" CellStyle="width: 160px; min-width: 160px;">
                         <CellTemplate Context="row">
                             <MudIconButton Icon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" OnClick="@(() => View(row.Item.Id))" />
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Save" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.Id))" />
+                            <MudIconButton Icon="@Icons.Material.TwoTone.Edit" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.Id))" />
                             <MudIconButton Icon="@Icons.Material.TwoTone.DeleteSweep" Size="MudBlazor.Size.Small" OnClick="@(() => Delete(row.Item.Id))" />
                         </CellTemplate>
                     </TemplateColumn>
