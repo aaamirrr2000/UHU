@@ -39,16 +39,22 @@ public class Globals
     public static async Task<(List<ServiceChargesModel> Charges, double TotalAmount)> GetServiceChargesAsync(DateTime today, double baseAmount)
     {
         var myDate = today.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-        string criteria = $"CAST('{myDate}' AS DATE) BETWEEN CAST(EffectiveFrom AS DATE) AND CAST(EffectiveTo AS DATE) AND organization_id = {Globals.Organization.Id}";
+        string criteria = $"CAST('{myDate}' AS DATE) BETWEEN CAST(EffectiveFrom AS DATE) AND CAST(EffectiveTo AS DATE) AND OrganizationId = {Globals.Organization.Id}";
 
-        // --- 2. Fetch rows ---------------------------------------------------
-        List<ServiceChargesModel> res = await Functions.GetAsync<List<ServiceChargesModel>>($"ServiceCharges/Search/{criteria}", true) ?? new List<ServiceChargesModel>();
+        List<ServiceChargesModel> res = await Functions.GetAsync<List<ServiceChargesModel>>($"ServiceCharges/Search/{criteria}", true)
+                                          ?? new List<ServiceChargesModel>();
 
-        // --- 3. Calculate total, honouring ChargeType -----------------------
-        double total = res.Sum(c => string.Equals(c.ChargeType, "Percentage", StringComparison.OrdinalIgnoreCase)
-                ? baseAmount * c.Amount / 100.0     // percentage
-                : c.Amount                          // flat
-        );
+        double total = 0;
+
+        foreach (var charge in res)
+        {
+            double chargeAmount = string.Equals(charge.ChargeType, "Percentage", StringComparison.OrdinalIgnoreCase)
+                ? baseAmount * charge.Amount / 100.0  // percentage
+                : charge.Amount;                      // flat
+
+            charge.CalculatedAmount = chargeAmount; // Optional: store it in the model
+            total += chargeAmount;
+        }
 
         return (res, total);
     }
@@ -57,13 +63,19 @@ public class Globals
     {
         string dateStr = today.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-        string criteria = $"CAST('{dateStr}' AS DATE) BETWEEN CAST(EffectiveFrom AS DATE) AND CAST(EffectiveTo AS DATE) AND organization_id = {Globals.Organization.Id}";
+        string criteria = $"CAST('{dateStr}' AS DATE) BETWEEN CAST(EffectiveFrom AS DATE) AND CAST(EffectiveTo AS DATE) AND OrganizationId = {Globals.Organization.Id}";
 
         List<TaxModel>? list = await Functions.GetAsync<List<TaxModel>>($"Tax/Search/{criteria}", true);
 
         var taxes = list ?? new List<TaxModel>();
+        double totalTax = 0;
 
-        double totalTax = taxes.Sum(t => baseAmount * t.RatePercent / 100.0);
+        foreach (var tax in taxes)
+        {
+            double taxAmount = baseAmount * tax.RatePercent / 100.0;
+            tax.TaxAmount = taxAmount;
+            totalTax += taxAmount;
+        }
 
         return (taxes, totalTax);
     }

@@ -15,28 +15,23 @@
     PartyAddress        VARCHAR(255)     NULL DEFAULT NULL,
     TableId             INT              NULL,
     TranDate            DATETIME         NULL DEFAULT NULL,
-    ServiceChargeType   VARCHAR(20),
-    ServiceChargeRate   DECIMAL(16, 2)   NULL DEFAULT 0.00,
-    ServiceCharge       DECIMAL(16, 2)   NULL DEFAULT 0.00,
     DiscountAmount      DECIMAL(16, 2)   NULL DEFAULT 0.00,
-    TaxRate             DECIMAL(16, 2)   NULL DEFAULT 0.00,
-    TaxAmount           DECIMAL(16, 2)   NULL DEFAULT 0.00,
-    BillAmount          DECIMAL(16, 2)   NULL DEFAULT NULL,
-    PaymentMethod       VARCHAR(50)      NULL DEFAULT NULL,
-    PaymentRef          VARCHAR(50)      NULL DEFAULT NULL,
-    PaymentAmount       DECIMAL(16, 2)   NULL DEFAULT NULL,
-    Description         VARCHAR(50)      NOT NULL,
+    SubTotalAmount      DECIMAL(16, 2)   NULL DEFAULT 0.00,
+    TotalChargeAmount   DECIMAL(16, 2)   NULL DEFAULT 0.00,
+    BillAmount          DECIMAL(16, 2)   NULL DEFAULT 0.00,
+    TotalPaidAmount     DECIMAL(16, 2)   NULL DEFAULT 0.00,
+    Description         VARCHAR(255)     NOT NULL,
     Status              VARCHAR(50)      NULL,
     ServiceType         VARCHAR(50)      NULL,
     PreprationTime      INT,
     ClientComments      VARCHAR(255)     NULL DEFAULT NULL,
     Rating              INT              NULL,
-	CreatedBy           INT             NULL DEFAULT NULL,
-	CreatedOn           DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	CreatedFrom         VARCHAR(255)    NULL DEFAULT NULL,
-	UpdatedBy           INT             NULL DEFAULT NULL,
-	UpdatedOn           DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	UpdatedFrom         VARCHAR(255)    NULL DEFAULT NULL,
+	CreatedBy           INT              NULL DEFAULT NULL,
+	CreatedOn           DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	CreatedFrom         VARCHAR(255)     NULL DEFAULT NULL,
+	UpdatedBy           INT              NULL DEFAULT NULL,
+	UpdatedOn           DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	UpdatedFrom         VARCHAR(255)     NULL DEFAULT NULL,
     IsSoftDeleted       SMALLINT         NOT NULL DEFAULT 0,
     RowVersion          ROWVERSION,
     FOREIGN KEY (SalesId)   REFERENCES Employees(Id),
@@ -69,4 +64,37 @@ CREATE TABLE BillDetail
     RowVersion          ROWVERSION,
     FOREIGN KEY (BillId)       REFERENCES Bill(Id),
     FOREIGN KEY (ItemId)       REFERENCES Items(Id)
+);
+
+CREATE TABLE BillCharges
+(
+    Id                  INT             PRIMARY KEY IDENTITY(1,1),
+    BillId              INT             NOT NULL,
+    ChargeRuleId        INT             NOT NULL,  
+    RuleName            NVARCHAR(100)   NOT NULL,
+    RuleType            VARCHAR(20)     NOT NULL CHECK (RuleType IN ('CHARGE', 'DISCOUNT')),
+    AmountType          VARCHAR(20)     NOT NULL CHECK (AmountType IN ('FLAT', 'PERCENTAGE')),
+    Rate                DECIMAL(18,4)   NOT NULL,
+    CalculatedAmount    DECIMAL(18,4)   NOT NULL,
+    SequenceOrder       INT             NOT NULL DEFAULT 0,
+    CalculationBase     VARCHAR(50)     NOT NULL CHECK (CalculationBase IN ('BILLED_AMOUNT', 'AFTER_PREVIOUS_CHARGES')),
+
+    IsSoftDeleted       SMALLINT         NOT NULL DEFAULT 0,
+    RowVersion          ROWVERSION,
+    FOREIGN KEY (BillId) REFERENCES Bill(Id),
+);
+
+CREATE TABLE BillPayments
+(
+    Id              INT IDENTITY(1,1) PRIMARY KEY,
+    BillId          INT NOT NULL,
+    PaymentMethod   VARCHAR(50) NOT NULL,
+    PaymentRef      VARCHAR(100) NULL, 
+    AmountPaid      DECIMAL(16, 2) NOT NULL,
+    PaidOn          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    Notes           VARCHAR(255) NULL,
+    IsSoftDeleted   SMALLINT NOT NULL DEFAULT 0,
+    RowVersion      ROWVERSION,
+
+    FOREIGN KEY (BillId) REFERENCES Bill(Id)
 );

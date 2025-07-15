@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
+using MySqlX.XDevAPI.Common;
+
 using NG.MicroERP.API.Services;
 using NG.MicroERP.Shared.Models;
 
@@ -49,7 +51,7 @@ public class BillController : ControllerBase
     }
 
     [HttpPost("Insert")]
-    public async Task<IActionResult> Insert(Bill_And_Bill_Detail_Model obj)
+    public async Task<IActionResult> Insert(BillsModel obj)
     {
         var result = await Srv.Post(obj)!;
         if (result.Item1 == true)
@@ -59,7 +61,7 @@ public class BillController : ControllerBase
     }
 
     [HttpPost("Update")]
-    public async Task<IActionResult> Update(Bill_And_Bill_Detail_Model obj)
+    public async Task<IActionResult> Update(BillsModel obj)
     {
         var result = await Srv.Put(obj)!;
         if (result.Item1 == true)
@@ -103,7 +105,7 @@ public class BillController : ControllerBase
     }
 
     [HttpPost("ClientComments")]
-    public async Task<IActionResult> ClientComments(Bill_And_Bill_Detail_Model obj)
+    public async Task<IActionResult> ClientComments(BillsModel obj)
     {
         var result = await Srv.ClientComments(obj)!;
         if (result.Item1 == true)
@@ -115,11 +117,13 @@ public class BillController : ControllerBase
     [HttpPost("GenerateBill")]
     public async Task<IActionResult> GenerateBill(BillModel obj)
     {
-        var result = await Srv.GenerateBill(obj)!;
-        if (result.Item1 == true)
-            return Ok(result.Item2);
-        else
-            return BadRequest(result.Item2);
+        //var result = await Srv.GenerateBill(obj)!;
+        //if (result.Item1 == true)
+        //    return Ok(result.Item2);
+        //else
+        //    return BadRequest(result.Item2);
+
+        return BadRequest();
     }
 
     [HttpPost("BillStatus/{Id}/{Status}/{SoftDelete?}")]
@@ -131,4 +135,12 @@ public class BillController : ControllerBase
         else
             return BadRequest(result.Item2);
     }
+
+    [HttpGet("CalculateBillCharges/{BilledAmount}")]
+    public async Task<IActionResult> CalculateBillCharges(decimal BilledAmount = 0)
+    {
+        var result = await Srv.CalculateBillCharges(BilledAmount)!;
+        return Ok(result);
+    }
+
 }

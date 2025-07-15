@@ -7,8 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Scripts\20240117100000_CreateServiceChargesTable.sql" />
-    <None Remove="Scripts\20240117200000_CreateTaxTable.sql" />
     <None Remove="Scripts\20250304000000_CashBookReport.sql" />
     <None Remove="Scripts\20250305000000_BillReport.sql" />
   </ItemGroup>
@@ -31,9 +29,8 @@
     <EmbeddedResource Include="Scripts\20240116000000_CreateCashbookTable.sql" />
     <EmbeddedResource Include="Scripts\20240116100000_CreateRestaurantTablesTable.sql" />
     <EmbeddedResource Include="Scripts\20240117000000_CreateBillTable.sql" />
-    <EmbeddedResource Include="Scripts\20240117100000_CreateServiceChargesTable.sql" />
-    <EmbeddedResource Include="Scripts\20240117200000_CreateTaxTable.sql" />
     <EmbeddedResource Include="Scripts\20240118000000_CreateStockReceivingTable.sql" />
+    <EmbeddedResource Include="Scripts\20240117300000_CreateChargesRuleTable.sql" />
     <EmbeddedResource Include="Scripts\20240120000000_CreateDevicesTable.sql" />
     <EmbeddedResource Include="Scripts\20250220000000_CreateAttendance.sql" />
     <EmbeddedResource Include="Scripts\20250240000000_CategoriesItemsDineInInsert.sql" />

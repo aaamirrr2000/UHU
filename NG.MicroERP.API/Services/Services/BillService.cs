@@ -15,15 +15,15 @@ namespace NG.MicroERP.API.Services;
 public interface IBillService
 {
     Task<(bool, List<BillModel>)>? Search(string Criteria = "");
-    Task<(bool, Bill_And_Bill_Detail_Model?)>? Get(int id);
-    Task<(bool, BillModel?, string)> Post(Bill_And_Bill_Detail_Model obj);
-    Task<(bool, string)> Put(Bill_And_Bill_Detail_Model obj);
+    Task<(bool, BillsModel?)>? Get(int id);
+    Task<(bool, BillModel?, string)> Post(BillsModel obj);
+    Task<(bool, string)> Put(BillsModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(BillModel obj);
-	Task<(bool, List<BillReportModel>)>? GetBillReport(int id);
-	Task<(bool, string)> ClientComments(Bill_And_Bill_Detail_Model obj);
-    Task<(bool, string)> GenerateBill(BillModel obj);
+	Task<(bool, List<BillMasterReportModel>)>? GetBillReport(int id);
+	Task<(bool, string)> ClientComments(BillsModel obj);
     Task<(bool, string)> BillStatus(int BillId, string Status, int SoftDelete = 0);
+    Task<List<BillChargeModel>> CalculateBillCharges(decimal billedAmount);
 }
 
 
@@ -33,114 +33,74 @@ public class BillService : IBillService
 
     public async Task<(bool, List<BillModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"
-
-					SELECT
-                        bill.ID,
-                        bill.seqno,
-                        bill.billtype,
-                        bill.source,
-                        bill.salesid,
-                        employees.Fullname,
-                        bill.tableid,
-                        RestaurantTables.TableNumber AS TableName,
-                        bill.locationid,
-                        locations.name AS location,
-                        bill.partyid,
-                        parties.name AS party,
-                        bill.partyname,
-                        bill.partyphone,
-                        bill.partyemail,
-                        bill.partyaddress,
-                        bill.trandate,
-                        bill.ServiceTypeType,
-                        bill.ServiceTypeRate,
-                        bill.ServiceType,
-                        bill.ServiceCharge,
-                        bill.DiscountAmount,
-                        bill.TaxRate
-                        bill.TaxAmount,
-
-                        ROUND(
-                            (
-                                ISNULL(ItemTotals.TotalItemAmount, 0)
-                                + (ISNULL(ItemTotals.TotalItemAmount, 0) * ISNULL(bill.ServiceCharge, 0) / 100)
-                                + (ISNULL(ItemTotals.TotalItemAmount, 0) * ISNULL(bill.taxamount, 0) / 100)
-                                - ISNULL(bill.DiscountAmount, 0)
-                            ), 2
-                        ) AS billamount,
-
-                        bill.paymentmethod,
-                        bill.paymentref,
-                        bill.paymentamount,
-                        bill.Description,
-                        bill.CreatedBy,
-                        bill.CreatedOn,
-                        bill.Status,
-                        users.username,
-                        bill.ClientComments
-
-                    FROM bill
-                    LEFT JOIN locations ON locations.id = bill.locationid
-                    LEFT JOIN parties ON parties.id = bill.partyid
-                    LEFT JOIN users ON users.id = bill.CreatedBy
-                    LEFT JOIN employees ON employees.id = users.empid
-                    LEFT JOIN RestaurantTables ON RestaurantTables.id = bill.tableid
-
-                    LEFT JOIN (
-                        SELECT
-                            billid,
-                            SUM(
-                                (ISNULL(qty, 0) * ISNULL(unitprice, 0)) 
-                                - ISNULL(DiscountAmount, 0) 
-                                + ISNULL(TaxAmount, 0)
-                            ) AS TotalItemAmount
-                        FROM BillDetail
-                        WHERE IsSoftDeleted = 0
-                        GROUP BY billid
-                    ) AS ItemTotals ON ItemTotals.billid = bill.ID
-
-                    WHERE bill.IsSoftDeleted = 0
-
-					";
+        string SQL = @"
+            SELECT
+                Bill.ID,
+                Bill.SeqNo,
+                Bill.BillType,
+                Bill.Source,
+                Bill.SalesId,
+                Employees.Fullname,
+                Bill.TableId,
+                RestaurantTables.TableNumber AS TableName,
+                Bill.LocationId,
+                Locations.Name AS Location,
+                Bill.PartyId,
+                Parties.Name AS Party,
+                Bill.PartyName,
+                Bill.PartyPhone,
+                Bill.PartyEmail,
+                Bill.PartyAddress,
+                Bill.TranDate,
+                Bill.PreprationTime,
+                Bill.SubTotalAmount,
+                Bill.TotalChargeAmount,
+                Bill.DiscountAmount,
+                Bill.TaxAmount,
+                Bill.BillAmount,
+                Bill.TotalPaidAmount,
+                (Bill.BillAmount - Bill.TotalPaidAmount) AS BalanceAmount,
+                Bill.Description,
+                Bill.CreatedBy,
+                Bill.CreatedOn,
+                Bill.Status,
+                Users.Username,
+                Bill.ClientComments
+            FROM Bill
+            LEFT JOIN Locations ON Locations.Id = Bill.LocationId
+            LEFT JOIN Parties ON Parties.Id = Bill.PartyId
+            LEFT JOIN Users ON Users.Id = Bill.CreatedBy
+            LEFT JOIN Employees ON Employees.Id = Users.EmpId
+            LEFT JOIN RestaurantTables ON RestaurantTables.Id = Bill.TableId
+            WHERE Bill.IsSoftDeleted = 0";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
-            SQL += " and " + Criteria;
+            SQL += " AND " + Criteria;
 
-        SQL += " Order by bill.Id Desc";
+        SQL += " ORDER BY Bill.Id DESC";
 
         List<BillModel> result = (await dapper.SearchByQuery<BillModel>(SQL)) ?? new List<BillModel>();
-
-        if (result == null || result.Count == 0)
-            return (false, null!);
-        else
-            return (true, result);
+        return result == null || result.Count == 0 ? (false, null!) : (true, result);
     }
 
-
-    public async Task<(bool, Bill_And_Bill_Detail_Model?)> Get(int id)
+    public async Task<(bool, BillsModel?)> Get(int id)
     {
-        var res = new Bill_And_Bill_Detail_Model();
-        BillDetailService billDetailService = new BillDetailService();
-
+        var res = new BillsModel();
 
         var billResult = await Search($"Bill.Id = {id}")!;
-        if (billResult.Item1 == false)
-            return (false, null);
+        if (!billResult.Item1) return (false, null);
 
         res.Bill = billResult.Item2.FirstOrDefault()!;
 
+        var billDetailService = new BillDetailService();
         var billDetailResult = await billDetailService.Search($"BillDetail.BillId = {id}")!;
-        if (billDetailResult.Item1)
-        {
-            if (billDetailResult.Item1 && billDetailResult.Item2 != null)
-            {
-                res.BillDetails.Clear();
 
-                foreach (var item in billDetailResult.Item2)
-                {
-                    res.BillDetails.Add(item);
-                }
+        if (billDetailResult.Item1 && billDetailResult.Item2 != null)
+        {
+            res.BillDetails.Clear();
+            foreach (var item in billDetailResult.Item2)
+            {
+                res.BillDetails.Add(item);
             }
         }
 
@@ -149,134 +109,74 @@ public class BillService : IBillService
 
 
 
-    public async Task<(bool, List<BillReportModel>)>? GetBillReport(int id)
+    public async Task<(bool, List<BillMasterReportModel>)>? GetBillReport(int id)
     {
 		string SQL = $@"Select * from BillReport Where Id={id}";
 
-        List<BillReportModel> result = (await dapper.SearchByQuery<BillReportModel>(SQL)) ?? new List<BillReportModel>();
+        List<BillMasterReportModel> result = (await dapper.SearchByQuery<BillMasterReportModel>(SQL)) ?? new List<BillMasterReportModel>();
         if (result == null || result.Count == 0)
             return (false, null!);
         else
             return (true, result);
     }
 
-    public async Task<(bool, BillModel?, string)> Post(Bill_And_Bill_Detail_Model obj)
+    public async Task<(bool, BillModel?, string)> Post(BillsModel obj)
     {
         try
         {
-            string Code = dapper.GetCode("INV", "Bill", "seqno")!;
-
-            string SQLInsert = $@"INSERT INTO Bill 
-								(
-									OrganizationId, 
-									SeqNo, 
-									BillType, 
-									Source, 
-									SalesId, 
-									LocationId, 
-									PartyId, 
-									PartyName, 
-									PartyPhone, 
-									PartyEmail, 
-									PartyAddress, 
-									TableId, 
-									TranDate, 
-                                    ServiceTypeType,
-                                    ServiceTypeRate,
-									ServiceCharge,
-									DiscountAmount,
-                                    TaxRate,
-									TaxAmount, 
-									PaymentMethod, 
-									PaymentRef, 
-									PaymentAmount, 
-									Description,
-									Status,
-									ServiceType,
-									CreatedBy, 
-									CreatedOn, 
-									CreatedFrom, 
-									IsSoftDeleted
-								) 
-								VALUES 
-								(
-									{obj.Bill.OrganizationId},
-									'{Code}', 
-									'{obj.Bill.BillType!.ToUpper()}', 
-									'{obj.Bill.Source!.ToUpper()}', 
-									{obj.Bill.SalesId},
-									{obj.Bill.LocationId},
-									{obj.Bill.PartyId},
-									'{obj.Bill.PartyName!.ToUpper()}', 
-									'{obj.Bill.PartyPhone!.ToUpper()}', 
-									'{obj.Bill.PartyEmail!.ToUpper()}', 
-									'{obj.Bill.PartyAddress!.ToUpper()}', 
-									{obj.Bill.TableId},
-									'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
-                                    '{obj.Bill.ServiceChargeType!.ToUpper()}',
-                                    {obj.Bill.ServiceChargeRate},
-									{obj.Bill.ServiceCharge},
-									{obj.Bill.DiscountAmount},
-                                    {obj.Bill.TaxRate},
-									{obj.Bill.TaxAmount},
-									'{obj.Bill.PaymentMethod!.ToUpper()}', 
-									'{obj.Bill.PaymentRef!.ToUpper()}', 
-									{obj.Bill.PaymentAmount},
-									'{obj.Bill.Description!.ToUpper()}',
-									'{obj.Bill.Status!.ToUpper()}',
-									'{obj.Bill.ServiceType!.ToUpper()}',
-									{obj.Bill.CreatedBy},
-									'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
-									'{obj.Bill.CreatedFrom!.ToUpper()}', 
-									{obj.Bill.IsSoftDeleted}
-								)";
-
+            string Code = dapper.GetCode("INV", "Bill", "SeqNo")!;
+            string SQLInsert = $@"
+                INSERT INTO Bill (OrganizationId, SeqNo, BillType, Source, SalesId, LocationId, PartyId, PartyName, PartyPhone, PartyEmail,
+                PartyAddress, TableId, TranDate, ServiceType, PreprationTime, DiscountAmount, SubTotalAmount, TotalChargeAmount,
+                BillAmount, TotalPaidAmount, Description, Status, CreatedBy, CreatedOn, CreatedFrom, IsSoftDeleted)
+                VALUES ({obj.Bill.OrganizationId}, '{Code}', '{obj.Bill.BillType!.ToUpper()}', '{obj.Bill.Source!.ToUpper()}', {obj.Bill.SalesId},
+                {obj.Bill.LocationId}, {obj.Bill.PartyId}, '{obj.Bill.PartyName!.ToUpper()}', '{obj.Bill.PartyPhone!.ToUpper()}',
+                '{obj.Bill.PartyEmail!.ToUpper()}', '{obj.Bill.PartyAddress!.ToUpper()}', {obj.Bill.TableId},
+                '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', '{obj.Bill.ServiceType!.ToUpper()}', '{obj.Bill.PreprationTime}',
+                {obj.Bill.DiscountAmount}, {obj.Bill.SubTotalAmount}, {obj.Bill.TotalChargeAmount},
+                {obj.Bill.BillAmount}, {obj.Bill.TotalPaidAmount}, '{obj.Bill.Description!.ToUpper()}',
+                '{obj.Bill.Status!.ToUpper()}', {obj.Bill.CreatedBy}, '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}',
+                '{obj.Bill.CreatedFrom!.ToUpper()}', {obj.Bill.IsSoftDeleted})";
             var res = await dapper.Insert(SQLInsert);
 
-			if (res.Item1==true)
-			{
-				int InsertedId = res.Item2;
-                foreach (var sql in obj.BillDetails!)
-				{
-				   SQLInsert = $@"INSERT INTO BillDetail 
-								(
-									ItemId, 
-									StockCondition, 
-									ServingSize, 
-									Qty, 
-									UnitPrice, 
-									DiscountAmount, 
-									TaxAmount, 
-									BillId, 
-									Description, 
-									Status,
-									Person,
-									TranDate, 
-									IsSoftDeleted
-								) 
-								VALUES 
-								(
-									{sql.ItemId},
-									'{sql.StockCondition!.ToUpper()}', 
-									'{sql.ServingSize}', 
-									{sql.Qty},
-									{sql.UnitPrice},
-									{sql.DiscountAmount},
-									{sql.TaxAmount},
-									{res.Item2},
-									'{sql.Description!.ToUpper()}', 
-									'{sql.Status!.ToUpper()}', 
-									{sql.Person},
-									'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
-									{sql.IsSoftDeleted}
-								)";
+            if (res.Item1)
+            {
+                int insertedId = res.Item2;
+                foreach (var detail in obj.BillDetails!)
+                {
+                    string detailInsert = $@"
+                        INSERT INTO BillDetail (ItemId, StockCondition, ServingSize, Qty, UnitPrice, DiscountAmount, TaxAmount,
+                        BillId, Description, Status, Person, TranDate, IsSoftDeleted)
+                        VALUES ({detail.ItemId}, '{detail.StockCondition!.ToUpper()}', '{detail.ServingSize}', {detail.Qty},
+                        {detail.UnitPrice}, {detail.DiscountAmount}, {detail.TaxAmount}, {insertedId}, '{detail.Description!.ToUpper()}',
+                        '{detail.Status!.ToUpper()}', {detail.Person}, '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', {detail.IsSoftDeleted})";
+                    await dapper.Insert(detailInsert);
+                }
 
-					var result = await dapper.Insert(SQLInsert);
-				}
+                foreach (var charge in obj.BillCharges)
+                {
+                    string chargeInsert = $@"
+                        INSERT INTO BillCharges (BillId, ChargeRuleId, RuleName, RuleType, AmountType, Rate,
+                        CalculatedAmount, SequenceOrder, CalculationBase, ChargeCategory, IsSoftDeleted)
+                        VALUES ({charge.BillId}, {charge.ChargeRuleId}, '{charge.RuleName}', '{charge.RuleType}',
+                        '{charge.AmountType}', {charge.Rate}, {charge.CalculatedAmount}, {charge.SequenceOrder},
+                        '{charge.CalculationBase}', '{charge.ChargeCategory}', {charge.IsSoftDeleted})";
+                    await dapper.Insert(chargeInsert);
+                }
+
+
+                foreach (var payment in obj.BillPayments)
+                {
+                    string paymentInsert = $@"
+                        INSERT INTO BillPayments (BillId, PaymentMethod, PaymentRef, AmountPaid, PaidOn, Notes, IsSoftDeleted)
+                        VALUES ({insertedId}, '{payment.PaymentMethod}', '{payment.PaymentRef}', {payment.AmountPaid},
+                        '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', '{payment.Notes?.Replace("'", "''")}', 0)";
+                    await dapper.Insert(paymentInsert);
+                }
             }
-            var Output = await Search($"bill.id={res.Item2}")!;
 
-            return (true, Output.Item2.FirstOrDefault(), "");
+            var output = await Search($"Bill.Id = {res.Item2}")!;
+            return (true, output.Item2.FirstOrDefault(), "");
         }
         catch (Exception ex)
         {
@@ -284,65 +184,69 @@ public class BillService : IBillService
         }
     }
 
-    public async Task<(bool, string)> Put(Bill_And_Bill_Detail_Model obj)
+    public async Task<(bool, string)> Put(BillsModel obj)
     {
         try
         {
-            string SQLUpdate = $@"UPDATE Bill SET 
-					OrganizationId = {obj.Bill.OrganizationId}, 
-					SeqNo = '{obj.Bill.SeqNo!.ToUpper()}', 
-					BillType = '{obj.Bill.BillType!.ToUpper()}', 
-					Source = '{obj.Bill.Source!.ToUpper()}', 
-					SalesId = {obj.Bill.SalesId}, 
-					LocationId = {obj.Bill.LocationId}, 
-					PartyId = {obj.Bill.PartyId}, 
-					PartyName = '{obj.Bill.PartyName!.ToUpper()}', 
-					PartyPhone = '{obj.Bill.PartyPhone!.ToUpper()}', 
-					PartyEmail = '{obj.Bill.PartyEmail!.ToUpper()}', 
-					PartyAddress = '{obj.Bill.PartyAddress!.ToUpper()}', 
-					TableId = {obj.Bill.TableId},
-					TranDate = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
-                    ServiceChargeType = '{obj.Bill.ServiceChargeType}', 
-					ServiceCharge = {obj.Bill.ServiceCharge},
-                    ServiceChargeRate = {obj.Bill.ServiceChargeRate},
-					DiscountAmount = {obj.Bill.DiscountAmount}, 
-					TaxRat = {obj.Bill.TaxRate}, 
-                    Amount = {obj.Bill.TaxAmount},
-					PaymentMethod = '{obj.Bill.PaymentMethod!.ToUpper()}', 
-					PaymentRef = '{obj.Bill.PaymentRef!.ToUpper()}', 
-					PaymentAmount = {obj.Bill.PaymentAmount}, 
-					Description = '{obj.Bill.Description!.ToUpper()}',
-					Status = '{obj.Bill.Status!.ToUpper()}',
-					ServiceType = '{obj.Bill.ServiceType!.ToUpper()}',
-					UpdatedBy = {obj.Bill.UpdatedBy}, 
-					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
-					UpdatedFrom = '{obj.Bill.UpdatedFrom!.ToUpper()}', 
-					IsSoftDeleted = {obj.Bill.IsSoftDeleted} 
-				WHERE Id = {obj.Bill.Id};";
+            string SQLUpdate = $@"
+                UPDATE Bill SET OrganizationId = {obj.Bill.OrganizationId}, SeqNo = '{obj.Bill.SeqNo!.ToUpper()}',
+                BillType = '{obj.Bill.BillType!.ToUpper()}', Source = '{obj.Bill.Source!.ToUpper()}', SalesId = {obj.Bill.SalesId},
+                LocationId = {obj.Bill.LocationId}, PartyId = {obj.Bill.PartyId}, PartyName = '{obj.Bill.PartyName!.ToUpper()}',
+                PartyPhone = '{obj.Bill.PartyPhone!.ToUpper()}', PartyEmail = '{obj.Bill.PartyEmail!.ToUpper()}',
+                PartyAddress = '{obj.Bill.PartyAddress!.ToUpper()}', TableId = {obj.Bill.TableId},
+                TranDate = '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', DiscountAmount = {obj.Bill.DiscountAmount},
+                SubTotalAmount = {obj.Bill.SubTotalAmount}, TotalChargeAmount = {obj.Bill.TotalChargeAmount},
+                BillAmount = {obj.Bill.BillAmount}, TotalPaidAmount = {obj.Bill.TotalPaidAmount},
+                Description = '{obj.Bill.Description!.ToUpper()}', Status = '{obj.Bill.Status!.ToUpper()}',
+                ServiceType = '{obj.Bill.ServiceType!.ToUpper()}', PreprationTime = '{obj.Bill.PreprationTime}',
+                ClientComments = '{obj.Bill.ClientComments}', Rating = {obj.Bill.Rating}, UpdatedBy = {obj.Bill.UpdatedBy},
+                UpdatedOn = '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', UpdatedFrom = '{obj.Bill.UpdatedFrom!.ToUpper()}',
+                IsSoftDeleted = {obj.Bill.IsSoftDeleted} WHERE Id = {obj.Bill.Id};";
 
+            await dapper.Update(SQLUpdate);
 
-            var res = await dapper.Update(SQLUpdate);
+            //Bill Detail
+            await dapper.ExecuteQuery($"DELETE FROM BillDetail WHERE BillId = {obj.Bill.Id}");
 
-            await dapper.ExecuteQuery($"Delete from BillDetail where billid = {obj.Bill.Id}");
-
-            foreach (var sql in obj.BillDetails!)
+            foreach (var detail in obj.BillDetails!)
             {
-                SQLUpdate = $@"UPDATE BillDetail SET 
-					ItemId = {sql.ItemId}, 
-					StockCondition = '{sql.StockCondition!.ToUpper()}', 
-					ServingSize = '{sql.ServingSize!.ToUpper()}', 
-					Qty = {sql.Qty}, 
-					UnitPrice = {sql.UnitPrice}, 
-					DiscountAmount = {sql.DiscountAmount}, 
-					TaxAmount = {sql.TaxAmount}, 
-					BillId = {sql.BillId}, 
-					Description = '{sql.Description!.ToUpper()}', 
-					Status = '{sql.Status!.ToUpper()}', 
-					Person = {sql.Person},
-					TranDate = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
-					IsSoftDeleted = {sql.IsSoftDeleted}  
-				WHERE Id = {sql.Id};";
-                var result = await dapper.Insert(SQLUpdate);
+                string detailInsert = $@"
+                    INSERT INTO BillDetail (ItemId, StockCondition, ServingSize, Qty, UnitPrice, DiscountAmount, TaxAmount,
+                    BillId, Description, Status, Person, TranDate, IsSoftDeleted)
+                    VALUES ({detail.ItemId}, '{detail.StockCondition!.ToUpper()}', '{detail.ServingSize}', {detail.Qty},
+                    {detail.UnitPrice}, {detail.DiscountAmount}, {detail.TaxAmount}, {obj.Bill.Id},
+                    '{detail.Description!.ToUpper()}', '{detail.Status!.ToUpper()}', {detail.Person},
+                    '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', {detail.IsSoftDeleted})";
+                await dapper.Insert(detailInsert);
+            }
+
+
+            //Bill Charge
+            await dapper.ExecuteQuery($"DELETE FROM BillCharges WHERE BillId = {obj.Bill.Id}");
+
+            foreach (var charge in obj.BillCharges)
+            {
+                string chargeInsert = $@"
+                        INSERT INTO BillCharges (BillId, ChargeRuleId, RuleName, RuleType, AmountType, Rate,
+                        CalculatedAmount, SequenceOrder, CalculationBase, ChargeCategory, IsSoftDeleted)
+                        VALUES ({charge.BillId}, {charge.ChargeRuleId}, '{charge.RuleName}', '{charge.RuleType}',
+                        '{charge.AmountType}', {charge.Rate}, {charge.CalculatedAmount}, {charge.SequenceOrder},
+                        '{charge.CalculationBase}', '{charge.ChargeCategory}', {charge.IsSoftDeleted})";
+
+                await dapper.Insert(chargeInsert);
+            }
+
+
+            //Bill Payments
+            await dapper.ExecuteQuery($"DELETE FROM BillPayments WHERE BillId = {obj.Bill.Id}");
+
+            foreach (var payment in obj.BillPayments)
+            {
+                string paymentInsert = $@"
+                    INSERT INTO BillPayments (BillId, PaymentMethod, PaymentRef, AmountPaid, PaidOn, Notes, IsSoftDeleted)
+                    VALUES ({obj.Bill.Id}, '{payment.PaymentMethod}', '{payment.PaymentRef}', {payment.AmountPaid},
+                    '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', '{payment.Notes?.Replace("'", "''")}', 0)";
+                await dapper.Insert(paymentInsert);
             }
 
             return (true, "OK");
@@ -373,7 +277,7 @@ public class BillService : IBillService
         }
     }
 
-    public async Task<(bool, string)> ClientComments(Bill_And_Bill_Detail_Model obj)
+    public async Task<(bool, string)> ClientComments(BillsModel obj)
     {
         try
         {
@@ -420,27 +324,6 @@ public class BillService : IBillService
         return await dapper.Update(SQLUpdate)!;
     }
 
-    public async Task<(bool, string)> GenerateBill(BillModel obj)
-    {
-        try
-        {
-            string SQLUpdate = $@"UPDATE Bill SET 
-					ServiceCharge = {obj.ServiceCharge},
-					DiscountAmount = {obj.DiscountAmount}, 
-					TaxAmount = {obj.TaxAmount},
-                    Status = 'COMPLETE'
-				WHERE Id = {obj.Id};";
-
-            var res = await dapper.Update(SQLUpdate);
-
-            return (true, "OK");
-        }
-        catch (Exception ex)
-        {
-            return (false, ex.Message);
-        }
-    }
-
     public async Task<(bool, string)> BillStatus(int BillId, string Status, int SoftDelete = 0)
     {
         try
@@ -456,5 +339,50 @@ public class BillService : IBillService
         {
             return (true, ex.Message);
         }
+    }
+
+    public async Task<List<BillChargeModel>> CalculateBillCharges(decimal billedAmount)
+    {
+        List<BillChargeModel> calculatedCharges = new();
+        decimal runningTotal = billedAmount;
+
+        string query = @"
+                        SELECT Id AS ChargeRuleId, RuleName, RuleType, AmountType, Amount AS Rate,
+                               SequenceOrder, CalculationBase, ISNULL(ChargeCategory, 'OTHER') AS ChargeCategory
+                        FROM ChargeRules
+                        WHERE IsActive = 1 AND IsSoftDeleted = 0
+                        ORDER BY SequenceOrder";
+
+        var chargeRules = await dapper.SearchByQuery<BillChargeModel>(query);
+        if (chargeRules == null || !chargeRules.Any())
+            return calculatedCharges;
+
+        foreach (var rule in chargeRules)
+        {
+            decimal baseAmount = rule.CalculationBase == "AFTER_PREVIOUS_CHARGES"
+                                ? runningTotal
+                                : billedAmount;
+
+            decimal amount = rule.AmountType switch
+            {
+                "FLAT" => rule.Rate,
+                "PERCENTAGE" => Math.Round((baseAmount * rule.Rate / 100), 2),
+                _ => 0
+            };
+
+            if (rule.RuleType == "DISCOUNT")
+                amount = -amount;
+
+            rule.CalculatedAmount = amount;
+            calculatedCharges.Add(rule);
+
+            // Update running total only for charges
+            if (rule.RuleType == "CHARGE")
+                runningTotal += amount;
+            else
+                runningTotal -= Math.Abs(amount);
+        }
+
+        return calculatedCharges;
     }
 }

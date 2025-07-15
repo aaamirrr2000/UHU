@@ -41,7 +41,7 @@
                     <TemplateColumn Title="Actions" CellStyle="width: 160px; min-width: 160px;">
                         <CellTemplate Context="row">
                             <MudIconButton Icon="@Icons.Material.TwoTone.Visibility" Size="MudBlazor.Size.Small" OnClick="@(() => View(row.Item.Id))" />
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Edit" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.Id))" />
+                            <MudIconButton Icon="@Icons.Material.TwoTone.Edit" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.Id))" Variant="Variant.Filled" Color="Color.Primary"/>
                             @* <MudIconButton Icon="@Icons.Material.TwoTone.Delete" Size="MudBlazor.Size.Small" OnClick="@(() => Delete(row.Item.Id))" /> *@
                             <MudIconButton Icon="@Icons.Material.TwoTone.Restore" Size="MudBlazor.Size.Small" OnClick="@(() => SetParent(row.Item.Id))" />
                         </CellTemplate>

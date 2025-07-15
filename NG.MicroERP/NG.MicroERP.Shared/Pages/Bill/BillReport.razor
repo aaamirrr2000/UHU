@@ -3,7 +3,7 @@
 @inject IJSRuntime JSRuntime
 @layout BlankLayout
 
-@if (BillHeader != null && BillDetails.Any())
+@if (BillHeader != null && BillItems.Any())
 {
     <div class="invoice-actions no-print">
         <button class="btn btn-primary" @onclick="PrintReport">Print</button>
@@ -31,7 +31,7 @@
         <!-- Customer Info -->
         <div class="row mt-4">
             <div class="col-sm-6">
-                <p><strong>Customer:</strong> @BillHeader.Party</p>
+                <p><strong>Customer:</strong> @BillHeader.PartyNameDb</p>
                 <p><strong>Name:</strong> @BillHeader.PartyName</p>
                 <p><strong>Phone:</strong> @BillHeader.PartyPhone</p>
                 <p><strong>Email:</strong> @BillHeader.PartyEmail</p>
@@ -50,12 +50,10 @@
             <thead>
                 <tr>
                     <th class="text-left">Item Name</th>
-                    <th class="text-left">
-                        @if (ServingSize == 1)
-                        {
-                            <p>ServingSize</p>
-                        }
-                    </th>
+                    @if (ServingSize == 1)
+                    {
+                        <th class="text-left">Serving Size</th>
+                    }
                     <th>Quantity</th>
                     <th>Unit Price</th>
                     <th>Discount</th>
@@ -63,29 +61,18 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var item in BillDetails)
+                @foreach (var item in BillItems)
                 {
                     <tr class="table-row-hover">
-                        @if (@item.StockCondition != "NEW")
+                        <td class="text-left">@item.ItemName @item.StockCondition</td>
+                        @if (ServingSize == 1)
                         {
-                            <td class="text-left">@item.ItemName @item.StockCondition</td>
+                            <td class="text-left">@item.ServingSize</td>
                         }
-                        else
-                        {
-                            <td class="text-left">@item.ItemName</td>
-                        }
-
-                        <td class="text-left">
-                            @if (ServingSize == 1)
-                            {
-
-                                @item.ServingSize
-                            }
-                        </td>
                         <td class="text-right">@item.Qty.ToString("N2")</td>
                         <td class="text-right">@item.UnitPrice.ToString("N2")</td>
-                        <td class="text-right">@item.ItemDiscount.ToString("N2")</td>
-                        <td class="text-right">@item.Amount.ToString("N2")</td>
+                        <td class="text-right">@item.DiscountAmount.ToString("N2")</td>
+                        <td class="text-right">@item.ItemTotalAmount.ToString("N2")</td>
                     </tr>
                 }
 
@@ -98,21 +85,26 @@
                     <td colspan="5" class="text-right font-weight-bold">Discount</td>
                     <td class="text-right font-weight-bold">@BillHeader.DiscountAmount.ToString("N2")</td>
                 </tr>
-                <tr>
-                    <td colspan="5" class="text-right font-weight-bold">Payment @BillHeader.PaymentMethod @BillHeader.PaymentRef</td>
-                    <td class="text-right font-weight-bold">@BillHeader.PaymentAmount.ToString("N2")</td>
-                </tr>
+
+                @foreach (var payment in BillPayments)
+                {
+                    <tr>
+                        <td colspan="5" class="text-right font-weight-bold">Payment @payment.PaymentMethod @payment.PaymentRef</td>
+                        <td class="text-right font-weight-bold">@payment.AmountPaid.ToString("N2")</td>
+                    </tr>
+                }
             </tbody>
         </table>
 
-        @if (@BillHeader.PaymentAmount != 0)
+        @if (BillPayments.Sum(x => x.AmountPaid) > 0)
         {
-            <label>@Functions.ConvertMoneyToWords((decimal)BillHeader.PaymentAmount)</label>
+            <label>@Functions.ConvertMoneyToWords((decimal)BillPayments.Sum(x => x.AmountPaid))</label>
         }
+
         <!-- Footer -->
         <div class="row">
             <div class="col-md-6 mt-4">
-                <p><strong>Created By:</strong> @BillHeader.fullname</p>
+                <p><strong>Created By:</strong> @BillHeader.EmployeeFullName</p>
                 <p><strong>Created Date:</strong> @BillHeader.CreatedOn.ToString("dd-MMM-yyyy HH:mm:ss")</p>
             </div>
             <div class="col-md-6 mt-4">
@@ -126,34 +118,22 @@ else
     <p>Loading...</p>
 }
 
-
-
 @code {
-    [Parameter] public int id { get; set; } = 0;
+    [Parameter] public int id { get; set; }
     [Parameter] public int ServingSize { get; set; } = 1;
-    private decimal totalAmount;
-    private DateTime currentDate = DateTime.Now;
-    private string userFullName = "";
-    private string htmlContent = "";
-    private string pdfFileName = "BillReport.pdf";
 
-    private List<BillReportModel> BillReportData = new();
-    private BillReportModel? BillHeader;
-    private List<BillReportModel> BillDetails = new();
+    private BillMasterReportModel? BillHeader;
+    private List<BillItemReportModel> BillItems = new();
+    private List<BillPaymentsReportModel> BillPayments = new();
+    private decimal totalAmount = 0;
 
     protected override async Task OnInitializedAsync()
     {
-        var BillReportData = await Functions.GetAsync<List<BillReportModel>>($"Bill/GetBillReport?id={id}", true);
-        if (BillReportData == null || BillReportData.Count == 0)
-        {
-            NavManager.NavigateTo("/not-found");
-            return;
-        }
+        BillHeader = await Functions.GetAsync<BillMasterReportModel>($"Bill/GetBillMaster?id={id}", true);
+        BillItems = await Functions.GetAsync<List<BillItemReportModel>>($"Bill/GetBillItems?id={id}", true) ?? new();
+        BillPayments = await Functions.GetAsync<List<BillPaymentsReportModel>>($"Bill/GetBillPayments?id={id}", true) ?? new();
 
-        BillHeader = BillReportData.First(); // Master record
-        BillDetails = BillReportData;        // All items share same header
-
-        totalAmount = (decimal)BillDetails.Sum(x => x.Amount);
+        totalAmount = BillItems.Sum(x => (decimal)x.ItemTotalAmount);
     }
 
     private async Task PrintReport()
@@ -161,6 +141,7 @@ else
         await JSRuntime.InvokeVoidAsync("printInvoice");
     }
 }
+
 
 
 <style>

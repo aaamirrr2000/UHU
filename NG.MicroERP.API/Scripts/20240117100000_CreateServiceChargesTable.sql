@@ -2,13 +2,13 @@
 (
     Id              INT             IDENTITY(1,1) PRIMARY KEY,
     GUID             UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
+    OrganizationId  INT             DEFAULT 1,
     ChargeName      NVARCHAR(100)   NOT NULL,                                               -- e.g. “Delivery”
     ChargeType      VARCHAR(50)         NOT NULL CHECK (ChargeType IN ('FLAT','PERCENTAGE')),   -- F = Flat  |  P = Percent
     Amount          DECIMAL(18,4)   NOT NULL,                                               -- 25.0000  |  7.5000 (=7.5 %)
     AppliesTo       INT             NULL DEFAULT 0,                                         -- Categories
     EffectiveFrom   DATE            NOT NULL,
     EffectiveTo     DATE            NULL,
-    OrganizationId  INT             DEFAULT 1,
     IsActive        BIT             NOT NULL DEFAULT 1,
 
     CreatedBy       INT             NULL,

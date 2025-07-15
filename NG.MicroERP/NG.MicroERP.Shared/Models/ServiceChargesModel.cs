@@ -27,4 +27,7 @@ public class ServiceChargesModel
     public int IsSoftDeleted { get; set; } = 0;
     public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
 
+    //
+    public double CalculatedAmount { get; set; } = 0;
+
 }

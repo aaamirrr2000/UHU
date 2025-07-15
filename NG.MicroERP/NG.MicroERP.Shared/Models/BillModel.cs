@@ -8,7 +8,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace NG.MicroERP.Shared.Models;
-
 public class BillModel
 {
     public int Id { get; set; } = 0;
@@ -26,20 +25,15 @@ public class BillModel
     public string? PartyEmail { get; set; } = string.Empty;
     public string? PartyAddress { get; set; } = string.Empty;
     public DateTime TranDate { get; set; } = DateTime.Today;
-    public string ServiceChargeType { get; set; } = string.Empty;
-    public double ServiceChargeRate { get; set; } = 0;
-    public double ServiceCharge { get; set; } = 0;
+    public string ServiceType { get; set; } = string.Empty;
+    public int PreprationTime { get; set; } = 0;
     public decimal DiscountAmount { get; set; } = 0;
-    public double TaxRate { get; set; } = 0;
-    public decimal TaxAmount { get; set; } = 0;
+    public decimal SubTotalAmount { get; set; } = 0;
+    public decimal TotalChargeAmount { get; set; } = 0;
     public decimal BillAmount { get; set; } = 0;
-    public string? PaymentMethod { get; set; } = string.Empty;
-    public string? PaymentRef { get; set; } = string.Empty;
-    public decimal PaymentAmount { get; set; } = 0;
+    public decimal TotalPaidAmount { get; set; } = 0;
     public string? Description { get; set; } = string.Empty;
     public string? Status { get; set; } = string.Empty;
-    public string ServiceType { get; set; } = string.Empty;
-    public TimeSpan PreparationTime { get; set; }
     public string ClientComments { get; set; } = string.Empty;
     public int Rating { get; set; } = 0;
     public int CreatedBy { get; set; } = 0;
@@ -51,14 +45,15 @@ public class BillModel
     public int IsSoftDeleted { get; set; } = 0;
     public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
 
-    //
+    // Computed
+    public decimal BalanceAmount => BillAmount - TotalPaidAmount;
+
+    // UI Display Fields
     public string Location { get; set; } = string.Empty;
     public string Party { get; set; } = string.Empty;
     public string UserName { get; set; } = string.Empty;
     public string Fullname { get; set; } = string.Empty;
     public string TableName { get; set; } = string.Empty;
-    //public bool IsDeleteVisible { get; set; } = false;
-    //public bool IsStatusVisible { get; set; } = false;
     public string ElapsedTime { get; set; } = "";
 }
 
@@ -69,6 +64,7 @@ public class BillDetailModel
     public Guid Guid { get; set; }
     public int ItemId { get; set; } = 0;
     public string? StockCondition { get; set; } = string.Empty;
+    public string? ServingSize { get; set; } = string.Empty;
     public double Qty { get; set; } = 0;
     public double UnitPrice { get; set; } = 0;
     public double DiscountAmount { get; set; } = 0;
@@ -80,14 +76,12 @@ public class BillDetailModel
     public string Status { get; set; } = string.Empty;
     public int Person { get; set; } = 0;
     public int Rating { get; set; } = 0;
-
     public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
 
-    //
+    // UI & Navigation Fields
     public string Item { get; set; } = string.Empty;
     public string StockType { get; set; } = string.Empty;
     public bool IsSelected { get; set; } = false;
-    public string? ServingSize { get; set; }
     public string? SeqNo { get; set; } = string.Empty;
     public string? BillType { get; set; } = string.Empty;
     public int LocationId { get; set; } = 0;
@@ -95,14 +89,9 @@ public class BillDetailModel
     public int PartyId { get; set; } = 0;
     public string? PartyName { get; set; } = string.Empty;
     public string? Pic { get; set; } = string.Empty;
-
-    public int TableId { get; set; } = 0;
     public string? TableName { get; set; } = string.Empty;
-
     public string? TableLocation { get; set; } = string.Empty;
-
     public string? BillStatus { get; set; } = string.Empty;
-
     public string? BillDetailStatus { get; set; } = string.Empty;
 
     public BillDetailModel()
@@ -110,60 +99,44 @@ public class BillDetailModel
         Id = lastUsedId++;
     }
 
-    public double Item_Amount
-    {
-        get
-        {
-            return (Qty * UnitPrice) - DiscountAmount - TaxAmount;
-        }
-    }
-
-
-
-
+    public double Item_Amount => (Qty * UnitPrice) + TaxAmount - DiscountAmount;
 }
 
 
-public class Bill_And_Bill_Detail_Model
+public class BillsModel
 {
     public BillModel Bill { get; set; } = new BillModel();
     public ObservableCollection<BillDetailModel> BillDetails { get; set; } = new();
+    public ObservableCollection<BillChargeModel> BillCharges { get; set; } = new();
+    public ObservableCollection<BillPaymentModel> BillPayments { get; set; } = new();
 }
 
-public class BillReportModel
+public class BillChargeModel
 {
-    public int Id { get; set; } = 0;
-    public string? SeqNo { get; set; } = string.Empty;
-    public string? BillType { get; set; } = string.Empty;
-    public int LocationId { get; set; } = 0;
-    public string? LocationName { get; set; } = string.Empty;
-    public int PartyId { get; set; } = 0;
-    public string? Party { get; set; } = string.Empty;
-    public string? PartyName { get; set; } = string.Empty;
-    public string? PartyPhone { get; set; } = string.Empty;
-    public string? PartyEmail { get; set; } = string.Empty;
-    public string? PartyAddress { get; set; } = string.Empty;
-    public DateTime TranDate { get; set; } = DateTime.Today;
-    public double DiscountAmount { get; set; } = 0;
-    public double TaxAmount { get; set; } = 0;
-    public double BillAmount { get; set; } = 0;
-    public string? PaymentMethod { get; set; } = string.Empty;
-    public string? PaymentRef { get; set; } = string.Empty;
-    public double PaymentAmount { get; set; } = 0;
-    public string? Description { get; set; } = string.Empty;
-    public DateTime CreatedOn { get; set; } = DateTime.Today;
-    public string? Username { get; set; } = string.Empty;
-    public string? fullname { get; set; } = string.Empty;
-    public int ItemId { get; set; } = 0;
-    public string? ItemName { get; set; } = string.Empty;
-    public string? ServingSize { get; set; } = string.Empty;
-    public string? StockCondition { get; set; } = string.Empty;
-    public string? Instructions { get; set; } = string.Empty;
-    public double Qty { get; set; } = 0;
-    public double UnitPrice { get; set; } = 0;
-    public double ItemDiscount { get; set; } = 0;
-    public double ItemTax { get; set; } = 0;
-    public double Amount { get; set; } = 0;
-    public string? Status { get; set; } = string.Empty;
+    public int Id { get; set; }
+    public int BillId { get; set; }
+    public int ChargeRuleId { get; set; }
+    public string RuleName { get; set; } = string.Empty;
+    public string RuleType { get; set; } = "CHARGE"; // CHARGE or DISCOUNT
+    public string AmountType { get; set; } = "FLAT"; // FLAT or PERCENTAGE
+    public decimal Rate { get; set; }
+    public decimal CalculatedAmount { get; set; }
+    public int SequenceOrder { get; set; } = 0;
+    public string CalculationBase { get; set; } = "BILLED_AMOUNT";
+    public string ChargeCategory { get; set; } = "OTHER"; // NEW FIELD: SERVICE, TAX, DISCOUNT, OTHER
+    public short IsSoftDeleted { get; set; } = 0;
+    public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
+}
 
+public class BillPaymentModel
+{
+    public int Id { get; set; }
+    public int BillId { get; set; }
+    public string PaymentMethod { get; set; } = string.Empty;
+    public string? PaymentRef { get; set; }
+    public decimal AmountPaid { get; set; }
+    public DateTime PaidOn { get; set; } = DateTime.UtcNow;
+    public string? Notes { get; set; }
+    public short IsSoftDeleted { get; set; } = 0;
+    public byte[]? RowVersion { get; set; }
 }

@@ -40,14 +40,14 @@
             <label>Sub Total:</label>
             <div class="readonly">@GetSubTotal().ToString("N2")</div>
         </div>
-        <div class="total-row">
+       @*  <div class="total-row">
             <label>Service Charges @@ @Globals.ServiceCharge.Amount%:</label>
             <div class="readonly">@Bills.Bill!.ServiceCharge.ToString("N2")</div>
         </div>
         <div class="total-row">
             <label>GST  @@ @Globals.GST%:</label>
             <div class="readonly">@Bills.Bill!.TaxAmount.ToString("N2")</div>
-        </div>
+        </div> *@
         <div class="total-row">
             <label>Discount:</label>
             @if (BillGenerated == false)
@@ -148,10 +148,10 @@
 
         // ✅ Calculate tax and store it
         double tax = (subTotal + serviceAmount - discount) * Globals.GST / 100;
-        Bills.Bill!.TaxAmount = Convert.ToDecimal(tax);
+        //Bills.Bill!.TaxAmount = Convert.ToDecimal(tax);
 
         // ✅ Optional: Store service amount too
-        Bills.Bill.ServiceCharge = serviceAmount;
+        //Bills.Bill.ServiceCharge = serviceAmount;
 
 
 
@@ -171,8 +171,8 @@
         var bill = new BillModel
         {
             Id = id,
-            ServiceCharge = Globals.ServiceCharge!.Amount,
-            TaxAmount = Convert.ToDecimal(Globals.GST),
+            //ServiceCharge = Globals.ServiceCharge!.Amount,
+            //TaxAmount = Convert.ToDecimal(Globals.GST),
             DiscountAmount = Bills.Bill.DiscountAmount,
         };
 
@@ -197,6 +197,40 @@
         // await pdfHelper.GenerateBill();
     }
 
+    public static void ApplyChargesToItems(
+     List<BillItemReportModel> items,
+     List<BillChargesReportModel> charges)
+    {
+        if (items == null || charges == null || !items.Any() || !charges.Any()) return;
+
+        decimal totalBaseAmount = Convert.ToDecimal(items.Sum(i => i.ItemTotalAmount));
+
+        foreach (var charge in charges)
+        {
+            foreach (var item in items)
+            {
+                decimal itemTotal = Convert.ToDecimal(item.ItemTotalAmount);
+                decimal proportion = totalBaseAmount == 0 ? 0 : itemTotal / totalBaseAmount;
+                decimal chargeAmount = 0;
+
+                if (charge.AmountType?.ToUpper() == "FIXED")
+                {
+                    chargeAmount = Convert.ToDecimal(charge.CalculatedAmount) * proportion;
+                }
+                else if (charge.AmountType?.ToUpper() == "PERCENTAGE")
+                {
+                    chargeAmount = itemTotal * (Convert.ToDecimal(charge.Rate) / 100m);
+                }
+
+                /*
+                if (item.ChargesBreakdown.ContainsKey(charge.RuleName!))
+                    item.ChargesBreakdown[charge.RuleName!] += chargeAmount;
+                else
+                    item.ChargesBreakdown[charge.RuleName!] = chargeAmount;
+                */
+            }
+        }
+    }
 }
 
 <style>

@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NG.MicroERP.API", "NG.Micro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NG.MicroERP.App.SwiftServe", "NG.MicroERP.App.SwiftServe\NG.MicroERP.App.SwiftServe.csproj", "{2FB63F7F-E9D7-4187-95CB-578ED418B6B9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NG.MicroERP.POS", "NG.MicroERP.POS\NG.MicroERP.POS.csproj", "{0A894A50-BDA2-43A3-B059-6E8AD2980DBA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,6 +61,10 @@ Global
 		{2FB63F7F-E9D7-4187-95CB-578ED418B6B9}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
 		{2FB63F7F-E9D7-4187-95CB-578ED418B6B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2FB63F7F-E9D7-4187-95CB-578ED418B6B9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A894A50-BDA2-43A3-B059-6E8AD2980DBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A894A50-BDA2-43A3-B059-6E8AD2980DBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A894A50-BDA2-43A3-B059-6E8AD2980DBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A894A50-BDA2-43A3-B059-6E8AD2980DBA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

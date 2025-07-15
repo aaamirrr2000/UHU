@@ -3,6 +3,7 @@
 
     Id              INT              IDENTITY(1,1) PRIMARY KEY,
     GUID             UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
+    OrganizationId  INT             DEFAULT 1,
     TaxName         NVARCHAR(100)    NOT NULL,                 -- e.g. “GST”
     TaxCode         NVARCHAR(20)     NOT NULL UNIQUE,          -- short code for invoices
     RatePercent     DECIMAL(9,4)     NOT NULL,                 -- 17.0000  = 17 %

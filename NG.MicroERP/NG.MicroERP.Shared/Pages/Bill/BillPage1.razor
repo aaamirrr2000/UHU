@@ -1,0 +1,670 @@
+﻿@page "/BillPage1/{Act}/{Id:int?}"
+@page "/BillPage1"
+
+@using System.Globalization
+@inject HttpClient Http
+
+<div class="foodmeal-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>FoodMeal.</h2>
+        <nav>
+            <ul>
+                <li class="active"><i class="fas fa-chart-line"></i> Dashboard</li>
+                <li><i class="fas fa-hamburger"></i> Food Order</li>
+                <li><i class="fas fa-heart"></i> Favorite</li>
+                <li><i class="fas fa-comment-dots"></i> Message</li>
+                <li><i class="fas fa-history"></i> Order History</li>
+                <li><i class="fas fa-file-invoice"></i> Bills</li>
+                <li><i class="fas fa-cog"></i> Setting</li>
+            </ul>
+        </nav>
+        <div class="upgrade-box">
+            <p>Upgrade your Account to Get Free Voucher</p>
+            <button class="upgrade-btn">Upgrade</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <h3>Hey, Zack</h3>
+            <input type="text" placeholder="What do you want to eat today..." class="search-bar" />
+            <div class="top-icons">
+                <i class="fas fa-bell"></i>
+                <i class="fas fa-envelope"></i>
+                <img src="/images/user.png" class="user-pic" />
+            </div>
+        </div>
+
+        <div class="voucher-banner">
+            <img src="/images/banner.jpg" alt="Banner" />
+            <div class="voucher-text">
+                <h4>Get Discount Voucher Up To 20%</h4>
+                <p>Lorem ipsum dolor sit amet consectetur adipiscing elit, sed do eiusmod tempor incididunt.</p>
+            </div>
+        </div>
+
+        <div class="category-section">
+            <h5>Category</h5>
+            <div class="categories">
+                @foreach (var category in Categories)
+                {
+                    <button class="@(category == "Bakery" ? "active" : null)">@category</button>
+                }
+            </div>
+        </div>
+
+        <div class="popular-section">
+            <h5>Popular Dishes <a href="#">View all</a></h5>
+            <div class="cards">
+                @foreach (var item in PopularDishes)
+                {
+                    <div class="card">
+                        <img src="@item.Image" />
+                        <div class="discount">@item.Discount</div>
+                        <h6>@item.Name</h6>
+                        <p>@item.Price.ToString("C", CultureInfo.InvariantCulture)</p>
+                        <div class="stars">★★★★★</div>
+                        <button class="add-btn">+</button>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="recent-section">
+            <h5>Recent Order <a href="#">View all</a></h5>
+            <div class="cards">
+                @foreach (var item in RecentOrders)
+                {
+                    <div class="card">
+                        <img src="@item.Image" />
+                        <h6>@item.Name</h6>
+                        <p>@item.Price.ToString("C", CultureInfo.InvariantCulture)</p>
+                        <small>4.97 km • 21 min</small>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="right-sidebar">
+        <div class="address-box">
+            <label>Customer:</label>
+            <select class="input-box" @onchange="OnCustomerChanged">
+                @foreach (var cust in Customers)
+                {
+                    <option value="@cust.Id" selected="@(SelectedCustomer?.Id == cust.Id)">
+                        @cust.Name
+                    </option>
+                }
+            </select>
+
+            <h5>Address: @SelectedCustomer?.Address</h5>
+            <h5>Phone: @SelectedCustomer?.Phone</h5>
+            <h5>Email: @SelectedCustomer?.Email</h5>
+        </div>
+
+        <div class="order-summary">
+
+            <div class="order-grid-container">
+                <table class="order-grid">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                            <th>Discount</th>
+                            <th>Net</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in BillItems)
+                        {
+                            <tr>
+                                <td>
+                                    <select class="item-select" @onchange="e => OnItemChanged(item, e.Value?.ToString())">
+                                        @foreach (var menuItem in PopularDishes)
+                                        {
+                                            <option value="@menuItem.Name" selected="@(item.Name == menuItem.Name)">
+                                                @menuItem.Name
+                                            </option>
+                                        }
+                                    </select>
+                                </td>
+                                <td><input type="number" min="1" class="input-box" @bind="item.Qty" @oninput="e => Recalculate()" /></td>
+                                <td><input type="number" min="0" step="0.01" class="input-box" @bind="item.UnitPrice" @oninput="e => Recalculate()" /></td>
+                                <td><input type="number" min="0" step="0.01" class="input-box" @bind="item.Discount" @oninput="e => Recalculate()" /></td>
+                                <td>@item.NetAmount.ToString("C", CultureInfo.InvariantCulture)</td>
+                                <td><button class="delete-btn" @onclick="@(() => DeleteItem(item))">🗑️</button></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Total <span>@BillItems.Sum(i => i.NetAmount).ToString("C", CultureInfo.InvariantCulture)</span></h4>
+
+            <div class="wallet-buttons">
+                @foreach (var method in PaymentMethods)
+                {
+                    <button class="transfer">
+                        <i class="@method.IconClass"></i> @method.Name
+                    </button>
+                }
+            </div>
+
+            <div class="payment-summary">
+                <table class="summary-table">
+                    <tr>
+                        <td>Total:</td>
+                        <td style="text-align: right;">@TotalAmount.ToString("C", CultureInfo.InvariantCulture)</td>
+                    </tr>
+                    <tr>
+                        <td>Overall Discount:</td>
+                        <td style="text-align: right;">
+                            <input type="number" class="input-box" @bind="OverallDiscount" @oninput="e => Recalculate()" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Final Amount:</td>
+                        <td style="text-align: right;">@FinalAmount.ToString("C", CultureInfo.InvariantCulture)</td>
+                    </tr>
+                    <tr>
+                        <td>Payment Amount:</td>
+                        <td style="text-align: right;">
+                            <input type="number" class="input-box" @bind="PaymentAmount" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Payment Reference:</td>
+                        <td>
+                            <input type="text" class="input-box" @bind="PaymentReference" />
+                        </td>
+                    </tr>
+                </table>
+
+                <button class="checkout-btn">Checkout</button>
+            </div>
+
+            <input type="text" placeholder="Have a coupon code?" class="coupon" />
+            <button class="checkout-btn">Checkout</button>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    // Parameters
+    [Parameter] public int? Id { get; set; } = 0;
+    [Parameter] public string? Act { get; set; } = "INSERT";
+    [CascadingParameter] private bool isReadOnly { get; set; }
+
+    // Models
+    public class OrderItem
+    {
+        public string Name { get; set; } = string.Empty;
+        public int Qty { get; set; } = 1;
+        public decimal UnitPrice { get; set; } = 0;
+        public decimal Discount { get; set; } = 0;
+        public decimal NetAmount => Qty * UnitPrice - Discount;
+    }
+
+    public class FoodItem
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Image { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public string Discount { get; set; } = string.Empty;
+    }
+
+    public class PaymentMethod
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string IconClass { get; set; } = "fas fa-exchange-alt"; // Default icon
+    }
+
+    private List<Customer> Customers = new();
+    private Customer? SelectedCustomer;
+
+    private List<PaymentMethod> PaymentMethods = new();
+
+    private decimal OverallDiscount { get; set; } = 0;
+    private decimal PaymentAmount { get; set; } = 0;
+    private string PaymentReference { get; set; } = string.Empty;
+
+    private decimal TotalAmount => BillItems.Sum(i => i.NetAmount);
+    private decimal FinalAmount => TotalAmount - OverallDiscount;
+
+    // UI State
+    private List<OrderItem> BillItems = new();
+    private List<string> Categories = new();
+    private List<FoodItem> PopularDishes = new();
+    private List<FoodItem> RecentOrders = new();
+
+    // Lifecycle
+    protected override async Task OnInitializedAsync()
+    {
+        Categories = new List<string> { "Bakery", "Burger", "Beverage", "Chicken", "Pizza", "Seafood" };
+
+        PopularDishes = new List<FoodItem>
+        {
+            new FoodItem { Name = "Fish Burger", Image = "/images/fishburger.jpg", Price = 5.59m, Discount = "15% Off" },
+            new FoodItem { Name = "Beef Burger", Image = "/images/beefburger.jpg", Price = 5.59m, Discount = "15% Off" },
+            new FoodItem { Name = "Cheese Burger", Image = "/images/cheeseburger.jpg", Price = 5.59m, Discount = "15% Off" }
+        };
+
+        RecentOrders = new List<FoodItem>
+        {
+            new FoodItem { Name = "Fish Burger", Image = "/images/fishburger.jpg", Price = 5.59m },
+            new FoodItem { Name = "Japan Ramen", Image = "/images/ramen.jpg", Price = 5.59m },
+            new FoodItem { Name = "Fried Rice", Image = "/images/friedrice.jpg", Price = 5.59m }
+        };
+
+        BillItems = new List<OrderItem>
+        {
+            new OrderItem { Name = "Fish Burger", Qty = 2, UnitPrice = 5.59m, Discount = 1.00m },
+            new OrderItem { Name = "Cheese Burger", Qty = 1, UnitPrice = 5.59m, Discount = 0.50m },
+        };
+
+        Customers = new List<Customer>
+        {
+            new Customer { Id = 1, Name = "Ali Khan", Address = "Model Town, Lahore", Phone = "03001234567", Email = "ali@example.com" },
+            new Customer { Id = 2, Name = "Sara Ahmed", Address = "DHA, Karachi", Phone = "03111234567", Email = "sara@example.com" }
+        };
+
+                SelectedCustomer = Customers.FirstOrDefault();
+
+                PaymentMethods = new List<PaymentMethod>
+        {
+            new PaymentMethod { Name = "Cash", IconClass = "fas fa-money-bill-wave" },
+            new PaymentMethod { Name = "Credit Card", IconClass = "fas fa-credit-card" },
+            new PaymentMethod { Name = "Wallet", IconClass = "fas fa-wallet" }
+        };
+    }
+
+    // Event Handlers
+    private void OnItemChanged(OrderItem item, string? selectedName)
+    {
+        var selected = PopularDishes.FirstOrDefault(x => x.Name == selectedName);
+        if (selected != null)
+        {
+            item.Name = selected.Name;
+            item.UnitPrice = selected.Price;
+        }
+        Recalculate();
+    }
+
+    private void Recalculate() => StateHasChanged();
+
+    private void DeleteItem(OrderItem item) => BillItems.Remove(item);
+
+    private void OnCustomerChanged(ChangeEventArgs e)
+    {
+        var selectedId = int.Parse(e.Value?.ToString() ?? "0");
+        SelectedCustomer = Customers.FirstOrDefault(c => c.Id == selectedId);
+    }
+
+
+    public class Customer
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Address { get; set; } = "";
+        public string Phone { get; set; } = "";
+        public string Email { get; set; } = "";
+    }
+
+}
+
+<style>
+    /* Apply variables */
+    body, .main-content, .sidebar, .right-sidebar, .card, .voucher-banner {
+        color: var(--text-color);
+        background-color: var(--bg-color);
+    }
+
+    h2, h3, h4, h5, h6, p, li, button, input, span, small {
+        color: var(--text-color);
+    }
+
+    .foodmeal-container {
+        display: flex;
+        height: 100vh;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    /* Light Theme */
+    .light-theme {
+        --text-color: #1a1a1a;
+        --bg-color: #f9f8fd;
+    }
+
+    /* Dark Theme */
+    .dark-theme {
+        --text-color: #f5f5f5;
+        --bg-color: #1e1e1e;
+    }
+
+
+    .sidebar {
+        width: 240px;
+        background: #8f43ff;
+        color: white;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+        .sidebar h2 {
+            margin-bottom: 30px;
+        }
+
+        .sidebar nav ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar nav li {
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+            .sidebar nav li.active,
+            .sidebar nav li:hover {
+                background-color: #a367ff;
+            }
+
+    .upgrade-box {
+        background: #cba5ff;
+        padding: 10px;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .main-content {
+        flex: 1;
+        padding: 20px;
+        background: #f9f8fd;
+        overflow-y: auto;
+    }
+
+    .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+        .top-bar .search-bar {
+            width: 60%;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+        }
+
+    .top-icons i,
+    .top-icons img {
+        margin-left: 10px;
+        cursor: pointer;
+    }
+
+    .voucher-banner {
+        display: flex;
+        align-items: center;
+        margin: 20px 0;
+        background: white;
+        border-radius: 10px;
+        padding: 10px;
+    }
+
+    .categories button {
+        margin-right: 10px;
+        padding: 10px 20px;
+        border: none;
+        background: #eee;
+        border-radius: 10px;
+        cursor: pointer;
+    }
+
+    .categories .active {
+        background: #8f43ff;
+        color: white;
+    }
+
+    .cards {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .card {
+        width: 160px;
+        background: white;
+        padding: 10px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+
+        .card img {
+            width: 100%;
+            border-radius: 8px;
+        }
+
+    .discount {
+        background: #ff4d4f;
+        color: white;
+        padding: 2px 6px;
+        font-size: 0.8rem;
+        position: relative;
+        top: -8px;
+        right: -8px;
+        border-radius: 4px;
+        display: inline-block;
+    }
+
+    .add-btn {
+        background: #8f43ff;
+        color: white;
+        border: none;
+        padding: 6px 10px;
+        border-radius: 50%;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+
+    .right-sidebar {
+        width: 33%;
+        background: #f5f0ff;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .order-grid th:nth-child(2),
+    .order-grid td:nth-child(2),
+    .order-grid th:nth-child(3),
+    .order-grid td:nth-child(3),
+    .order-grid th:nth-child(4),
+    order-grid td:nth-child(4),
+    .order-grid th:nth-child(5),
+    .order-grid td:nth-child(5) {
+        text-align: right;
+    }
+
+    .order-grid th:nth-child(1),
+    .order-grid td:nth-child(1) {
+        width: 35%;
+    }
+
+    .order-grid th:nth-child(2),
+    .order-grid td:nth-child(2) {
+        width: 10%;
+    }
+
+    .order-grid th:nth-child(3),
+    .order-grid td:nth-child(3),
+    .order-grid th:nth-child(4),
+    .order-grid td:nth-child(4),
+    .order-grid th:nth-child(5),
+    .order-grid td:nth-child(5) {
+        width: 15%;
+    }
+
+    .order-grid th:nth-child(6),
+    .order-grid td:nth-child(6) {
+        width: 10%;
+        text-align: center;
+    }
+    .wallet h3 {
+        margin-top: 0;
+    }
+
+    .wallet-buttons button {
+        margin: 5px;
+        padding: 8px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .topup {
+        background: #ffd966;
+    }
+
+    .transfer {
+        background: #93c47d;
+    }
+
+    .order-summary {
+        margin-top: 20px;
+    }
+
+        .order-summary ul {
+            padding: 0;
+            list-style: none;
+        }
+
+        .order-summary li {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+    .checkout-btn {
+        width: 100%;
+        background: #8f43ff;
+        color: white;
+        border: none;
+        padding: 12px;
+        margin-top: 10px;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .item-select, .input-box {
+        width: 100%;
+        padding: 5px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+
+    .delete-btn {
+        background: #ff4d4f;
+        color: white;
+        border: none;
+        padding: 6px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .summary-table {
+        width: 100%;
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+
+        .summary-table td {
+            padding: 6px;
+            font-size: 0.95rem;
+        }
+
+    .payment-summary input.input-box {
+        text-align: right;
+        width: 100%;
+    }
+
+    .order-summary {
+        margin-top: 20px;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    .order-grid {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+        .order-grid thead {
+            position: sticky;
+            top: 0;
+            background-color: #f5f5f5;
+            z-index: 1;
+        }
+
+        .order-grid th, .order-grid td {
+            padding: 6px;
+            border: 1px solid #ccc;
+            text-align: right;
+        }
+
+            .order-grid td:first-child, .order-grid th:first-child {
+                text-align: left;
+                width: 30%;
+            }
+
+            .order-grid td:last-child, .order-grid th:last-child {
+                text-align: center;
+                width: 5%;
+            }
+
+        .order-grid .item-select, .order-grid .input-box {
+            width: 100%;
+            padding: 4px;
+            box-sizing: border-box;
+        }
+
+    .address-box select.input-box {
+        width: 100%;
+        padding: 6px;
+        margin-bottom: 10px;
+    }
+
+    .order-grid-container {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+.order-grid {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.order-grid thead {
+    position: sticky;
+    top: 0;
+    background-color: #f5f5f5;
+    z-index: 2;
+}
+
+</style>

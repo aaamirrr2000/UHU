@@ -4,6 +4,7 @@
 	Guid                  UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
 	OrganizationId          INT             NOT NULL,
 	Code                  VARCHAR(50)      NOT NULL,
+	Pic                   VARCHAR(255)     NOT NULL,
 	Name                  VARCHAR(255)     NOT NULL,
 	ParentId              INT              NOT NULL DEFAULT 0,
 	IsActive              SMALLINT         NOT NULL DEFAULT 1,

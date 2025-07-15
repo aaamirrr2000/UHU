@@ -27,6 +27,9 @@ public class TaxModel
     public int IsSoftDeleted { get; set; } = 0;
     public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
 
+    //
+    public double TaxAmount { get; set; } = 0;
+
 }
 
 
