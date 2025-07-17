@@ -61,7 +61,8 @@ public class CategoriesService : ICategoriesService
             string SQLInsert = $@"INSERT INTO Categories 
 			(
 				OrganizationId, 
-				Code, 
+				Code,
+                Pic,
 				Name, 
 				ParentId, 
 				IsActive, 
@@ -74,6 +75,7 @@ public class CategoriesService : ICategoriesService
 			(
 				{obj.OrganizationId},
 				'{Code!}', 
+                '{obj.Pic}', 
 				'{obj.Name!.ToUpper()}', 
 				{obj.ParentId},
 				{obj.IsActive},
@@ -110,6 +112,7 @@ public class CategoriesService : ICategoriesService
             string SQLUpdate = $@"UPDATE Categories SET 
 					OrganizationId = {obj.OrganizationId}, 
 					Code = '{obj.Code!.ToUpper()}', 
+                    Pic = '{obj.Pic}', 
 					Name = '{obj.Name!.ToUpper()}', 
 					ParentId = {obj.ParentId}, 
 					IsActive = {obj.IsActive}, 

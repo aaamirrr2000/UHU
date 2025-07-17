@@ -4,6 +4,7 @@
 @inject IDialogService dialogService
 @inject NavigationManager NavManager
 @inject ISnackbar SnackbarService
+@inject FileUploadService FileUploadService
 
 <Loading IsLoading="@LoadingPanel" />
 
@@ -88,6 +89,30 @@
                     </MudSelect>
 
                     <ValidationMessage For="@(() => record.IsActive)" />
+                </div>
+                <div class="w-100 d-flex justify-content-center">
+                    <div class="p-3 border rounded" style="width: 300px;">
+                        <label class="small fw-bold text-uppercase d-block mb-2 text-center">Items Image</label>
+
+                        <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
+                            @if (!string.IsNullOrEmpty(record.Pic))
+                            {
+                                <img src="@record.Pic"
+                                     class="img-fluid rounded"
+                                     alt="Items Image"
+                                     style="max-height: 100%; max-width: 100%; object-fit: cover;" />
+                            }
+                            else
+                            {
+                                <div class="d-flex align-items-center justify-content-center bg-secondary rounded-circle"
+                                     style="width: 120px; height: 120px;">
+                                    <i class="fas fa-image text-white fs-3"></i>
+                                </div>
+                            }
+                        </div>
+
+                        <InputFile OnChange="OnFileInputChanged" />
+                    </div>
                 </div>
             </div>
         </MudExpansionPanel>
@@ -201,6 +226,29 @@
         LoadingPanel = false;
         await _drawer.CloseDrawer();
 
+    }
+
+    private async Task OnFileInputChanged(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var result = await Functions.FileUpload(e, FileUploadService);
+
+            if (result.Item1 == true)
+            {
+                record.Pic = result.Item2;
+                SnackbarService.Add("File uploaded successfully!", Severity.Success);
+            }
+            else
+            {
+                SnackbarService.Add($"Error: {result.Item2}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Exception: {ex.Message}", Severity.Error);
+            record.Pic = null;
+        }
     }
 }
 

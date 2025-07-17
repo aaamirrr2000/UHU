@@ -61,4 +61,6 @@ INSERT INTO TypeCode (ListName, ListValue, ParentId, SeqNo) VALUES
 ('CHARGES', 'AMOUNT', 0, 1),
 ('BILL TYPE', 'SALE', 0, 1),
 ('BILL TYPE', 'SALE RETURN', 0, 1),
-('BILL TYPE', 'QUOTATION', 0, 1);
+('BILL TYPE', 'QUOTATION', 0, 1),
+('CHARGE RULE TYPE', 'CHARGE', 0, 1),
+('CHARGE RULE TYPE', 'DISCOUNT', 0, 1);

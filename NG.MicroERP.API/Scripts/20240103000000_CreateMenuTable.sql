@@ -128,7 +128,7 @@ VALUES
                               , 0),
 
 (19, 'Organization'    , NULL , 'Maintain organisation profile and settings'
-                              , 'OrganizationDashboard'     , 13
+                              , 'OrganizationsDashboard'     , 13
                               , 'fas fa-building'           , 9010, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
@@ -169,16 +169,9 @@ VALUES
                               , 1 , GETDATE(), NULL
                               , 0),
 
-(20, 'Service Charges' , NULL , 'Define service charge rates and rules'
-                              , 'ServiceChargesDashboard'   , 13
+(20, 'Charge Rules' , NULL , 'Define charge rates and rules i.e. Service Charges, Tax etc.'
+                              , 'ChargeRulesDashboard'   , 13
                               , 'fas fa-receipt'            , 9070, 1
-                              , 1 , GETDATE(), NULL
-                              , 1 , GETDATE(), NULL
-                              , 0),
-
-(21, 'Tax'             , NULL , 'Define tax types and rates'
-                              , 'TaxDashboard'              , 13
-                              , 'fas fa-percentage'         , 9080, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
                               , 0);

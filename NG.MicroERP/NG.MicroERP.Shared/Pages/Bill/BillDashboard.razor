@@ -20,9 +20,9 @@
                 <ToolBarContent>
                     <MudText Typo="Typo.h6">Bill</MudText>
                     <MudSpacer />
-                    <MudIconButton Icon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" OnClick="@(() => Clear())" Variant="Variant.Filled" Color="Color.Success"/>
-                    <MudIconButton Icon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" OnClick="@(() => GetAll())" Variant="Variant.Filled" Color="Color.Info" />
-                    <MudIconButton Icon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" OnClick="@(() => GetAll())" Variant="Variant.Filled" Color="Color.Secondary" />
+                    <MudIconButton Icon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" OnClick="@(() => Clear())" Variant="Variant.Filled" Color="Color.Success" Class="mx-1"/>
+                    <MudIconButton Icon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" OnClick="@(() => GetAll())" Variant="Variant.Filled" Color="Color.Info"  Class="mx-1"/>
+                    <MudIconButton Icon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" OnClick="@(() => GetAll())" Variant="Variant.Filled" Color="Color.Secondary" Class="mx-1" />
                     <MudDateRangePicker @bind-DateRange="_dateRange"
                                         AutoClose="true"
                                         Variant="Variant.Text"
@@ -34,7 +34,8 @@
                                         PlaceholderStart="Start Date"
                                         PlaceholderEnd="End Date"
                                         MinDate=@(Globals.Organization.CreatedOn)
-                                        MaxDate=@(Globals.Organization.Expiry) />
+                                        MaxDate=@(Globals.Organization.Expiry)
+                                        Class="mx-1" />
                 </ToolBarContent>
 
                 <Columns>

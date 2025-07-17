@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <None Remove="Scripts\20250304000000_CashBookReport.sql" />
+    <None Remove="Scripts\20250304100000_Bills.sql" />
     <None Remove="Scripts\20250305000000_BillReport.sql" />
   </ItemGroup>
 
@@ -37,6 +38,7 @@
     <EmbeddedResource Include="Scripts\20250250000000_DineInOrderStatusView.sql" />
     <EmbeddedResource Include="Scripts\20250303000000_GroupMenuView.sql" />
     <EmbeddedResource Include="Scripts\20250304000000_CashBookReport.sql" />
+    <EmbeddedResource Include="Scripts\20250304100000_Bills.sql" />
     <EmbeddedResource Include="Scripts\20250305000000_BillReport.sql" />
   </ItemGroup>
 

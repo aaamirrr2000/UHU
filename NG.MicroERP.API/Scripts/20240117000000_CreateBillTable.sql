@@ -78,8 +78,8 @@ CREATE TABLE BillCharges
     CalculatedAmount    DECIMAL(18,4)   NOT NULL,
     SequenceOrder       INT             NOT NULL DEFAULT 0,
     CalculationBase     VARCHAR(50)     NOT NULL CHECK (CalculationBase IN ('BILLED_AMOUNT', 'AFTER_PREVIOUS_CHARGES')),
-
-    IsSoftDeleted       SMALLINT         NOT NULL DEFAULT 0,
+    ChargeCategory      VARCHAR(255)     NOT NULL,
+    IsSoftDeleted       SMALLINT        NOT NULL DEFAULT 0,
     RowVersion          ROWVERSION,
     FOREIGN KEY (BillId) REFERENCES Bill(Id),
 );

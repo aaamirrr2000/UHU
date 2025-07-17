@@ -41,6 +41,7 @@ public static class DependencyInjection
         services.AddSingleton<IDineinOrderStatusService, DineinOrderStatusService>();
         services.AddSingleton<IServiceChargesService, ServiceChargesService>();
         services.AddSingleton<ITaxService, TaxService>();
+        services.AddSingleton<IChargeRulesService, ChargeRulesService>();
 
         services.AddScoped<Globals>();
         services.AddScoped<FileUploadService>();

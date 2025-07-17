@@ -14,9 +14,9 @@ namespace NG.MicroERP.API.Services;
 
 public interface IBillService
 {
-    Task<(bool, List<BillModel>)>? Search(string Criteria = "");
+    Task<(bool, List<BillsAllModel>)>? Search(string Criteria = "");
     Task<(bool, BillsModel?)>? Get(int id);
-    Task<(bool, BillModel?, string)> Post(BillsModel obj);
+    Task<(bool, string)> Post(BillsModel obj);
     Task<(bool, string)> Put(BillsModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(BillModel obj);
@@ -31,80 +31,34 @@ public class BillService : IBillService
 {
     DapperFunctions dapper = new DapperFunctions();
 
-    public async Task<(bool, List<BillModel>)>? Search(string Criteria = "")
+    public async Task<(bool, List<BillsAllModel>)>? Search(string Criteria = "")
     {
-        string SQL = @"
-            SELECT
-                Bill.ID,
-                Bill.SeqNo,
-                Bill.BillType,
-                Bill.Source,
-                Bill.SalesId,
-                Employees.Fullname,
-                Bill.TableId,
-                RestaurantTables.TableNumber AS TableName,
-                Bill.LocationId,
-                Locations.Name AS Location,
-                Bill.PartyId,
-                Parties.Name AS Party,
-                Bill.PartyName,
-                Bill.PartyPhone,
-                Bill.PartyEmail,
-                Bill.PartyAddress,
-                Bill.TranDate,
-                Bill.PreprationTime,
-                Bill.SubTotalAmount,
-                Bill.TotalChargeAmount,
-                Bill.DiscountAmount,
-                Bill.TaxAmount,
-                Bill.BillAmount,
-                Bill.TotalPaidAmount,
-                (Bill.BillAmount - Bill.TotalPaidAmount) AS BalanceAmount,
-                Bill.Description,
-                Bill.CreatedBy,
-                Bill.CreatedOn,
-                Bill.Status,
-                Users.Username,
-                Bill.ClientComments
-            FROM Bill
-            LEFT JOIN Locations ON Locations.Id = Bill.LocationId
-            LEFT JOIN Parties ON Parties.Id = Bill.PartyId
-            LEFT JOIN Users ON Users.Id = Bill.CreatedBy
-            LEFT JOIN Employees ON Employees.Id = Users.EmpId
-            LEFT JOIN RestaurantTables ON RestaurantTables.Id = Bill.TableId
-            WHERE Bill.IsSoftDeleted = 0";
+        string SQL = @"SELECT * FROM Bills";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
-            SQL += " AND " + Criteria;
+            SQL += " WHERE " + Criteria;
 
         SQL += " ORDER BY Bill.Id DESC";
 
-        List<BillModel> result = (await dapper.SearchByQuery<BillModel>(SQL)) ?? new List<BillModel>();
+        List<BillsAllModel> result = (await dapper.SearchByQuery<BillsAllModel>(SQL)) ?? new List<BillsAllModel>();
         return result == null || result.Count == 0 ? (false, null!) : (true, result);
     }
 
     public async Task<(bool, BillsModel?)> Get(int id)
     {
-        var res = new BillsModel();
+        BillsModel result = new();
 
-        var billResult = await Search($"Bill.Id = {id}")!;
-        if (!billResult.Item1) return (false, null);
+        List<BillModel> bill = await dapper.SearchByQuery<BillModel>($"Select * from Bills Where Id={id}") ?? new List<BillModel>();
+        List<BillDetailModel> bill_detail = await dapper.SearchByQuery<BillDetailModel>($"Select * from BillDetail Where BillId={id}") ?? new List<BillDetailModel>();
+        List<BillChargeModel> bill_charge = await dapper.SearchByQuery<BillChargeModel>($"Select * from BillCharges Where BillId={id}") ?? new List<BillChargeModel>();
+        List<BillPaymentModel> bill_payments = await dapper.SearchByQuery<BillPaymentModel>($"Select * from BillPayments Where BillId={id}") ?? new List<BillPaymentModel>();
 
-        res.Bill = billResult.Item2.FirstOrDefault()!;
+        result.Bill = bill.FirstOrDefault();
+        result.BillDetails = new ObservableCollection<BillDetailModel>(bill_detail);
+        result.BillCharges = new ObservableCollection<BillChargeModel>(bill_charge);
+        result.BillPayments = new ObservableCollection<BillPaymentModel>(bill_payments);
 
-        var billDetailService = new BillDetailService();
-        var billDetailResult = await billDetailService.Search($"BillDetail.BillId = {id}")!;
-
-        if (billDetailResult.Item1 && billDetailResult.Item2 != null)
-        {
-            res.BillDetails.Clear();
-            foreach (var item in billDetailResult.Item2)
-            {
-                res.BillDetails.Add(item);
-            }
-        }
-
-        return (true, res);
+        return (true, result);
     }
 
 
@@ -120,7 +74,7 @@ public class BillService : IBillService
             return (true, result);
     }
 
-    public async Task<(bool, BillModel?, string)> Post(BillsModel obj)
+    public async Task<(bool, string)> Post(BillsModel obj)
     {
         try
         {
@@ -137,6 +91,7 @@ public class BillService : IBillService
                 {obj.Bill.BillAmount}, {obj.Bill.TotalPaidAmount}, '{obj.Bill.Description!.ToUpper()}',
                 '{obj.Bill.Status!.ToUpper()}', {obj.Bill.CreatedBy}, '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}',
                 '{obj.Bill.CreatedFrom!.ToUpper()}', {obj.Bill.IsSoftDeleted})";
+            
             var res = await dapper.Insert(SQLInsert);
 
             if (res.Item1)
@@ -158,7 +113,7 @@ public class BillService : IBillService
                     string chargeInsert = $@"
                         INSERT INTO BillCharges (BillId, ChargeRuleId, RuleName, RuleType, AmountType, Rate,
                         CalculatedAmount, SequenceOrder, CalculationBase, ChargeCategory, IsSoftDeleted)
-                        VALUES ({charge.BillId}, {charge.ChargeRuleId}, '{charge.RuleName}', '{charge.RuleType}',
+                        VALUES ({insertedId}, {charge.ChargeRuleId}, '{charge.RuleName}', '{charge.RuleType}',
                         '{charge.AmountType}', {charge.Rate}, {charge.CalculatedAmount}, {charge.SequenceOrder},
                         '{charge.CalculationBase}', '{charge.ChargeCategory}', {charge.IsSoftDeleted})";
                     await dapper.Insert(chargeInsert);
@@ -175,12 +130,12 @@ public class BillService : IBillService
                 }
             }
 
-            var output = await Search($"Bill.Id = {res.Item2}")!;
-            return (true, output.Item2.FirstOrDefault(), "");
+            //var output = await Search($"Bill.Id = {res.Item2}")!;
+            return (true, "");
         }
         catch (Exception ex)
         {
-            return (false, null, ex.Message);
+            return (false, ex.Message);
         }
     }
 

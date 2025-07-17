@@ -13,45 +13,64 @@
         Save
     </MudButton>
     <MudExpansionPanel Expanded="true" Style="margin-bottom:10px;">
-        <div class="row" style="width:100%; display: flex;">
-            <div class="col-6 mb-3">
-                <MudTextField Label="Size" @bind-Value="servingSize.Size" Variant="Variant.Filled" Placeholder="Size" />
-                <ValidationMessage For="@(() => servingSize.Size)" />
-            </div>
-            <div class="col-6 mb-3">
-                <MudNumericField Label="Price" @bind-Value="servingSize.Price" Variant="Variant.Filled" Placeholder="Price" Format="#,##0.00" />
-                <ValidationMessage For="@(() => servingSize.Price)" />
-            </div>
-        </div>
+          <TitleContent>
+            <div class="d-flex align-items-center p-2 rounded shadow-sm" style="gap: 10px;">
+                <img src="@record.Pic"
+                     alt="Item Image"
+                     class="img-thumbnail"
+                     style="width: 60px; height: 60px; object-fit: cover; border-radius: 10%;" />
 
-        <div class="w-100 d-flex justify-content-center">
-            <div class="p-3 border rounded" style="width: 300px;">
-                <label class="small fw-bold text-uppercase d-block mb-2 text-center">Items Image</label>
+                <div class="ms-2">
+                    <MudText Typo="Typo.h6" Class="fw-bold text-dark">@record.Name</MudText>
+                    <MudText Typo="Typo.caption" Class="text-muted">@record.Description</MudText>
+                </div>
+            </div>
 
-                <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
-                    @if (!string.IsNullOrEmpty(servingSize.Pic))
-                    {
-                        <img src="@servingSize.Pic"
-                             class="img-fluid rounded"
-                             alt="Items Image"
-                             style="max-height: 100%; max-width: 100%; object-fit: cover;" />
-                    }
-                    else
-                    {
-                        <div class="d-flex align-items-center justify-content-center bg-secondary rounded-circle"
-                             style="width: 120px; height: 120px;">
-                            <i class="fas fa-image text-white fs-3"></i>
-                        </div>
-                    }
+            </TitleContent>
+
+            <ChildContent>
+
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-6 mb-3">
+                        <MudTextField Label="Size" @bind-Value="servingSize.Size" Variant="Variant.Filled" Placeholder="Size" />
+                        <ValidationMessage For="@(() => servingSize.Size)" />
+                    </div>
+                    <div class="col-6 mb-3">
+                        <MudNumericField Label="Price" @bind-Value="servingSize.Price" Variant="Variant.Filled" Placeholder="Price" Format="#,##0.00" />
+                        <ValidationMessage For="@(() => servingSize.Price)" />
+                    </div>
                 </div>
 
-                <InputFile OnChange="OnFileInputChanged" />
-            </div>
-        </div>
+                <div class="w-100 d-flex justify-content-center">
+                    <div class="p-3 border rounded" style="width: 300px;">
+                        <label class="small fw-bold text-uppercase d-block mb-2 text-center">Items Image</label>
 
-        <MudButton OnClick="AddSize" Color="Color.Primary" Variant="Variant.Filled" Style="margin: 10px 0;">
-            Add Serving Size
-        </MudButton>
+                        <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
+                            @if (!string.IsNullOrEmpty(servingSize.Pic))
+                            {
+                                <img src="@servingSize.Pic"
+                                     class="img-fluid rounded"
+                                     alt="Items Image"
+                                     style="max-height: 100%; max-width: 100%; object-fit: cover;" />
+                            }
+                            else
+                            {
+                                <div class="d-flex align-items-center justify-content-center bg-secondary rounded-circle"
+                                     style="width: 120px; height: 120px;">
+                                    <i class="fas fa-image text-white fs-3"></i>
+                                </div>
+                            }
+                        </div>
+
+                        <InputFile OnChange="OnFileInputChanged" />
+                    </div>
+                </div>
+
+                <MudButton OnClick="AddSize" Color="Color.Primary" Variant="Variant.Filled" Style="margin: 10px 0;">
+                    Add
+                </MudButton>
+            </ChildContent>
+
     </MudExpansionPanel>
 
     <MudTable Items="@servingSizes" Hover="true" Dense="true">
@@ -63,7 +82,8 @@
         </HeaderContent>
         <RowTemplate Context="item">
             <MudTd>
-                <MudButton Color="Color.Error" OnClick="() => Delete(item)">Remove</MudButton>
+                <MudIconButton Icon="@Icons.Material.TwoTone.Edit" Size="MudBlazor.Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="() => Delete(item)" />
+                <MudIconButton Icon="@Icons.Material.TwoTone.DeleteSweep" Size="MudBlazor.Size.Small" Variant="Variant.Filled" Color="Color.Error" OnClick="() => Delete(item)" />
             </MudTd>
             <MudTd>
                 <img src="@(!string.IsNullOrWhiteSpace(item.Pic) ? item.Pic : "images/no-image.png")" alt="Picture" style="width:30px; height:30px; border-radius: 50%;" />
@@ -83,6 +103,8 @@
     private ServingSizeModel servingSize = new();
     private List<ServingSizeModel> servingSizes = new();
     private bool LoadingPanel { get; set; }
+    public string Action { get; set; } = "INSERT";
+    private ServingSizeModel? selectedItem = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -117,22 +139,51 @@
 
     private void AddSize()
     {
-        if (!string.IsNullOrWhiteSpace(servingSize.Size) && servingSize.Price > 0)
+        if (string.IsNullOrWhiteSpace(servingSize.Size) || servingSize.Price <= 0)
+            return;
+
+        if (Action == "UPDATE" && selectedItem != null)
+        {
+            selectedItem.Size = servingSize.Size;
+            selectedItem.Price = servingSize.Price;
+            selectedItem.Pic = servingSize.Pic;
+        }
+        else
         {
             servingSizes.Add(new ServingSizeModel
             {
                 Size = servingSize.Size,
                 Price = servingSize.Price,
-                Pic=servingSize.Pic
+                Pic = servingSize.Pic
             });
-
-            servingSize = new();
         }
+
+        servingSize = new();
+        selectedItem = null;
+        Action = "INSERT";
+
     }
 
-    private void Delete(ServingSizeModel item)
+    private async Task Delete(ServingSizeModel item)
     {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
         servingSizes.Remove(item);
+    }
+
+    protected async Task Edit(ServingSizeModel item)
+    {
+        servingSize = new ServingSizeModel
+        {
+            Size = item.Size,
+            Price = item.Price,
+            Pic = item.Pic
+        };
+
+        selectedItem = item;
+        Action = "UPDATE";
     }
 
     private async Task Save()
