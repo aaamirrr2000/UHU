@@ -33,7 +33,7 @@
                 <ToolBarContent>
                     <MudText Typo="Typo.h6">Digital Invoice Configuration</MudText>
                     <MudSpacer />
-                    <MudIconButton Icon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" OnClick="@(() => Refresh())" Class="mx-1"/>
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Info" OnClick="@(() => Refresh())">Refresh</MudButton>
                 </ToolBarContent>
 
                 <Columns>

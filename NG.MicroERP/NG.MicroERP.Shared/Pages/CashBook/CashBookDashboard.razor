@@ -33,11 +33,11 @@
                 <ToolBarContent>
                     <MudText Typo="Typo.h6">CashBook Managment</MudText>
                     <MudSpacer />
-                    <MudIconButton Icon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" OnClick="@(() => Clear())" Variant="Variant.Filled" Color="Color.Success"/>
-                    <MudIconButton Icon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" OnClick="@(() => Refresh())" Variant="Variant.Filled" Color="Color.Info" />
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Clear())">New</MudButton>
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Info" OnClick="@(() => Refresh())">Refresh</MudButton>
                     <InputDate @bind-Value="startDate" Label="Start Date" Format="yyyy-MM-dd" @bind-Value:after="GetAll" class="InputDateStyle" />
                     <InputDate @bind-Value="endDate" Label="End Date" Format="yyyy-MM-dd" @bind-Value:after="GetAll" class="InputDateStyle" />
-                    <MudIconButton Icon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" OnClick="@(() => GetAll())" Variant="Variant.Filled" Color="Color.Secondary" />
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => GetAll())">Search</MudButton>
                 </ToolBarContent>
                  
                 <Columns>

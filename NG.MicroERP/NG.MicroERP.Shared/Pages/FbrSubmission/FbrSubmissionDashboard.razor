@@ -8,7 +8,7 @@
 <Loading IsLoading="@LoadingPanel" />
 
 <div class="row" style="margin: 2px; height: 90vh; display: flex;">
-    <MyDrawer @ref="_drawer" Title="FbrSubmission" FaIcon="fas fa-address-book">
+    <MyDrawer @ref="_drawer" Title="FBR Submissions" FaIcon="fas fa-address-book">
         <HeaderContent>
         </HeaderContent>
         <ChildContent>
@@ -31,9 +31,10 @@
         <div class="row">
             <MudDataGrid T="FbrSubmissionModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
                 <ToolBarContent>
-                    <MudText Typo="Typo.h6">FbrSubmission Managment</MudText>
+                    <MudText Typo="Typo.h6">FBR Submissions Managment</MudText>
                     <MudSpacer />
-                    <MudIconButton Icon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" OnClick="@(() => Refresh())" Class="mx-1"/>
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Clear())">New</MudButton>
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Info" OnClick="@(() => Refresh())">Refresh</MudButton>
                 </ToolBarContent>
 
                 <Columns>
@@ -45,17 +46,15 @@
                         </CellTemplate>
                     </TemplateColumn>
 
-                <PropertyColumn Property="x => x.JsonPayload" Title="Payload" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.SubmissionDateTime" Title="Submission Date Time" Sortable="true" Filterable="true" Format="dd-MMM-yyy"/>
-				<PropertyColumn Property="x => x.ResponseCode" Title="Response Code" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.IRN" Title="IRN" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.DigitalInvoiceUrl" Title="Digital Invoice Url" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.QRCodeData" Title="QRCode" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.ErrorMessage" Title="Error Message" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.SubmissionMachineInfo" Title="Submission Machine Info" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.CreatedOn" Title="Created On" Sortable="true" Filterable="true" Format="dd-MMM-yyy"/>
-
-
+                    <PropertyColumn Property="x => x.JsonPayload" Title="Payload" Sortable="true" Filterable="true" />
+				    <PropertyColumn Property="x => x.SubmissionDateTime" Title="Submission Date Time" Sortable="true" Filterable="true" Format="dd-MMM-yyy"/>
+				    <PropertyColumn Property="x => x.ResponseCode" Title="Response Code" Sortable="true" Filterable="true" />
+				    <PropertyColumn Property="x => x.IRN" Title="IRN" Sortable="true" Filterable="true" />
+				    <PropertyColumn Property="x => x.DigitalInvoiceUrl" Title="Digital Invoice URL" Sortable="true" Filterable="true" />
+				    <PropertyColumn Property="x => x.QRCodeData" Title="QRCode" Sortable="true" Filterable="true" />
+				    <PropertyColumn Property="x => x.ErrorMessage" Title="Error Message" Sortable="true" Filterable="true" />
+				    <PropertyColumn Property="x => x.SubmissionMachineInfo" Title="Submission Machine Info" Sortable="true" Filterable="true" />
+				    <PropertyColumn Property="x => x.CreatedOn" Title="Created On" Sortable="true" Filterable="true" Format="dd-MMM-yyy"/>
                 </Columns>
 
                 <PagerContent>

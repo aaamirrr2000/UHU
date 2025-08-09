@@ -41,43 +41,41 @@
 
                     <!-- Action Buttons -->
                     <MudTooltip Text="Options">
-                        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Info" OnClick="Options" Variant="Variant.Filled" />
+                        <MudButton StartIcon="@Icons.Material.TwoTone.Menu" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Info" OnClick="Options">More</MudButton>
                     </MudTooltip>
 
                     <MudTooltip Text="New">
-                        <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Success" OnClick="Clear" Variant="Variant.Filled" />
+                        <MudButton StartIcon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Primary" OnClick="Clear">New</MudButton>
                     </MudTooltip>
 
                     @if (Act != "VIEW")
                     {
                         <MudTooltip Text="Save">
-                            <MudIconButton Icon="@Icons.Material.Filled.Save" Color="Color.Warning" OnClick="Save" Variant="Variant.Filled" />
+                            <MudButton StartIcon="@Icons.Material.TwoTone.Save" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Success" OnClick="Save">Save</MudButton>
                         </MudTooltip>
                     }
 
                     @if (Id != 0)
                     {
                         <MudTooltip Text="Print">
-                            <MudIconButton Icon="@Icons.Material.Filled.Print" Color="Color.Secondary" OnClick="Print" Variant="Variant.Filled" />
+                            <MudButton StartIcon="@Icons.Material.TwoTone.Print" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Secondary" OnClick="Print">Print</MudButton>
                         </MudTooltip>
                     }
 
                     <MudTooltip Text="Customer">
-                        <MudIconButton Icon="@Icons.Material.Filled.Person" Color="Color.Primary" OnClick="AddParty" Variant="Variant.Filled" />
+                        <MudButton StartIcon="@Icons.Material.TwoTone.Person" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Secondary" OnClick="AddParty">Party</MudButton>
                     </MudTooltip>
 
+                    <MudTextField T="string"
+                                  Dense="true"
+                                  Variant="Variant.Filled"
+                                  Placeholder="Bill #"
+                                  @bind-Value="record.Bill.SeqNo"
+                                  Style="width: 100%;" />
                 </div>
             </MudItem>
 
-            <!-- Right Section: Bill# -->
-            <MudItem xs="12" sm="3">
-                <MudTextField T="string"
-                              Dense="true"
-                              Variant="Variant.Filled"
-                              Placeholder="Bill #"
-                              @bind-Value="record.Bill.SeqNo"
-                              Style="width: 100%;" />
-            </MudItem>
+           
         </MudGrid>
     </MudAppBar>
 
@@ -297,10 +295,7 @@
 
                     <!-- Search Button -->
                     <MudTooltip Text="Search">
-                        <MudIconButton Icon="@Icons.Material.Filled.Search"
-                                       Color="Color.Error"
-                                       OnClick="@(() => AddItemDialogShow(ClickedItem.Code!, "s"))"
-                                       Variant="Variant.Filled" />
+                        <MudButton StartIcon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => AddItemDialogShow(ClickedItem.Code!, "s"))">Search</MudButton>
                     </MudTooltip>
                 </div>
 
@@ -471,48 +466,50 @@
 
                         </MudItem>
 
-                        <!-- Service Type Dropdown -->
-                        <MudItem Class="mb-5">
-                            <MudSelect T="string" @bind-Value="record.Bill.ServiceType" Disabled="@Disabled" Label="Select Service Type" Dense="true">
-                                @if (ServiceTypes != null)
-                                {
-                                    @foreach (var pm in ServiceTypes)
+                        @if(Globals.Organization.Industry == "DINE-IN")
+                        {
+                            <!-- Service Type Dropdown -->
+                            <MudItem Class="mb-5">
+                                <MudSelect T="string" @bind-Value="record.Bill.ServiceType" Disabled="@Disabled" Label="Select Service Type" Dense="true">
+                                    @if (ServiceTypes != null)
                                     {
-                                        <MudSelectItem T="string" Value="@pm.ListValue">@pm.ListValue</MudSelectItem>
+                                        @foreach (var pm in ServiceTypes)
+                                        {
+                                            <MudSelectItem T="string" Value="@pm.ListValue">@pm.ListValue</MudSelectItem>
+                                        }
                                     }
-                                }
-                            </MudSelect>
-                        </MudItem>
+                                </MudSelect>
+                            </MudItem>
 
-                        <!-- Bill Status Dropdown -->
-                        <MudItem Class="mb-5">
-                            <MudSelect T="string" @bind-Value="record.Bill.Status" Disabled="@Disabled" Label="Select Bill Status" Dense="true">
-                                @if (BillStatus != null)
-                                {
-                                    @foreach (var pm in BillStatus)
+                            <!-- Bill Status Dropdown -->
+                            <MudItem Class="mb-5">
+                                <MudSelect T="string" @bind-Value="record.Bill.Status" Disabled="@Disabled" Label="Select Bill Status" Dense="true">
+                                    @if (BillStatus != null)
                                     {
-                                        <MudSelectItem T="string" Value="@pm.ListValue">@pm.ListValue</MudSelectItem>
+                                        @foreach (var pm in BillStatus)
+                                        {
+                                            <MudSelectItem T="string" Value="@pm.ListValue">@pm.ListValue</MudSelectItem>
+                                        }
                                     }
-                                }
-                            </MudSelect>
-                        </MudItem>
+                                </MudSelect>
+                            </MudItem>
 
-                        <!-- Table Dropdown -->
-                        <MudItem Class="mb-5">
-                            <MudSelect T="int" @bind-Value="record.Bill.TableId" Disabled="@Disabled" Label="Select Table" Dense="true">
-                                @if (Tables != null)
-                                {
-                                    @foreach (var option in Tables)
+                            <!-- Table Dropdown -->
+                            <MudItem Class="mb-5">
+                                <MudSelect T="int" @bind-Value="record.Bill.TableId" Disabled="@Disabled" Label="Select Table" Dense="true">
+                                    @if (Tables != null)
                                     {
-                                        <MudSelectItem T="int" Value="@option.Id">@($"{option.TableNumber} - {option.TableLocation}")</MudSelectItem>
+                                        @foreach (var option in Tables)
+                                        {
+                                            <MudSelectItem T="int" Value="@option.Id">@($"{option.TableNumber} - {option.TableLocation}")</MudSelectItem>
+                                        }
                                     }
-                                }
-                            </MudSelect>
-                        </MudItem>
-
+                                </MudSelect>
+                            </MudItem>
+                        }
                         <!-- Sales ID Dropdown -->
                         <MudItem Class="mb-5">
-                            <MudSelect T="int" @bind-Value="record.Bill.SalesId" Disabled="@Disabled" Label="Select Sales ID" Dense="true">
+                            <MudSelect T="int" @bind-Value="record.Bill.SalesId" Disabled="@Disabled" Label="Sales Person" Dense="true">
                                 @if (SalesId != null)
                                 {
                                     @foreach (var option in SalesId)
@@ -1121,8 +1118,9 @@
 
 
     // -------------------------- UI Helpers --------------------------
-    private async void Clear()
+    private void Clear()
     {
+        /*
         record = new BillsModel();
 
         if (string.IsNullOrEmpty(record.Bill.Status) && BillStatus?.Any() == true)
@@ -1144,6 +1142,10 @@
         // TotalServiceCharges = 0;
         // TotalTax = 0;
         await CalculateTotalNetAmountAsync();
+        */
+
+        var url = $"/BillPage/INSERT/0";
+        JS.InvokeVoidAsync("open", url, "_blank");
 
     } 
 
