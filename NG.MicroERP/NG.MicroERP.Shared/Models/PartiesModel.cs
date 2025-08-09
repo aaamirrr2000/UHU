@@ -18,6 +18,8 @@ public class PartiesModel
     public string? Address { get; set; } = string.Empty;
     public string? Phone { get; set; } = string.Empty;
     public string? Email { get; set; } = string.Empty;
+    public string? NTN { get; set; } = string.Empty;
+    public string? CNIC { get; set; } = string.Empty;
     public double DiscountPercentage { get; set; } = 0;
     public int AccountId { get; set; } = 0;
     public string? Latitude { get; set; } = string.Empty;

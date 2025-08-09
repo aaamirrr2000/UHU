@@ -43,7 +43,7 @@
     else
     {
         <div class="row">
-            <MudDataGrid T="ItemsModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
+            <MudDataGrid T="ItemsModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="15" Dense="true">
                 <ToolBarContent>
                     <MudText Typo="Typo.h6">Items Managment</MudText>
                     <MudSpacer />
@@ -79,8 +79,9 @@
                         </CellTemplate>
                     </TemplateColumn>
 				<PropertyColumn Property="x => x.Code" Title="Code" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.Name" Title="Item Name" Sortable="true" Filterable="true" />
-                <PropertyColumn Property="x => x.Description" Title="Description" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.Name" Title="Item" Sortable="true" Filterable="true" />
+                <PropertyColumn Property="x => x.CategoryName" Title="Category" Sortable="true" Filterable="true" />
+                @* <PropertyColumn Property="x => x.Description" Title="Description" Sortable="true" Filterable="true" /> *@
 				<PropertyColumn Property="x => x.StockType" Title="Stock Type" Sortable="true" Filterable="true" />
 				<PropertyColumn Property="x => x.Unit" Title="Unit" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.RetailPrice" Title="Retail Price" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />

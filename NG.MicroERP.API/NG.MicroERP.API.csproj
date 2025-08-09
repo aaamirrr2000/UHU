@@ -29,16 +29,19 @@
     <EmbeddedResource Include="Scripts\20240115000000_CreateLeavesTable.sql" />
     <EmbeddedResource Include="Scripts\20240116000000_CreateCashbookTable.sql" />
     <EmbeddedResource Include="Scripts\20240116100000_CreateRestaurantTablesTable.sql" />
+    <EmbeddedResource Include="Scripts\20240117400000_CreateFBRSubmissionTable.sql" />
     <EmbeddedResource Include="Scripts\20240117000000_CreateBillTable.sql" />
     <EmbeddedResource Include="Scripts\20240118000000_CreateStockReceivingTable.sql" />
     <EmbeddedResource Include="Scripts\20240117300000_CreateChargesRuleTable.sql" />
     <EmbeddedResource Include="Scripts\20240120000000_CreateDevicesTable.sql" />
+    <EmbeddedResource Include="Scripts\20250230000000_CreateDigitalInvoiceConfig.sql" />
     <EmbeddedResource Include="Scripts\20250220000000_CreateAttendance.sql" />
     <EmbeddedResource Include="Scripts\20250240000000_CategoriesItemsDineInInsert.sql" />
     <EmbeddedResource Include="Scripts\20250250000000_DineInOrderStatusView.sql" />
     <EmbeddedResource Include="Scripts\20250303000000_GroupMenuView.sql" />
     <EmbeddedResource Include="Scripts\20250304000000_CashBookReport.sql" />
     <EmbeddedResource Include="Scripts\20250304100000_Bills.sql" />
+    <EmbeddedResource Include="Scripts\20240114100000_CategoriesHavingSomeItems.sql" />
     <EmbeddedResource Include="Scripts\20250305000000_BillReport.sql" />
   </ItemGroup>
 

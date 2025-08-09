@@ -1,4 +1,6 @@
-﻿using NG.MicroERP.API.Helper;
+﻿using Newtonsoft.Json;
+
+using NG.MicroERP.API.Helper;
 using NG.MicroERP.Shared.Helper;
 using NG.MicroERP.Shared.Models;
 
@@ -16,14 +18,14 @@ public interface IBillService
 {
     Task<(bool, List<BillsAllModel>)>? Search(string Criteria = "");
     Task<(bool, BillsModel?)>? Get(int id);
-    Task<(bool, string)> Post(BillsModel obj);
     Task<(bool, string)> Put(BillsModel obj);
+    Task<(bool, BillModel, string)> Post(BillsModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(BillModel obj);
 	Task<(bool, List<BillMasterReportModel>)>? GetBillReport(int id);
 	Task<(bool, string)> ClientComments(BillsModel obj);
     Task<(bool, string)> BillStatus(int BillId, string Status, int SoftDelete = 0);
-    Task<List<BillChargeModel>> CalculateBillCharges(decimal billedAmount);
+    Task<List<BillChargeModel>> CalculateBillCharges(DateTime StartDate, DateTime EndDate, decimal BilledAmount = 0);
 }
 
 
@@ -38,7 +40,7 @@ public class BillService : IBillService
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " WHERE " + Criteria;
 
-        SQL += " ORDER BY Bill.Id DESC";
+        SQL += " ORDER BY Id DESC";
 
         List<BillsAllModel> result = (await dapper.SearchByQuery<BillsAllModel>(SQL)) ?? new List<BillsAllModel>();
         return result == null || result.Count == 0 ? (false, null!) : (true, result);
@@ -48,20 +50,18 @@ public class BillService : IBillService
     {
         BillsModel result = new();
 
-        List<BillModel> bill = await dapper.SearchByQuery<BillModel>($"Select * from Bills Where Id={id}") ?? new List<BillModel>();
-        List<BillDetailModel> bill_detail = await dapper.SearchByQuery<BillDetailModel>($"Select * from BillDetail Where BillId={id}") ?? new List<BillDetailModel>();
+        List<BillModel> bill = await dapper.SearchByQuery<BillModel>($"Select * from Bill Where Id={id}") ?? new List<BillModel>();
+        List<BillItemReportModel> bill_detail = await dapper.SearchByQuery<BillItemReportModel>($"Select * from BillItemReport Where BillId={id}") ?? new List<BillItemReportModel>();
         List<BillChargeModel> bill_charge = await dapper.SearchByQuery<BillChargeModel>($"Select * from BillCharges Where BillId={id}") ?? new List<BillChargeModel>();
         List<BillPaymentModel> bill_payments = await dapper.SearchByQuery<BillPaymentModel>($"Select * from BillPayments Where BillId={id}") ?? new List<BillPaymentModel>();
 
         result.Bill = bill.FirstOrDefault();
-        result.BillDetails = new ObservableCollection<BillDetailModel>(bill_detail);
+        result.BillDetails = new ObservableCollection<BillItemReportModel>(bill_detail);
         result.BillCharges = new ObservableCollection<BillChargeModel>(bill_charge);
         result.BillPayments = new ObservableCollection<BillPaymentModel>(bill_payments);
 
         return (true, result);
     }
-
-
 
     public async Task<(bool, List<BillMasterReportModel>)>? GetBillReport(int id)
     {
@@ -74,21 +74,19 @@ public class BillService : IBillService
             return (true, result);
     }
 
-    public async Task<(bool, string)> Post(BillsModel obj)
+    public async Task<(bool, BillModel, string)> Post(BillsModel obj)
     {
         try
         {
             string Code = dapper.GetCode("INV", "Bill", "SeqNo")!;
             string SQLInsert = $@"
                 INSERT INTO Bill (OrganizationId, SeqNo, BillType, Source, SalesId, LocationId, PartyId, PartyName, PartyPhone, PartyEmail,
-                PartyAddress, TableId, TranDate, ServiceType, PreprationTime, DiscountAmount, SubTotalAmount, TotalChargeAmount,
-                BillAmount, TotalPaidAmount, Description, Status, CreatedBy, CreatedOn, CreatedFrom, IsSoftDeleted)
+                PartyAddress, TableId, TranDate, ServiceType, PreprationTime, DiscountAmount, Description, Status, CreatedBy, CreatedOn, CreatedFrom, IsSoftDeleted)
                 VALUES ({obj.Bill.OrganizationId}, '{Code}', '{obj.Bill.BillType!.ToUpper()}', '{obj.Bill.Source!.ToUpper()}', {obj.Bill.SalesId},
                 {obj.Bill.LocationId}, {obj.Bill.PartyId}, '{obj.Bill.PartyName!.ToUpper()}', '{obj.Bill.PartyPhone!.ToUpper()}',
                 '{obj.Bill.PartyEmail!.ToUpper()}', '{obj.Bill.PartyAddress!.ToUpper()}', {obj.Bill.TableId},
                 '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', '{obj.Bill.ServiceType!.ToUpper()}', '{obj.Bill.PreprationTime}',
-                {obj.Bill.DiscountAmount}, {obj.Bill.SubTotalAmount}, {obj.Bill.TotalChargeAmount},
-                {obj.Bill.BillAmount}, {obj.Bill.TotalPaidAmount}, '{obj.Bill.Description!.ToUpper()}',
+                {obj.Bill.DiscountAmount}, '{obj.Bill.Description!.ToUpper()}',
                 '{obj.Bill.Status!.ToUpper()}', {obj.Bill.CreatedBy}, '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}',
                 '{obj.Bill.CreatedFrom!.ToUpper()}', {obj.Bill.IsSoftDeleted})";
             
@@ -103,7 +101,7 @@ public class BillService : IBillService
                         INSERT INTO BillDetail (ItemId, StockCondition, ServingSize, Qty, UnitPrice, DiscountAmount, TaxAmount,
                         BillId, Description, Status, Person, TranDate, IsSoftDeleted)
                         VALUES ({detail.ItemId}, '{detail.StockCondition!.ToUpper()}', '{detail.ServingSize}', {detail.Qty},
-                        {detail.UnitPrice}, {detail.DiscountAmount}, {detail.TaxAmount}, {insertedId}, '{detail.Description!.ToUpper()}',
+                        {detail.UnitPrice}, {detail.DiscountAmount}, {detail.TaxAmount}, {insertedId}, '{detail.Instructions!.ToUpper()}',
                         '{detail.Status!.ToUpper()}', {detail.Person}, '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', {detail.IsSoftDeleted})";
                     await dapper.Insert(detailInsert);
                 }
@@ -128,15 +126,64 @@ public class BillService : IBillService
                         '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', '{payment.Notes?.Replace("'", "''")}', 0)";
                     await dapper.Insert(paymentInsert);
                 }
+
+                //await DigitalInvoice(obj, insertedId);
+
+                var output = await Search($"Id = {res.Item2}")!;
+                List<BillsAllModel> result = output.Item2;
+
+                BillModel result1 = new();
+                result1.Id = result.FirstOrDefault()!.ID;
+                result1.SeqNo = result.FirstOrDefault()!.SeqNo;
+
+                return (true, result1, "OK");
             }
 
-            //var output = await Search($"Bill.Id = {res.Item2}")!;
-            return (true, "");
+            return (false, null, "Bill Save Error");
+
         }
         catch (Exception ex)
         {
-            return (false, ex.Message);
+            return (false, null, ex.Message);
         }
+    }
+
+    public async Task DigitalInvoice(BillsModel obj, int BillId)
+    {
+        //Generate Json to upload on FBR portal
+        var fbrInvoice = new FbrInvoice
+        {
+            InvoiceNumber = obj.Bill.SeqNo ?? $"BILL-{obj.Bill.Id}",
+            POSID = obj.Bill.LocationId.ToString(),
+            USIN = $"{obj.Bill.TranDate:yyyyMMdd}-{obj.Bill.Id:D6}",
+            DateTime = obj.Bill.TranDate,
+            BuyerNTN = "",
+            BuyerCNIC = "", 
+            BuyerName = obj.Bill.PartyName,
+            BuyerPhoneNumber = obj.Bill.PartyPhone,
+            TotalSaleValue = obj.Bill.SubTotalAmount,
+            TotalTaxCharged = obj.Bill.TotalTaxAmount,
+            Discount = obj.Bill.DiscountAmount,
+            InvoiceType = 1, // 1 = Standard
+            PaymentMode = 1, // 1 = Cash, 2 = Credit Card, etc.
+            Items = obj.BillDetails.Select(d => new FbrInvoiceItem
+            {
+                ItemCode = d.ItemId.ToString(),
+                ItemName = d.ItemName,
+                PCTCode = "1000.00", // map to real PCT Code if you have it
+                Quantity = Convert.ToDecimal(d.Qty),
+                UnitPrice = Convert.ToDecimal(d.UnitPrice),
+                SaleValue = Convert.ToDecimal(d.Qty * d.UnitPrice),
+                TaxRate = Convert.ToDecimal(d.TaxAmount > 0 ? (d.TaxAmount / (d.Qty * d.UnitPrice) * 100) : 0),
+                TaxCharged = Convert.ToDecimal(d.TaxAmount),
+                TotalAmount = Convert.ToDecimal(d.ItemTotalAmount)
+            }).ToList()
+        };
+
+        string InvoiceJSon = JsonConvert.SerializeObject(fbrInvoice, Formatting.Indented);
+
+        //Get QRcode from FBR and store with Bill
+        
     }
 
     public async Task<(bool, string)> Put(BillsModel obj)
@@ -150,8 +197,6 @@ public class BillService : IBillService
                 PartyPhone = '{obj.Bill.PartyPhone!.ToUpper()}', PartyEmail = '{obj.Bill.PartyEmail!.ToUpper()}',
                 PartyAddress = '{obj.Bill.PartyAddress!.ToUpper()}', TableId = {obj.Bill.TableId},
                 TranDate = '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', DiscountAmount = {obj.Bill.DiscountAmount},
-                SubTotalAmount = {obj.Bill.SubTotalAmount}, TotalChargeAmount = {obj.Bill.TotalChargeAmount},
-                BillAmount = {obj.Bill.BillAmount}, TotalPaidAmount = {obj.Bill.TotalPaidAmount},
                 Description = '{obj.Bill.Description!.ToUpper()}', Status = '{obj.Bill.Status!.ToUpper()}',
                 ServiceType = '{obj.Bill.ServiceType!.ToUpper()}', PreprationTime = '{obj.Bill.PreprationTime}',
                 ClientComments = '{obj.Bill.ClientComments}', Rating = {obj.Bill.Rating}, UpdatedBy = {obj.Bill.UpdatedBy},
@@ -170,7 +215,7 @@ public class BillService : IBillService
                     BillId, Description, Status, Person, TranDate, IsSoftDeleted)
                     VALUES ({detail.ItemId}, '{detail.StockCondition!.ToUpper()}', '{detail.ServingSize}', {detail.Qty},
                     {detail.UnitPrice}, {detail.DiscountAmount}, {detail.TaxAmount}, {obj.Bill.Id},
-                    '{detail.Description!.ToUpper()}', '{detail.Status!.ToUpper()}', {detail.Person},
+                    '{detail.Instructions!.ToUpper()}', '{detail.Status!.ToUpper()}', {detail.Person},
                     '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', {detail.IsSoftDeleted})";
                 await dapper.Insert(detailInsert);
             }
@@ -296,17 +341,28 @@ public class BillService : IBillService
         }
     }
 
-    public async Task<List<BillChargeModel>> CalculateBillCharges(decimal billedAmount)
+    public async Task<List<BillChargeModel>> CalculateBillCharges(DateTime StartDate, DateTime EndDate, decimal BilledAmount = 0)
     {
         List<BillChargeModel> calculatedCharges = new();
-        decimal runningTotal = billedAmount;
+        decimal runningTotal = BilledAmount;
 
-        string query = @"
-                        SELECT Id AS ChargeRuleId, RuleName, RuleType, AmountType, Amount AS Rate,
-                               SequenceOrder, CalculationBase, ISNULL(ChargeCategory, 'OTHER') AS ChargeCategory
+        string query = $@"
+                        SELECT 
+                            Id AS ChargeRuleId, 
+                            RuleName, 
+                            RuleType, 
+                            AmountType, 
+                            Amount AS Rate,
+                            SequenceOrder, 
+                            CalculationBase, 
+                            ISNULL(ChargeCategory, 'OTHER') AS ChargeCategory
                         FROM ChargeRules
-                        WHERE IsActive = 1 AND IsSoftDeleted = 0
-                        ORDER BY SequenceOrder";
+                        WHERE 
+                            IsActive = 1 
+                            AND IsSoftDeleted = 0 
+                            AND EffectiveFrom <= '{StartDate.ToString("yyyy-MM-dd")}'
+                            AND EffectiveTo >= '{EndDate.ToString("yyyy-MM-dd")}'
+                        ORDER BY SequenceOrder;";
 
         var chargeRules = await dapper.SearchByQuery<BillChargeModel>(query);
         if (chargeRules == null || !chargeRules.Any())
@@ -316,7 +372,7 @@ public class BillService : IBillService
         {
             decimal baseAmount = rule.CalculationBase == "AFTER_PREVIOUS_CHARGES"
                                 ? runningTotal
-                                : billedAmount;
+                                : BilledAmount;
 
             decimal amount = rule.AmountType switch
             {

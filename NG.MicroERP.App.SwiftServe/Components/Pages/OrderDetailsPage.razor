@@ -122,7 +122,7 @@ else
 @code {
     [Parameter] public int id { get; set; }
     [Parameter] public string Action { get; set; } = "ORDER";
-    private Bill_And_Bill_Detail_Model Bills = new();
+    private BillsModel Bills = new();
     private ObservableCollection<BillDetailModel> BillDetails = new();
 
     protected override async Task OnInitializedAsync()

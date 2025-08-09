@@ -256,9 +256,15 @@
             record.IsActive = 1;
             isReadOnly = false;
         }
-        else
+        else  if (Action != "VIEW")
         {
             await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action != "VIEW")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
         }
 
         LoadingPanel = false;

@@ -18,11 +18,49 @@ SELECT
     a.TableId,
     a.TranDate,
     a.DiscountAmount,
-    a.SubTotalAmount,
-    a.TotalChargeAmount,
-    a.BillAmount,
-    a.TotalPaidAmount,
-    (a.BillAmount - a.TotalPaidAmount) AS BalanceAmount,
+
+    -- Subtotal
+    (SELECT SUM(qty * unitprice - discountamount + taxamount) 
+     FROM BillDetail 
+     WHERE billid = a.Id) AS SubTotalAmount,
+
+    -- Extra charges
+    (SELECT SUM(CalculatedAmount) 
+     FROM BillCharges 
+     WHERE billid = a.Id) AS TotalChargeAmount,
+
+    -- Paid amount
+    (SELECT SUM(AmountPaid) 
+     FROM BillPayments 
+     WHERE billid = a.Id) AS TotalPaidAmount,
+
+    -- Billed Amount = SubTotal + Charges - Discount
+    (
+        ISNULL((SELECT SUM(qty * unitprice - discountamount + taxamount) 
+                FROM BillDetail 
+                WHERE billid = a.Id), 0) +
+        ISNULL((SELECT SUM(CalculatedAmount) 
+                FROM BillCharges 
+                WHERE billid = a.Id), 0) -
+        ISNULL(a.DiscountAmount, 0)
+    ) AS BilledAmount,
+
+    -- Balance Amount = Billed - Paid
+    (
+        ISNULL((
+            ISNULL((SELECT SUM(qty * unitprice - discountamount + taxamount) 
+                    FROM BillDetail 
+                    WHERE billid = a.Id), 0) +
+            ISNULL((SELECT SUM(CalculatedAmount) 
+                    FROM BillCharges 
+                    WHERE billid = a.Id), 0) -
+            ISNULL(a.DiscountAmount, 0)
+        ), 0) -
+        ISNULL((SELECT SUM(AmountPaid) 
+                FROM BillPayments 
+                WHERE billid = a.Id), 0)
+    ) AS BalanceAmount,
+
     a.Description,
     a.Status,
     a.ServiceType,
@@ -33,12 +71,14 @@ SELECT
     a.CreatedBy,
     d.Username,
     e.Fullname AS EmployeeFullName
+
 FROM Bill AS a
 LEFT JOIN Locations AS b ON b.Id = a.LocationId
 LEFT JOIN Parties AS c ON c.Id = a.PartyId
 LEFT JOIN Users AS d ON d.Id = a.CreatedBy
 LEFT JOIN Employees AS e ON e.Id = d.EmpId
 WHERE a.IsSoftDeleted = 0;
+
 
 GO
 
@@ -60,7 +100,10 @@ SELECT
     ((f.Qty * f.UnitPrice) + f.TaxAmount - f.DiscountAmount) AS ItemTotalAmount,
     f.Description AS Instructions,
     f.Status,
-    f.TranDate
+    f.Person,
+    f.TranDate,
+    f.Rating,
+    f.IsSoftDeleted
 FROM BillDetail AS f
 INNER JOIN Bill AS a ON a.Id = f.BillId
 LEFT JOIN Items AS g ON g.Id = f.ItemId

@@ -23,6 +23,7 @@ public class CategoriesModel
     public DateTime UpdatedOn { get; set; } = DateTime.Today;
     public string? UpdatedFrom { get; set; } = string.Empty;
     public int IsSoftDeleted { get; set; } = 0;
+    public double ItemCount { get; set; } = 0;
     public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
 
 }

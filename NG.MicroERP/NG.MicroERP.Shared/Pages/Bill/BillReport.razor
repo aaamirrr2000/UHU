@@ -1,9 +1,10 @@
-﻿@page "/BillReport/{ServingSize:int}/{id:int}"
+﻿@page "/BillReport/{id:int}"
+@page "/BillReport/{ServingSize:int}/{id:int}"
 @inject NavigationManager NavManager
 @inject IJSRuntime JSRuntime
 @layout BlankLayout
 
-@if (BillHeader != null && BillItems.Any())
+@if (BillsData?.Bill != null)
 {
     <div class="invoice-actions no-print">
         <button class="btn btn-primary" @onclick="PrintReport">Print</button>
@@ -22,90 +23,180 @@
                 </div>
             </div>
             <div class="row">
-                <p>
-                    <h2>@(BillHeader.BillType == "QUOTATION" ? "Q U O T A T I O N" : "B I L L")</h2>
-                </p>
+                <h2>@(BillsData.Bill.BillType == "QUOTATION" ? "Q U O T A T I O N" : BillsData.Bill.BillType)</h2>
             </div>
         </div>
 
         <!-- Customer Info -->
         <div class="row mt-4">
             <div class="col-sm-6">
-                <p><strong>Customer:</strong> @BillHeader.PartyNameDb</p>
-                <p><strong>Name:</strong> @BillHeader.PartyName</p>
-                <p><strong>Phone:</strong> @BillHeader.PartyPhone</p>
-                <p><strong>Email:</strong> @BillHeader.PartyEmail</p>
+                <p><strong>Bill No:</strong> @BillsData.Bill.SeqNo</p>
+                <p><strong>Bill Type:</strong> @BillsData.Bill.BillType</p>
+                <p><strong>Date:</strong> @BillsData.Bill.TranDate.ToString("dd-MMM-yyyy hh:mm:ss tt")</p>
+                <p><strong>Location:</strong> @BillsData.Bill.Location</p>
             </div>
             <div class="col-sm-6">
-                <p><strong>Bill No:</strong> @BillHeader.SeqNo</p>
-                <p><strong>Bill Type:</strong> @BillHeader.BillType</p>
-                <p><strong>Date:</strong> @BillHeader.TranDate.ToString("dd-MMM-yyyy hh:mm:ss tt")</p>
-                <p><strong>Purchase From:</strong> @BillHeader.LocationName</p>
+                <p><strong>Party:</strong> @BillsData.Bill.Party</p>
+                <p><strong>Phone:</strong> @BillsData.Bill.PartyPhone</p>
+                <p><strong>Email:</strong> @BillsData.Bill.PartyEmail</p>
             </div>
-            <p><strong>Address:</strong> @BillHeader.PartyAddress</p>
+            <p><strong>Address:</strong> @BillsData.Bill.PartyAddress</p>
         </div>
 
         <!-- Details Table -->
         <table class="table table-bordered invoice-table">
             <thead>
                 <tr>
-                    <th class="text-left">Item Name</th>
-                    @if (ServingSize == 1)
-                    {
-                        <th class="text-left">Serving Size</th>
-                    }
+                    <th class="text-left">Sr.</th>
+                    <th class="text-left">Item</th>
+                    <th class="text-left">Feature</th>
                     <th>Quantity</th>
                     <th>Unit Price</th>
                     <th>Discount</th>
+                    <th>Tax</th>
                     <th>Total</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var item in BillItems)
+                @foreach (var item in BillsData.BillDetails)
                 {
                     <tr class="table-row-hover">
-                        <td class="text-left">@item.ItemName @item.StockCondition</td>
-                        @if (ServingSize == 1)
-                        {
-                            <td class="text-left">@item.ServingSize</td>
-                        }
+                        <td class="text-left">1</td>
+                        <td class="text-left">@item.ItemName.ToUpper() @item.StockCondition.ToUpper()</td>
+                        <td class="text-left">@item.ServingSize</td>
                         <td class="text-right">@item.Qty.ToString("N2")</td>
                         <td class="text-right">@item.UnitPrice.ToString("N2")</td>
                         <td class="text-right">@item.DiscountAmount.ToString("N2")</td>
+                        <td class="text-right">@item.TaxAmount.ToString("N2")</td>
                         <td class="text-right">@item.ItemTotalAmount.ToString("N2")</td>
                     </tr>
                 }
 
-                <!-- Totals -->
                 <tr>
-                    <td colspan="5" class="text-right font-weight-bold">Billed Amount</td>
-                    <td class="text-right font-weight-bold">@totalAmount.ToString("N2")</td>
+                    <td colspan="7" class="text-right font-weight-bold">Total</td>
+                    <td class="text-right font-weight-bold">@BillsData.Bill.SubTotalAmount.ToString("N2")</td>
                 </tr>
                 <tr>
-                    <td colspan="5" class="text-right font-weight-bold">Discount</td>
-                    <td class="text-right font-weight-bold">@BillHeader.DiscountAmount.ToString("N2")</td>
+                    <td colspan="7" class="text-right font-weight-bold">Service Charges</td>
+                    <td class="text-right font-weight-bold">
+                        @{
+                            var serviceCharge = BillsData.BillCharges
+                            ?.Where(x => x.ChargeCategory?.ToUpper() == "SERVICE")
+                            .Sum(x => x.CalculatedAmount) ?? 0;
+                        }
+                        @serviceCharge.ToString("N2")
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="7" class="text-right font-weight-bold">Tax</td>
+                    <td class="text-right font-weight-bold">
+                        @{
+                            var taxAmount = BillsData.BillCharges
+                            ?.Where(x => x.ChargeCategory?.ToUpper() == "TAX")
+                            .Sum(x => x.CalculatedAmount) ?? 0;
+                        }
+                        @taxAmount.ToString("N2")
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="7" class="text-right font-weight-bold">Discount</td>
+                    <td class="text-right font-weight-bold">
+                        @((BillsData.Bill.DiscountAmount).ToString("N2"))
+                    </td>
                 </tr>
 
-                @foreach (var payment in BillPayments)
+                <tr>
+                    <td colspan="7" class="text-right font-weight-bold">Total</td>
+                    <td class="text-right font-weight-bold">
+                        @{
+                            var total = BillsData.Bill.SubTotalAmount
+                            + serviceCharge
+                            + taxAmount
+                            - (BillsData.Bill.DiscountAmount);
+                        }
+                        @total.ToString("N2")
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="7" class="text-right font-weight-bold">Paid</td>
+                    <td class="text-right font-weight-bold">
+                        @BillsData.Bill.TotalPaidAmount.ToString("N2")
+                    </td>
+                </tr>
+                @if (@BillsData.Bill.BalanceAmount != 0)
                 {
                     <tr>
-                        <td colspan="5" class="text-right font-weight-bold">Payment @payment.PaymentMethod @payment.PaymentRef</td>
-                        <td class="text-right font-weight-bold">@payment.AmountPaid.ToString("N2")</td>
+                        <td colspan="7" class="text-right font-weight-bold">Balance</td>
+                        <td class="text-right font-weight-bold">
+                            @BillsData.Bill.BalanceAmount.ToString("N2")
+                        </td>
                     </tr>
                 }
             </tbody>
         </table>
+            
+        <!-- Charges/Taxes Section -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h5>Service Charges / Taxes</h5>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th class="text-left">Particulars</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var charge in BillsData.BillCharges.OrderBy(c => c.SequenceOrder))
+                        {
+                            <tr>
+                                <td class="text-left font-weight-bold">@charge.RuleName</td>
+                                <td>@charge.CalculatedAmount.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
 
-        @if (BillPayments.Sum(x => x.AmountPaid) > 0)
-        {
-            <label>@Functions.ConvertMoneyToWords((decimal)BillPayments.Sum(x => x.AmountPaid))</label>
-        }
+            <!-- Paid / Balance Section -->
+            <div class="col-md-6">
+                <h5>Payment Details</h5>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th class="text-left">Particulars</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var payment in BillsData.BillPayments)
+                        {
+                            <tr>
+                                <td class="text-left font-weight-bold">
+                                    @payment.PaymentMethod
+                                    @if (!string.IsNullOrWhiteSpace(payment.PaymentRef))
+                                    {
+                                        <text> (@payment.PaymentRef)</text>
+                                    }
+                                </td>
+                                <td>@payment.AmountPaid.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                @if (BillsData.Bill.TotalPaidAmount > 0)
+                {
+                    <p class="mt-2"><strong>@Functions.ConvertMoneyToWords(BillsData.Bill.TotalPaidAmount)</strong></p>
+                }
+            </div>
+        </div>
 
         <!-- Footer -->
         <div class="row">
             <div class="col-md-6 mt-4">
-                <p><strong>Created By:</strong> @BillHeader.EmployeeFullName</p>
-                <p><strong>Created Date:</strong> @BillHeader.CreatedOn.ToString("dd-MMM-yyyy HH:mm:ss")</p>
+                <p><strong>Created By:</strong> @BillsData.Bill.UserName</p>
+                <p><strong>Created Date:</strong> @BillsData.Bill.CreatedOn.ToString("dd-MMM-yyyy HH:mm:ss")</p>
             </div>
             <div class="col-md-6 mt-4">
                 <p><strong>Print On:</strong> @DateTime.Now.ToString("dd-MMM-yyyy HH:mm:ss")</p>
@@ -118,30 +209,68 @@ else
     <p>Loading...</p>
 }
 
+
 @code {
     [Parameter] public int id { get; set; }
     [Parameter] public int ServingSize { get; set; } = 1;
 
-    private BillMasterReportModel? BillHeader;
-    private List<BillItemReportModel> BillItems = new();
-    private List<BillPaymentsReportModel> BillPayments = new();
-    private decimal totalAmount = 0;
+    private BillsModel? BillsData;
 
     protected override async Task OnInitializedAsync()
     {
-        BillHeader = await Functions.GetAsync<BillMasterReportModel>($"Bill/GetBillMaster?id={id}", true);
-        BillItems = await Functions.GetAsync<List<BillItemReportModel>>($"Bill/GetBillItems?id={id}", true) ?? new();
-        BillPayments = await Functions.GetAsync<List<BillPaymentsReportModel>>($"Bill/GetBillPayments?id={id}", true) ?? new();
-
-        totalAmount = BillItems.Sum(x => (decimal)x.ItemTotalAmount);
+        BillsData = await Functions.GetAsync<BillsModel>($"Bill/Get?id={id}", true);
+        BillsData = Globals.BillGridTotals(BillsData);
     }
+
+
+    // private BillsModel BillGridTotals(BillsModel Bill)
+    // {
+    //     //Bill Detail Total
+    //     double TotalBillAmount = 0;
+    //     foreach (var i in Bill.BillDetails)
+    //     {
+    //         TotalBillAmount += (i.Qty * i.UnitPrice) + i.TaxAmount - i.DiscountAmount;
+    //     }
+
+
+    //     //Payments Total
+    //     decimal TotalPaymentsAmount = 0;
+    //     foreach (var i in BillsData.BillPayments)
+    //     {
+    //         TotalPaymentsAmount += i.AmountPaid;
+    //     }
+
+    //     //Service Charges
+    //     decimal TotalServiceChargesAmount = 0;
+
+    //     foreach (var i in BillsData.BillCharges.Where(x => x.ChargeCategory != "TAX"))
+    //     {
+    //         TotalServiceChargesAmount += i.CalculatedAmount;
+    //     }
+
+    //     //Tax
+    //     decimal TotalTaxAmount = 0;
+
+    //     foreach (var i in BillsData.BillCharges.Where(x => x.ChargeCategory == "TAX"))
+    //     {
+    //         TotalTaxAmount += i.CalculatedAmount;
+    //     }
+
+
+    //     Bill.Bill.SubTotalAmount = Convert.ToDecimal(TotalBillAmount);
+    //     Bill.Bill.TotalServiceChargeAmount = Convert.ToDecimal(TotalServiceChargesAmount);
+    //     Bill.Bill.TotalTaxAmount = Convert.ToDecimal(TotalTaxAmount);
+    //     Bill.Bill.TotalPaidAmount =Convert.ToDecimal(TotalPaymentsAmount);
+    //     Bill.Bill.BalanceAmount = BillsData.Bill.SubTotalAmount + BillsData.Bill.TotalServiceChargeAmount + BillsData.Bill.TotalTaxAmount - BillsData.Bill.TotalPaidAmount;
+
+    //     return Bill;
+    // }
 
     private async Task PrintReport()
     {
         await JSRuntime.InvokeVoidAsync("printInvoice");
     }
 }
-
 
 
 <style>

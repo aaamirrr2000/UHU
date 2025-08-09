@@ -89,11 +89,11 @@
             <!-- Left: Items & summary -->
             <MudItem xs="12" md="7">
                 <!-- Items table -->
-                <MudCard Elevation="1" Class="d-flex flex-column" Style="height:70vh; overflow:hidden;">
+                <MudCard Elevation="1" Class="d-flex flex-column" Style="height:65vh; overflow:hidden;">
                     <MudCardContent Class="p-0" Style="flex-grow: 1; overflow: hidden;">
 
-                        <div style="height: 100%; overflow-y: auto; padding-right: 4px;">
-                            <MudTable Items="record.BillDetails.OrderByDescending(x => x.Id)"
+                        <div style="height: 600px; overflow-y: auto;">
+                            <MudTable Items="record.BillDetails.Reverse()"
                                       Hover="true"
                                       Dense="true"
                                       StickyHeader="true"
@@ -101,66 +101,80 @@
                                       Bordered="true"
                                       Breakpoint="Breakpoint.Xs"
                                       Striped="false"
-                                      Class="billing-table">
-
+                                      Class="billing-table"
+                                      Style="min-width: 900px;">
                                 <HeaderContent>
-                                    <MudTh Width="5%" Align="Align.Center">#</MudTh>
-                                    <MudTh Width="5%" Align="Align.Center">(...)</MudTh>
-                                    <MudTh>Item</MudTh>
-                                    <MudTh Width="10%" Align="Align.Right">Qty</MudTh>
-                                    <MudTh Width="10%" Align="Align.Right">Price</MudTh>
-                                    <MudTh Width="10%" Align="Align.Right">Discount</MudTh>
-                                    <MudTh Width="10%" Align="Align.Right">Amount</MudTh>
+                                    <MudTh Width="5%" Align="Align.Center" Style="@GetFooterStyle()">#</MudTh>
+                                    <MudTh Width="5%" Align="Align.Center" Style="@GetFooterStyle()">(...)</MudTh>
+                                    <MudTh Align="Align.Center" Style="@GetFooterStyle()">Item</MudTh>
+                                    <MudTh Width="10%" Align="Align.Right" Style="@GetFooterStyle()">Qty</MudTh>
+                                    <MudTh Width="10%" Align="Align.Right" Style="@GetFooterStyle()">Price</MudTh>
+                                    <MudTh Width="10%" Align="Align.Right" Style="@GetFooterStyle()">Discount</MudTh>
+                                    <MudTh Width="10%" Align="Align.Right" Style="@GetFooterStyle()">Tax</MudTh>
+                                    <MudTh Width="10%" Align="Align.Right" Style="@GetFooterStyle()">Amount</MudTh>
                                 </HeaderContent>
 
                                 <RowTemplate Context="row">
                                     @{
-                                        var idx = record.BillDetails.IndexOf(row) + 1;
+                                        // Serial in reverse: first in gets highest serial, last in gets 1
+                                        var serial = record.BillDetails.Count - record.BillDetails.IndexOf(row);
                                         var itemAmount = (row.Qty * row.UnitPrice) - row.DiscountAmount;
                                     }
-
-                                    <MudTd Align="Align.Center">@idx</MudTd>
-
+                                    <MudTd Align="Align.Center">@serial</MudTd>
                                     <MudTd Align="Align.Center">
                                         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                        Size="Size.Small"
                                                        Color="Color.Error"
                                                        OnClick="@(() => DeleteItem(row))" />
                                     </MudTd>
-
                                     <MudTd>
                                         <MudText Typo="Typo.subtitle2" Class="fw-semibold" Color="Color.Primary">
-                                            @row.Item
+                                            @row.ItemName
                                         </MudText>
                                         <MudText Typo="Typo.caption" Class="text-muted" Color="Color.Error">
                                             @row.ServingSize
                                         </MudText>
                                     </MudTd>
-
                                     <MudTd Align="Align.Right">
                                         <MudNumericField T="double"
                                                          Dense="true"
                                                          Min="0"
                                                          HideSpinButtons="false"
-                                                         @bind-Value="row.Qty"
+                                                         Value="row.Qty"
+                                                         ValueChanged="@((double newQty) => OnRowQtyChanged(row, newQty))"
                                                          InputClass="text-end no-bottom-border"
                                                          ToStringFormat="#,##0.00"
-                                                         OnBlur="@(() => CalculateTotalNetAmountAsync())"
                                                          Class="w-100"
                                                          Style="text-align:right;" />
-                                    </MudTd>
 
+                                    </MudTd>
                                     <MudTd Style="text-align:right;">@row.UnitPrice.ToString("#,##0.00")</MudTd>
                                     <MudTd Style="text-align:right;">@row.DiscountAmount.ToString("#,##0.00")</MudTd>
-                                    <MudTd Style="text-align:right;"><MudText Color="@(itemAmount < 0 ? Color.Error : Color.Default)">@itemAmount.ToString("#,##0.00")</MudText></MudTd>
+                                    <MudTd Style="text-align:right;">@row.TaxAmount.ToString("#,##0.00")</MudTd>
+                                    <MudTd Style="text-align:right;">
+                                        <MudText Color="@(itemAmount < 0 ? Color.Error : Color.Default)">
+                                            @itemAmount.ToString("#,##0.00")
+                                        </MudText>
+                                    </MudTd>
                                 </RowTemplate>
 
                                 <FooterContent>
-                                    <MudTd ColSpan="3" Style="text-align:right;"><b>Total</b></MudTd>
-                                    <MudTd Style="text-align:right;"><b>@TotalQty.ToString("#,##0.00")</b></MudTd>
-                                    <MudTd />
-                                    <MudTd Style="text-align:right;"><b>@TotalDiscountAmount.ToString("#,##0.00")</b></MudTd>
-                                    <MudTd Style="text-align:right;"><b>@TotalBilledDetailAmount.ToString("#,##0.00")</b></MudTd>
+                                    <MudTd ColSpan="3" style="@GetFooterStyle(true)">
+                                        <b>Total</b>
+                                    </MudTd>
+                                    <MudTd style="@GetFooterStyle()">
+                                        <b>@TotalQty.ToString("#,##0.00")</b>
+                                    </MudTd>
+                                    <MudTd style="@GetFooterStyle()" />
+                                    <MudTd style="@GetFooterStyle()">
+                                        <b>@TotalDiscountAmount.ToString("#,##0.00")</b>
+                                    </MudTd>
+                                    <MudTd style="@GetFooterStyle()">
+                                        <b>@TotalTaxAmount.ToString("#,##0.00")</b>
+                                    </MudTd>
+                                    <MudTd style="@GetFooterStyle()">
+                                        <b>@record.Bill.SubTotalAmount.ToString("#,##0.00")</b>
+                                    </MudTd>
                                 </FooterContent>
                             </MudTable>
                         </div>
@@ -173,14 +187,15 @@
                    <div class="row summary-row">
                         <!-- Row 1 -->
                         <div class="col-md-4 summary-col">
-                            <MudTextField T="decimal"
-                                          Dense="true"
-                                              @bind-Value="TotalServiceCharges"
-                                          Variant="Variant.Outlined"
-                                          Label="Service Charges"
-                                          Class="summary-value"
-                                          Style="text-align: right;"
-                                          ReadOnly />
+                                <MudTextField T="decimal"
+                                              Dense="true"
+                                              Value="record.Bill.TotalServiceChargeAmount"
+                                              Variant="Variant.Outlined"
+                                              Label="Service Charges"
+                                              Class="summary-value"
+                                              InputClass="text-end"
+                                              Format="#,##0.00"
+                                              ReadOnly />
                         </div>
 
                         <div class="col-md-4 summary-col">
@@ -188,38 +203,42 @@
                                 <MudIconButton Icon="@Icons.Material.Filled.Receipt" Color="Color.Info" OnClick="OpenTaxDialog" Variant="Variant.Filled" />
                             </MudTooltip>
                                 <MudTextField T="decimal"
-                                          Dense="true"
-                                              @bind-Value="TotalTax"
-                                          Variant="Variant.Outlined"
-                                          Label="Tax"
-                                          Class="summary-value"
-                                          Style="text-align: right;"
-                                          ReadOnly />
+                                              Dense="true"
+                                              Value="record.Bill.TotalTaxAmount"
+                                              Variant="Variant.Outlined"
+                                              Label="Tax"
+                                              Class="summary-value"
+                                              InputClass="text-end"
+                                              Format="#,##0.00"
+                                              ReadOnly />
                         </div>
 
                         <div class="col-md-4 summary-col">
                                 <MudNumericField T="decimal"
-                                             Dense="true"
-                                             @bind-Value="record.Bill.DiscountAmount"
-                                             Class="summary-value"
-                                             Variant="Variant.Outlined"
-                                             Label="Discount"
-                                             HideSpinButtons="true"
-                                             Style="text-align: right;" />
+                                                 Dense="true"
+                                                 @bind-Value="record.Bill.DiscountAmount"
+                                                 @bind-Value:after="OnDiscountChanged"
+                                                 Class="summary-value"
+                                                 Variant="Variant.Outlined"
+                                                 Label="Discount"
+                                                 HideSpinButtons="true"
+                                                 InputClass="text-end"
+                                                 Format="#,##0.00" />
+
                         </div>
                     </div>
 
                     <div class="row summary-row mt-2">
                         <!-- Row 2 -->
                         <div class="col-md-4 summary-col">
-
                                 <MudTextField T="decimal"
                                               Dense="true"
                                               Variant="Variant.Outlined"
                                               Label="Billed Amount"
-                                              @bind-Value="TotalBilledAmount"
+                                              Value="record.Bill.BilledAmount"
                                               Class="summary-value"
-                                              Style="text-align: right;"
+                                              InputClass="text-end"
+                                              Format="#,##0.00"
                                               ReadOnly />
                                 </div>
 
@@ -228,31 +247,30 @@
                             <MudTooltip Text="Payment Info">
                                 <MudIconButton Icon="@Icons.Material.Filled.Payments" Color="Color.Info" OnClick="OpenPaymentDialog" Variant="Variant.Filled" />
                             </MudTooltip>
-
                                 <MudTextField T="decimal"
-                                          Dense="true"
-                                          Variant="Variant.Outlined"
-                                          Label="Paid Amount"
-                                          Class="summary-value"
-                                          @bind-Value="TotalPayment"
-                                          Style="text-align: right;"
-                                          ReadOnly />
+                                              Dense="true"
+                                              Variant="Variant.Outlined"
+                                              Label="Paid Amount"
+                                              Class="summary-value"
+                                              Value="record.Bill.TotalPaidAmount"
+                                              InputClass="text-end"
+                                              Format="#,##0.00"
+                                              ReadOnly />
                         </div>
 
                         <div class="col-md-4 summary-col">
-                                <MudNumericField T="decimal"
-                                                 Label="Net Amount"
-                                                 @bind-Value="TotalNetAmount"
-                                                 ReadOnly="true"
-                                                 Dense="true"
-                                                 Variant="Variant.Outlined"
-                                                 Class="summary-value"
-                                                 HideSpinButtons="true"
-                                                 Format="N2"
-                                                 Style="width: 100%;"
-                                                 Culture="@CultureInfo.GetCultureInfo("en-US")" />
-
-
+                            <MudNumericField T="decimal"
+                                Label="Net Amount"
+                                Value="record.Bill.BalanceAmount"
+                                ReadOnly="true"
+                                Dense="true"
+                                Variant="Variant.Outlined"
+                                Class="summary-value"
+                                HideSpinButtons="true"
+                                InputClass="text-end"
+                                Format="#,##0.00"
+                                Style="width: 100%;"
+                                Culture="@CultureInfo.GetCultureInfo("en-US")" />
                         </div>
 
                         <div class="col-md-4 summary-col">
@@ -286,62 +304,74 @@
                     </MudTooltip>
                 </div>
 
-                <MudTabs Rounded="true" Centered="false" Elevation="1" Class="mb-2" ScrollButtons="ScrollButtons.Auto"> 
+                <MudTabs Rounded="true" Centered="false" Elevation="1" Class="mb-2" ScrollButtons="ScrollButtons.Auto">
                     <MudTabPanel Text=@($"Items") Class="p-2">
+                        <div class="d-flex flex-row gap-3" style="height: 500vh; overflow: auto;">
 
-                        <div class="m-3 d-flex flex-wrap gap-3">
-                            @foreach (var category in _categories)
-                            {
-                                <button class="position-relative border-0 p-0"
-                                        style="width: 120px; height: 120px; border-radius: 10px; overflow: hidden;"
-                                        @onclick="() => LoadItemsByCategory(category)">
+                            <div style="width: 240px; height: 750px; overflow-y: auto; background-color: lightgray; border-radius: 0px; padding: 8px; margin-top: 10px;">
+                                <div style="display: flex; flex-direction: column;">
+                                    @foreach (var category in _categories)
+                                    {
+                                        <button @onclick="() => LoadItemsByCategory(category)"
+                                                style="display: flex; align-items: center; justify-content: flex-start; width: 100%; text-align: left; border: none; background-color: transparent; padding: 8px 10px; border-radius: 0px; margin-bottom: 4px; border-bottom: 1px solid rgba(0, 0, 0, 0.1); transition: background-color 0.2s ease;"
+                                                onmouseover="this.style.backgroundColor='rgba(0,0,0,0.1)'"
+                                                onmouseout="this.style.backgroundColor='transparent'">
 
-                                    <!-- Full-size image -->
-                                    <img src="@category.Pic"
-                                         alt="@category.Name"
-                                         style="width: 100%; height: 100%; object-fit: cover;" />
+                                            @if (!string.IsNullOrWhiteSpace(category.Pic))
+                                            {
+                                                <img src="@category.Pic"
+                                                     alt="@category.Name"
+                                                     style="width: 36px; height: 36px; object-fit: cover; border-radius: 50%; margin-right: 10px; flex-shrink: 0;" />
+                                            }
+                                            else
+                                            {
+                                                <div style="width: 36px; height: 36px; border-radius: 50%; background-color: #ccc; color: #333; font-weight: bold; font-size: 16px; display: flex; align-items: center; justify-content: center; margin-right: 10px; flex-shrink: 0;">
+                                                    @category.Name.Substring(0, 1).ToUpper()
+                                                </div>
+                                            }
 
-                                    <!-- Black strip with category name -->
-                                    <div class="position-absolute bottom-0 w-100"
-                                         style="background-color: rgba(0, 0, 0, 0.7); padding: 6px 4px;">
-                                        <span class="text-white text-center w-100 d-block fw-semibold" style="font-size: 14px;">
-                                            @category.Name
-                                        </span>
-                                    </div>
-                                </button>
-                            }
+                                            <span style="font-weight: 600; font-size: 14px; color: #212529; white-space: nowrap;">
+                                                @category.Name (@category.ItemCount)
+                                            </span>
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+
+
+                            <!-- Right Column: Items -->
+                            <div class="flex-grow-1">
+                                <MudTextField Dense="true" Class="mb-2 p-2" Placeholder="Search…"
+                                              @bind-Value="ClickedItem.Name"
+                                              Adornment="Adornment.Start"
+                                              AdornmentIcon="@Icons.Material.Filled.Search" />
+
+                                <MudGrid GutterSize="GutterSize.Small">
+                                    @foreach (var fav in SelectedItems.Where(f => string.IsNullOrWhiteSpace(ClickedItem.Name) || f.Name!.Contains(ClickedItem!.Name!, StringComparison.OrdinalIgnoreCase)))
+                                    {
+                                        <MudItem xs="6" sm="4" md="3">
+                                            <div class="position-relative"
+                                                 style="cursor: pointer; width: 100%; height: 150px; border-radius: 10px; overflow: hidden;"
+                                                 @onclick="@(async () => await AddItemDialogShow(fav.Id.ToString()))">
+                                                <img src="@fav.Pic"
+                                                     alt="@fav.Name"
+                                                     style="width: 100%; height: 100%; object-fit: cover;" />
+                                                <div class="position-absolute bottom-0 w-100"
+                                                     style="background-color: rgba(0, 0, 0, 0.7); padding: 6px 4px;">
+                                                    <div class="text-white text-center fw-semibold" style="font-size: 14px;">
+                                                        @fav.Name
+                                                    </div>
+                                                    <div class="text-white text-center" style="font-size: 12px;">
+                                                        @fav.RetailPrice.ToString("#,##0.00")
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </MudItem>
+                                    }
+                                </MudGrid>
+                            </div>
+
                         </div>
-
-                        <MudTextField Dense="true" Class="mb-2 p-2" Placeholder="Search…" @bind-Value="ClickedItem.Name" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
-
-                        <MudGrid GutterSize="GutterSize.Small">
-                            @foreach (var fav in SelectedItems.Where(f => string.IsNullOrWhiteSpace(ClickedItem.Name) || f.Name!.Contains(ClickedItem!.Name!, StringComparison.OrdinalIgnoreCase)))
-                            {
-                                <MudItem xs="6" sm="4" md="3">
-                                    <div class="position-relative"
-                                         style="cursor: pointer; width: 100%; height: 150px; border-radius: 10px; overflow: hidden;"
-                                         @onclick="@(async () => await AddItemDialogShow(fav.Id.ToString()))">
-
-                                        <!-- Full background image -->
-                                        <img src="@fav.Pic"
-                                             alt="@fav.Name"
-                                             style="width: 100%; height: 100%; object-fit: cover;" />
-
-                                        <!-- Bottom black overlay with name and price -->
-                                        <div class="position-absolute bottom-0 w-100"
-                                             style="background-color: rgba(0, 0, 0, 0.7); padding: 6px 4px;">
-                                            <div class="text-white text-center fw-semibold" style="font-size: 14px;">
-                                                @fav.Name
-                                            </div>
-                                            <div class="text-white text-center" style="font-size: 12px;">
-                                                @fav.RetailPrice.ToString("#,##0.00")
-                                            </div>
-                                        </div>
-                                    </div>
-                                </MudItem>
-                            }
-                        </MudGrid>
-
                     </MudTabPanel>
 
                     <MudTabPanel Text=@($"Favorites ({MaxItems:#,##0})") Class="p-2">
@@ -423,15 +453,22 @@
                     <MudPaper Class="p-4" Elevation="0">
                         <!-- Customer Dropdown -->
                         <MudItem Class="mb-5">
-                            <MudSelect T="int" @bind-Value="record.Bill.PartyId" Disabled="@Disabled" Label="Select Customer" Dense="true">
-                                @if (Parties != null)
+                        <MudSelect T="int"
+                                   Value="record.Bill.PartyId"
+                                   ValueChanged="OnPartyChanged"
+                                   ValueExpression="() => record.Bill.PartyId"
+                                   Disabled="@Disabled"
+                                   Label="Select Customer"
+                                   Dense="true">
+                            @if (Parties != null)
+                            {
+                                @foreach (var customer in Parties)
                                 {
-                                    @foreach (var customer in Parties)
-                                    {
-                                        <MudSelectItem T="int" Value="@customer.Id">@customer.Name</MudSelectItem>
-                                    }
+                                    <MudSelectItem T="int" Value="@customer.Id">@customer.Name</MudSelectItem>
                                 }
-                            </MudSelect>
+                            }
+                        </MudSelect>
+
                         </MudItem>
 
                         <!-- Service Type Dropdown -->
@@ -601,6 +638,7 @@
 
                             <!-- Price -->
                             <div class="col-md-3 text-end">
+                                <MudText Typo="Typo.h5" Class="fw-bold mb-3" style="letter-spacing: 3px; font-size: 12px;">Rate / Item</MudText>
                                 <MudNumericField T="double"
                                                  @bind-Value="SelectedItem.RetailPrice"
                                                  Variant="Variant.Outlined"
@@ -700,7 +738,7 @@
                     <MudTd>
                         @if (context.AmountType == "PERCENTAGE")
                         {
-                            <span>@($"{TotalBilledDetailAmount:#,##0.00} x {context.Rate:#,##0.00}% = {context.CalculatedAmount:#,##0.00}")</span>
+                            <span>@($"{record.Bill.SubTotalAmount:#,##0.00} x {context.Rate:#,##0.00}% = {context.CalculatedAmount:#,##0.00}")</span>
                         }
                         else if (context.AmountType == "FLAT")
                         {
@@ -742,12 +780,13 @@
     </TitleContent>
 
     <DialogContent>
-        <MudPaper Class="pa-4" Style="max-width: 700px; width: 100%; border: 1px solid #ccc; border-radius: 8px; min-height: 70vh;">
+        <MudPaper Class="pa-4" Style="max-width: 700px; width: 100%; border: 1px solid #ccc; border-radius: 8px; min-height: 50vh;">
             <MudGrid GutterSize="GutterSize.Small" Class="mb-4">
                 <MudItem xs="12" sm="4">
                     <MudSelect T="string"
                                 Dense="true"
                                 @bind-Value="BillPayments.PaymentMethod"
+                                @bind-Value:after="OnPaymentMethodChange"
                                 Variant="Variant.Outlined"
                                 Label="Payment Method"
                                 Class="w-100 text-center">
@@ -828,7 +867,7 @@
                     <FooterContent>
                         <MudTd colspan="2" class="text-end font-weight-bold">Total</MudTd>
                         <MudTd class="text-end font-weight-bold">
-                            @TotalPayment.ToString("#,##0.00")
+                            @record.Bill.TotalPaidAmount.ToString("#,##0.00")
                         </MudTd>
                     </FooterContent>
             </MudTable>
@@ -851,6 +890,7 @@
     [Parameter] public string? Act { get; set; } = "INSERT";
     [CascadingParameter] private bool isReadOnly { get; set; }
     public bool Disabled { get; set; } = true;
+    private DateRange _dateRange { get; set; } = new DateRange(DateTime.Now.Date, DateTime.Now.AddDays(5).Date);
 
     // =======================
     // 2. Main Models
@@ -914,6 +954,7 @@
     private List<RestaurantTablesModel>? Tables { get; set; } = null!;
     public List<EmployeesModel> SalesId { get; set; } = new();
     private List<CategoriesModel> _categories = new();
+    private PartiesModel SelectedParty = new();
 
     // =======================
     // 6. TypeCode Data
@@ -953,23 +994,47 @@
     List<BillChargeModel> billCharge = new();
     private double TotalQty => record.BillDetails.Sum(i => i.Qty);
     private double TotalDiscountAmount => record.BillDetails.Sum(i => i.DiscountAmount);
-    decimal TotalServiceCharges = 0;
-    decimal TotalTax = 0;
-    decimal TotalPayment = 0;
-    decimal TotalBilledDetailAmount = 0;
-    decimal TotalBilledAmount = 0;
-    decimal TotalNetAmount = 0;
-   
+    private double TotalTaxAmount => record.BillDetails.Sum(i => i.TaxAmount);
+
+    // private decimal TotalBilledDetailAmount => Totals().BillItemsTotal;
+    // private decimal TotalServiceCharges => Totals().BillServiceChargesTotal;
+    // private decimal TotalTax => Totals().BillTaxTotal;
+    // private decimal TotalPayment => Totals().BillPaymentsTotal;
+    // private decimal TotalBilledAmount => TotalBilledDetailAmount + TotalServiceCharges + TotalTax - Convert.ToDecimal(record.Bill.DiscountAmount);
+    // private decimal TotalNetAmount => TotalBilledAmount - TotalPayment;
+
+    // private decimal TotalBilledDetailAmount => Totals().BillItemsTotal;
+    // private decimal TotalServiceCharges => Totals().BillServiceChargesTotal;
+    // private decimal TotalTax => Totals().BillTaxTotal;
+    // private decimal TotalPayment => Totals().BillPaymentsTotal;
+    // private decimal TotalBilledAmount => TotalBilledDetailAmount + TotalServiceCharges + TotalTax - Convert.ToDecimal(record.Bill.DiscountAmount);
+    // private decimal TotalNetAmount => TotalBilledAmount - TotalPayment;
+
     // -------------------------- Lifecycle --------------------------
     protected override async Task OnInitializedAsync()
     {
         await GetAll();
     }
 
-    protected override void OnParametersSet()
+    protected async override void OnParametersSet()
     {
-        Clear();
+        if (Act == "INSERT")
+        {
+            Clear();
+        }
+        else
+        {
+            await Get(Id);
+        }
     }
+
+    private string GetFooterStyle(bool isHeader = false)
+    {
+        var background = Globals._isDarkMode ? "white" : "#1e1e1e";
+        var color = Globals._isDarkMode ? "black" : "white";
+        return $"background-color:{background}; color:{color}; text-align:right;";
+    }
+
 
     // -------------------------- Data Loaders --------------------------
     protected async Task GetAll()
@@ -988,16 +1053,15 @@
         Tables = await Functions.GetAsync<List<RestaurantTablesModel>>($"RestaurantTables/Search", true) ?? new List<RestaurantTablesModel>();
         SalesId = await Functions.GetAsync<List<EmployeesModel>>($"Employees/Search", true) ?? new List<EmployeesModel>();
         BillType = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/BILL TYPE", true) ?? new List<TypeCodeModel>();
-  
-        Clear();
-        if (Act == "INSERT")
-        {
-            record = new BillsModel();
-        }
-        else
-        {
-            await Get(Id);
-        }
+
+        // if (Act == "INSERT")
+        // {
+        //     Clear();
+        // }
+        // else
+        // {
+        //     await Get(Id);
+        // }
 
         LoadingPanel = false;
     }
@@ -1008,19 +1072,42 @@
         {
             LoadingPanel = true;
             record = await Functions.GetAsync<BillsModel>($"Bill/Get?Id={id}", true) ?? new BillsModel();
-            if (record.BillDetails == null)
+            if (record.Bill == null)
             {
-                record = new BillsModel();
+                var rec = new BillsModel();
+                record.Bill = rec.Bill;
+                record.Bill.TranDate = DateTime.Now.AddHours(Convert.ToDouble(Globals.Organization.GMT));
+                record.BillCharges = rec.BillCharges;
+                record.BillPayments = rec.BillPayments;
+
+                foreach (var i in rec.BillDetails)
+                {
+                    var row = new BillItemReportModel
+                    {
+                        ItemId = i.ItemId,
+                        ItemName = i.ItemName!,
+                        UnitPrice = i.UnitPrice,
+                        ServingSize = i.ServingSize,
+                        Qty = i.Qty,
+                        DiscountAmount = i.DiscountAmount * i.Qty,
+                        TaxAmount = i.TaxAmount * i.Qty
+                    };
+
+                    record.BillDetails.Add(row);
+
+                }
+
+                await CalculateTotalNetAmountAsync();
             }
 
-            await CalculateTotalNetAmountAsync();
             LoadingPanel = false;
+            StateHasChanged();
         }
     }
 
     private async Task LoadCategories()
     {
-        _categories = await Functions.GetAsync<List<CategoriesModel>>("Categories/Search", true) ?? new();
+        _categories = await Functions.GetAsync<List<CategoriesModel>>("Categories/SearchCategoriesHavingSomeItems", true) ?? new();
         if (_categories.Any())
         {
             await LoadItemsByCategory(_categories[0]);
@@ -1034,8 +1121,9 @@
 
 
     // -------------------------- UI Helpers --------------------------
-    private void Clear()
+    private async void Clear()
     {
+        record = new BillsModel();
 
         if (string.IsNullOrEmpty(record.Bill.Status) && BillStatus?.Any() == true)
             record.Bill.Status = BillStatus.First().ListValue;
@@ -1052,6 +1140,10 @@
         record.Bill.BillType = "SALE";
         record.Bill.PartyId=1;
         Disabled = Act == "VIEW";
+        record.Bill.TranDate = DateTime.Now.AddHours(Convert.ToDouble(Globals.Organization.GMT));
+        // TotalServiceCharges = 0;
+        // TotalTax = 0;
+        await CalculateTotalNetAmountAsync();
 
     } 
 
@@ -1131,8 +1223,6 @@
         _DialogItemsDetails = true;
     }
 
-
-
     private void FilterItems()
     {
         if (string.IsNullOrWhiteSpace(searchText))
@@ -1153,53 +1243,39 @@
 
     }
 
+    private async void OnDiscountChanged()
+    {
+        await CalculateTotalNetAmountAsync();
+    }
+
     // -------------------------- Tax & Charges --------------------------
     private void OpenTaxDialog()
     {        
         _DialogTax = true;
     }
 
-    private async Task CalculateTotalNetAmountAsync()
+    private async Task<(decimal ServiceCharges, decimal Tax)> CalculateCharges(decimal BilledAmountForCalaulation)
     {
-        // Step 1: Calculate Billed Amount (sum of bill details)
-        TotalBilledDetailAmount = BillDetailTotal();
+        var formattedStartDate = _dateRange.Start?.ToString("yyyy-MM-dd") ?? string.Empty;
+        var formattedEndDate = _dateRange.End?.ToString("yyyy-MM-dd") ?? string.Empty;
+        string criteria = $"{formattedStartDate}/{formattedEndDate}/{BilledAmountForCalaulation}";
 
-        // Step 2: Fetch charges from API using billed amount
-        var billCharges = await Functions.GetAsync<List<BillChargeModel>>($"Bill/CalculateBillCharges/{TotalBilledDetailAmount}", true);
+        var billCharges = await Functions.GetAsync<List<BillChargeModel>>($"Bill/CalculateBillCharges/{criteria}", true);
+
         record.BillCharges = new ObservableCollection<BillChargeModel>(billCharges ?? new List<BillChargeModel>());
 
-        // Step 3: Calculate categorized totals
-        TotalServiceCharges = record.BillCharges
+        decimal serviceCharges = record.BillCharges
             .Where(c => c.ChargeCategory == "SERVICE" && c.RuleType == "CHARGE")
             .Sum(c => c.CalculatedAmount);
 
-        TotalTax = record.BillCharges
+        decimal tax = record.BillCharges
             .Where(c => c.ChargeCategory == "TAX" && c.RuleType == "CHARGE")
             .Sum(c => c.CalculatedAmount);
 
-        record.Bill.DiscountAmount = record.BillCharges
-            .Where(c => c.ChargeCategory == "DISCOUNT" && c.RuleType == "DISCOUNT")
-            .Sum(c => c.CalculatedAmount);
-
-        TotalPayment = record.BillPayments.Sum(c => c.AmountPaid);
-
-        // Step 4: Calculate Total Net Amount after applying charges and discount
-        TotalBilledAmount = TotalBilledDetailAmount + TotalServiceCharges + TotalTax - Convert.ToDecimal(record.Bill.DiscountAmount);
-        TotalNetAmount = TotalBilledAmount - TotalPayment;
-
-        StateHasChanged();
+        return (serviceCharges, tax);
     }
 
-
-
-    private async void DeleteItem(BillDetailModel item)
-    {
-        record.BillDetails.Remove(item);
-        await CalculateTotalNetAmountAsync();
-    }
-
-
-    private decimal BillDetailTotal()
+    private async Task GetCharges()
     {
         double TotalBillAmount = 0;
         foreach (var i in record.BillDetails)
@@ -1207,9 +1283,66 @@
             TotalBillAmount += (i.Qty * i.UnitPrice) + i.TaxAmount - i.DiscountAmount;
         }
 
-        return Convert.ToDecimal(TotalBillAmount);
+        var Charges = await CalculateCharges(Convert.ToDecimal(TotalBillAmount));
+        record.Bill.TotalServiceChargeAmount = Charges.ServiceCharges;
+        record.Bill.TotalTaxAmount = Charges.Tax;
+        Totals();
     }
 
+    private async Task CalculateTotalNetAmountAsync()
+    {
+        Totals();
+        StateHasChanged();
+    }
+
+    private async void DeleteItem(BillItemReportModel item)
+    {
+        record.BillDetails.Remove(item);
+        await GetCharges();
+        await CalculateTotalNetAmountAsync();
+    }
+
+
+    // private (decimal BillItemsTotal, decimal BillServiceChargesTotal, decimal BillTaxTotal, decimal BillPaymentsTotal) Totals()
+    // {
+    //     //Bill Detail Total
+    //     double TotalBillAmount = 0;
+    //     foreach (var i in record.BillDetails)
+    //     {
+    //         TotalBillAmount += (i.Qty * i.UnitPrice) + i.TaxAmount - i.DiscountAmount;
+    //     }
+
+    //     //Payments Total
+    //     decimal TotalPaymentsAmount = 0;
+    //     foreach (var i in record.BillPayments)
+    //     {
+    //         TotalPaymentsAmount += i.AmountPaid;
+    //     }
+
+    //     //Service Charges
+    //     decimal TotalServiceChargesAmount = 0;
+
+    //     foreach (var i in record.BillCharges.Where(x => x.ChargeCategory != "TAX"))
+    //     {
+    //         TotalServiceChargesAmount += i.CalculatedAmount;
+    //     }
+
+    //     //Tax
+    //     decimal TotalTaxAmount = 0;
+
+    //     foreach (var i in record.BillCharges.Where(x => x.ChargeCategory == "TAX"))
+    //     {
+    //         TotalTaxAmount += i.CalculatedAmount;
+    //     }
+
+
+    //     return (Convert.ToDecimal(TotalBillAmount), Convert.ToDecimal(TotalServiceChargesAmount), Convert.ToDecimal(TotalTaxAmount), Convert.ToDecimal(TotalPaymentsAmount));
+    // }
+
+    private void Totals()
+    {
+        Globals.BillGridTotals(record);    
+    }
 
     private void DeleteCharge(BillChargeModel charge)
     {
@@ -1219,16 +1352,36 @@
         }
     }
 
+    private async Task OnRowQtyChanged(BillItemReportModel row, double newQty)
+    {
+        row.Qty = newQty;
+
+        var item = ItemsData.FirstOrDefault(i => i.Id == row.ItemId);
+        if (item != null)
+        {
+            row.DiscountAmount = item.Discount * row.Qty;
+            row.TaxAmount = item.Tax * row.Qty;
+        }
+
+        await GetCharges();
+        await CalculateTotalNetAmountAsync();
+        StateHasChanged();
+    }
+
     // -------------------------- Payments --------------------------
     private void OpenPaymentDialog()
     {
+        
         _DialogPayment = true;
+    }
+
+    private async void OnPaymentMethodChange()
+    {
+        BillPayments.AmountPaid = record.Bill.BalanceAmount;
     }
 
     private async void AddPayment()
     {
-
-        record.BillPayments.Add(BillPayments);
         BillPayments = new BillPaymentModel();
         await CalculateTotalNetAmountAsync();
     }
@@ -1236,6 +1389,7 @@
     private async void DeletePayment(BillPaymentModel payment)
     {
         record.BillPayments.Remove(payment);
+        //BillPayments.AmountPaid = record.Bill.BalanceAmount;
         await CalculateTotalNetAmountAsync();
     }
 
@@ -1271,7 +1425,9 @@
         var selectedSize = item.ServingSizes?.FirstOrDefault(s => s.Size == item.ServingSize);
         if (selectedSize != null)
         {
-            item.RetailPrice = Convert.ToDouble(selectedSize.Price) * item.Qty;
+            //item.RetailPrice = Convert.ToDouble(selectedSize.Price) * item.Qty;
+            item.RetailPrice = Convert.ToDouble(selectedSize.Price);
+
         }
     }
 
@@ -1291,27 +1447,29 @@
         row.UnitPrice = item.RetailPrice;
         row.ServingSize = item.ServingSize;
         row.TaxAmount = 0;
-
+        await GetCharges();
         await CalculateTotalNetAmountAsync();
     }
 
     private async void AddToCart(ItemsModel selectedItem)
     {
         if (selectedItem == null) return;
+        if (selectedItem.RetailPrice    == 0) return;   
 
-        var row = new BillDetailModel
+        var row = new BillItemReportModel
         {
             ItemId = selectedItem.Id,
-            Item = selectedItem.Name!,
+            ItemName = selectedItem.Name!,
             UnitPrice = selectedItem.RetailPrice,
             ServingSize = selectedItem.ServingSize,
             Qty = selectedItem.Qty,
-            DiscountAmount = 0,
-            TaxAmount = 0
+            DiscountAmount = selectedItem.Discount * selectedItem.Qty,
+            TaxAmount = selectedItem.Tax * selectedItem.Qty
         };
 
         record.BillDetails.Add(row);
         _DialogItemsDetails = false;
+        await GetCharges();
         await CalculateTotalNetAmountAsync();
     }
 
@@ -1321,10 +1479,10 @@
         var firstItem = ItemsData.FirstOrDefault();
         if (firstItem == null) return;
 
-        record.BillDetails.Add(new BillDetailModel
+        record.BillDetails.Add(new BillItemReportModel
         {
             ItemId = firstItem.Id,
-            Item = firstItem.Name!,
+            ItemName = firstItem.Name!,
             ServingSize = firstItem.ServingSize,
             Qty = 1,
             UnitPrice = firstItem.RetailPrice,
@@ -1347,9 +1505,9 @@
         //         return;
         // }
 
-        BillDetailModel BillItem = new();
+        BillItemReportModel BillItem = new();
         BillItem.ItemId = SelectedItem.Id;
-        BillItem.Item= BillItems.Item;
+        BillItem.ItemName= BillItems.Item;
         BillItem.ServingSize = BillItems.ServingSize;
         BillItem.StockCondition = BillItems.StockCondition;
         BillItem.Qty= BillItems.Qty;
@@ -1359,6 +1517,7 @@
         BillItem.Status = "COMPLETE";
         record.BillDetails.Add(BillItem);
 
+        await GetCharges();
         await CalculateTotalNetAmountAsync();
         SelectedItem = null!;
         //_myDialogItemSelection!.Hide();
@@ -1438,6 +1597,21 @@
         StateHasChanged();
     }
 
+    // -------------------------- Party --------------------------
+
+    private async Task OnPartyChanged(int newValue)
+    {
+        record.Bill.PartyId = newValue;
+
+        var party = Parties.FirstOrDefault(p => p.Id == newValue);
+        if (party != null)
+        {
+            record.Bill.PartyName = party.Name;
+            record.Bill.PartyPhone = party.Phone;
+            record.Bill.PartyEmail = party.Email;
+            record.Bill.PartyAddress = party.Address;
+        }
+    }
 
     // -------------------------- Dialogs --------------------------
 
@@ -1457,8 +1631,6 @@
     private async void Save()
     {
 
-        // LoadingPanel = true;
-
 
 
         if (record.Bill.PartyId == 0 || record.Bill.SalesId == 0 || record.Bill.TableId == 0)
@@ -1466,6 +1638,8 @@
             //SnackbarService.Add($"Cannot Save Record. Please check Selected Customer, Sales Id or Table", Severity.Error);
             return;
         }
+
+        LoadingPanel = true;
 
         BillsModel BillHeader = new();
         var Action = "INSERT";
@@ -1484,18 +1658,17 @@
         record.Bill.UpdatedBy = Globals.User.Id;
         record.Bill.UpdatedOn = DateTime.Now;
         record.Bill.UpdatedFrom = Functions.GetComputerDetails();
+        LoadingPanel = false;
 
         var result = await Functions.PostAsync<BillModel>($"Bill/{Action}", record, true);
         if (result.Success == false)
         {
-            LoadingPanel = false;
             Snackbar.Add($"Record Save Fail.", Severity.Error);
         }
         else
         {
-            LoadingPanel = false;
             Snackbar.Add($"Record Saved Successfully", Severity.Success);
-            //record.Bill.SeqNo = result.Result!.SeqNo;
+            record.Bill.SeqNo = result.Result!.SeqNo;
             Id = result.Result.Id;
             Print();
         }

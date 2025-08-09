@@ -1,0 +1,214 @@
+﻿@page "/FbrSubmissionPage/{Action}/{CurrentRecord?}"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+
+    <div class="text-end" style="margin-top:10px;">
+        @if (Action != "VIEW")
+        {
+            <MudButton Variant="Variant.Filled" OnClick="Save" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                @(Action == "INSERT" ? "Save" : "Update")
+            </MudButton>
+
+            @if (Action == "UPDATE")
+            {
+                <MudButton Variant="Variant.Filled" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                    Delete
+                </MudButton>
+            }
+        }
+    </div>
+
+    <br />
+
+    <MudExpansionPanels MultiExpansion="true">
+        <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
+
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded shadow-sm" style="gap: 10px;">
+                    <div class="ms-2">
+                       @*  <MudText Typo="Typo.h6" Class="fw-bold text-dark">@record.Name</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">@record.Description</MudText> *@
+                    </div>
+                </div>
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                   
+                    <div class="col-6 mb-3">
+                        <MudTextField Label="JsonPayload" id="JsonPayload" @bind-Value="record.JsonPayload" Variant="Variant.Filled" placeholder="JsonPayload" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.JsonPayload)" />
+                    </div>
+                    <div class="col-6 mb-3">
+                        <MudDatePicker Label="SubmissionDateTime" @bind-Value="record.SubmissionDateTime" Format="yyyy-MM-dd" Variant="Variant.Filled" placeholder="SubmissionDateTime" ReadOnly="@isReadOnly"></MudDatePicker>
+                        <ValidationMessage For="@(() => record.SubmissionDateTime)" />
+                    </div>
+                    <div class="col-6 mb-3">
+                        <MudTextField Label="ResponseCode" id="ResponseCode" @bind-Value="record.ResponseCode" Variant="Variant.Filled" placeholder="ResponseCode" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.ResponseCode)" />
+                    </div>
+                    <div class="col-6 mb-3">
+                        <MudTextField Label="IRN" id="IRN" @bind-Value="record.IRN" Variant="Variant.Filled" placeholder="IRN" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.IRN)" />
+                    </div>
+                    <div class="col-6 mb-3">
+                        <MudTextField Label="DigitalInvoiceUrl" id="DigitalInvoiceUrl" @bind-Value="record.DigitalInvoiceUrl" Variant="Variant.Filled" placeholder="DigitalInvoiceUrl" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.DigitalInvoiceUrl)" />
+                    </div>
+                    <div class="col-6 mb-3">
+                        <MudTextField Label="QRCodeData" id="QRCodeData" @bind-Value="record.QRCodeData" Variant="Variant.Filled" placeholder="QRCodeData" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.QRCodeData)" />
+                    </div>
+                    <div class="col-6 mb-3">
+                        <MudTextField Label="ErrorMessage" id="ErrorMessage" @bind-Value="record.ErrorMessage" Variant="Variant.Filled" placeholder="ErrorMessage" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.ErrorMessage)" />
+                    </div>
+                    <div class="col-6 mb-3">
+                        <MudNumericField Label="RetryCount" @bind-Value="record.RetryCount" Variant="Variant.Filled" placeholder="RetryCount" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
+                        <ValidationMessage For="@(() => record.RetryCount)" />
+                    </div>
+                    <div class="col-6 mb-3">
+                        <MudTextField Label="SubmissionMachineInfo" id="SubmissionMachineInfo" @bind-Value="record.SubmissionMachineInfo" Variant="Variant.Filled" placeholder="SubmissionMachineInfo" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.SubmissionMachineInfo)" />
+                    </div>
+                    <div class="col-6 mb-3">
+                        <MudDatePicker Label="CreatedOn" @bind-Value="record.CreatedOn" Format="yyyy-MM-dd" Variant="Variant.Filled" placeholder="CreatedOn" ReadOnly="@isReadOnly"></MudDatePicker>
+                        <ValidationMessage For="@(() => record.CreatedOn)" />
+                    </div>
+
+                </div>
+            </ChildContent>
+
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+
+</div>
+
+@code
+{
+    static FbrSubmissionModel record = new();
+    List<BillsModel> Bil = new();
+
+
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        Bil = await Functions.GetAsync<List<BillsModel>>($"Bill/Search", true) ?? new List<BillsModel>();
+
+
+
+        if (Action == "INSERT")
+        {
+            isReadOnly = false;
+        }
+        else if (Action != "VIEW")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action != "VIEW")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<FbrSubmissionModel>($"FbrSubmission/Get?Id={id}", true) ?? new FbrSubmissionModel();
+        LoadingPanel = false;
+    }
+
+    protected void GetDefaultValues()
+    {
+        StateHasChanged();
+    }
+
+    protected async void Clear()
+    {
+        Action = "INSERT";
+        record = new FbrSubmissionModel();
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        isReadOnly = true;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+
+        record.CreatedOn = DateTime.Now;
+
+        string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+        var result = await Functions.PostAsync<FbrSubmissionModel>($"FbrSubmission/{url}", record, true);
+        if (result.Success == false)
+        {
+            SnackbarService.Add($"Record {Action} Fail.", Severity.Error);
+        }
+        else
+        {
+            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+            record = new();
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+        await _drawer.CloseDrawer();
+
+    }
+}
+

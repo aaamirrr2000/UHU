@@ -136,10 +136,10 @@ public class BillController : ControllerBase
             return BadRequest(result.Item2);
     }
 
-    [HttpGet("CalculateBillCharges/{BilledAmount}")]
-    public async Task<IActionResult> CalculateBillCharges(decimal BilledAmount = 0)
+    [HttpGet("CalculateBillCharges/{StartDate}/{EndDate}/{BilledAmount}")]
+    public async Task<IActionResult> CalculateBillCharges(DateTime StartDate, DateTime EndDate, decimal BilledAmount = 0)
     {
-        var result = await Srv.CalculateBillCharges(BilledAmount)!;
+        var result = await Srv.CalculateBillCharges(StartDate, EndDate, BilledAmount)!;
         return Ok(result);
     }
 

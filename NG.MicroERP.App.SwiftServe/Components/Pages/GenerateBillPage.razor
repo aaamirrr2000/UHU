@@ -82,7 +82,7 @@
     [Parameter] public int id { get; set; }
     [CascadingParameter] private List<ItemsModel> _cart { get; set; }
 
-    private Bill_And_Bill_Detail_Model Bills = new();
+    private BillsModel Bills = new();
     private ObservableCollection<BillDetailModel> BillDetails = new();
 
     private List<TypeCodeModel> GST = new();

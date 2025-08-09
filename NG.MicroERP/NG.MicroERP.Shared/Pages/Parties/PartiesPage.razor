@@ -82,6 +82,14 @@
                     <ValidationMessage For="@(() => record.Email)" />
                 </div>
                 <div class="col-6 mb-3">
+                    <MudTextField Label="NTN" id="NTN" @bind-Value="record.NTN" Variant="Variant.Filled" placeholder="NTN" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.NTN)" />
+                </div>
+                <div class="col-6 mb-3">
+                    <MudTextField Label="CNIC" id="CNIC" @bind-Value="record.CNIC" Variant="Variant.Filled" placeholder="CNIC" ReadOnly="@isReadOnly"></MudTextField>
+                    <ValidationMessage For="@(() => record.CNIC)" />
+                </div>
+                <div class="col-6 mb-3">
                     <MudNumericField Label="DiscountPercentage" @bind-Value="record.DiscountPercentage" Variant="Variant.Filled" placeholder="DiscountPercentage" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
                     <ValidationMessage For="@(() => record.DiscountPercentage)" />
                 </div>

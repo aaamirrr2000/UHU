@@ -34,6 +34,16 @@ public class CategoriesController : ControllerBase
 
     }
 
+    [HttpGet("SearchCategoriesHavingSomeItems/{Criteria?}")]
+    public async Task<IActionResult> SearchCategoriesHavingSomeItems(string Criteria = "")
+    {
+        var result = await Srv.SearchCategoriesHavingSomeItems(Criteria)!;
+        if (result.Item1 == false)
+            return NotFound("Record Not Found");
+
+        return Ok(result.Item2);
+    }
+
     [HttpPost("Insert")]
     public async Task<IActionResult> Insert(CategoriesModel obj)
     {

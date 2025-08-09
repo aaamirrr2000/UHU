@@ -1,74 +1,70 @@
-﻿-- Enable explicit ID insertion
+﻿-- Enable explicit ID insertion for Categories
 SET IDENTITY_INSERT Categories ON;
 
-INSERT INTO Categories (
-    Id, OrganizationId, Code, Pic, Name, ParentId, IsActive,
-    CreatedBy, CreatedOn, CreatedFrom,
-    UpdatedBy, UpdatedOn, UpdatedFrom,
-    IsSoftDeleted
-)
-VALUES
-(1, 1, 'CAT-001', 'files/CAT-001.jpg', 'Starters',     0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
-(2, 1, 'CAT-002', 'files/CAT-002.jpg', 'Main Course',  0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
-(3, 1, 'CAT-003', 'files/CAT-003.jpg', 'Desserts',     0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
-(4, 1, 'CAT-004', 'files/CAT-004.jpg', 'Drinks',       0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
-(5, 1, 'CAT-005', 'files/CAT-005.jpg', 'Pizza',        2, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
-(6, 1, 'CAT-006', 'files/CAT-006.jpg', 'Services',     0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0);
+INSERT INTO [dbo].[Categories] (
+    [Id], [OrganizationId], [Code], [Pic], [Name], [ParentId], 
+    [IsActive], [CreatedBy], [CreatedOn], [CreatedFrom], 
+    [UpdatedBy], [UpdatedOn], [UpdatedFrom], [IsSoftDeleted]
+) 
+VALUES 
+(1, 1, 'CAT000001', 'files/CAT-001.jpg', 'ACCESSORIES', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(2, 1, 'CAT000002', 'files/CAT-001.jpg', 'AMP', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(3, 1, 'CAT000003', 'files/CAT-001.jpg', 'ASSETS', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(4, 1, 'CAT000004', 'files/CAT-001.jpg', 'BAG', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(5, 1, 'CAT000005', 'files/CAT-001.jpg', 'CABLE', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(6, 1, 'CAT000006', 'files/CAT-001.jpg', 'CAJONS', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(7, 1, 'CAT000007', 'files/CAT-001.jpg', 'CAPO', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(8, 1, 'CAT000008', 'files/CAT-001.jpg', 'DEJEMBES', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(9, 1, 'CAT000009', 'files/CAT-001.jpg', 'GUITARS', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(10, 1, 'CAT000010', 'files/CAT-001.jpg', 'HOLDER', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(11, 1, 'CAT000011', 'files/CAT-001.jpg', 'MENDOLINS', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(12, 1, 'CAT000012', 'files/CAT-001.jpg', 'PARTS', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(13, 1, 'CAT000013', 'files/CAT-001.jpg', 'RABABS', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(14, 1, 'CAT000014', 'files/CAT-001.jpg', 'STAND', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(15, 1, 'CAT000015', 'files/CAT-001.jpg', 'STRAP', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(16, 1, 'CAT000016', 'files/CAT-001.jpg', 'STRING', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(17, 1, 'CAT000017', 'files/CAT-001.jpg', 'UKULELES', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(18, 1, 'CAT000018', 'files/CAT-001.jpg', 'VIOLINS', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(19, 1, 'CAT000019', 'files/CAT-001.jpg', 'INSTRUMENT', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(20, 1, 'CAT000020', 'files/CAT-001.jpg', 'RECORDER', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(21, 1, 'CAT000021', 'files/CAT-001.jpg', 'SERVICE', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(22, 1, 'CAT000022', 'files/CAT-001.jpg', 'KEYBOARD', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0),
+(23, 1, 'CAT000022', 'files/CAT-001.jpg', 'DRUM', 0, 1, 1, GETDATE(), 'AdminPC', 1, GETDATE(), 'AdminPC', 0);
 
 
 SET IDENTITY_INSERT Categories OFF;
+GO
 
-
+-- Enable explicit ID insertion for Items
 SET IDENTITY_INSERT Items ON;
 
+
 INSERT INTO Items (
-    Id, OrganizationId, Pic, Code, Name, Description, MinQty, MaxQty, Discount,
-    CostPrice, RetailPrice, CategoriesId, StockType, Unit, IsActive,
-    CreatedBy, CreatedOn, CreatedFrom, UpdatedBy, UpdatedOn, UpdatedFrom,
-    IsSoftDeleted, RowVersion, ServingSize, IsInventoryItem
+    [Id], [OrganizationId], [Pic], [Code], [Name], [Description], [MinQty], [MaxQty], [Discount], [Tax], [CostPrice], [RetailPrice], 
+    [CategoriesId], [StockType], [Unit], [ServingSize], [IsInventoryItem], [IsFavItem], [IsActive], [CreatedBy], [CreatedOn], [CreatedFrom], 
+    [UpdatedBy], [UpdatedOn], [UpdatedFrom], [IsSoftDeleted]
 )
 VALUES
--- Starters
-(1, 1, 'https://images.unsplash.com/photo-1617196038435-bd0e66f0e2f6?w=800', 'ST-001', 'Spring Rolls', 'Crispy vegetable rolls served with sauce', 1, 10, 0, 40, 80, 1, 'Food', 'Plate', 1, 1, GETDATE(), 'Init', 1, GETDATE(), 'Init', 0, NULL, 
-N'[{"Size":"4 pcs","Price":80,"Pic":"https://localhost:7019/files/st1.jpg"},{"Size":"8 pcs","Price":150,"Pic":"https://localhost:7019/files/st2.jpg"}]', 1),
-(2, 1, 'https://images.unsplash.com/photo-1550507994-4e7d96224678?w=800', 'ST-002', 'Garlic Bread', 'Toasted bread with garlic and herbs', 1, 10, 0, 30, 60, 1, 'Food', 'Plate', 1, 1, GETDATE(), 'Init', 1, GETDATE(), 'Init', 0, NULL, 
-N'[{"Size":"Half","Price":60,"Pic":"https://localhost:7019/files/st3.jpg"},{"Size":"Full","Price":110,"Pic":"https://localhost:7019/files/st4.jpg"}]', 1),
-(3, 1, 'https://images.unsplash.com/photo-1572441710534-680c04b6cfea?w=800', 'ST-003', 'Chicken Wings', 'Spicy grilled chicken wings', 1, 10, 0, 90, 180, 1, 'Food', 'Plate', 1, 1, GETDATE(), 'Init', 1, GETDATE(), 'Init', 0, NULL, 
-N'[{"Size":"6 pcs","Price":180,"Pic":"https://localhost:7019/files/st5.jpg"}]', 1),
-(4, 1, 'https://images.unsplash.com/photo-1628595358103-97b8a3e8c99d?w=800', 'ST-004', 'Fried Wontons', 'Golden crispy wontons with dip', 1, 10, 0, 70, 120, 1, 'Food', 'Plate', 1, 1, GETDATE(), 'Init', 1, GETDATE(), 'Init', 0, NULL, 
-N'[{"Size":"5 pcs","Price":120,"Pic":"https://localhost:7019/files/st6.jpg"}]', 1),
-
--- Main Course
-(5, 1, 'https://images.unsplash.com/photo-1576402187878-974f87a7d09e?w=800', 'MC-001', 'Chicken Biryani', 'Spicy chicken biryani served with raita', 1, 10, 0, 200, 350, 2, 'Food', 'Plate', 1, 1, GETDATE(), 'Init', 1, GETDATE(), 'Init', 0, NULL, 
-N'[{"Size":"Small","Price":250,"Pic":"https://localhost:7019/files/mc1.jpg"},{"Size":"Regular","Price":350,"Pic":"https://localhost:7019/files/mc2.jpg"},{"Size":"Large","Price":500,"Pic":"https://localhost:7019/files/mc3.jpg"}]', 1),
-(6, 1, 'https://images.unsplash.com/photo-1621996346565-c16d9d3c16cc?w=800', 'MC-002', 'Paneer Butter Masala', 'Paneer cubes in creamy tomato gravy', 1, 10, 0, 180, 320, 2, 'Food', 'Bowl', 1, 1, GETDATE(), 'Init', 1, GETDATE(), 'Init', 0, NULL, 
-N'[{"Size":"Half","Price":180,"Pic":"https://localhost:7019/files/mc4.jpg"},{"Size":"Full","Price":320,"Pic":"https://localhost:7019/files/mc5.jpg"}]', 1),
-(7, 1, 'https://images.unsplash.com/photo-1594007654729-bef1f6f1cc42?w=800', 'MC-003', 'Beef Steak', 'Grilled steak with pepper sauce', 1, 10, 0, 350, 600, 2, 'Food', 'Plate', 1, 1, GETDATE(), 'Init', 1, GETDATE(), 'Init', 0, NULL, 
-N'[{"Size":"Medium","Price":600,"Pic":"https://localhost:7019/files/mc6.jpg"}]', 1),
-(8, 1, 'https://images.unsplash.com/photo-1641579304364-6c6aecc1f0cd?w=800', 'MC-004', 'Butter Chicken', 'Chicken in creamy spiced tomato sauce', 1, 10, 0, 200, 380, 2, 'Food', 'Bowl', 1, 1, GETDATE(), 'Init', 1, GETDATE(), 'Init', 0, NULL, 
-N'[{"Size":"Half","Price":200,"Pic":"https://localhost:7019/files/mc7.jpg"},{"Size":"Full","Price":380,"Pic":"https://localhost:7019/files/mc8.jpg"}]', 1),
-
--- Desserts
-(9, 1, 'https://images.unsplash.com/photo-1601979031925-027d1a9793f4?w=800', 'DS-001', 'Gulab Jamun', 'Soft sweet balls in sugar syrup', 1, 10, 0, 30, 60, 3, 'Food', 'Bowl', 1, 1, GETDATE(), 'Init', 1, GETDATE(), 'Init', 0, NULL, 
-N'[{"Size":"2 pcs","Price":60,"Pic":"https://localhost:7019/files/ds1.jpg"},{"Size":"4 pcs","Price":110,"Pic":"https://localhost:7019/files/ds2.jpg"}]', 1),
-(10, 1, 'https://images.unsplash.com/photo-1542435503-956c469947f6?w=800', 'DS-002', 'Ice Cream', 'Vanilla, Chocolate, Strawberry options available', 1, 10, 0, 40, 70, 3, 'Food', 'Cup', 1, 1, GETDATE(), 'Init', 1, GETDATE(), 'Init', 0, NULL, 
-N'[{"Size":"Single Scoop","Price":70,"Pic":"https://localhost:7019/files/ds3.jpg"},{"Size":"Double Scoop","Price":120,"Pic":"https://localhost:7019/files/ds4.jpg"}]', 1),
-(11, 1, 'https://images.unsplash.com/photo-1609250291995-cfd2f64461b5?w=800', 'DS-003', 'Chocolate Brownie', 'Warm brownie with ice cream scoop', 1, 10, 0, 80, 150, 3, 'Food', 'Piece', 1, 1, GETDATE(), 'Init', 1, GETDATE(), 'Init', 0, NULL, 
-N'[{"Size":"Single","Price":150,"Pic":"https://localhost:7019/files/ds5.jpg"}]', 1),
-(12, 1, 'https://images.unsplash.com/photo-1621072159433-1cba42cda48b?w=800', 'DS-004', 'Ras Malai', 'Soft paneer in creamy milk sauce', 1, 10, 0, 60, 120, 3, 'Food', 'Bowl', 1, 1, GETDATE(), 'Init', 1, GETDATE(), 'Init', 0, NULL, 
-N'[{"Size":"2 pcs","Price":120,"Pic":"https://localhost:7019/files/ds6.jpg"}]', 1),
-
--- Drinks
-(13, 1, 'https://images.unsplash.com/photo-1615484477597-df91872b8f1f?w=800', 'DR-001', 'Cola', 'Chilled fizzy cola drink', 1, 10, 0, 20, 40, 4, 'Drink', 'Glass', 1, 1, GETDATE(), 'Init', 1, GETDATE(), 'Init', 0, NULL, 
-N'[{"Size":"250 ml","Price":40,"Pic":"https://localhost:7019/files/dr1.jpg"},{"Size":"500 ml","Price":60,"Pic":"https://localhost:7019/files/dr2.jpg"}]', 1),
-(14, 1, 'https://images.unsplash.com/photo-1580535722401-ec55d5880652?w=800', 'DR-002', 'Lemonade', 'Fresh lemon juice with mint', 1, 10, 0, 25, 50, 4, 'Drink', 'Glass', 1, 1, GETDATE(), 'Init', 1, GETDATE(), 'Init', 0, NULL, 
-N'[{"Size":"Regular","Price":50,"Pic":"https://localhost:7019/files/dr3.jpg"},{"Size":"Large","Price":70,"Pic":"https://localhost:7019/files/dr4.jpg"}]', 1),
-
--- Services (IsInventoryItem = 0)
-(15, 1, 'https://images.unsplash.com/photo-1556741533-f6acd647d2fb?w=800', 'SV-001', 'Courier Service', 'Fast and secure parcel delivery service', 1, 1, 0, 0, 150, 6, 'Service', 'Job', 1, 1, GETDATE(), 'Init', 1, GETDATE(), 'Init', 0, NULL, 
-N'[{"Size":"Standard","Price":150,"Pic":"https://localhost:7019/files/sv1.jpg"},{"Size":"Express","Price":250,"Pic":"https://localhost:7019/files/sv2.jpg"}]', 0),
-(16, 1, 'https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=800', 'SV-002', 'Delivery Service', 'Food and product delivery at your doorstep', 1, 1, 0, 0, 100, 6, 'Service', 'Job', 1, 1, GETDATE(), 'Init', 1, GETDATE(), 'Init', 0, NULL, 
-N'[{"Size":"Within City","Price":100,"Pic":"https://localhost:7019/files/sv3.jpg"},{"Size":"Outskirts","Price":200,"Pic":"https://localhost:7019/files/sv4.jpg"}]', 0);
+(1, 1, 'https://localhost:7019/files/guitar1.jpg', 'GTR001', 'Yamaha F310', 'Acoustic guitar for beginners', 1.00, 5.00, 0.000000, 5.000000, 12000.00, 14500.00, 9, 'Piece', 'Unit', '[{"Size":"Standard","Price":14500,"Pic":"https://localhost:7019/files/guitar1.jpg"},{"Size":"With Bag","Price":15500,"Pic":"https://localhost:7019/files/guitar1b.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
+(2, 1, 'https://localhost:7019/files/guitar2.jpg', 'GTR002', 'Fender Stratocaster', 'Electric guitar with classic tone', 1.00, 3.00, 5.000000, 10.000000, 60000.00, 72000.00, 9, 'Piece', 'Unit', '[{"Size":"Standard","Price":72000,"Pic":"https://localhost:7019/files/guitar2.jpg"},{"Size":"With Amp","Price":80000,"Pic":"https://localhost:7019/files/guitar2b.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
+(3, 1, 'https://localhost:7019/files/keyboard1.jpg', 'KYB001', 'Casio CTK-3500', '61-key portable keyboard', 1.00, 4.00, 0.000000, 5.000000, 18000.00, 22000.00, 22, 'Piece', 'Unit', '[{"Size":"Standard","Price":22000,"Pic":"https://localhost:7019/files/keyboard1.jpg"},{"Size":"With Stand","Price":25000,"Pic":"https://localhost:7019/files/keyboard1b.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
+(4, 1, 'https://localhost:7019/files/keyboard2.jpg', 'KYB002', 'Yamaha PSR-E373', 'Touch-sensitive keyboard with 622 voices', 1.00, 2.00, 0.000000, 5.000000, 32000.00, 38000.00, 22, 'Piece', 'Unit', '[{"Size":"Standard","Price":38000,"Pic":"https://localhost:7019/files/keyboard2.jpg"},{"Size":"With Adapter","Price":40000,"Pic":"https://localhost:7019/files/keyboard2b.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
+(5, 1, 'https://localhost:7019/files/drum1.jpg', 'DRM001', 'Roland V-Drums TD-1K', 'Electronic drum kit for practice', 1.00, 2.00, 0.000000, 8.000000, 85000.00, 95000.00, 23, 'Set', 'Unit', '[{"Size":"5-Piece","Price":95000,"Pic":"https://localhost:7019/files/drum1.jpg"},{"Size":"With Stool","Price":99000,"Pic":"https://localhost:7019/files/drum1b.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
+(6, 1, 'https://localhost:7019/files/drum2.jpg', 'DRM002', 'Yamaha Stage Custom', 'Acoustic drum set with birch shells', 1.00, 1.00, 0.000000, 10.000000, 95000.00, 110000.00, 23, 'Set', 'Unit', '[{"Size":"Standard","Price":110000,"Pic":"https://localhost:7019/files/drum2.jpg"},{"Size":"With Cymbals","Price":120000,"Pic":"https://localhost:7019/files/drum2b.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
+(7, 1, 'https://localhost:7019/files/violin1.jpg', 'VLN001', 'Stentor Student II', 'Full-size beginner violin', 1.00, 5.00, 0.000000, 5.000000, 9000.00, 11000.00, 18, 'Piece', 'Unit', '[{"Size":"4/4","Price":11000,"Pic":"https://localhost:7019/files/violin1.jpg"},{"Size":"3/4","Price":9500,"Pic":"https://localhost:7019/files/violin1b.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
+(8, 1, 'https://localhost:7019/files/violin2.jpg', 'VLN002', 'Cremona SV-500', 'Professional model with ebony fittings', 1.00, 3.00, 0.000000, 8.000000, 22000.00, 26000.00, 19, 'Piece', 'Unit', '[{"Size":"4/4","Price":26000,"Pic":"https://localhost:7019/files/violin2.jpg"},{"Size":"With Case","Price":28000,"Pic":"https://localhost:7019/files/violin2b.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
+(9, 1, 'https://localhost:7019/files/amp1.jpg', 'AMP001', 'Marshall MG15', '15-watt practice amp with overdrive', 1.00, 5.00, 0.000000, 5.000000, 10000.00, 12500.00, 2, 'Piece', 'Unit', '[{"Size":"Standard","Price":12500,"Pic":"https://localhost:7019/files/amp1.jpg"},{"Size":"With Cables","Price":13500,"Pic":"https://localhost:7019/files/amp1b.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
+(10, 1, 'https://localhost:7019/files/amp2.jpg', 'AMP002', 'Fender Frontman 10G', '10-watt electric guitar amp', 1.00, 4.00, 0.000000, 5.000000, 8500.00, 10000.00, 2, 'Piece', 'Unit', '[{"Size":"Standard","Price":10000,"Pic":"https://localhost:7019/files/amp2.jpg"},{"Size":"With Cable","Price":11000,"Pic":"https://localhost:7019/files/amp2b.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
+(11, 1, 'https://localhost:7019/files/stand1.jpg', 'STD001', 'Adjustable Music Stand', 'Foldable sheet music stand', 1.00, 10.00, 0.000000, 6.000000, 2000.00, 2500.00, 14, 'Piece', 'Unit', '[{"Size":"Standard","Price":2500,"Pic":"https://localhost:7019/files/stand1.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
+(12, 1, 'https://localhost:7019/files/strap1.jpg', 'STR001', 'Leather Guitar Strap', 'Comfortable leather strap for guitar', 1.00, 15.00, 0.000000, 7.000000, 1200.00, 1600.00, 15, 'Piece', 'Unit', '[{"Size":"Standard","Price":1600,"Pic":"https://localhost:7019/files/strap1.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
+(13, 1, 'https://localhost:7019/files/string1.jpg', 'STRG001', 'D’Addario EJ16', 'Phosphor Bronze Acoustic Guitar Strings', 1.00, 30.00, 0.000000, 8.000000, 600.00, 850.00, 16, 'Pack', 'Unit', '[{"Size":"Set","Price":850,"Pic":"https://localhost:7019/files/string1.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
+(14, 1, 'https://localhost:7019/files/ukulele1.jpg', 'UKL001', 'Kala KA-15S', 'Soprano ukulele with mahogany body', 1.00, 4.00, 0.000000, 5.000000, 9000.00, 10500.00, 17, 'Piece', 'Unit', '[{"Size":"Standard","Price":10500,"Pic":"https://localhost:7019/files/ukulele1.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
+(15, 1, 'https://localhost:7019/files/violin3.jpg', 'VLN003', 'Yamaha V5SC', 'Intermediate violin with case and bow', 1.00, 2.00, 0.000000, 5.000000, 30000.00, 36000.00, 18, 'Piece', 'Unit', '[{"Size":"4/4","Price":36000,"Pic":"https://localhost:7019/files/violin3.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
+(16, 1, 'https://localhost:7019/files/instrument1.jpg', 'INS001', 'Flute - Beginner Model', 'Closed hole silver-plated flute', 1.00, 5.00, 0.000000, 10.000000, 7000.00, 8800.00, 19, 'Piece', 'Unit', '[{"Size":"Standard","Price":8800,"Pic":"https://localhost:7019/files/instrument1.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
+(17, 1, 'https://localhost:7019/files/recorder1.jpg', 'REC001', 'Yamaha YRS-23', 'Soprano Recorder with Baroque Fingering', 1.00, 10.00, 0.000000, 11.000000, 800.00, 1000.00, 20, 'Piece', 'Unit', '[{"Size":"Standard","Price":1000,"Pic":"https://localhost:7019/files/recorder1.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
+(18, 1, 'https://localhost:7019/files/capo1.jpg', 'CAP001', 'Kyser Quick-Change Capo', 'Capo for 6-string acoustic guitars', 1.00, 10.00, 0.000000, 12.000000, 1200.00, 1500.00, 7, 'Piece', 'Unit', '[{"Size":"Standard","Price":1500,"Pic":"https://localhost:7019/files/capo1.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
+(19, 1, 'https://localhost:7019/files/bag1.jpg', 'BAG001', 'Padded Guitar Bag', 'Protective carrying bag for guitar', 1.00, 10.00, 0.000000, 13.000000, 2500.00, 3000.00, 4, 'Piece', 'Unit', '[{"Size":"Standard","Price":3000,"Pic":"https://localhost:7019/files/bag1.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
+(20, 1, 'https://localhost:7019/files/service1.jpg', 'SVC001', 'Guitar Tuning Service', 'Professional guitar tuning by expert', 1.00, 5.00, 0.000000, 14.000000, 1000.00, 1500.00, 21, 'Service', 'Unit', '[{"Size":"Per Session","Price":1500,"Pic":"https://localhost:7019/files/service1.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0);
 
 SET IDENTITY_INSERT Items OFF;
-
+GO

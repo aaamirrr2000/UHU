@@ -10,6 +10,7 @@
 	MinQty                DECIMAL(16, 2)   NOT NULL DEFAULT 0.00,
 	MaxQty                DECIMAL(16, 2)   NOT NULL DEFAULT 0.00,
 	Discount              DECIMAL(16, 6)   NOT NULL DEFAULT 0.00,
+	Tax					  DECIMAL(16, 6)   NOT NULL DEFAULT 0.00,
 	CostPrice             DECIMAL(8, 2)    NOT NULL DEFAULT 0.00,
 	RetailPrice           DECIMAL(8, 2)    NOT NULL DEFAULT 0.00,
 	CategoriesId          INT              NOT NULL,

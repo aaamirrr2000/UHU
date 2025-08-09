@@ -49,6 +49,22 @@ public class CategoriesService : ICategoriesService
             return (true, result);
     }
 
+    public async Task<(bool, List<CategoriesModel>)>? SearchCategoriesHavingSomeItems(string Criteria = "")
+    {
+        string SQL = $@"SELECT * FROM CategoriesHavingSomeItems";
+
+        if (!string.IsNullOrWhiteSpace(Criteria))
+            SQL += " where " + Criteria;
+
+        SQL += " Order by Name";
+
+        List<CategoriesModel> result = (await dapper.SearchByQuery<CategoriesModel>(SQL)) ?? new List<CategoriesModel>();
+
+        if (result == null || result.Count == 0)
+            return (false, null!);
+        else
+            return (true, result);
+    }
 
     public async Task<(bool, CategoriesModel, string)> Post(CategoriesModel obj)
     {

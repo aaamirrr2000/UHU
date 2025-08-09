@@ -20,8 +20,8 @@
                 <ToolBarContent>
                     <MudText Typo="Typo.h6">Bill</MudText>
                     <MudSpacer />
-                    <MudIconButton Icon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" OnClick="@(() => Clear())" Variant="Variant.Filled" Color="Color.Success" Class="mx-1"/>
-                    <MudIconButton Icon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" OnClick="@(() => GetAll())" Variant="Variant.Filled" Color="Color.Info"  Class="mx-1"/>
+                    <MudIconButton Icon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" OnClick="@(() => Clear())" Variant="Variant.Filled" Color="Color.Success" Class="mx-1" />
+                    <MudIconButton Icon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" OnClick="@(() => GetAll())" Variant="Variant.Filled" Color="Color.Info" Class="mx-1" />
                     <MudIconButton Icon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" OnClick="@(() => GetAll())" Variant="Variant.Filled" Color="Color.Secondary" Class="mx-1" />
                     <MudDateRangePicker @bind-DateRange="_dateRange"
                                         AutoClose="true"
@@ -39,28 +39,40 @@
                 </ToolBarContent>
 
                 <Columns>
-                    <TemplateColumn Title="Actions" CellStyle="width: 160px; min-width: 160px;">
+                    <TemplateColumn Title="Actions" CellStyle="width: 220px; min-width: 220px;">
                         <CellTemplate Context="row">
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" OnClick="@(() => View(row.Item.Id))" Variant="Variant.Filled" Color="Color.Secondary"/>
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Edit" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.Id))" Variant="Variant.Filled" Color="Color.Primary"/>
+                            <MudIconButton Icon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" OnClick="@(() => View(row.Item.Id))" Variant="Variant.Filled" Color="Color.Secondary" />
+                            <MudIconButton Icon="@Icons.Material.TwoTone.Edit" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.Id))" Variant="Variant.Filled" Color="Color.Primary" />
                             <MudIconButton Icon="@Icons.Material.TwoTone.DeleteSweep" Size="MudBlazor.Size.Small" OnClick="@(() => Delete(row.Item.Id))" Variant="Variant.Filled" Color="Color.Error" />
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Print" Size="MudBlazor.Size.Small" OnClick="@(() => Print(row.Item.Id))" />
+                            <MudIconButton Icon="@Icons.Material.TwoTone.Print" Size="MudBlazor.Size.Small" OnClick="@(() => Print(row.Item.Id))" Variant="Variant.Filled" Color="Color.Success" />
                         </CellTemplate>
                     </TemplateColumn>
 
                     <PropertyColumn Property="x => x.SeqNo" Title="Bill#" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.TranDate" Title="Tranaction Date" Sortable="true" Filterable="true" Format="dd-MMM-yyy" />
+                    <PropertyColumn Property="x => x.TranDate" Title="Transaction Date" Sortable="true" Filterable="true" Format="dd-MMM-yyyy" />
                     <PropertyColumn Property="x => x.BillType" Title="Bill Type" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.Source" Title="Source" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.PartyName" Title="Customer" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.Status" Title="Status" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.SubTotalAmount" Title="Sub Total" Sortable="true" Filterable="true" CellStyle="text-align: right;" />
+                    <PropertyColumn Property="x => x.TotalServiceChargeAmount" Title="Charges" Sortable="true" Filterable="true" CellStyle="text-align: right;" />
+                    <PropertyColumn Property="x => x.TotalTaxAmount" Title="Tax" Sortable="true" Filterable="true" CellStyle="text-align: right;" />
+                    <PropertyColumn Property="x => x.TotalPaidAmount" Title="Payment" Sortable="true" Filterable="true" CellStyle="text-align: right;" />
 
+                    <!-- Balance column either from model or computed here -->
+                    <TemplateColumn Title="Balance" CellStyle="text-align: right;">
+                        <CellTemplate Context="row">
+                            @((row.Item.SubTotalAmount + row.Item.TotalServiceChargeAmount + row.Item.TotalTaxAmount - row.Item.TotalPaidAmount).ToString("N2"))
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="x => x.Status" Title="Status" Sortable="true" Filterable="true" />
                 </Columns>
 
                 <PagerContent>
                     <MudDataGridPager T="BillModel" />
                 </PagerContent>
             </MudDataGrid>
+
         </div>
     }
 </div>

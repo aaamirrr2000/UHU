@@ -59,7 +59,10 @@ public class BillItemReportModel
     public double ItemTotalAmount { get; set; }
     public string Instructions { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public int Person { get; set; } = 0;
     public DateTime TranDate { get; set; }
+    public int Rating { get; set; }
+    public short IsSoftDeleted { get; set; } = 0;
 }
 
 public class BillPaymentsReportModel

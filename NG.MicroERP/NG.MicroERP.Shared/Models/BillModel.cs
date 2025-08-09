@@ -29,9 +29,12 @@ public class BillModel
     public int PreprationTime { get; set; } = 0;
     public decimal DiscountAmount { get; set; } = 0;
     public decimal SubTotalAmount { get; set; } = 0;
-    public decimal TotalChargeAmount { get; set; } = 0;
+    public decimal TotalServiceChargeAmount { get; set; } = 0;
+    public decimal TotalTaxAmount { get; set; } = 0;
     public decimal BillAmount { get; set; } = 0;
     public decimal TotalPaidAmount { get; set; } = 0;
+    public decimal BilledAmount { get; set; } = 0;
+    public decimal BalanceAmount { get; set; } = 0;
     public string? Description { get; set; } = string.Empty;
     public string? Status { get; set; } = string.Empty;
     public string ClientComments { get; set; } = string.Empty;
@@ -45,8 +48,6 @@ public class BillModel
     public int IsSoftDeleted { get; set; } = 0;
     public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
 
-    // Computed
-    public decimal BalanceAmount => BillAmount - TotalPaidAmount;
 
     // UI Display Fields
     public string Location { get; set; } = string.Empty;
@@ -106,7 +107,7 @@ public class BillDetailModel
 public class BillsModel
 {
     public BillModel Bill { get; set; } = new BillModel();
-    public ObservableCollection<BillDetailModel> BillDetails { get; set; } = new();
+    public ObservableCollection<BillItemReportModel> BillDetails { get; set; } = new();
     public ObservableCollection<BillChargeModel> BillCharges { get; set; } = new();
     public ObservableCollection<BillPaymentModel> BillPayments { get; set; } = new();
 }

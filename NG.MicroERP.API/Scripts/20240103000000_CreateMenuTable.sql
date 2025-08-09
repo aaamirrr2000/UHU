@@ -174,6 +174,20 @@ VALUES
                               , 'fas fa-receipt'            , 9070, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
+                              , 0),
+
+(21, 'Digital Invoice' , NULL , 'Define Digital Invoice Configuration'
+                              , 'DigitalInvoiceConfigDashboard', 13
+                              , 'fas fa-receipt'            , 9070, 1
+                              , 1 , GETDATE(), NULL
+                              , 1 , GETDATE(), NULL
+                              , 0),
+
+(22, 'FBR Submission' , NULL , 'FBR Submitted Invoice Status'
+                              , 'FbrSubmissionDashboard', 13
+                              , 'fas fa-receipt'            , 9070, 1
+                              , 1 , GETDATE(), NULL
+                              , 1 , GETDATE(), NULL
                               , 0);
 
 SET IDENTITY_INSERT dbo.Menu OFF;

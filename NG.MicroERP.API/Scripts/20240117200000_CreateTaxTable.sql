@@ -1,4 +1,4 @@
-﻿CREATE TABLE dbo.Tax
+﻿CREATE TABLE Tax
 (
 
     Id              INT              IDENTITY(1,1) PRIMARY KEY,
@@ -9,8 +9,8 @@
     RatePercent     DECIMAL(9,4)     NOT NULL,                 -- 17.0000  = 17 %
     IsCompound      BIT              NOT NULL DEFAULT 0,       -- 1 = applied on top of other tax
     AppliesTo       VARCHAR(20)      NOT NULL,                 -- “SERVICE”, “GOODS”, “ALL”
-    EffectiveFrom   DATE            NOT NULL,
-    EffectiveTo     DATE            NULL,
+    EffectiveFrom   DATE             NOT NULL,
+    EffectiveTo     DATE             NULL,
     IsActive        BIT              NOT NULL DEFAULT 1,
 
     CreatedBy       INT              NULL,

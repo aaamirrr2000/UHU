@@ -1,0 +1,166 @@
+﻿@page "/FbrSubmissionDashboard"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="row" style="margin: 2px; height: 90vh; display: flex;">
+    <MyDrawer @ref="_drawer" Title="FbrSubmission" FaIcon="fas fa-address-book">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <FbrSubmissionPage Action="@Action" CurrentRecord="record.Id"/>
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    @if (data == null)
+    {
+        <SimpleLoading />
+    }
+    else
+    {
+        <div class="row">
+            <MudDataGrid T="FbrSubmissionModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">FbrSubmission Managment</MudText>
+                    <MudSpacer />
+                    <MudIconButton Icon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" OnClick="@(() => Refresh())" Class="mx-1"/>
+                </ToolBarContent>
+
+                <Columns>
+                    <TemplateColumn Title="Actions" CellStyle="width: 160px; min-width: 160px;">
+                        <CellTemplate Context="row">
+                            <MudIconButton Icon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" OnClick="@(() => View(row.Item.Id))" Variant="Variant.Filled" Color="Color.Secondary"/>
+                            <MudIconButton Icon="@Icons.Material.TwoTone.Edit" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.Id))" Variant="Variant.Filled" Color="Color.Primary"/>
+                            <MudIconButton Icon="@Icons.Material.TwoTone.DeleteSweep" Size="MudBlazor.Size.Small" OnClick="@(() => Delete(row.Item.Id))" Variant="Variant.Filled" Color="Color.Error" />
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                <PropertyColumn Property="x => x.JsonPayload" Title="Payload" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.SubmissionDateTime" Title="Submission Date Time" Sortable="true" Filterable="true" Format="dd-MMM-yyy"/>
+				<PropertyColumn Property="x => x.ResponseCode" Title="Response Code" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.IRN" Title="IRN" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.DigitalInvoiceUrl" Title="Digital Invoice Url" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.QRCodeData" Title="QRCode" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.ErrorMessage" Title="Error Message" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.SubmissionMachineInfo" Title="Submission Machine Info" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.CreatedOn" Title="Created On" Sortable="true" Filterable="true" Format="dd-MMM-yyy"/>
+
+
+                </Columns>
+
+                <PagerContent>
+                    <MudDataGridPager T="FbrSubmissionModel" />
+                </PagerContent>
+            </MudDataGrid>
+        </div>
+    }
+</div>
+
+@code
+{
+    static List<FbrSubmissionModel> data = new();
+    static FbrSubmissionModel record = new();
+
+    public string Action { get; set; } = "INSERT";
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        data = await Functions.GetAsync<List<FbrSubmissionModel>>($"FbrSubmission/Search", true) ?? new List<FbrSubmissionModel>();
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<FbrSubmissionModel>($"FbrSubmission/Get?Id={id}", true) ?? new FbrSubmissionModel();
+        LoadingPanel = false;
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new FbrSubmissionModel();
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Refresh()
+    {
+        data = await Functions.GetAsync<List<FbrSubmissionModel>>($"FbrSubmission/Search", true) ?? new List<FbrSubmissionModel>();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        isReadOnly = true;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE"; 
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Get(id);
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+         
+       
+        record.CreatedOn = DateTime.Now;
+       
+
+        var result = await Functions.PostAsync<FbrSubmissionModel>($"FbrSubmission/{Action}", record, true);
+        if (result.Success == true)
+        {
+            SnackbarService.Add($"Record Not Deleted", Severity.Error);
+        }
+        else
+        {
+            SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
+            record = new();
+            isReadOnly = true;
+        }
+    
+        data = await Functions.GetAsync<List<FbrSubmissionModel>>($"FbrSubmission/Search", true) ?? new List<FbrSubmissionModel>();
+        LoadingPanel = false;
+        await _drawer.CloseDrawer();
+     
+    }
+
+}
+
