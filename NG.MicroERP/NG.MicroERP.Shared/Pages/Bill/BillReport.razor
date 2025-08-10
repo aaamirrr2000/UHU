@@ -57,6 +57,24 @@
                     <th>Total</th>
                 </tr>
             </thead>
+            @{
+                // Declare upfront so they exist even if no charges
+                decimal serviceCharge = 0;
+                decimal taxAmount = 0;
+
+                if (BillsData.BillCharges?.Any(x => x.ChargeCategory?.ToUpper() == "SERVICE") == true)
+                {
+                    serviceCharge = BillsData.BillCharges?.Where(x => x.ChargeCategory?.ToUpper() == "SERVICE").Sum(x => x.CalculatedAmount) ?? 0;
+                }
+
+                if (BillsData.BillCharges?.Any(x => x.ChargeCategory?.ToUpper() == "TAX") == true)
+                {
+                    taxAmount = BillsData.BillCharges?.Where(x => x.ChargeCategory?.ToUpper() == "TAX").Sum(x => x.CalculatedAmount) ?? 0;
+                }
+
+                var finalTotal = BillsData.Bill.SubTotalAmount + serviceCharge + taxAmount - BillsData.Bill.DiscountAmount;
+            }
+
             <tbody>
                 @foreach (var item in BillsData.BillDetails)
                 {
@@ -73,63 +91,49 @@
                 }
 
                 <tr>
-                    <td colspan="7" class="text-right font-weight-bold">Total</td>
+                    <td colspan="7" class="text-right font-weight-bold">Subtotal</td>
                     <td class="text-right font-weight-bold">@BillsData.Bill.SubTotalAmount.ToString("N2")</td>
                 </tr>
-                <tr>
-                    <td colspan="7" class="text-right font-weight-bold">Service Charges</td>
-                    <td class="text-right font-weight-bold">
-                        @{
-                            var serviceCharge = BillsData.BillCharges
-                            ?.Where(x => x.ChargeCategory?.ToUpper() == "SERVICE")
-                            .Sum(x => x.CalculatedAmount) ?? 0;
-                        }
-                        @serviceCharge.ToString("N2")
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="7" class="text-right font-weight-bold">Tax</td>
-                    <td class="text-right font-weight-bold">
-                        @{
-                            var taxAmount = BillsData.BillCharges
-                            ?.Where(x => x.ChargeCategory?.ToUpper() == "TAX")
-                            .Sum(x => x.CalculatedAmount) ?? 0;
-                        }
-                        @taxAmount.ToString("N2")
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="7" class="text-right font-weight-bold">Discount</td>
-                    <td class="text-right font-weight-bold">
-                        @((BillsData.Bill.DiscountAmount).ToString("N2"))
-                    </td>
-                </tr>
+
+                @if (serviceCharge > 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-right font-weight-bold">Service Charges</td>
+                        <td class="text-right font-weight-bold">@serviceCharge.ToString("N2")</td>
+                    </tr>
+                }
+
+                @if (taxAmount > 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-right font-weight-bold">Tax</td>
+                        <td class="text-right font-weight-bold">@taxAmount.ToString("N2")</td>
+                    </tr>
+                }
+
+                @if (BillsData.Bill.DiscountAmount != 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-right font-weight-bold">Discount</td>
+                        <td class="text-right font-weight-bold">@BillsData.Bill.DiscountAmount.ToString("N2")</td>
+                    </tr>
+                }
 
                 <tr>
                     <td colspan="7" class="text-right font-weight-bold">Total</td>
-                    <td class="text-right font-weight-bold">
-                        @{
-                            var total = BillsData.Bill.SubTotalAmount
-                            + serviceCharge
-                            + taxAmount
-                            - (BillsData.Bill.DiscountAmount);
-                        }
-                        @total.ToString("N2")
-                    </td>
+                    <td class="text-right font-weight-bold">@finalTotal.ToString("N2")</td>
                 </tr>
+
                 <tr>
                     <td colspan="7" class="text-right font-weight-bold">Paid</td>
-                    <td class="text-right font-weight-bold">
-                        @BillsData.Bill.TotalPaidAmount.ToString("N2")
-                    </td>
+                    <td class="text-right font-weight-bold">@BillsData.Bill.TotalPaidAmount.ToString("N2")</td>
                 </tr>
-                @if (@BillsData.Bill.BalanceAmount != 0)
+
+                @if (BillsData.Bill.BalanceAmount != 0)
                 {
                     <tr>
                         <td colspan="7" class="text-right font-weight-bold">Balance</td>
-                        <td class="text-right font-weight-bold">
-                            @BillsData.Bill.BalanceAmount.ToString("N2")
-                        </td>
+                        <td class="text-right font-weight-bold">@BillsData.Bill.BalanceAmount.ToString("N2")</td>
                     </tr>
                 }
             </tbody>
@@ -137,59 +141,64 @@
             
         <!-- Charges/Taxes Section -->
         <div class="row mt-4">
-            <div class="col-md-6">
-                <h5>Service Charges / Taxes</h5>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th class="text-left">Particulars</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var charge in BillsData.BillCharges.OrderBy(c => c.SequenceOrder))
-                        {
+            @if(BillsData.BillCharges.Count > 0)
+            {
+                <div class="col-md-6">
+                    <h5>Service Charges / Taxes</h5>
+                    <table class="table table-bordered">
+                        <thead>
                             <tr>
-                                <td class="text-left font-weight-bold">@charge.RuleName</td>
-                                <td>@charge.CalculatedAmount.ToString("N2")</td>
+                                <th class="text-left">Particulars</th>
+                                <th>Amount</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-
+                        </thead>
+                        <tbody>
+                            @foreach (var charge in BillsData.BillCharges.OrderBy(c => c.SequenceOrder))
+                            {
+                                <tr>
+                                    <td class="text-left font-weight-bold">@charge.RuleName</td>
+                                    <td>@charge.CalculatedAmount.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
             <!-- Paid / Balance Section -->
-            <div class="col-md-6">
-                <h5>Payment Details</h5>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th class="text-left">Particulars</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var payment in BillsData.BillPayments)
-                        {
+            @if(BillsData.BillPayments.Count > 0)
+            {
+                <div class="col-md-6">
+                    <h5>Payment Details</h5>
+                    <table class="table table-bordered">
+                        <thead>
                             <tr>
-                                <td class="text-left font-weight-bold">
-                                    @payment.PaymentMethod
-                                    @if (!string.IsNullOrWhiteSpace(payment.PaymentRef))
-                                    {
-                                        <text> (@payment.PaymentRef)</text>
-                                    }
-                                </td>
-                                <td>@payment.AmountPaid.ToString("N2")</td>
+                                <th class="text-left">Particulars</th>
+                                <th>Amount</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach (var payment in BillsData.BillPayments)
+                            {
+                                <tr>
+                                    <td class="text-left font-weight-bold">
+                                        @payment.PaymentMethod
+                                        @if (!string.IsNullOrWhiteSpace(payment.PaymentRef))
+                                        {
+                                            <text> (@payment.PaymentRef)</text>
+                                        }
+                                    </td>
+                                    <td>@payment.AmountPaid.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
 
-                @if (BillsData.Bill.TotalPaidAmount > 0)
-                {
-                    <p class="mt-2"><strong>@Functions.ConvertMoneyToWords(BillsData.Bill.TotalPaidAmount)</strong></p>
-                }
-            </div>
+                    @if (BillsData.Bill.TotalPaidAmount > 0)
+                    {
+                        <p class="mt-2"><strong>@Functions.ConvertMoneyToWords(BillsData.Bill.TotalPaidAmount)</strong></p>
+                    }
+                </div>
+            }
         </div>
 
         <!-- Footer -->
@@ -222,49 +231,6 @@ else
         BillsData = Globals.BillGridTotals(BillsData);
     }
 
-
-    // private BillsModel BillGridTotals(BillsModel Bill)
-    // {
-    //     //Bill Detail Total
-    //     double TotalBillAmount = 0;
-    //     foreach (var i in Bill.BillDetails)
-    //     {
-    //         TotalBillAmount += (i.Qty * i.UnitPrice) + i.TaxAmount - i.DiscountAmount;
-    //     }
-
-
-    //     //Payments Total
-    //     decimal TotalPaymentsAmount = 0;
-    //     foreach (var i in BillsData.BillPayments)
-    //     {
-    //         TotalPaymentsAmount += i.AmountPaid;
-    //     }
-
-    //     //Service Charges
-    //     decimal TotalServiceChargesAmount = 0;
-
-    //     foreach (var i in BillsData.BillCharges.Where(x => x.ChargeCategory != "TAX"))
-    //     {
-    //         TotalServiceChargesAmount += i.CalculatedAmount;
-    //     }
-
-    //     //Tax
-    //     decimal TotalTaxAmount = 0;
-
-    //     foreach (var i in BillsData.BillCharges.Where(x => x.ChargeCategory == "TAX"))
-    //     {
-    //         TotalTaxAmount += i.CalculatedAmount;
-    //     }
-
-
-    //     Bill.Bill.SubTotalAmount = Convert.ToDecimal(TotalBillAmount);
-    //     Bill.Bill.TotalServiceChargeAmount = Convert.ToDecimal(TotalServiceChargesAmount);
-    //     Bill.Bill.TotalTaxAmount = Convert.ToDecimal(TotalTaxAmount);
-    //     Bill.Bill.TotalPaidAmount =Convert.ToDecimal(TotalPaymentsAmount);
-    //     Bill.Bill.BalanceAmount = BillsData.Bill.SubTotalAmount + BillsData.Bill.TotalServiceChargeAmount + BillsData.Bill.TotalTaxAmount - BillsData.Bill.TotalPaidAmount;
-
-    //     return Bill;
-    // }
 
     private async Task PrintReport()
     {

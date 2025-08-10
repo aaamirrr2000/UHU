@@ -195,10 +195,6 @@ public class Functions
 
     }
 
-  
-
-  
-
 
     [Obsolete]
     public static async Task<(bool, string)> UploadAsync(InputFileChangeEventArgs e, Microsoft.AspNetCore.Hosting.IHostingEnvironment webHostEnvironment, string folder = "Images")

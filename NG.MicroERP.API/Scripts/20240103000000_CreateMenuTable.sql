@@ -32,21 +32,28 @@ INSERT INTO dbo.Menu
          IsSoftDeleted)
 VALUES
 /*── SALES ───────────────────────────────────────────────*/
-(1 , 'Sale'      , NULL , 'Create and review sales transactions'
+(1 , 'Invoice'      , NULL , 'Create and review sales and purchase transactions'
                        , NULL                        , 0
                        , 'fas fa-shopping-cart'      , 1000, 1
                        , 1 , GETDATE(), NULL
                        , 1 , GETDATE(), NULL
                        , 0),
 
-(2 , 'Bill'      , NULL , 'Generate and view customer bills'
+(2 , 'Purchase Invoice'      , 'PURCHASE' , 'Generate and view suppliers bills'
                        , 'BillDashboard'             , 1
                        , 'fas fa-file-invoice-dollar', 1100, 1
                        , 1 , GETDATE(), NULL
                        , 1 , GETDATE(), NULL
                        , 0),
 
-(3 , 'Cash Book' , NULL , 'Enter and monitor cash receipts & payments'
+(3 , 'Sale Invoice'      , 'SALE' , 'Generate and view customer bills'
+                       , 'BillDashboard'             , 1
+                       , 'fas fa-file-invoice-dollar', 1100, 1
+                       , 1 , GETDATE(), NULL
+                       , 1 , GETDATE(), NULL
+                       , 0),
+
+(4 , 'Cash Book' , NULL , 'Enter and monitor cash receipts & payments'
                        , 'CashBookDashboard'         , 1
                        , 'fas fa-wallet'             , 1200, 1
                        , 1 , GETDATE(), NULL
@@ -54,137 +61,137 @@ VALUES
                        , 0),
 
 /*── STOCK ───────────────────────────────────────────────*/
-(4 , 'Stock'           , NULL , 'Manage inventory levels and stock transactions'
+(5 , 'Stock'           , NULL , 'Manage inventory levels and stock transactions'
                               , NULL                        , 0
                               , 'fas fa-boxes'             , 3000, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
                               , 0),
 
-(5 , 'Stock Received'  , NULL , 'Record incoming stock receipts'
-                              , 'StockPage'                 , 4
+(6 , 'Stock Received'  , NULL , 'Record incoming stock receipts'
+                              , 'StockPage'                 , 5
                               , 'fas fa-truck-loading'      , 3100, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
                               , 0),
 
 /*── REPORTS ─────────────────────────────────────────────*/
-(6 , 'Reports'             , NULL , 'Generate operational and financial reports'
+(7 , 'Reports'             , NULL , 'Generate operational and financial reports'
                                  , NULL                        , 0
                                  , 'fas fa-chart-line'         , 5000, 1
                                  , 1 , GETDATE(), NULL
                                  , 1 , GETDATE(), NULL
                                  , 0),
 
-(7 , 'Collection Report'   , 'Report', 'Review incoming payments and collection status'
-                                 , 'CollectionReport'          , 6
+(8 , 'Collection Report'   , 'Report', 'Review incoming payments and collection status'
+                                 , 'CollectionReport'          , 7
                                  , 'fas fa-hand-holding-usd'   , 5100, 1
                                  , 1 , GETDATE(), NULL
                                  , 1 , GETDATE(), NULL
                                  , 0),
 
-(8 , 'Cash Position Report', 'Report', 'View daily cash in/out and current balance'
-                                 , 'CashPositionReport'        , 6
+(9 , 'Cash Position Report', 'Report', 'View daily cash in/out and current balance'
+                                 , 'CashPositionReport'        , 7
                                  , 'fas fa-money-bill-wave'    , 5200, 1
                                  , 1 , GETDATE(), NULL
                                  , 1 , GETDATE(), NULL
                                  , 0),
 
 /*── SECURITY ────────────────────────────────────────────*/
-(9 , 'Security'        , NULL , 'Configure user security and permissions'
+(10 , 'Security'        , NULL , 'Configure user security and permissions'
                               , NULL                        , 0
                               , 'fas fa-shield-alt'         , 8000, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
                               , 0),
 
-(10, 'Users'           , NULL , 'Add, edit, and deactivate system users'
-                              , 'UsersDashboard'            , 9
+(11, 'Users'           , NULL , 'Add, edit, and deactivate system users'
+                              , 'UsersDashboard'            , 10
                               , 'fas fa-user'               , 8010, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
                               , 0),
 
-(11, 'Groups'          , NULL , 'Create and manage user groups and roles'
-                              , 'GroupsDashboard'           , 9
+(12, 'Groups'          , NULL , 'Create and manage user groups and roles'
+                              , 'GroupsDashboard'           , 10
                               , 'fas fa-users-cog'          , 8020, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
                               , 0),
 
-(12, 'Permissions'     , NULL , 'Assign menu permissions to users or groups'
-                              , 'PermissionsDashboard'      , 9
+(13, 'Permissions'     , NULL , 'Assign menu permissions to users or groups'
+                              , 'PermissionsDashboard'      , 10
                               , 'fas fa-lock'               , 8030, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
                               , 0),
 
 /*── SETUP / MASTER DATA ────────────────────────────────*/
-(13, 'Setup'           , NULL , 'Configure core system settings and master data'
+(14, 'Setup'           , NULL , 'Configure core system settings and master data'
                               , NULL                        , 0
                               , 'fas fa-cogs'               , 9000, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
                               , 0),
 
-(19, 'Organization'    , NULL , 'Maintain organisation profile and settings'
-                              , 'OrganizationsDashboard'     , 13
+(15, 'Organization'    , NULL , 'Maintain organisation profile and settings'
+                              , 'OrganizationsDashboard'     , 14
                               , 'fas fa-building'           , 9010, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
                               , 0),
 
-(15, 'Locations'       , NULL , 'Maintain branch or warehouse locations'
-                              , 'LocationsDashboard'        , 13
+(16, 'Locations'       , NULL , 'Maintain branch or warehouse locations'
+                              , 'LocationsDashboard'        , 14
                               , 'fas fa-map-marker-alt'     , 9020, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
                               , 0),
 
-(14, 'Employee'        , NULL , 'Maintain employee records and HR details'
-                              , 'EmployeesDashboard'        , 13
+(17, 'Employee'        , NULL , 'Maintain employee records and HR details'
+                              , 'EmployeesDashboard'        , 14
                               , 'fas fa-id-badge'           , 9030, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
                               , 0),
 
-(16, 'Parties'         , NULL , 'Maintain customer and vendor master data'
-                              , 'PartiesDashboard'          , 13
+(18, 'Parties'         , NULL , 'Maintain customer and vendor master data'
+                              , 'PartiesDashboard'          , 14
                               , 'fas fa-address-book'       , 9040, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
                               , 0),
 
-(17, 'Categories'      , NULL , 'Maintain product category list'
-                              , 'CategoriesDashboard'       , 13
+(19, 'Categories'      , NULL , 'Maintain product category list'
+                              , 'CategoriesDashboard'       , 14
                               , 'fas fa-tags'               , 9050, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
                               , 0),
 
-(18, 'Items'           , NULL , 'Add and manage individual products and SKUs'
-                              , 'ItemsDashboard'            , 13
+(20, 'Items'           , NULL , 'Add and manage individual products and SKUs'
+                              , 'ItemsDashboard'            , 14
                               , 'fas fa-barcode'            , 9060, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
                               , 0),
 
-(20, 'Charge Rules' , NULL , 'Define charge rates and rules i.e. Service Charges, Tax etc.'
-                              , 'ChargeRulesDashboard'   , 13
+(21, 'Charge Rules' , NULL , 'Define charge rates and rules i.e. Service Charges, Tax etc.'
+                              , 'ChargeRulesDashboard'   , 14
                               , 'fas fa-receipt'            , 9070, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
                               , 0),
 
-(21, 'Digital Invoice' , NULL , 'Define Digital Invoice Configuration'
-                              , 'DigitalInvoiceConfigDashboard', 13
+(22, 'Digital Invoice' , NULL , 'Define Digital Invoice Configuration'
+                              , 'DigitalInvoiceConfigDashboard', 14
                               , 'fas fa-receipt'            , 9070, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
                               , 0),
 
-(22, 'FBR Submission' , NULL , 'FBR Submitted Invoice Status'
-                              , 'FbrSubmissionDashboard', 13
+(23, 'FBR Submission' , NULL , 'FBR Submitted Invoice Status'
+                              , 'FbrSubmissionDashboard', 14
                               , 'fas fa-receipt'            , 9070, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL

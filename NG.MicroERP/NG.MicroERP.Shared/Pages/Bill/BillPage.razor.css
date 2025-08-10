@@ -1,0 +1,94 @@
+﻿.app-bar {
+    height: 56px;
+}
+
+.billing-table .mud-table-cell {
+    font-size: 0.85rem;
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+}
+
+.font-xs {
+    font-size: 0.85rem;
+}
+
+.no-bottom-border input {
+    border-bottom: none !important;
+    box-shadow: none !important;
+}
+
+    .no-bottom-border input:focus {
+        outline: none;
+    }
+
+.summary-grid .mud-input-input {
+    text-align: right;
+}
+
+.item-card:hover {
+    box-shadow: 0 0 10px rgba(0,0,0,.25);
+    transform: translateY(-2px);
+    transition: box-shadow .2s, transform .2s;
+}
+
+.truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.no-border input {
+    border: none !important;
+    background-color: transparent;
+}
+
+.summary-label {
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+}
+
+.summary-icon {
+    height: 24px;
+    width: 24px;
+    padding: 2px;
+    margin-right: 6px;
+}
+
+.summary-row {
+    padding: 0px 8px;
+    /*  border: 0.5px solid lightgray; */
+}
+
+.summary-col {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    white-space: nowrap;
+    padding: 4px 8px;
+    /* border: 0.5px solid lightgray; */
+}
+
+.summary-value {
+    text-align: right;
+    width: 100%;
+}
+
+.mud-dialog.custom-dialog {
+    width: 400px;
+    height: 300px;
+}
+
+.summary-value .mud-input-control {
+    text-align: right;
+}
+
+.billing-table tfoot {
+    position: sticky;
+    bottom: 0;
+    background-color: lightgray;
+    z-index: 10;
+    border-top: 1px solid #ccc;
+}

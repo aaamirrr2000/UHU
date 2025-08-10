@@ -1,4 +1,4 @@
-﻿@page "/BillDashboard"
+﻿@page "/BillDashboard/{InvoiceType}"
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
@@ -80,6 +80,7 @@
 
 @code
 {
+	[Parameter] public string InvoiceType { get; set; } = "SALE";
     static List<BillModel> data = new();
     static BillModel record = new();
 
@@ -107,7 +108,7 @@
         var formattedEndDate = _dateRange.End?.ToString("yyyy-MM-dd") ?? string.Empty;
 
 
-        string criteria = string.Empty;
+        string criteria = $" AND BillType LIKE '%{InvoiceType}%'";
 
         LoadingPanel = true;
 
@@ -142,7 +143,7 @@
     {
         record = new BillModel();
         isReadOnly = false;
-        NewBill("INSERT", 0);
+        NewBill("INSERT", 0, InvoiceType);
     }
 
     protected async Task Refresh()
@@ -154,14 +155,14 @@
     {
         await Get(id);
         isReadOnly = true;
-        NewBill("VIEW", id);
+        NewBill("VIEW", id, InvoiceType);
     }
 
     protected async Task Edit(int id)
     {
         await Get(id);
         isReadOnly = false;
-        NewBill("UPDATE", id);
+        NewBill("UPDATE", id, InvoiceType);
     }
 
     protected async Task Delete(int id)
@@ -181,9 +182,9 @@
         JSRuntime.InvokeVoidAsync("open", url, "_blank");
     }
 
-    protected void NewBill(string Action, int Id)
+    protected void NewBill(string Action, int Id, string invoiceType = "SALE")
     {
-        var url = $"/BillPage/{Action}/{Id}";
+        var url = $"/BillPage/{invoiceType}/{Action}/{Id}";
         JSRuntime.InvokeVoidAsync("open", url, "_blank");
     }
 

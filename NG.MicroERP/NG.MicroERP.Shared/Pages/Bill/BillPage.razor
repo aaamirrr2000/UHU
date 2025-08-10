@@ -1,5 +1,4 @@
-﻿@page "/BillPage/{Act}/{Id:int?}"
-@page "/BillPage"
+﻿@page "/BillPage/{InvoiceType}/{Act}/{Id:int?}"
 @using System.Collections.ObjectModel
 @using System.Text.Json
 @inject NavigationManager NavManager
@@ -19,16 +18,16 @@
                 <div class="d-flex align-items-center justify-content-start flex-wrap" style="gap: 4px; max-width: 100%;">
 
                     <!-- Bill Type Dropdown -->
-                    <MudSelect Dense="true"
-                               T="string"
+                    <MudSelect T="string"
                                @bind-Value="record.Bill.BillType"
+                               Dense="true"
                                Variant="Variant.Filled"
-                               Style="min-width: 150px; max-width: 200px;">
-                        @if (BillType != null)
+                               Style="min-width:150px;max-width:200px;">
+                        @if (BillType?.Any() == true)
                         {
-                            @foreach (var pm in BillType)
+                            @foreach (var option in BillType)
                             {
-                                <MudSelectItem Value="@pm.ListValue">@pm.ListValue</MudSelectItem>
+                                <MudSelectItem Value="@option">@option</MudSelectItem>
                             }
                         }
                     </MudSelect>
@@ -61,10 +60,6 @@
                             <MudButton StartIcon="@Icons.Material.TwoTone.Print" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Secondary" OnClick="Print">Print</MudButton>
                         </MudTooltip>
                     }
-
-                    <MudTooltip Text="Customer">
-                        <MudButton StartIcon="@Icons.Material.TwoTone.Person" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Secondary" OnClick="AddParty">Party</MudButton>
-                    </MudTooltip>
 
                     <MudTextField T="string"
                                   Dense="true"
@@ -184,22 +179,24 @@
 
                    <div class="row summary-row">
                         <!-- Row 1 -->
-                        <div class="col-md-4 summary-col">
-                                <MudTextField T="decimal"
-                                              Dense="true"
-                                              Value="record.Bill.TotalServiceChargeAmount"
-                                              Variant="Variant.Outlined"
-                                              Label="Service Charges"
-                                              Class="summary-value"
-                                              InputClass="text-end"
-                                              Format="#,##0.00"
-                                              ReadOnly />
+                        <div class="col-md-4 summary-col" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                             <MudTooltip Text="Tax">
+                                <MudIconButton Icon="@Icons.Material.Filled.Receipt" Color="Color.Info" OnClick="OpenTaxDialog" Variant="Variant.Filled" />
+                            </MudTooltip>
+
+                            <MudTextField T="decimal"
+                                            Dense="true"
+                                            Value="record.Bill.TotalServiceChargeAmount"
+                                            Variant="Variant.Outlined"
+                                            Label="Service Charges"
+                                            Class="summary-value"
+                                            InputClass="text-end"
+                                            Format="#,##0.00"
+                                            ReadOnly />
                         </div>
 
                         <div class="col-md-4 summary-col">
-                            <MudTooltip Text="Tax">
-                                <MudIconButton Icon="@Icons.Material.Filled.Receipt" Color="Color.Info" OnClick="OpenTaxDialog" Variant="Variant.Filled" />
-                            </MudTooltip>
+                           
                                 <MudTextField T="decimal"
                                               Dense="true"
                                               Value="record.Bill.TotalTaxAmount"
@@ -240,21 +237,27 @@
                                               ReadOnly />
                                 </div>
 
-                        <div class="col-md-4 summary-col">
-                            
+                        <div class="col-md-4 summary-col" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+     
                             <MudTooltip Text="Payment Info">
-                                <MudIconButton Icon="@Icons.Material.Filled.Payments" Color="Color.Info" OnClick="OpenPaymentDialog" Variant="Variant.Filled" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Payments" 
+                                               Color="Color.Secondary" 
+                                               OnClick="OpenPaymentDialog" 
+                                               Variant="Variant.Filled" />
                             </MudTooltip>
-                                <MudTextField T="decimal"
-                                              Dense="true"
-                                              Variant="Variant.Outlined"
-                                              Label="Paid Amount"
-                                              Class="summary-value"
-                                              Value="record.Bill.TotalPaidAmount"
-                                              InputClass="text-end"
-                                              Format="#,##0.00"
-                                              ReadOnly />
+
+                            <MudTextField T="decimal"
+                                          Dense="true"
+                                          Variant="Variant.Outlined"
+                                          Label="Paid Amount"
+                                          Class="summary-value"
+                                          Value="record.Bill.TotalPaidAmount"
+                                          InputClass="text-end"
+                                          FullWidth
+                                          Format="#,##0.00"
+                                          ReadOnly />
                         </div>
+
 
                         <div class="col-md-4 summary-col">
                             <MudNumericField T="decimal"
@@ -466,8 +469,26 @@
 
                         </MudItem>
 
-                        @if(Globals.Organization.Industry == "DINE-IN")
-                        {
+                         <MudItem Class="mb-5">
+                            <MudText Typo="Typo.subtitle2">Name</MudText>
+                        <MudTextField T="string" Placeholder="Customer (Optional)" Label="Customer (Optional)" @bind-Value="record.Bill.PartyName" Disabled="@Disabled" Dense="true" />
+                        </MudItem>
+
+                        <MudItem Class="mb-5">
+                            <MudText Typo="Typo.subtitle2">Phone</MudText>
+                        <MudTextField T="string" Placeholder="Phone (Optional)" Label="Phone (Optional)" @bind-Value="record.Bill.PartyPhone" Disabled="@Disabled" Dense="true" />
+                        </MudItem>
+
+                        <MudItem Class="mb-5">
+                            <MudText Typo="Typo.subtitle2">Email</MudText>
+                        <MudTextField T="string" InputType="InputType.Email" Placeholder="Email (Optional)" Label="Email (Optional)" Style="text-transform: unset;" @bind-Value="record.Bill.PartyEmail" Disabled="@Disabled" Dense="true" />
+                        </MudItem>
+
+                        <MudItem Class="mb-5">
+                            <MudText Typo="Typo.subtitle2">Address</MudText>
+                        <MudTextField T="string" Placeholder="Address (Optional)" Label="Address (Optional)" @bind-Value="record.Bill.PartyAddress" Disabled="@Disabled" Dense="true" />
+                        </MudItem>
+
                             <!-- Service Type Dropdown -->
                             <MudItem Class="mb-5">
                                 <MudSelect T="string" @bind-Value="record.Bill.ServiceType" Disabled="@Disabled" Label="Select Service Type" Dense="true">
@@ -506,7 +527,7 @@
                                     }
                                 </MudSelect>
                             </MudItem>
-                        }
+                        
                         <!-- Sales ID Dropdown -->
                         <MudItem Class="mb-5">
                             <MudSelect T="int" @bind-Value="record.Bill.SalesId" Disabled="@Disabled" Label="Sales Person" Dense="true">
@@ -525,41 +546,6 @@
                             <MudIcon Icon="@Icons.Material.Filled.Close" Class="mr-1" />
                             Close
                         </MudButton> *@
-                    </MudPaper>
-                </MudForm>
-        </ChildContent>
-        <FooterContent>
-        </FooterContent>
-    </MyDrawer>
-
-    @* Parties ---------------------------------------------------------------------------------------------------------------------------------------- *@
-    <MyDrawer @ref="_drawerParty" Title="Customer Details" FaIcon="fas fa-address-book">
-        <HeaderContent>
-        </HeaderContent>
-        <ChildContent>
-                <MudForm>
-                    <MudPaper Class="p-4" Elevation="0">
-
-                        <MudItem Class="mb-5">
-                            <MudText Typo="Typo.subtitle2">Name</MudText>
-                        <MudTextField T="string" Placeholder="Customer (Optional)" Label="Customer (Optional)" @bind-Value="record.Bill.PartyName" Disabled="@Disabled" Dense="true" />
-                        </MudItem>
-
-                        <MudItem Class="mb-5">
-                            <MudText Typo="Typo.subtitle2">Phone</MudText>
-                        <MudTextField T="string" Placeholder="Phone (Optional)" Label="Phone (Optional)" @bind-Value="record.Bill.PartyPhone" Disabled="@Disabled" Dense="true" />
-                        </MudItem>
-
-                        <MudItem Class="mb-5">
-                            <MudText Typo="Typo.subtitle2">Email</MudText>
-                        <MudTextField T="string" InputType="InputType.Email" Placeholder="Email (Optional)" Label="Email (Optional)" Style="text-transform: unset;" @bind-Value="record.Bill.PartyEmail" Disabled="@Disabled" Dense="true" />
-                        </MudItem>
-
-                        <MudItem Class="mb-5">
-                            <MudText Typo="Typo.subtitle2">Address</MudText>
-                        <MudTextField T="string" Placeholder="Address (Optional)" Label="Address (Optional)" @bind-Value="record.Bill.PartyAddress" Disabled="@Disabled" Dense="true" />
-                        </MudItem>
-
                     </MudPaper>
                 </MudForm>
         </ChildContent>
@@ -707,7 +693,7 @@
                 <MudItem xs="10">
                     <MudText Typo="Typo.h6">
                         <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Class="mr-2" />
-                        Charges
+                        Service Charges & Taxes
                     </MudText>
                 </MudItem>
             </MudGrid>
@@ -715,43 +701,60 @@
 
         <DialogContent>
 
-            <MudTable Items="@record.BillCharges" Dense="true">
-                <HeaderContent>
-                    <MudTh>Description</MudTh>
-                    <MudTh>Calculation</MudTh>
-                    <MudTh class="text-end">Amount</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd>
-                        @if (context.AmountType == "PERCENTAGE")
-                        {
-                            <span>@context.RuleName @@ @($"{context.Rate:#,##0.00}%")</span>
-                        }
-                        else if (context.AmountType == "FLAT")
-                        {
-                            <span>@context.RuleName @($"{context.Rate:#,##0.00}/-")</span>
-                        }
-                    </MudTd>
-                    <MudTd>
-                        @if (context.AmountType == "PERCENTAGE")
-                        {
-                            <span>@($"{record.Bill.SubTotalAmount:#,##0.00} x {context.Rate:#,##0.00}% = {context.CalculatedAmount:#,##0.00}")</span>
-                        }
-                        else if (context.AmountType == "FLAT")
-                        {
-                            <span>@($"Flat Amount = {context.CalculatedAmount:#,##0.00}")</span>
-                        }
-                    </MudTd>
-                    <MudTd class="text-end">@context.CalculatedAmount.ToString("#,##0.00")</MudTd>
-                </RowTemplate>
+            @foreach (var group in record.BillCharges.GroupBy(x => x.ChargeCategory?.ToUpper()))
+            {
+                var categoryName = group.Key;
+                var categoryTotal = group.Sum(x => x.CalculatedAmount);
 
-                <FooterContent>
-                    <MudTd colspan="2" class="text-end font-weight-bold">Total</MudTd>
-                    <MudTd class="text-end font-weight-bold">
-                        @record.BillCharges.Sum(x => x.CalculatedAmount).ToString("#,##0.00")
-                    </MudTd>
-                </FooterContent>
-            </MudTable>
+                    <MudText Typo="Typo.h6" Class="mb-2">@categoryName CHARGES</MudText>
+
+                    <MudTable T="BillChargeModel" Items="group" Dense="true">
+                        <HeaderContent>
+                            <MudTh>Description</MudTh>
+                            <MudTh>Calculation</MudTh>
+                            <MudTh class="text-end">Amount</MudTh>
+                        </HeaderContent>
+
+                        <RowTemplate>
+                            <MudTd>
+                                @if (context.AmountType == "PERCENTAGE")
+                                {
+                                    <span>@context.RuleName @@ @($"{context.Rate:#,##0.00}%")</span>
+                                }
+                                else if (context.AmountType == "FLAT")
+                                {
+                                    <span>@context.RuleName @($"{context.Rate:#,##0.00}/-")</span>
+                                }
+                            </MudTd>
+                            <MudTd>
+                                @if (context.AmountType == "PERCENTAGE")
+                                {
+                                    <span>@($"{record.Bill.SubTotalAmount:#,##0.00} x {context.Rate:#,##0.00}% = {context.CalculatedAmount:#,##0.00}")</span>
+                                }
+                                else if (context.AmountType == "FLAT")
+                                {
+                                    <span>@($"Flat Amount = {context.CalculatedAmount:#,##0.00}")</span>
+                                }
+                            </MudTd>
+                            <MudTd class="text-end">@context.CalculatedAmount.ToString("#,##0.00")</MudTd>
+                        </RowTemplate>
+
+                        <FooterContent>
+                            <MudTd colspan="2" class="text-end font-weight-bold">Subtotal (@categoryName)</MudTd>
+                            <MudTd class="text-end font-weight-bold">@categoryTotal.ToString("#,##0.00")</MudTd>
+                        </FooterContent>
+                    </MudTable>
+            }
+
+            <MudDivider Class="my-4" />
+
+            @{
+                var grandTotal = record.BillCharges.Sum(x => x.CalculatedAmount);
+            }
+            <MudText Typo="Typo.h6" Class="mt-2 text-end font-weight-bold">
+                Grand Total: @grandTotal.ToString("#,##0.00")
+            </MudText>
+
 
 
         </DialogContent>
@@ -786,6 +789,7 @@
                                 @bind-Value:after="OnPaymentMethodChange"
                                 Variant="Variant.Outlined"
                                 Label="Payment Method"
+                                   Immediate="true"
                                 Class="w-100 text-center">
                         @foreach (var pm in PaymentMethod)
                         {
@@ -800,6 +804,7 @@
                                     @bind-Value="BillPayments.PaymentRef"
                                     Variant="Variant.Outlined"
                                     Label="Payment Reference"
+                                    Immediate="true"
                                     Class="w-100 text-center" />
                 </MudItem>
 
@@ -808,26 +813,25 @@
                                     Dense="true"
                                     @bind-Value="BillPayments.AmountPaid"
                                     Variant="Variant.Outlined"
-                                    Label="Net Amount"
-                                    Class="w-100 text-end" />
+                                    Label="Amount"
+                                    Format="#,##0.00"
+                                    InputClass="text-end"
+                                    Style="text-align:right;"
+                                     />
                 </MudItem>
-
-                <MudItem xs="3" class="d-flex justify-end mt-2">
+                
+                <MudItem xs="6" class="d-flex justify-content-end mt-2" style="gap:5px;">
                     <MudButton Variant="Variant.Filled"
-                                Color="Color.Info"
-                                OnClick="AddPayment">
+                               Color="Color.Success"
+                               OnClick="AddPayment">
                         Add Payment
                     </MudButton>
-                </MudItem>
-
-                <MudItem xs="2" class="d-flex justify-end mt-2">
                     <MudButton Variant="Variant.Filled"
-                                Color="Color.Info"
-                                OnClick="ClosePaymentDialog">
+                               Color="Color.Secondary"
+                               OnClick="ClosePaymentDialog">
                         Close
                     </MudButton>
                 </MudItem>
-
             </MudGrid>
 
             <MudTable Items="@record.BillPayments"
@@ -850,24 +854,39 @@
 
                 <RowTemplate>
                     <MudTd>
-                        <MudIconButton Icon="@Icons.Material.TwoTone.DeleteSweep"
-                                        Size="Size.Small"
-                                        Variant="Variant.Filled"
-                                        Color="Color.Error"
-                                        OnClick="() => DeletePayment(context)" />
+                        <MudButton StartIcon="@Icons.Material.TwoTone.DeleteSweep" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Error" OnClick="() => DeletePayment(context)" >Remove</MudButton>
+
+
                     </MudTd>
                     <MudTd>@context.PaymentMethod</MudTd>
                     <MudTd>@context.PaymentRef</MudTd>
                     <MudTd class="text-end">@context.AmountPaid.ToString("N2")</MudTd>
                 </RowTemplate>
 
-                    <FooterContent>
-                        <MudTd colspan="2" class="text-end font-weight-bold">Total</MudTd>
-                        <MudTd class="text-end font-weight-bold">
-                            @record.Bill.TotalPaidAmount.ToString("#,##0.00")
-                        </MudTd>
-                    </FooterContent>
+                <FooterContent>
+
+                </FooterContent>
             </MudTable>
+           <div style="display:flex; justify-content:flex-end; margin-top:15px;">
+                <div style="border:1px solid #dee2e6; border-radius:6px; padding:12px 20px; min-width:250px;">
+                    <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:6px;">
+                        <span>Total</span>
+                        <span style="color:#198754;">
+                            @record.Bill.TotalPaidAmount.ToString("#,##0.00")
+                        </span>
+                    </div>
+                    @if (@record.Bill.BalanceAmount !=0)
+                    {
+                        <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                            <span>Balance</span>
+                            <span style="color:#dc3545;">
+                                @record.Bill.BalanceAmount.ToString("#,##0.00")
+                            </span>
+                        </div>
+                    }
+                </div>
+            </div>
+
         </MudPaper>
     </DialogContent>
 
@@ -885,6 +904,7 @@
     // =======================
     [Parameter] public int? Id { get; set; } = 0;
     [Parameter] public string? Act { get; set; } = "INSERT";
+    [Parameter] public string InvoiceType { get; set; } = "SALE";
     [CascadingParameter] private bool isReadOnly { get; set; }
     public bool Disabled { get; set; } = true;
     private DateRange _dateRange { get; set; } = new DateRange(DateTime.Now.Date, DateTime.Now.AddDays(5).Date);
@@ -910,7 +930,6 @@
     // 4. Dialog Components (Drawers)
     // =======================
     private MyDrawer _drawer = new();
-    private MyDrawer _drawerParty = new();
     private bool _DialogServiceCharges;
     private bool _DialogTax;
     private bool _DialogItemsDetails;
@@ -960,7 +979,7 @@
     private List<TypeCodeModel> StockCondition = new();
     private List<TypeCodeModel> ServiceTypes = new();
     private List<TypeCodeModel> BillStatus = new();
-    private List<TypeCodeModel> BillType = new();
+    private List<string> BillType = new();
     public string? SelectedStockCondition { get; set; } = "NEW";
 
     // =======================
@@ -993,33 +1012,29 @@
     private double TotalDiscountAmount => record.BillDetails.Sum(i => i.DiscountAmount);
     private double TotalTaxAmount => record.BillDetails.Sum(i => i.TaxAmount);
 
-    // private decimal TotalBilledDetailAmount => Totals().BillItemsTotal;
-    // private decimal TotalServiceCharges => Totals().BillServiceChargesTotal;
-    // private decimal TotalTax => Totals().BillTaxTotal;
-    // private decimal TotalPayment => Totals().BillPaymentsTotal;
-    // private decimal TotalBilledAmount => TotalBilledDetailAmount + TotalServiceCharges + TotalTax - Convert.ToDecimal(record.Bill.DiscountAmount);
-    // private decimal TotalNetAmount => TotalBilledAmount - TotalPayment;
-
-    // private decimal TotalBilledDetailAmount => Totals().BillItemsTotal;
-    // private decimal TotalServiceCharges => Totals().BillServiceChargesTotal;
-    // private decimal TotalTax => Totals().BillTaxTotal;
-    // private decimal TotalPayment => Totals().BillPaymentsTotal;
-    // private decimal TotalBilledAmount => TotalBilledDetailAmount + TotalServiceCharges + TotalTax - Convert.ToDecimal(record.Bill.DiscountAmount);
-    // private decimal TotalNetAmount => TotalBilledAmount - TotalPayment;
-
     // -------------------------- Lifecycle --------------------------
     protected override async Task OnInitializedAsync()
     {
+        Disabled = Act == "VIEW";
+        if (Act == "INSERT" && (Id == 0 || Id == null))
+        {
+            Disabled = false;
+            record.Bill.BillType = "SALE";
+            record.Bill.TranDate = DateTime.Now;
+        }
         await GetAll();
     }
 
     protected async override void OnParametersSet()
     {
-        if (Act == "INSERT")
+        Disabled = Act == "VIEW";
+        if (Act == "INSERT" && (Id == 0 || Id == null))
         {
-            Clear();
+            Disabled = false;
+            record.Bill.BillType = "SALE";
+            record.Bill.TranDate = DateTime.Now;
         }
-        else
+        if (Act != "INSERT")
         {
             await Get(Id);
         }
@@ -1042,23 +1057,43 @@
         ItemsData = await Functions.GetAsync<List<ItemsModel>>($"Items/Search", true) ?? new List<ItemsModel>();
         FavItemsData = await Functions.GetAsync<List<ItemsModel>>($"Items/Search/1=1/TOP {MaxItems}", true) ?? new List<ItemsModel>();
         RecentItemsData = await Functions.GetAsync<List<ItemsModel>>($"Items/SearchRecent/TOP {MaxItems}", true) ?? new List<ItemsModel>();
-        Parties = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search?PARTYTYPE=CUSTOMER", true) ?? new List<PartiesModel>();
         PaymentMethod = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PAYMENT METHOD", true) ?? new List<TypeCodeModel>();
         StockCondition = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/STOCK CONDITION", true) ?? new List<TypeCodeModel>();
         ServiceTypes = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/SERVICE TYPE", true) ?? new List<TypeCodeModel>();
         BillStatus = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/BILL STATUS", true) ?? new List<TypeCodeModel>();
         Tables = await Functions.GetAsync<List<RestaurantTablesModel>>($"RestaurantTables/Search", true) ?? new List<RestaurantTablesModel>();
         SalesId = await Functions.GetAsync<List<EmployeesModel>>($"Employees/Search", true) ?? new List<EmployeesModel>();
-        BillType = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/BILL TYPE", true) ?? new List<TypeCodeModel>();
 
-        // if (Act == "INSERT")
-        // {
-        //     Clear();
-        // }
-        // else
-        // {
-        //     await Get(Id);
-        // }
+        string Prty = "SUPPLIER";
+        if(InvoiceType == "SALE")
+        {
+            BillType.Add("SALE");
+            BillType.Add("SALE RETURN");
+            BillType.Add("QUOTATION");
+            Prty = "CUSTOMER";
+        }
+        else
+        {
+            BillType.Add("PURCHASE");
+            BillType.Add("PURCHASE RETURN");
+        }
+
+        Parties = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search/PARTYTYPE='{Prty}'", true) ?? new List<PartiesModel>();
+        if (Parties != null && Parties.Any())
+            record.Bill.PartyId = Parties.First().Id;
+
+
+        // Set default status if available
+        if (BillStatus != null && BillStatus.Any())
+            record.Bill.Status = BillStatus.First().ListValue;
+
+        // Set default table if available
+        if (Tables != null && Tables.Any())
+            record.Bill.TableId = Tables.First().Id;
+
+        // Set default sales person if available
+        if (SalesId != null && SalesId.Any())
+            record.Bill.SalesId = SalesId.First().Id;
 
         LoadingPanel = false;
     }
@@ -1118,35 +1153,22 @@
 
 
     // -------------------------- UI Helpers --------------------------
-    private void Clear()
+    private async Task Clear()
     {
-        /*
+        // Create a new bill model
         record = new BillsModel();
 
-        if (string.IsNullOrEmpty(record.Bill.Status) && BillStatus?.Any() == true)
-            record.Bill.Status = BillStatus.First().ListValue;
 
-        if (Parties != null && Parties.Any() && record.Bill.PartyId == default)
-            record.Bill.PartyId = Parties.First().Id;
 
-        if (Tables != null && Tables.Any() && record.Bill.TableId == default)
-            record.Bill.TableId = Tables.First().Id;
+        // Enable fields for INSERT mode
+        Disabled = false;
 
-        if (SalesId != null && SalesId.Any() && record.Bill.SalesId == default)
-            record.Bill.SalesId = SalesId.First().Id;
-
-        record.Bill.BillType = "SALE";
-        record.Bill.PartyId=1;
-        Disabled = Act == "VIEW";
-        record.Bill.TranDate = DateTime.Now.AddHours(Convert.ToDouble(Globals.Organization.GMT));
-        // TotalServiceCharges = 0;
-        // TotalTax = 0;
+        // Recalculate totals
         await CalculateTotalNetAmountAsync();
-        */
 
+        // Open a new bill page in INSERT mode
         var url = $"/BillPage/INSERT/0";
         JS.InvokeVoidAsync("open", url, "_blank");
-
     } 
 
     private void Print()
@@ -1299,47 +1321,14 @@
 
     private async void DeleteItem(BillItemReportModel item)
     {
+        var res = await Functions.ShowConfirmation(DialogService, "Do You want to REMOVE Item?");
+        if (res == false)
+            return;
+
         record.BillDetails.Remove(item);
         await GetCharges();
         await CalculateTotalNetAmountAsync();
     }
-
-
-    // private (decimal BillItemsTotal, decimal BillServiceChargesTotal, decimal BillTaxTotal, decimal BillPaymentsTotal) Totals()
-    // {
-    //     //Bill Detail Total
-    //     double TotalBillAmount = 0;
-    //     foreach (var i in record.BillDetails)
-    //     {
-    //         TotalBillAmount += (i.Qty * i.UnitPrice) + i.TaxAmount - i.DiscountAmount;
-    //     }
-
-    //     //Payments Total
-    //     decimal TotalPaymentsAmount = 0;
-    //     foreach (var i in record.BillPayments)
-    //     {
-    //         TotalPaymentsAmount += i.AmountPaid;
-    //     }
-
-    //     //Service Charges
-    //     decimal TotalServiceChargesAmount = 0;
-
-    //     foreach (var i in record.BillCharges.Where(x => x.ChargeCategory != "TAX"))
-    //     {
-    //         TotalServiceChargesAmount += i.CalculatedAmount;
-    //     }
-
-    //     //Tax
-    //     decimal TotalTaxAmount = 0;
-
-    //     foreach (var i in record.BillCharges.Where(x => x.ChargeCategory == "TAX"))
-    //     {
-    //         TotalTaxAmount += i.CalculatedAmount;
-    //     }
-
-
-    //     return (Convert.ToDecimal(TotalBillAmount), Convert.ToDecimal(TotalServiceChargesAmount), Convert.ToDecimal(TotalTaxAmount), Convert.ToDecimal(TotalPaymentsAmount));
-    // }
 
     private void Totals()
     {
@@ -1384,14 +1373,19 @@
 
     private async void AddPayment()
     {
+
+        record.BillPayments.Add(BillPayments);
         BillPayments = new BillPaymentModel();
         await CalculateTotalNetAmountAsync();
     }
 
     private async void DeletePayment(BillPaymentModel payment)
     {
+        var res = await Functions.ShowConfirmation(DialogService, "Do You want to REMOVE Payment?");
+        if (res == false)
+            return;
+        
         record.BillPayments.Remove(payment);
-        //BillPayments.AmountPaid = record.Bill.BalanceAmount;
         await CalculateTotalNetAmountAsync();
     }
 
@@ -1617,10 +1611,7 @@
 
     // -------------------------- Dialogs --------------------------
 
-    protected async Task AddParty()
-    {
-        await _drawerParty.OpenDrawerAsync();
-    }
+
 
     private async Task Options()
     {
@@ -1633,13 +1624,11 @@
     private async void Save()
     {
 
-
-
-        if (record.Bill.PartyId == 0 || record.Bill.SalesId == 0 || record.Bill.TableId == 0)
-        {
-            //SnackbarService.Add($"Cannot Save Record. Please check Selected Customer, Sales Id or Table", Severity.Error);
-            return;
-        }
+        // if (record.Bill.PartyId == 0 || record.Bill.SalesId == 0 || record.Bill.TableId == 0)
+        // {
+        //     Snackbar.Add($"Cannot Save Record. Please check Selected Customer, Sales Id or Table", Severity.Error);
+        //     return;
+        // }
 
         LoadingPanel = true;
 
@@ -1669,7 +1658,8 @@
         }
         else
         {
-            Snackbar.Add($"Record Saved Successfully", Severity.Success);
+            await Functions.ShowMessage(DialogService, "success", $"Record Saved Successfully, {result.Result!.SeqNo}");
+            //Snackbar.Add($"Record Saved Successfully", Severity.Success);
             record.Bill.SeqNo = result.Result!.SeqNo;
             Id = result.Result.Id;
             Print();
@@ -1677,103 +1667,3 @@
 
     }
 }
-
-
-
-<!-- Custom styling -->
-<style>
-    .app-bar {
-        height: 56px;
-    }
-
-    .billing-table .mud-table-cell {
-        font-size: 0.85rem;
-        padding-top: 0.3rem;
-        padding-bottom: 0.3rem;
-    }
-    .font-xs {
-        font-size: 0.85rem;
-    }
-
-    .no-bottom-border input {
-        border-bottom: none !important;
-        box-shadow: none !important;
-    }
-
-    .no-bottom-border input:focus {
-        outline: none;
-    }
-
-    .summary-grid .mud-input-input {
-        text-align: right;
-    }
-
-    .item-card:hover {
-        box-shadow: 0 0 10px rgba(0,0,0,.25);
-        transform: translateY(-2px);
-        transition: box-shadow .2s, transform .2s;
-    }
-
-    .truncate {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .no-border input {
-        border: none !important;
-        background-color: transparent;
-    }
-
-    .summary-label {
-        white-space: nowrap;
-        display: flex;
-        align-items: center;
-        font-weight: 600;
-    }
-
-    .summary-icon {
-        height: 24px;
-        width: 24px;
-        padding: 2px;
-        margin-right: 6px;
-    }
-
-    .summary-row {
-        padding: 0px 8px;
-       /*  border: 0.5px solid lightgray; */
-    }
-
-    .summary-col {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        white-space: nowrap;
-        padding: 4px 8px;
-        /* border: 0.5px solid lightgray; */
-    }
-
-    .summary-value {
-        text-align: right;
-        width: 100%;
-    }
-
-    .mud-dialog.custom-dialog {
-        width: 400px;
-        height: 300px;
-    }
-
-    .summary-value .mud-input-control {
-        text-align: right;
-    }
-
-    .billing-table tfoot {
-        position: sticky;
-        bottom: 0;
-        background-color: lightgray; 
-        z-index: 10;              
-        border-top: 1px solid #ccc; 
-    }
-
-</style>
