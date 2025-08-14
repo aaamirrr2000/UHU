@@ -27,7 +27,7 @@ public class EmployeesService : IEmployeesService
 
     public async Task<(bool, List<EmployeesModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM Employees Where IsSoftDeleted=0";
+        string SQL = $@"SELECT * FROM Employees Where IsSoftDeleted=0 and IsActive=1";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;

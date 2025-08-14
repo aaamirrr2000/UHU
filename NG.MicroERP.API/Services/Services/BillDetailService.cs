@@ -36,7 +36,6 @@ public class BillDetailService : IBillDetailService
                           BillDetail.Qty,
                           BillDetail.UnitPrice,
                           BillDetail.DiscountAmount,
-                          BillDetail.TaxAmount,
                           BillDetail.BillId,
                           Items.StockType,
                           BillDetail.Description,

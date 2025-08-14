@@ -43,12 +43,23 @@
                 <Columns>
                     <TemplateColumn Title="Actions" Style="width: 50px; min-width: 50px;">
                         <CellTemplate Context="row">
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" OnClick="@(() => View(row.Item.Id))" Variant="Variant.Filled" Color="Color.Secondary"/>
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Edit" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.Id))" Variant="Variant.Filled" Color="Color.Primary"/>
-                            <MudIconButton Icon="@Icons.Material.TwoTone.DeleteSweep" Size="MudBlazor.Size.Small" OnClick="@(() => Delete(row.Item.Id))" Variant="Variant.Filled" Color="Color.Error" />
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Print" Size="MudBlazor.Size.Small" OnClick="@(() => Print(row.Item.Id))" />
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true" Color="Color.Inherit">
+                                <MudMenuItem OnClick="@(() => View(row.Item.Id))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Search" Class="me-2" /> View
+                                </MudMenuItem>
+                                <MudMenuItem OnClick="@(() => Edit(row.Item.Id))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Edit" Class="me-2" /> Edit
+                                </MudMenuItem>
+                                <MudMenuItem OnClick="@(() => Delete(row.Item.Id))" Style="color:red;">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.DeleteSweep" Class="me-2" /> Delete
+                                </MudMenuItem>
+                                <MudMenuItem OnClick="@(() => Print(row.Item.Id))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Print" Class="me-2" /> Print
+                                </MudMenuItem>
+                            </MudMenu>
                         </CellTemplate>
                     </TemplateColumn>
+
 
                     <PropertyColumn Property="x => x.SeqNo" Title="SeqNo" Sortable="true" Filterable="true" />
 				    <PropertyColumn Property="x => x.TranDate" Title="Tran Date" Sortable="true" Filterable="true" Format="dd-MMM-yyy"/>

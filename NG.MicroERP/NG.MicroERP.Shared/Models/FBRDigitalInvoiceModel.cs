@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace NG.MicroERP.Shared.Models;
 
-public class FbrInvoice
+public class FbrInvoiceModel
 {
     public string InvoiceNumber { get; set; }
     public string POSID { get; set; }
@@ -21,10 +21,10 @@ public class FbrInvoice
     public decimal Discount { get; set; }
     public int InvoiceType { get; set; }
     public int PaymentMode { get; set; }
-    public List<FbrInvoiceItem> Items { get; set; }
+    public List<FbrInvoiceItemModel> Items { get; set; }
 }
 
-public class FbrInvoiceItem
+public class FbrInvoiceItemModel
 {
     public string ItemCode { get; set; }
     public string ItemName { get; set; }
@@ -39,8 +39,8 @@ public class FbrInvoiceItem
 
 public class Fbr
 {
-    public FbrInvoice FbrInvoice { get; set; }
-    public List<FbrInvoiceItem> FbrInvoiceItems { get; set; }
+    public FbrInvoiceModel FbrInvoice { get; set; }
+    public List<FbrInvoiceItemModel> FbrInvoiceItems { get; set; }
 }
 
 

@@ -197,11 +197,11 @@
         var result = await Functions.PostAsync<FbrSubmissionModel>($"FbrSubmission/{url}", record, true);
         if (result.Success == false)
         {
-            SnackbarService.Add($"Record {Action} Fail.", Severity.Error);
+            await Functions.ShowMessage(dialogService, "error", $"Record Not Saved");
         }
         else
         {
-            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+            await Functions.ShowMessage(dialogService, "success", $"Record {Action} Successfully");
             record = new();
             isReadOnly = true;
         }

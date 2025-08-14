@@ -22,6 +22,20 @@
         </FooterContent>
     </MyDrawer>
 
+    <MyDrawer @ref="_drawerTaxItem" Title="Tax Items Mapping" FaIcon="fas fa-file-invoice-dollar">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <NG.MicroERP.Shared.Pages.TaxItems.TaxItemsPage CurrentRecord="record.Id"/>
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
     <MyDrawer @ref="_drawerServingSize" Title="Serving Size" FaIcon="fas fa-address-book">
         <HeaderContent>
         </HeaderContent>
@@ -52,18 +66,32 @@
                 </ToolBarContent>
 
                 <Columns>
-                  
 
-                    <TemplateColumn Title="Actions" CellStyle="width: 220px; min-width: 220px;">
+                    <TemplateColumn Title="Actions" CellStyle="width: 60px; min-width: 60px;">
                         <CellTemplate Context="row">
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" OnClick="@(() => View(row.Item.Id))" Variant="Variant.Filled" Color="Color.Secondary"/>
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Edit" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.Id))" Variant="Variant.Filled" Color="Color.Primary"/>
-                            <MudIconButton Icon="@Icons.Material.TwoTone.DeleteSweep" Size="MudBlazor.Size.Small" OnClick="@(() => Delete(row.Item.Id))" Variant="Variant.Filled" Color="Color.Error" />
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Favorite" Size="MudBlazor.Size.Small" OnClick="@(() => UpdateFavorite(row.Item))" Variant="Variant.Filled" Color="Color.Success" />
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Explore" Size="MudBlazor.Size.Small" OnClick="@(() => ServingSize(row.Item.Id))" Variant="Variant.Filled" Color="Color.Info" />
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true" Color="Color.Inherit">
+                                <MudMenuItem OnClick="@(() => View(row.Item.Id))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Search" Class="me-2" /> View
+                                </MudMenuItem>
+                                <MudMenuItem OnClick="@(() => Edit(row.Item.Id))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Edit" Class="me-2" /> Edit
+                                </MudMenuItem>
+                                <MudMenuItem OnClick="@(() => Delete(row.Item.Id))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.DeleteSweep" Class="me-2" /> Delete
+                                </MudMenuItem>
+                                <MudMenuItem OnClick="@(() => UpdateFavorite(row.Item))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Favorite" Class="me-2" /> Favorite
+                                </MudMenuItem>
+                                <MudMenuItem OnClick="@(() => ServingSize(row.Item.Id))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Explore" Class="me-2" /> Features
+                                </MudMenuItem>
+                                <MudMenuItem OnClick="@(() => ItemTax(row.Item.Id))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Money" Class="me-2" /> Taxes
+                                </MudMenuItem>
+                            </MudMenu>
                         </CellTemplate>
                     </TemplateColumn>
-                    
+
                     <TemplateColumn Title="Favorite" CellStyle="width: 50px; text-align: center;">
                         <CellTemplate Context="row">
                             @if (row.Item.IsFavItem == 1)
@@ -108,6 +136,7 @@
     private bool LoadingPanel { get; set; } = false;
     private MyDrawer _drawer = new();
     private MyDrawer _drawerServingSize = new();
+    private MyDrawer _drawerTaxItem = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -186,6 +215,12 @@
     {
         await Get(id);
         await _drawerServingSize.OpenDrawerAsync();
+    }
+
+    protected async Task ItemTax(int id)
+    {
+        await Get(id);
+        await _drawerTaxItem.OpenDrawerAsync();
     }
 
     protected async Task Save()

@@ -27,7 +27,7 @@ public class GroupsService : IGroupsService
 
     public async Task<(bool, List<GroupsModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM Groups Where IsSoftDeleted=0";
+        string SQL = $@"SELECT * FROM Groups Where IsSoftDeleted=0 and IsActive=1";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;

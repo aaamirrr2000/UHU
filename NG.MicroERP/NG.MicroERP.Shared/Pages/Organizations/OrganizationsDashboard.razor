@@ -38,14 +38,29 @@
                 </ToolBarContent>
 
                 <Columns>
-                    <TemplateColumn Title="Actions" CellStyle="width: 160px; min-width: 160px;">
+
+                    <TemplateColumn Title="Actions" CellStyle="width: 80px; min-width: 80px;">
                         <CellTemplate Context="row">
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Visibility" Size="MudBlazor.Size.Small" OnClick="@(() => View(row.Item.Id))" />
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Edit" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.Id))" Variant="Variant.Filled" Color="Color.Primary"/>
-                            @* <MudIconButton Icon="@Icons.Material.TwoTone.Delete" Size="MudBlazor.Size.Small" OnClick="@(() => Delete(row.Item.Id))" /> *@
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Restore" Size="MudBlazor.Size.Small" OnClick="@(() => SetParent(row.Item.Id))" />
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
+                                <MudMenuItem OnClick="@(() => View(row.Item.Id))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Visibility" Size="Size.Small" Class="me-2" /> View
+                                </MudMenuItem>
+                                <MudMenuItem OnClick="@(() => Edit(row.Item.Id))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Edit" Size="Size.Small" Class="me-2" /> Edit
+                                </MudMenuItem>
+
+                                @* <MudMenuItem OnClick="@(() => Delete(row.Item.Id))">
+                                        <MudIcon Icon="@Icons.Material.TwoTone.Delete" Size="Size.Small" Class="me-2" /> Delete
+                                    </MudMenuItem> *@
+                                <MudMenuItem OnClick="@(() => SetParent(row.Item.Id))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Restore" Size="Size.Small" Class="me-2" /> Restore
+                                </MudMenuItem>
+                            </MudMenu>
                         </CellTemplate>
                     </TemplateColumn>
+
+
+
                     <TemplateColumn Title="Logo" CellStyle="width: 50px; min-width: 50px;">
                         <CellTemplate Context="row">
                             <img src="@(!string.IsNullOrWhiteSpace(row.Item.Logo) ? row.Item.Logo : "images/no-image.png")" alt="Logo" style="width:30px; height:30px; border-radius: 50%;" />

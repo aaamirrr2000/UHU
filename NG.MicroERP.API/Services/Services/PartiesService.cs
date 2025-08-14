@@ -29,7 +29,7 @@ public class PartiesService : IPartiesService
 
     public async Task<(bool, List<PartiesModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM Parties Where IsSoftDeleted=0";
+        string SQL = $@"SELECT * FROM Parties Where IsSoftDeleted=0 and IsActive=1";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;

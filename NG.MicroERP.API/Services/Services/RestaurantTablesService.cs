@@ -27,7 +27,7 @@ public class RestaurantTablesService : IRestaurantTablesService
 
     public async Task<(bool, List<RestaurantTablesModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM RestaurantTables Where IsSoftDeleted=0";
+        string SQL = $@"SELECT * FROM RestaurantTables Where IsSoftDeleted=0 and IsActive=1";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;

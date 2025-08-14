@@ -25,7 +25,7 @@ public class CategoriesService : ICategoriesService
 
     public async Task<(bool, List<CategoriesModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM Categories Where IsSoftDeleted=0";
+        string SQL = $@"SELECT * FROM Categories Where IsSoftDeleted=0 and IsActive=1";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;

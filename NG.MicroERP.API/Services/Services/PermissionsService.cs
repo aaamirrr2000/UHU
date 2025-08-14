@@ -29,7 +29,7 @@ public class PermissionsService : IPermissionsService
 
     public async Task<(bool, List<PermissionsModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM Permissions Where IsSoftDeleted=0";
+        string SQL = $@"SELECT * FROM Permissions Where IsSoftDeleted=0 and IsActive=1";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;

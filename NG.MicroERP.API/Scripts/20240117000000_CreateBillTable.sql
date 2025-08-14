@@ -16,10 +16,6 @@
     TableId                 INT              NULL,
     TranDate                DATETIME         NULL DEFAULT NULL,
     DiscountAmount          DECIMAL(16, 2)   NULL DEFAULT 0.00,
-    --SubTotalAmount          DECIMAL(16, 2)   NULL DEFAULT 0.00,
-    --TotalChargeAmount       DECIMAL(16, 2)   NULL DEFAULT 0.00,
-    --BillAmount              DECIMAL(16, 2)   NULL DEFAULT 0.00,
-    --TotalPaidAmount         DECIMAL(16, 2)   NULL DEFAULT 0.00,
     Description             VARCHAR(255)     NOT NULL,
     Status                  VARCHAR(50)      NULL,
     ServiceType             VARCHAR(50)      NULL,
@@ -53,7 +49,7 @@ CREATE TABLE BillDetail
     Qty                 DECIMAL(16, 4)   NULL DEFAULT 0,
     UnitPrice           DECIMAL          NULL DEFAULT 0,
     DiscountAmount      DECIMAL(10, 2)   NULL DEFAULT 0.00,
-    TaxAmount           DECIMAL(10, 2)   NULL DEFAULT 0.00,
+    TaxId               INT              NULL,
     BillId              INT              NOT NULL,
     Description         VARCHAR(255)     NOT NULL,
     Status              VARCHAR(50)      NULL,
@@ -63,7 +59,8 @@ CREATE TABLE BillDetail
     IsSoftDeleted       SMALLINT         NOT NULL DEFAULT 0,
     RowVersion          ROWVERSION,
     FOREIGN KEY (BillId)       REFERENCES Bill(Id),
-    FOREIGN KEY (ItemId)       REFERENCES Items(Id)
+    FOREIGN KEY (ItemId)       REFERENCES Items(Id),
+    FOREIGN KEY (TaxId)       REFERENCES Items(Id)
 );
 
 CREATE TABLE BillCharges

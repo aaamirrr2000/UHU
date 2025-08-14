@@ -98,7 +98,7 @@ VALUES
                                  , 0),
 
 /*── SECURITY ────────────────────────────────────────────*/
-(10 , 'Security'        , NULL , 'Configure user security and permissions'
+(10 , 'Security Setup'        , NULL , 'Configure user security and permissions'
                               , NULL                        , 0
                               , 'fas fa-shield-alt'         , 8000, 1
                               , 1 , GETDATE(), NULL
@@ -127,7 +127,7 @@ VALUES
                               , 0),
 
 /*── SETUP / MASTER DATA ────────────────────────────────*/
-(14, 'Setup'           , NULL , 'Configure core system settings and master data'
+(14, 'General Setup'           , NULL , 'Configure core system settings and master data'
                               , NULL                        , 0
                               , 'fas fa-cogs'               , 9000, 1
                               , 1 , GETDATE(), NULL
@@ -183,15 +183,29 @@ VALUES
                               , 1 , GETDATE(), NULL
                               , 0),
 
-(22, 'Digital Invoice' , NULL , 'Define Digital Invoice Configuration'
-                              , 'DigitalInvoiceConfigDashboard', 14
+(22, 'Tax Setup'           , NULL , 'Configure Taxes'
+                              , NULL                        , 0
+                              , 'fas fa-cogs'               , 9000, 1
+                              , 1 , GETDATE(), NULL
+                              , 1 , GETDATE(), NULL
+                              , 0),
+
+(23, 'Taxes Master' , NULL , 'Configure Different types of taxes against differnt types of invoices'
+                              , 'TaxMasterDashboard', 22
                               , 'fas fa-receipt'            , 9070, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
                               , 0),
 
-(23, 'FBR Submission' , NULL , 'FBR Submitted Invoice Status'
-                              , 'FbrSubmissionDashboard', 14
+(24, 'Digital Invoice' , NULL , 'Define Digital Invoice Configuration'
+                              , 'DigitalInvoiceConfigDashboard', 22
+                              , 'fas fa-receipt'            , 9070, 1
+                              , 1 , GETDATE(), NULL
+                              , 1 , GETDATE(), NULL
+                              , 0),
+
+(25, 'FBR Submission' , NULL , 'FBR Submitted Invoice Status'
+                              , 'FbrSubmissionDashboard', 22
                               , 'fas fa-receipt'            , 9070, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL

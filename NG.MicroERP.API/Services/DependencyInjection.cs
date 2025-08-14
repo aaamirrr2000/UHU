@@ -44,6 +44,8 @@ public static class DependencyInjection
         services.AddSingleton<IChargeRulesService, ChargeRulesService>();
         services.AddSingleton<IDigitalInvoiceConfigService, DigitalInvoiceConfigService>();
         services.AddSingleton<IFbrSubmissionService, FbrSubmissionService>();
+        services.AddSingleton<ITaxMasterService, TaxMasterService>();
+        services.AddSingleton<ITaxItemsService, TaxItemsService>();
 
         services.AddScoped<Globals>();
         services.AddScoped<FileUploadService>();

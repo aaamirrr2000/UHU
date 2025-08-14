@@ -20,7 +20,7 @@ SELECT
     a.DiscountAmount,
 
     -- Subtotal
-    (SELECT SUM(qty * unitprice - discountamount + taxamount) 
+    (SELECT SUM(qty * unitprice - discountamount) 
      FROM BillDetail 
      WHERE billid = a.Id) AS SubTotalAmount,
 
@@ -36,7 +36,7 @@ SELECT
 
     -- Billed Amount = SubTotal + Charges - Discount
     (
-        ISNULL((SELECT SUM(qty * unitprice - discountamount + taxamount) 
+        ISNULL((SELECT SUM(qty * unitprice - discountamount) 
                 FROM BillDetail 
                 WHERE billid = a.Id), 0) +
         ISNULL((SELECT SUM(CalculatedAmount) 
@@ -48,7 +48,7 @@ SELECT
     -- Balance Amount = Billed - Paid
     (
         ISNULL((
-            ISNULL((SELECT SUM(qty * unitprice - discountamount + taxamount) 
+            ISNULL((SELECT SUM(qty * unitprice - discountamount) 
                     FROM BillDetail 
                     WHERE billid = a.Id), 0) +
             ISNULL((SELECT SUM(CalculatedAmount) 
@@ -89,6 +89,7 @@ SELECT
     f.BillId,
     a.SeqNo,
     f.ItemId,
+    g.PCTCode,
     g.Name AS ItemName,
     g.IsInventoryItem,
     f.ServingSize,
@@ -96,8 +97,8 @@ SELECT
     f.Qty,
     f.UnitPrice,
     f.DiscountAmount,
-    f.TaxAmount,
-    ((f.Qty * f.UnitPrice) + f.TaxAmount - f.DiscountAmount) AS ItemTotalAmount,
+
+    ((f.Qty * f.UnitPrice) - f.DiscountAmount) AS ItemTotalAmount,
     f.Description AS Instructions,
     f.Status,
     f.Person,
@@ -180,7 +181,7 @@ SELECT
     b.ClientComments,
 
     b.DiscountAmount,
-    SUM((bd.Qty * bd.UnitPrice) - bd.DiscountAmount + bd.TaxAmount) AS ItemsAmount,
+    SUM((bd.Qty * bd.UnitPrice) - bd.DiscountAmount) AS ItemsAmount,
     SUM(bc.CalculatedAmount) AS ChargesAmount,
     SUM(bp.AmountPaid) AS PaidAmount,
 

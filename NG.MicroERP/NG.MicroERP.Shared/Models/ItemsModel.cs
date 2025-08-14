@@ -13,6 +13,7 @@ public class ItemsModel
     public int OrganizationId { get; set; } = 0;
     public string? Pic { get; set; } = string.Empty;
     public string? Code { get; set; } = string.Empty;
+    public string? PCTCode { get; set; } = string.Empty;
     public string? Name { get; set; } = string.Empty;
     public string? Description { get; set; } = string.Empty;
     public double MinQty { get; set; } = 0;

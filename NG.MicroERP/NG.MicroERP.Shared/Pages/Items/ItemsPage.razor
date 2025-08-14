@@ -53,6 +53,10 @@
                     <MudTextField Label="Code" id="Code" @bind-Value="record.Code" Variant="Variant.Filled" placeholder="Code" ReadOnly="@isReadOnly"></MudTextField>
                     <ValidationMessage For="@(() => record.Code)" />
                 </div>
+                    <div class="col-6 mb-3">
+                        <MudTextField Label="PCTCode" id="PCTCode" @bind-Value="record.PCTCode" Variant="Variant.Filled" placeholder="PCTCode" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.PCTCode)" />
+                    </div>
                 <div class="col-6 mb-3">
                     <MudTextField Label="Name" id="Name" @bind-Value="record.Name" Variant="Variant.Filled" placeholder="Name" ReadOnly="@isReadOnly"></MudTextField>
                     <ValidationMessage For="@(() => record.Name)" />
@@ -328,11 +332,11 @@
         var result = await Functions.PostAsync<ItemsModel>($"Items/{url}", record, true);
         if (result.Success == false)
         {
-            SnackbarService.Add($"Record {Action} Fail.", Severity.Error);
+            await Functions.ShowMessage(dialogService, "error", $"Record Not Saved");
         }
         else
         {
-            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+            await Functions.ShowMessage(dialogService, "success", $"Record {Action} Successfully");
             record = new();
             isReadOnly = true;
         }

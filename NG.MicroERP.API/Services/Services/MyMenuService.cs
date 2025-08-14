@@ -27,7 +27,7 @@ public class MyMenuService : IMyMenuService
 
     public async Task<(bool, List<MyMenuModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM Menu Where IsSoftDeleted=0";
+        string SQL = $@"SELECT * FROM Menu Where IsSoftDeleted=0 and IsActive=1";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;

@@ -68,7 +68,10 @@
                 SnackbarService.Add("License Expired.", Severity.Error);
             }
             else
+            {
+                //await Task.Delay(5000); 
                 Nav.NavigateTo("/Home");
+            }
         }
         catch (Exception ex)
         {

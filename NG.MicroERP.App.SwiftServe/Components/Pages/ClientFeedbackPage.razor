@@ -130,7 +130,7 @@
 
     private async Task Save()
     {
-        Bill_And_Bill_Detail_Model MyBill = new();
+        BillsModel MyBill = new();
 
         MyBill.Bill.Id = id;
         MyBill.Bill.PartyName = feedback.Name.ToUpper();

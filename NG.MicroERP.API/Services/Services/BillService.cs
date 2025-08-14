@@ -18,7 +18,7 @@ public interface IBillService
 {
     Task<(bool, List<BillsAllModel>)>? Search(string Criteria = "");
     Task<(bool, BillsModel?)>? Get(int id);
-    Task<(bool, string)> Put(BillsModel obj);
+    Task<(bool, BillModel)> Put(BillsModel obj);
     Task<(bool, BillModel, string)> Post(BillsModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(BillModel obj);
@@ -148,10 +148,12 @@ public class BillService : IBillService
         }
     }
 
-    public async Task DigitalInvoice(BillsModel obj, int BillId)
+    public async Task DigitalInvoice(int Id)
     {
+        var obj = await Functions.GetAsync<BillsModel>($"Bill/Get?id={Id}", true);
+
         //Generate Json to upload on FBR portal
-        var fbrInvoice = new FbrInvoice
+        var fbrInvoice = new FbrInvoiceModel
         {
             InvoiceNumber = obj.Bill.SeqNo ?? $"BILL-{obj.Bill.Id}",
             POSID = obj.Bill.LocationId.ToString(),
@@ -159,14 +161,14 @@ public class BillService : IBillService
             DateTime = obj.Bill.TranDate,
             BuyerNTN = "",
             BuyerCNIC = "", 
-            BuyerName = obj.Bill.PartyName,
-            BuyerPhoneNumber = obj.Bill.PartyPhone,
+            BuyerName = obj.Bill.PartyName!,
+            BuyerPhoneNumber = obj.Bill.PartyPhone!,
             TotalSaleValue = obj.Bill.SubTotalAmount,
             TotalTaxCharged = obj.Bill.TotalTaxAmount,
             Discount = obj.Bill.DiscountAmount,
             InvoiceType = 1, // 1 = Standard
             PaymentMode = 1, // 1 = Cash, 2 = Credit Card, etc.
-            Items = obj.BillDetails.Select(d => new FbrInvoiceItem
+            Items = obj.BillDetails.Select(d => new FbrInvoiceItemModel
             {
                 ItemCode = d.ItemId.ToString(),
                 ItemName = d.ItemName,
@@ -186,7 +188,7 @@ public class BillService : IBillService
         
     }
 
-    public async Task<(bool, string)> Put(BillsModel obj)
+    public async Task<(bool, BillModel)> Put(BillsModel obj)
     {
         try
         {
@@ -249,11 +251,13 @@ public class BillService : IBillService
                 await dapper.Insert(paymentInsert);
             }
 
-            return (true, "OK");
+            List<BillModel> bill = await dapper.SearchByQuery<BillModel>($"Select * from Bill Where Id={obj.Bill.Id}") ?? new List<BillModel>();
+
+            return (true, bill.FirstOrDefault());
         }
         catch (Exception ex)
         {
-            return (false, ex.Message);
+            return (false, null);
         }
     }
 

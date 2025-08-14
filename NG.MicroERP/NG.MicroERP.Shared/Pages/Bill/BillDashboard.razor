@@ -5,6 +5,7 @@
 @inject NavigationManager NavManager
 @inject ISnackbar SnackbarService
 
+<PageTitle>@InvoiceType DASHBOARD</PageTitle>
 <Loading IsLoading="@LoadingPanel" />
 
 <div class="row" style="margin: 2px; height: 90vh; display: flex;">
@@ -16,53 +17,69 @@
     else
     {
         <div class="row">
-            <MudDataGrid T="BillModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
+            <MudDataGrid T="BillsAllModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
                 <ToolBarContent>
-                    <MudText Typo="Typo.h6">Bill</MudText>
+                    <MudText Typo="Typo.h6">@InvoiceType INVOICE</MudText>
                     <MudSpacer />
                     <MudButton StartIcon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Clear())">New</MudButton>
                     <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => GetAll())">Refresh</MudButton>
                     <MudButton StartIcon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Secondary" OnClick="@(() => GetAll())">Search</MudButton>
 
-                        <MudDateRangePicker @bind-DateRange="_dateRange"
-                                        AutoClose="true"
-                                        Variant="Variant.Text"
-                                        Margin="Margin.Dense"
-                                        DateFormat="dd.MMMM.yyyy"
-                                        TitleDateFormat="dd MMMM"
-                                        Modal="false"
-                                        Style="width:320px;"
-                                        PlaceholderStart="Start Date"
-                                        PlaceholderEnd="End Date"
-                                        MinDate=@(Globals.Organization.CreatedOn)
-                                        MaxDate=@(Globals.Organization.Expiry)
-                                        Class="mx-1" />
+                    <MudDateRangePicker @bind-DateRange="_dateRange"
+                    AutoClose="true"
+                    Variant="Variant.Text"
+                    Margin="Margin.Dense"
+                    DateFormat="dd.MMMM.yyyy"
+                    TitleDateFormat="dd MMMM"
+                    Modal="false"
+                    Style="width:320px;"
+                    PlaceholderStart="Start Date"
+                    PlaceholderEnd="End Date"
+                    MinDate=@(Globals.Organization.CreatedOn)
+                    MaxDate=@(Globals.Organization.Expiry)
+                    Class="mx-1" />
                 </ToolBarContent>
 
                 <Columns>
-                    <TemplateColumn Title="Actions" CellStyle="width: 220px; min-width: 220px;">
+                    <TemplateColumn Title="Actions" CellStyle="width: 60px; min-width: 60px;">
                         <CellTemplate Context="row">
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" OnClick="@(() => View(row.Item.Id))" Variant="Variant.Filled" Color="Color.Secondary" />
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Edit" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.Id))" Variant="Variant.Filled" Color="Color.Primary" />
-                            <MudIconButton Icon="@Icons.Material.TwoTone.DeleteSweep" Size="MudBlazor.Size.Small" OnClick="@(() => Delete(row.Item.Id))" Variant="Variant.Filled" Color="Color.Error" />
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Print" Size="MudBlazor.Size.Small" OnClick="@(() => Print(row.Item.Id))" Variant="Variant.Filled" Color="Color.Success" />
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true" Color="Color.Inherit">
+                                <MudMenuItem OnClick="@(() => View(row.Item))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Search" Class="me-2" /> View
+                                </MudMenuItem>
+
+                                @if (row.Item.TranDate.Date == DateTime.Now.Date)
+                                {
+                                    <MudMenuItem OnClick="@(() => Edit(row.Item))">
+                                        <MudIcon Icon="@Icons.Material.TwoTone.Edit" Class="me-2" /> Edit
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => Delete(row.Item))" Style="color:red;">
+                                        <MudIcon Icon="@Icons.Material.TwoTone.DeleteSweep" Class="me-2" /> Delete
+                                    </MudMenuItem>
+                                }
+
+                                <MudMenuItem OnClick="@(() => Print(row.Item))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Print" Class="me-2" /> Print
+                                </MudMenuItem>
+                            </MudMenu>
                         </CellTemplate>
                     </TemplateColumn>
 
-                    <PropertyColumn Property="x => x.SeqNo" Title="Bill#" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.TranDate" Title="Transaction Date" Sortable="true" Filterable="true" Format="dd-MMM-yyyy" />
-                    <PropertyColumn Property="x => x.BillType" Title="Bill Type" Sortable="true" Filterable="true" />
+
+                    <PropertyColumn Property="x => x.SeqNo" Title="Doc #" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.TranDate" Title="Date" Sortable="true" Filterable="true" Format="dd-MMM-yyyy" />
+                    <PropertyColumn Property="x => x.BillType" Title="Tran" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.Source" Title="Source" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.PartyName" Title="Customer" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.SubTotalAmount" Title="Sub Total" Sortable="true" Filterable="true" CellStyle="text-align: right;" />
-                    <PropertyColumn Property="x => x.TotalServiceChargeAmount" Title="Charges" Sortable="true" Filterable="true" CellStyle="text-align: right;" />
-                    <PropertyColumn Property="x => x.TotalTaxAmount" Title="Tax" Sortable="true" Filterable="true" CellStyle="text-align: right;" />
-                    <PropertyColumn Property="x => x.TotalPaidAmount" Title="Payment" Sortable="true" Filterable="true" CellStyle="text-align: right;" />
+                    <PropertyColumn Property="x => x.PartyName" Title="Party" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.SubTotalAmount" Title="Items Total" Sortable="true" Filterable="true" CellStyle="text-align: right;" Format="#,##0.00"/>
+                    <PropertyColumn Property="x => x.TotalChargeAmount" Title="Charges" Sortable="true" Filterable="true" CellStyle="text-align: right;"  Format="#,##0.00"/>
+                    <PropertyColumn Property="x => x.DiscountAmount" Title="Discount" Sortable="true" Filterable="true" CellStyle="text-align: right;" Format="#,##0.00" />
+                    <PropertyColumn Property="x => x.TotalPaidAmount" Title="Payment" Sortable="true" Filterable="true" CellStyle="text-align: right;" Format="#,##0.00" />
 
                     <!-- Balance column either from model or computed here -->
                     <TemplateColumn Title="Balance" CellStyle="text-align: right;">
                         <CellTemplate Context="row">
-                            @((row.Item.SubTotalAmount + row.Item.TotalServiceChargeAmount + row.Item.TotalTaxAmount - row.Item.TotalPaidAmount).ToString("N2"))
+                            @((row.Item.SubTotalAmount + row.Item.TotalChargeAmount - row.Item.DiscountAmount - row.Item.TotalPaidAmount).ToString("N2"))
                         </CellTemplate>
                     </TemplateColumn>
 
@@ -80,8 +97,8 @@
 
 @code
 {
-	[Parameter] public string InvoiceType { get; set; } = "SALE";
-    static List<BillModel> data = new();
+    [Parameter] public string InvoiceType { get; set; } = "SALE";
+    static List<BillsAllModel> data = new();
     static BillModel record = new();
 
     public string Action { get; set; } = "INSERT";
@@ -110,7 +127,7 @@
 
         string criteria = $" AND BillType LIKE '%{InvoiceType}%'";
 
-        LoadingPanel = true;
+
 
         if (Globals.User.GroupId != 1)
         {
@@ -123,14 +140,19 @@
             criteria = $"CAST(TranDate AS DATE) >= '{formattedStartDate}' AND CAST(TranDate AS DATE) <= '{formattedEndDate}' {criteria}";
         }
 
-        // Fetch data asynchronously with proper null handling
-        data = await Functions.GetAsync<List<BillModel>>($"Bill/Search/{criteria}", true) ?? new List<BillModel>();
-
+        LoadingPanel = true;
+        data = await Functions.GetAsync<List<BillsAllModel>>($"Bill/Search/{criteria}", true) ?? new List<BillsAllModel>();
         LoadingPanel = false;
 
-        await InvokeAsync(StateHasChanged);
+        //await InvokeAsync(StateHasChanged);
+        StateHasChanged();
     }
 
+
+    protected async override void OnParametersSet()
+    {
+      await GetAll();
+    }
 
     protected async Task Get(int id)
     {
@@ -148,37 +170,37 @@
 
     protected async Task Refresh()
     {
-        data = await Functions.GetAsync<List<BillModel>>($"Bill/Search", true) ?? new List<BillModel>();
+        await GetAll();
     }
 
-    protected async Task View(int id)
+    protected async Task View(BillsAllModel row)
     {
-        await Get(id);
+        await Get(row.ID);
         isReadOnly = true;
-        NewBill("VIEW", id, InvoiceType);
+        NewBill("VIEW", row.ID, InvoiceType);
     }
 
-    protected async Task Edit(int id)
+    protected async Task Edit(BillsAllModel row)
     {
-        await Get(id);
+        await Get(row.ID);
         isReadOnly = false;
-        NewBill("UPDATE", id, InvoiceType);
+        NewBill("UPDATE", row.ID, InvoiceType);
     }
 
-    protected async Task Delete(int id)
+    protected async Task Delete(BillsAllModel row)
     {
         var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
         if (res == false)
             return;
 
         Action = "SOFTDELETE";
-        await Get(id);
+        await Get(row.ID);
         await Save();
     }
 
-    protected async Task Print(int id)
+    protected async Task Print(BillsAllModel row)
     {
-        var url = $"/BillReport/{id}";
+        var url = $"/BillReport/{row.ID}";
         JSRuntime.InvokeVoidAsync("open", url, "_blank");
     }
 
@@ -212,7 +234,7 @@
             isReadOnly = true;
         }
 
-        data = await Functions.GetAsync<List<BillModel>>($"Bill/Search", true) ?? new List<BillModel>();
+        await GetAll();
         LoadingPanel = false;
         await _drawer.CloseDrawer();
 

@@ -28,7 +28,7 @@ public class CashBookService : ICashBookService
 
     public async Task<(bool, List<CashBookModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM Cashbook Where IsSoftDeleted=0";
+        string SQL = $@"SELECT * FROM Cashbook Where IsSoftDeleted=0 and IsActive=1";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;

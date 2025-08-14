@@ -21,7 +21,7 @@ public class ServiceChargesService : IServiceChargesService
 
     public async Task<(bool, List<ServiceChargesModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM ServiceCharges Where IsSoftDeleted=0";
+        string SQL = $@"SELECT * FROM ServiceCharges Where IsSoftDeleted=0 and IsActive=1";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;

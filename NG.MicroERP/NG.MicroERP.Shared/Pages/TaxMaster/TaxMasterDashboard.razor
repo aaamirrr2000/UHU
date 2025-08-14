@@ -1,4 +1,4 @@
-﻿@page "/TaxDashboard"
+﻿@page "/TaxMasterDashboard"
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
@@ -8,13 +8,13 @@
 <Loading IsLoading="@LoadingPanel" />
 
 <div class="row" style="margin: 2px; height: 90vh; display: flex;">
-    <MyDrawer @ref="_drawer" Title="Tax" FaIcon="fas fa-address-book">
+    <MyDrawer @ref="_drawer" Title="TaxMaster" FaIcon="fas fa-address-book">
         <HeaderContent>
         </HeaderContent>
         <ChildContent>
             <EditForm Model="record" OnSubmit="Save">
                 <MudForm>
-                    <TaxPage Action="@Action" CurrentRecord="record.Id"/>
+                    <TaxMasterPage Action="@Action" CurrentRecord="record.Id" />
                 </MudForm>
             </EditForm>
         </ChildContent>
@@ -29,32 +29,39 @@
     else
     {
         <div class="row">
-            <MudDataGrid T="TaxModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
+            <MudDataGrid T="TaxMasterModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
                 <ToolBarContent>
-                    <MudText Typo="Typo.h6">Tax Managment</MudText>
+                    <MudText Typo="Typo.h6">TaxMaster Managment</MudText>
                     <MudSpacer />
                     <MudButton StartIcon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Clear())">New</MudButton>
                     <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Info" OnClick="@(() => Refresh())">Refresh</MudButton>
                 </ToolBarContent>
 
                 <Columns>
-                    <TemplateColumn Title="Actions" CellStyle="width: 160px; min-width: 160px;">
+                    <TemplateColumn Title="Actions" CellStyle="width: 60px; min-width: 60px;">
                         <CellTemplate Context="row">
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" OnClick="@(() => View(row.Item.Id))" Variant="Variant.Filled" Color="Color.Secondary"/>
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Edit" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.Id))" Variant="Variant.Filled" Color="Color.Primary"/>
-                            <MudIconButton Icon="@Icons.Material.TwoTone.DeleteSweep" Size="MudBlazor.Size.Small" OnClick="@(() => Delete(row.Item.Id))" Variant="Variant.Filled" Color="Color.Error" />
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Dense="true">
+                                <MudMenuItem OnClick="@(() => View(row.Item.Id))">
+                                    <MudIcon Icon="@Icons.Material.Filled.Search" Class="me-2" /> View
+                                </MudMenuItem>
+                                <MudMenuItem OnClick="@(() => Edit(row.Item.Id))">
+                                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="me-2" /> Edit
+                                </MudMenuItem>
+                                <MudMenuItem OnClick="@(() => Delete(row.Item.Id))" Color="Color.Error">
+                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
+                                </MudMenuItem>
+                            </MudMenu>
                         </CellTemplate>
                     </TemplateColumn>
 
-                    				<PropertyColumn Property="x => x.TaxName" Title="TaxName" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.TaxCode" Title="TaxCode" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.AppliesTo" Title="AppliesTo" Sortable="true" Filterable="true" />
-
+                    <PropertyColumn Property="x => x.TaxType" Title="Tax Type" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.TaxName" Title="Name/Label" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.TaxRate" Title="Tax Rate %age" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
 
                 </Columns>
 
                 <PagerContent>
-                    <MudDataGridPager T="TaxModel" />
+                    <MudDataGridPager T="TaxMasterModel" />
                 </PagerContent>
             </MudDataGrid>
         </div>
@@ -63,8 +70,8 @@
 
 @code
 {
-    static List<TaxModel> data = new();
-    static TaxModel record = new();
+    static List<TaxMasterModel> data = new();
+    static TaxMasterModel record = new();
 
     public string Action { get; set; } = "INSERT";
 
@@ -80,21 +87,21 @@
     protected async Task GetAll()
     {
         LoadingPanel = true;
-        data = await Functions.GetAsync<List<TaxModel>>($"Tax/Search", true) ?? new List<TaxModel>();
+        data = await Functions.GetAsync<List<TaxMasterModel>>($"TaxMaster/Search", true) ?? new List<TaxMasterModel>();
         LoadingPanel = false;
     }
 
     protected async Task Get(int id)
     {
         LoadingPanel = true;
-        record = await Functions.GetAsync<TaxModel>($"Tax/Get?Id={id}", true) ?? new TaxModel();
+        record = await Functions.GetAsync<TaxMasterModel>($"TaxMaster/Get?Id={id}", true) ?? new TaxMasterModel();
         LoadingPanel = false;
     }
 
     protected async Task Clear()
     {
         Action = "INSERT";
-        record = new TaxModel();
+        record = new TaxMasterModel();
         record.IsActive = 1;
         isReadOnly = false;
         await _drawer.OpenDrawerAsync();
@@ -102,7 +109,7 @@
 
     protected async Task Refresh()
     {
-        data = await Functions.GetAsync<List<TaxModel>>($"Tax/Search", true) ?? new List<TaxModel>();
+        data = await Functions.GetAsync<List<TaxMasterModel>>($"TaxMaster/Search", true) ?? new List<TaxMasterModel>();
     }
 
     protected async Task View(int id)
@@ -116,7 +123,7 @@
     protected async Task Edit(int id)
     {
         await Get(id);
-        Action = "UPDATE"; 
+        Action = "UPDATE";
         isReadOnly = false;
         await _drawer.OpenDrawerAsync();
     }
@@ -135,7 +142,7 @@
     protected async Task Save()
     {
         LoadingPanel = true;
-         
+
         record.OrganizationId = Globals.User.OrganizationId;
         record.CreatedBy = Globals.User.Id;
         record.CreatedOn = DateTime.Now;
@@ -144,7 +151,7 @@
         record.UpdatedOn = DateTime.Now;
         record.UpdatedFrom = Functions.GetComputerDetails();
 
-        var result = await Functions.PostAsync<TaxModel>($"Tax/{Action}", record, true);
+        var result = await Functions.PostAsync<TaxMasterModel>($"TaxMaster/{Action}", record, true);
         if (result.Success == true)
         {
             SnackbarService.Add($"Record Not Deleted", Severity.Error);
@@ -155,11 +162,11 @@
             record = new();
             isReadOnly = true;
         }
-    
-        data = await Functions.GetAsync<List<TaxModel>>($"Tax/Search", true) ?? new List<TaxModel>();
+
+        data = await Functions.GetAsync<List<TaxMasterModel>>($"TaxMaster/Search", true) ?? new List<TaxMasterModel>();
         LoadingPanel = false;
         await _drawer.CloseDrawer();
-     
+
     }
 
 }

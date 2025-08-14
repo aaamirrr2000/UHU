@@ -20,7 +20,7 @@ public class FbrSubmissionService : IFbrSubmissionService
 
     public async Task<(bool, List<FbrSubmissionModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM FbrSubmission Where IsSoftDeleted=0";
+        string SQL = $@"SELECT * FROM FbrSubmission Where IsSoftDeleted=0 and IsActive=1";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;

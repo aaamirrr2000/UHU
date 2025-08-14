@@ -21,7 +21,7 @@ public class TaxService : ITaxService
 
     public async Task<(bool, List<TaxModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM Tax Where IsSoftDeleted=0";
+        string SQL = $@"SELECT * FROM Tax Where IsSoftDeleted=0 and IsActive=1";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;

@@ -27,7 +27,7 @@ public class LocationsService : ILocationsService
 
     public async Task<(bool, List<LocationsModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM Locations Where IsSoftDeleted=0";
+        string SQL = $@"SELECT * FROM Locations Where IsSoftDeleted=0 and IsActive=1";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;

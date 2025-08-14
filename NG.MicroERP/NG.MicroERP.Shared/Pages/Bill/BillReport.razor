@@ -36,7 +36,7 @@
                 <p><strong>Location:</strong> @BillsData.Bill.Location</p>
             </div>
             <div class="col-sm-6">
-                <p><strong>Party:</strong> @BillsData.Bill.Party</p>
+                <p><strong>Party:</strong> @BillsData.Bill.PartyName</p>
                 <p><strong>Phone:</strong> @BillsData.Bill.PartyPhone</p>
                 <p><strong>Email:</strong> @BillsData.Bill.PartyEmail</p>
             </div>
@@ -76,10 +76,14 @@
             }
 
             <tbody>
+                @{
+                    int serial = 1;
+                }
+
                 @foreach (var item in BillsData.BillDetails)
                 {
                     <tr class="table-row-hover">
-                        <td class="text-left">1</td>
+                        <td class="text-left">@serial</td>
                         <td class="text-left">@item.ItemName.ToUpper() @item.StockCondition.ToUpper()</td>
                         <td class="text-left">@item.ServingSize</td>
                         <td class="text-right">@item.Qty.ToString("N2")</td>
@@ -88,6 +92,8 @@
                         <td class="text-right">@item.TaxAmount.ToString("N2")</td>
                         <td class="text-right">@item.ItemTotalAmount.ToString("N2")</td>
                     </tr>
+
+                    serial++;
                 }
 
                 <tr>
@@ -149,7 +155,7 @@
                         <thead>
                             <tr>
                                 <th class="text-left">Particulars</th>
-                                <th>Amount</th>
+                                <th class="text-end">Amount</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -157,7 +163,7 @@
                             {
                                 <tr>
                                     <td class="text-left font-weight-bold">@charge.RuleName</td>
-                                    <td>@charge.CalculatedAmount.ToString("N2")</td>
+                                    <td class ="text-end">@charge.CalculatedAmount.ToString("N2")</td>
                                 </tr>
                             }
                         </tbody>
@@ -165,7 +171,7 @@
                 </div>
             }
             <!-- Paid / Balance Section -->
-            @if(BillsData.BillPayments.Count > 0)
+            @if (BillsData.BillPayments.Count > 0)
             {
                 <div class="col-md-6">
                     <h5>Payment Details</h5>
@@ -173,7 +179,7 @@
                         <thead>
                             <tr>
                                 <th class="text-left">Particulars</th>
-                                <th>Amount</th>
+                                <th class="text-end">Amount</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -187,7 +193,9 @@
                                             <text> (@payment.PaymentRef)</text>
                                         }
                                     </td>
-                                    <td>@payment.AmountPaid.ToString("N2")</td>
+                                    <td class="text-end">
+                                        @payment.AmountPaid.ToString("N2")
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -199,6 +207,7 @@
                     }
                 </div>
             }
+
         </div>
 
         <!-- Footer -->
@@ -228,7 +237,8 @@ else
     protected override async Task OnInitializedAsync()
     {
         BillsData = await Functions.GetAsync<BillsModel>($"Bill/Get?id={id}", true);
-        BillsData = Globals.BillGridTotals(BillsData);
+        if (BillsData != null)
+            BillsData = Globals.BillGridTotals(BillsData);
     }
 
 

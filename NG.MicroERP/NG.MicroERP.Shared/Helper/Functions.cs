@@ -97,7 +97,7 @@ public class Functions
                     }
                     catch (JsonException)
                     {
-                        return (false, default);
+                        return (true, default);
                     }
                 }
             }
@@ -149,10 +149,73 @@ public class Functions
         }
     }
 
-    public static async Task<bool> ShowConfirmation(IDialogService dialogService, string message)
+    public static async Task<bool> ShowConfirmation(IDialogService dialogService, string message, string icon = "🔔", string color = "#ff9800", string titleText = "Confirmation")
     {
-        bool? result = await dialogService.ShowMessageBox("🔔 Confirmation", (MarkupString)$"<p style='color: black; font-weight:bold;'>{message}</p>", yesText: "Confirm!", cancelText: "Cancel");
+        string html = $@"
+        <div style='text-align:center; padding:20px; font-family:Arial, sans-serif;'>
+            <div style='font-size:60px; margin-bottom:10px;'>{icon}</div>
+            <div style='font-size:28px; font-weight:bold; color:{color}; margin-bottom:10px;'>
+                {titleText}
+            </div>
+            <div style='font-size:18px; line-height:1.5; color:#FFC107;'>
+                {message}
+            </div>
+        </div>";
+
+        bool? result = await dialogService.ShowMessageBox(
+            title: "", // no plain title so we control HTML
+            markupMessage: (MarkupString)html,
+            yesText: "✅ Confirm",
+            cancelText: "❌ Cancel"
+        );
+
         return result ?? false;
+    }
+
+    public static async Task ShowMessage(IDialogService dialogService, string type, string message)
+    {
+        string icon = type.ToLower() switch
+        {
+            "error" => "❌",
+            "success" => "✅",
+            "warning" => "⚠️",
+            "info" => "ℹ️",
+            _ => "🔔"
+        };
+
+        string titleText = type.ToLower() switch
+        {
+            "error" => "Error",
+            "success" => "Success",
+            "warning" => "Warning",
+            "info" => "Information",
+            _ => "Message"
+        };
+
+        string color = type.ToLower() switch
+        {
+            "error" => "#e74c3c",
+            "success" => "#27ae60",
+            "warning" => "#f39c12",
+            "info" => "#2980b9",
+            _ => "#2c3e50"
+        };
+
+        // SweetAlert-style HTML
+        string html = $@"
+        <div style='text-align:center; padding:20px; font-family:Arial, sans-serif;'>
+            <div style='font-size:60px; margin-bottom:10px;'>{icon}</div>
+            <div style='font-size:28px; font-weight:bold; color:{color}; margin-bottom:10px;'>
+                {titleText}
+            </div>
+            <div style='font-size:18px; line-height:1.5; color:#FFC107;'>
+                {message}
+            </div>
+        </div>";
+
+        MarkupString markupMessage = (MarkupString)html;
+
+        await dialogService.ShowMessageBox("", markupMessage, "OK");
     }
 
 
@@ -252,30 +315,7 @@ public class Functions
         return $"{timestamp}_{Guid.NewGuid():N}{extension}";
     }
 
-    public static async Task ShowMessage(IDialogService dialogService, string type, string message)
-    {
-        string title = type.ToLower() switch
-        {
-            "error" => "❌ Error",
-            "success" => "✅ Success",
-            "warning" => "⚠️ Warning",
-            "info" => "ℹ️ Info",
-            _ => "🔔 Message"
-        };
-
-        string color = type.ToLower() switch
-        {
-            "error" => "red",
-            "success" => "green",
-            "warning" => "orange",
-            "info" => "blue",
-            _ => "black"
-        };
-
-        MarkupString markupMessage = (MarkupString)$"<p style='color:{color}; font-weight:bold;'>{message}</p>";
-
-        _ = await dialogService.ShowMessageBox(title, markupMessage, "Okay");
-    }
+ 
 
     public static string GenerateRandomPassword(int iNumChars = 8)
     {
@@ -419,7 +459,7 @@ public class Functions
         int dollars = (int)amount;
         int cents = (int)((amount - dollars) * 100);
 
-        string dollarPart = NumberToWords(dollars) + (dollars == 1 ? " Rupee" : " Ruppees");
+        string dollarPart = NumberToWords(dollars) + (dollars == 1 ? " Rupee" : " Ruppes");
         string centPart = cents > 0 ? " and " + NumberToWords(cents) + (cents == 1 ? " Paisa" : " Paisa") : "";
 
         return dollarPart + centPart + " Only";

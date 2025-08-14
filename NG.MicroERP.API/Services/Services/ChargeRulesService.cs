@@ -21,7 +21,7 @@ public class ChargeRulesService : IChargeRulesService
 
     public async Task<(bool, List<ChargeRulesModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM ChargeRules Where IsSoftDeleted=0";
+        string SQL = $@"SELECT * FROM ChargeRules Where IsSoftDeleted=0 and IsActive=1";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;
@@ -83,8 +83,8 @@ public class ChargeRulesService : IChargeRulesService
 				'{obj.CalculationBase!.ToUpper()}', 
 				{obj.SequenceOrder},
 				'{obj.ChargeCategory!.ToUpper()}', 
-				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
-				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+				'{obj.EffectiveFrom.ToString("yyyy-MM-dd HH:mm:ss")}',
+				'{obj.EffectiveTo.ToString("yyyy-MM-dd HH:mm:ss")}',
 				{obj.IsActive},
 				{obj.CreatedBy},
 				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
@@ -126,8 +126,8 @@ public class ChargeRulesService : IChargeRulesService
 					CalculationBase = '{obj.CalculationBase!.ToUpper()}', 
 					SequenceOrder = {obj.SequenceOrder}, 
 					ChargeCategory = '{obj.ChargeCategory!.ToUpper()}', 
-					EffectiveFrom = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
-					EffectiveTo = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					EffectiveFrom = '{obj.EffectiveFrom.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					EffectiveTo = '{obj.EffectiveTo.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
 					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 

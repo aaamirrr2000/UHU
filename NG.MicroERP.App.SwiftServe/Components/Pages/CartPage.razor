@@ -206,13 +206,13 @@
             BillAmount = Convert.ToDecimal(billDetails.Sum(d => d.Qty * Convert.ToDouble(d.UnitPrice)))
         };
 
-        var request = new Bill_And_Bill_Detail_Model
+        var request = new BillsModel
         {
             Bill = bill,
             BillDetails = new ObservableCollection<BillDetailModel>(billDetails)
         };
 
-        var result = await Functions.PostAsync<Bill_And_Bill_Detail_Model>("Bill/Insert", request, true);
+        var result = await Functions.PostAsync<BillsModel>("Bill/Insert", request, true);
 
         if (!result.Success)
         {
