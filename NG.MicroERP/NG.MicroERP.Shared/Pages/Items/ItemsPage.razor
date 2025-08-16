@@ -54,8 +54,8 @@
                     <ValidationMessage For="@(() => record.Code)" />
                 </div>
                     <div class="col-6 mb-3">
-                        <MudTextField Label="PCTCode" id="PCTCode" @bind-Value="record.PCTCode" Variant="Variant.Filled" placeholder="PCTCode" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.PCTCode)" />
+                        <MudTextField Label="PCTCode" id="PCTCode" @bind-Value="record.HsCode" Variant="Variant.Filled" placeholder="PCTCode" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.HsCode)" />
                     </div>
                 <div class="col-6 mb-3">
                     <MudTextField Label="Name" id="Name" @bind-Value="record.Name" Variant="Variant.Filled" placeholder="Name" ReadOnly="@isReadOnly"></MudTextField>
@@ -139,6 +139,34 @@
 
                     <ValidationMessage For="@(() => record.StockType)" />
                 </div>
+                    <div class="col-6 mb-3">
+
+                        <MudSelect T="string"
+                                   @bind-Value="record.SaleType"
+                                   Label="Sale Type"
+                                   Variant="Variant.Filled"
+                                   Dense="true"
+                                   Placeholder="Sale Type"
+                                   HelperText="Select Sale Type"
+                                   HelperTextOnFocus="true"
+                                   Clearable="true">
+
+                            @if (Sal != null && Sal.Any())
+                            {
+                                if (string.IsNullOrWhiteSpace(record.SaleType))
+                                {
+                                    record.SaleType = Sto.First().ListValue;
+                                }
+
+                                foreach (var i in Sto)
+                                {
+                                    <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+
+                        <ValidationMessage For="@(() => record.StockType)" />
+                    </div>
                 <div class="col-6 mb-3">
 
                     <MudSelect T="string"
@@ -233,6 +261,7 @@
     static ItemsModel record = new();
     List<CategoriesModel> Cat = new();
     List<TypeCodeModel> Sto = null!;
+    List<TypeCodeModel> Sal = null!;
     List<TypeCodeModel> Unit = null!;
 
     [Parameter] public string Action { get; set; } = "INSERT";
@@ -252,6 +281,7 @@
         LoadingPanel = true;
         Cat = await Functions.GetAsync<List<CategoriesModel>>($"Categories/Search", true) ?? new List<CategoriesModel>();
         Sto = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/STOCK TYPE", true) ?? new List<TypeCodeModel>();
+        Sal = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/SALE TYPE", true) ?? new List<TypeCodeModel>();
         Unit = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/UNIT TYPE", true) ?? new List<TypeCodeModel>();
 
         if (Action == "INSERT")

@@ -21,7 +21,7 @@ public class BillDetailService : IBillDetailService
 
                         SELECT
                           Bill.SeqNo,
-                          BillType,
+                          InvoiceType,
                           Bill.PartyId,
                           Parties.Name as PartyName,
                           Bill.LocationId,

@@ -80,9 +80,9 @@ public class BillService : IBillService
         {
             string Code = dapper.GetCode("INV", "Bill", "SeqNo")!;
             string SQLInsert = $@"
-                INSERT INTO Bill (OrganizationId, SeqNo, BillType, Source, SalesId, LocationId, PartyId, PartyName, PartyPhone, PartyEmail,
+                INSERT INTO Bill (OrganizationId, SeqNo, InvoiceType, Source, SalesId, LocationId, PartyId, PartyName, PartyPhone, PartyEmail,
                 PartyAddress, TableId, TranDate, ServiceType, PreprationTime, DiscountAmount, Description, Status, CreatedBy, CreatedOn, CreatedFrom, IsSoftDeleted)
-                VALUES ({obj.Bill.OrganizationId}, '{Code}', '{obj.Bill.BillType!.ToUpper()}', '{obj.Bill.Source!.ToUpper()}', {obj.Bill.SalesId},
+                VALUES ({obj.Bill.OrganizationId}, '{Code}', '{obj.Bill.InvoiceType!.ToUpper()}', '{obj.Bill.Source!.ToUpper()}', {obj.Bill.SalesId},
                 {obj.Bill.LocationId}, {obj.Bill.PartyId}, '{obj.Bill.PartyName!.ToUpper()}', '{obj.Bill.PartyPhone!.ToUpper()}',
                 '{obj.Bill.PartyEmail!.ToUpper()}', '{obj.Bill.PartyAddress!.ToUpper()}', {obj.Bill.TableId},
                 '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', '{obj.Bill.ServiceType!.ToUpper()}', '{obj.Bill.PreprationTime}',
@@ -127,8 +127,6 @@ public class BillService : IBillService
                     await dapper.Insert(paymentInsert);
                 }
 
-                //await DigitalInvoice(obj, insertedId);
-
                 var output = await Search($"Id = {res.Item2}")!;
                 List<BillsAllModel> result = output.Item2;
 
@@ -148,53 +146,13 @@ public class BillService : IBillService
         }
     }
 
-    public async Task DigitalInvoice(int Id)
-    {
-        var obj = await Functions.GetAsync<BillsModel>($"Bill/Get?id={Id}", true);
-
-        //Generate Json to upload on FBR portal
-        var fbrInvoice = new FbrInvoiceModel
-        {
-            InvoiceNumber = obj.Bill.SeqNo ?? $"BILL-{obj.Bill.Id}",
-            POSID = obj.Bill.LocationId.ToString(),
-            USIN = $"{obj.Bill.TranDate:yyyyMMdd}-{obj.Bill.Id:D6}",
-            DateTime = obj.Bill.TranDate,
-            BuyerNTN = "",
-            BuyerCNIC = "", 
-            BuyerName = obj.Bill.PartyName!,
-            BuyerPhoneNumber = obj.Bill.PartyPhone!,
-            TotalSaleValue = obj.Bill.SubTotalAmount,
-            TotalTaxCharged = obj.Bill.TotalTaxAmount,
-            Discount = obj.Bill.DiscountAmount,
-            InvoiceType = 1, // 1 = Standard
-            PaymentMode = 1, // 1 = Cash, 2 = Credit Card, etc.
-            Items = obj.BillDetails.Select(d => new FbrInvoiceItemModel
-            {
-                ItemCode = d.ItemId.ToString(),
-                ItemName = d.ItemName,
-                PCTCode = "1000.00", // map to real PCT Code if you have it
-                Quantity = Convert.ToDecimal(d.Qty),
-                UnitPrice = Convert.ToDecimal(d.UnitPrice),
-                SaleValue = Convert.ToDecimal(d.Qty * d.UnitPrice),
-                TaxRate = Convert.ToDecimal(d.TaxAmount > 0 ? (d.TaxAmount / (d.Qty * d.UnitPrice) * 100) : 0),
-                TaxCharged = Convert.ToDecimal(d.TaxAmount),
-                TotalAmount = Convert.ToDecimal(d.ItemTotalAmount)
-            }).ToList()
-        };
-
-        string InvoiceJSon = JsonConvert.SerializeObject(fbrInvoice, Formatting.Indented);
-
-        //Get QRcode from FBR and store with Bill
-        
-    }
-
     public async Task<(bool, BillModel)> Put(BillsModel obj)
     {
         try
         {
             string SQLUpdate = $@"
                 UPDATE Bill SET OrganizationId = {obj.Bill.OrganizationId}, SeqNo = '{obj.Bill.SeqNo!.ToUpper()}',
-                BillType = '{obj.Bill.BillType!.ToUpper()}', Source = '{obj.Bill.Source!.ToUpper()}', SalesId = {obj.Bill.SalesId},
+                InvoiceType = '{obj.Bill.InvoiceType!.ToUpper()}', Source = '{obj.Bill.Source!.ToUpper()}', SalesId = {obj.Bill.SalesId},
                 LocationId = {obj.Bill.LocationId}, PartyId = {obj.Bill.PartyId}, PartyName = '{obj.Bill.PartyName!.ToUpper()}',
                 PartyPhone = '{obj.Bill.PartyPhone!.ToUpper()}', PartyEmail = '{obj.Bill.PartyEmail!.ToUpper()}',
                 PartyAddress = '{obj.Bill.PartyAddress!.ToUpper()}', TableId = {obj.Bill.TableId},

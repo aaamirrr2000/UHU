@@ -74,6 +74,34 @@
                     <ValidationMessage For="@(() => record.Address)" />
                 </div>
                 <div class="col-6 mb-3">
+
+                    <MudSelect T="string"
+                               @bind-Value="record.Province"
+                               Label="PartyType"
+                               Variant="Variant.Filled"
+                               Dense="true"
+                               Placeholder="Province"
+                               HelperText="Select Province"
+                               HelperTextOnFocus="true"
+                               Clearable="true">
+
+                        @if (Pro != null && Pro.Any())
+                        {
+                            if (string.IsNullOrWhiteSpace(record.Province))
+                            {
+                                record.Province = Pro.First().ListValue;
+                            }
+
+                            foreach (var i in Par)
+                            {
+                                <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+
+                    <ValidationMessage For="@(() => record.PartyType)" />
+                </div>
+                <div class="col-6 mb-3">
                     <MudTextField Label="Phone" id="Phone" @bind-Value="record.Phone" Variant="Variant.Filled" placeholder="Phone" ReadOnly="@isReadOnly"></MudTextField>
                     <ValidationMessage For="@(() => record.Phone)" />
                 </div>
@@ -88,6 +116,34 @@
                 <div class="col-6 mb-3">
                     <MudTextField Label="CNIC" id="CNIC" @bind-Value="record.CNIC" Variant="Variant.Filled" placeholder="CNIC" ReadOnly="@isReadOnly"></MudTextField>
                     <ValidationMessage For="@(() => record.CNIC)" />
+                </div>
+                 <div class="col-6 mb-3">
+
+                    <MudSelect T="string"
+                               @bind-Value="record.RegistrationType"
+                               Label="RegistrationType"
+                               Variant="Variant.Filled"
+                               Dense="true"
+                               Placeholder="RegistrationType"
+                               HelperText="Select RegistrationType"
+                               HelperTextOnFocus="true"
+                               Clearable="true">
+
+                        @if (Reg != null && Reg.Any())
+                        {
+                            if (string.IsNullOrWhiteSpace(record.Province))
+                            {
+                                record.RegistrationType = Reg.First().ListValue;
+                            }
+
+                            foreach (var i in Par)
+                            {
+                                <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+
+                    <ValidationMessage For="@(() => record.PartyType)" />
                 </div>
                 <div class="col-6 mb-3">
                     <MudNumericField Label="DiscountPercentage" @bind-Value="record.DiscountPercentage" Variant="Variant.Filled" placeholder="DiscountPercentage" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
@@ -196,8 +252,9 @@
 {
     static PartiesModel record = new();
     List<TypeCodeModel> Par = null!;
+    List<TypeCodeModel> Pro = null!;
+    List<TypeCodeModel> Reg = null!;
     List<ChartOfAccountsModel> Acc = new();
-
 
     [Parameter] public string Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
@@ -215,6 +272,8 @@
     {
         LoadingPanel = true;
         Par = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PARTY TYPE", true) ?? new List<TypeCodeModel>();
+        Pro = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PROVINCE", true) ?? new List<TypeCodeModel>();
+        Reg = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/REGISTRATION STATUS", true) ?? new List<TypeCodeModel>();
         Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search", true) ?? new List<ChartOfAccountsModel>();
 
         if (Action == "INSERT")

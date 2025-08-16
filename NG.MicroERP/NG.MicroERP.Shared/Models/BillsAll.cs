@@ -10,7 +10,7 @@ public class BillsAllModel
 {
     public int ID { get; set; } = 0;
     public string? SeqNo { get; set; } = string.Empty;
-    public string? BillType { get; set; } = string.Empty;
+    public string? InvoiceType { get; set; } = string.Empty;
     public string? Source { get; set; } = string.Empty;
     public int SalesId { get; set; } = 0;
     public string? Fullname { get; set; } = string.Empty;
@@ -24,6 +24,7 @@ public class BillsAllModel
     public string? PartyPhone { get; set; } = string.Empty;
     public string? PartyEmail { get; set; } = string.Empty;
     public string? PartyAddress { get; set; } = string.Empty;
+    public string? ScenarioId { get; set; } = string.Empty;
     public DateTime TranDate { get; set; } = DateTime.Today;
     public int PreprationTime { get; set; } = 0;
     public double SubTotalAmount { get; set; } = 0;

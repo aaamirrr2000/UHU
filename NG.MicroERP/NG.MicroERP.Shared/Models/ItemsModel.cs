@@ -13,7 +13,7 @@ public class ItemsModel
     public int OrganizationId { get; set; } = 0;
     public string? Pic { get; set; } = string.Empty;
     public string? Code { get; set; } = string.Empty;
-    public string? PCTCode { get; set; } = string.Empty;
+    public string? HsCode { get; set; } = string.Empty;
     public string? Name { get; set; } = string.Empty;
     public string? Description { get; set; } = string.Empty;
     public double MinQty { get; set; } = 0;
@@ -24,6 +24,7 @@ public class ItemsModel
     public double RetailPrice { get; set; } = 0;
     public int CategoriesId { get; set; } = 0;
     public string? StockType { get; set; } = string.Empty;
+    public string? SaleType { get; set; } = string.Empty;
     public string? Unit { get; set; } = string.Empty;
     public string? ServingSize { get; set; }
     public int IsInventoryItem { get; set; } = 1;

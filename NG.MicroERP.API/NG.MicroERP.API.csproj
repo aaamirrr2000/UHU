@@ -25,26 +25,27 @@
     <EmbeddedResource Include="Scripts\20240111000000_CreateLocationTable.sql" />
     <EmbeddedResource Include="Scripts\20240112000000_CreatePartiesTable.sql" />
     <EmbeddedResource Include="Scripts\20240113000000_CreateCategoriesTable.sql" />
-    <EmbeddedResource Include="Scripts\20240114000000_CreateItemsTable.sql" />
-    <EmbeddedResource Include="Scripts\20240115000000_CreateLeavesTable.sql" />
+    <EmbeddedResource Include="Scripts\20240114200000_CreateDigitalInvoiceSaleTypeTable.sql" />
+    <EmbeddedResource Include="Scripts\20240115000000_CreateItemsTable.sql" />
+    <EmbeddedResource Include="Scripts\20240115200000_CreateLeavesTable.sql" />
     <EmbeddedResource Include="Scripts\20240116000000_CreateCashbookTable.sql" />
     <EmbeddedResource Include="Scripts\20240116100000_CreateRestaurantTablesTable.sql" />
     <EmbeddedResource Include="Scripts\20240117300000_CreateItemTaxesView.sql" />
     <EmbeddedResource Include="Scripts\20240117200000_CreateItemTaxesTable.sql" />
     <EmbeddedResource Include="Scripts\20240116200000_CreateTaxesMasterTable.sql" />
-    <EmbeddedResource Include="Scripts\20240117500000_CreateFBRSubmissionTable.sql" />
+    <EmbeddedResource Include="Scripts\20240114300000_CreateDigitalInvoiceScenariosTable.sql" />
     <EmbeddedResource Include="Scripts\20240117000000_CreateBillTable.sql" />
     <EmbeddedResource Include="Scripts\20240118000000_CreateStockReceivingTable.sql" />
     <EmbeddedResource Include="Scripts\20240117400000_CreateChargesRuleTable.sql" />
     <EmbeddedResource Include="Scripts\20240120000000_CreateDevicesTable.sql" />
-    <EmbeddedResource Include="Scripts\20250230000000_CreateDigitalInvoiceConfig.sql" />
+    <EmbeddedResource Include="Scripts\20240114100000_CreateDigitalInvoiceConfig.sql" />
     <EmbeddedResource Include="Scripts\20250220000000_CreateAttendance.sql" />
     <EmbeddedResource Include="Scripts\20250240000000_CategoriesItemsDineInInsert.sql" />
     <EmbeddedResource Include="Scripts\20250250000000_DineInOrderStatusView.sql" />
     <EmbeddedResource Include="Scripts\20250303000000_GroupMenuView.sql" />
     <EmbeddedResource Include="Scripts\20250304000000_CashBookReport.sql" />
     <EmbeddedResource Include="Scripts\20250304100000_Bills.sql" />
-    <EmbeddedResource Include="Scripts\20240114100000_CategoriesHavingSomeItems.sql" />
+    <EmbeddedResource Include="Scripts\20240115100000_CategoriesHavingSomeItems.sql" />
     <EmbeddedResource Include="Scripts\20250305000000_BillReport.sql" />
   </ItemGroup>
 

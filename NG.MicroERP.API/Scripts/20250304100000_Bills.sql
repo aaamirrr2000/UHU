@@ -2,7 +2,7 @@
 SELECT
     Bill.ID,
     Bill.SeqNo,
-    Bill.BillType,
+    Bill.InvoiceType,
     Bill.Source,
     Bill.SalesId,
     Employees.Fullname,

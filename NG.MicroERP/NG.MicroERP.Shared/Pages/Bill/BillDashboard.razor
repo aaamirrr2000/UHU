@@ -68,7 +68,7 @@
 
                     <PropertyColumn Property="x => x.SeqNo" Title="Doc #" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.TranDate" Title="Date" Sortable="true" Filterable="true" Format="dd-MMM-yyyy" />
-                    <PropertyColumn Property="x => x.BillType" Title="Tran" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.InvoiceType" Title="Tran" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.Source" Title="Source" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.PartyName" Title="Party" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.SubTotalAmount" Title="Items Total" Sortable="true" Filterable="true" CellStyle="text-align: right;" Format="#,##0.00"/>
@@ -125,7 +125,7 @@
         var formattedEndDate = _dateRange.End?.ToString("yyyy-MM-dd") ?? string.Empty;
 
 
-        string criteria = $" AND BillType LIKE '%{InvoiceType}%'";
+        string criteria = $" AND InvoiceType LIKE '%{InvoiceType}%'";
 
 
 

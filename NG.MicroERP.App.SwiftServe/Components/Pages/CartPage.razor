@@ -187,7 +187,7 @@
         var bill = new BillModel
         {
             OrganizationId = Globals.Organization.Id,
-            BillType = "BILL",
+            InvoiceType = "BILL",
             Source = "POS",
             TableId = CartState.SelectedTable?.Id ?? 0,
             SalesId = Globals.User.EmpId,
@@ -209,7 +209,7 @@
         var request = new BillsModel
         {
             Bill = bill,
-            BillDetails = new ObservableCollection<BillDetailModel>(billDetails)
+            BillDetails = new ObservableCollection<BillItemReportModel>(billDetails)
         };
 
         var result = await Functions.PostAsync<BillsModel>("Bill/Insert", request, true);

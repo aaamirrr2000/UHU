@@ -44,7 +44,9 @@ public class TaxItemConfigModel
     public int CategoriesId { get; set; } = 0;
     public string? Description { get; set; } = string.Empty;
     public int IsInventoryItem { get; set; } = 0;
-    public string? PCTCode { get; set; } = string.Empty;
+    public string? HsCode { get; set; } = string.Empty;
+    public string? SaleType { get; set; } = string.Empty;
+    public string? SaleTypeDescription { get; set; } = string.Empty;
     public string? ServingSize { get; set; } = string.Empty;
     public int IsActive { get; set; } = 0;
     public int IsSoftDeleted { get; set; } = 0;

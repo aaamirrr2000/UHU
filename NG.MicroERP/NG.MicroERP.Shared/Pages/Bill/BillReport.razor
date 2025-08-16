@@ -23,7 +23,7 @@
                 </div>
             </div>
             <div class="row">
-                <h2>@(BillsData.Bill.BillType == "QUOTATION" ? "Q U O T A T I O N" : BillsData.Bill.BillType)</h2>
+                <h2>@(BillsData.Bill.InvoiceType == "QUOTATION" ? "Q U O T A T I O N" : BillsData.Bill.InvoiceType)</h2>
             </div>
         </div>
 
@@ -31,7 +31,7 @@
         <div class="row mt-4">
             <div class="col-sm-6">
                 <p><strong>Bill No:</strong> @BillsData.Bill.SeqNo</p>
-                <p><strong>Bill Type:</strong> @BillsData.Bill.BillType</p>
+                <p><strong>Bill Type:</strong> @BillsData.Bill.InvoiceType</p>
                 <p><strong>Date:</strong> @BillsData.Bill.TranDate.ToString("dd-MMM-yyyy hh:mm:ss tt")</p>
                 <p><strong>Location:</strong> @BillsData.Bill.Location</p>
             </div>

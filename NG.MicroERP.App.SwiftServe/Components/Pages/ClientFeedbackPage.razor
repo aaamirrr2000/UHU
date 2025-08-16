@@ -140,7 +140,7 @@
         MyBill.Bill.ClientComments = feedback.Comments;
         //MyBill.Bill.Rating = rating;
 
-        MyBill.BillDetails = new ObservableCollection<BillDetailModel>(BillDetail);
+        MyBill.BillDetails = new ObservableCollection<BillItemReportModel>(BillDetail);
 
         var result = await Functions.PostAsync<string>("Bill/ClientComments", MyBill, true);
 

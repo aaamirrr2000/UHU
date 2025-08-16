@@ -107,10 +107,12 @@
                         </CellTemplate>
                     </TemplateColumn>
 				<PropertyColumn Property="x => x.Code" Title="Code" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.HsCode" Title="HsCode" Sortable="true" Filterable="true" />
 				<PropertyColumn Property="x => x.Name" Title="Item" Sortable="true" Filterable="true" />
                 <PropertyColumn Property="x => x.CategoryName" Title="Category" Sortable="true" Filterable="true" />
                 @* <PropertyColumn Property="x => x.Description" Title="Description" Sortable="true" Filterable="true" /> *@
 				<PropertyColumn Property="x => x.StockType" Title="Stock Type" Sortable="true" Filterable="true" />
+                <PropertyColumn Property="x => x.SaleType" Title="Sale Type" Sortable="true" Filterable="true" />
 				<PropertyColumn Property="x => x.Unit" Title="Unit" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.RetailPrice" Title="Retail Price" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
 				@* <PropertyColumn Property="x => x.ServingSize" Title="Serving Size JSon" Sortable="true" Filterable="true" /> *@

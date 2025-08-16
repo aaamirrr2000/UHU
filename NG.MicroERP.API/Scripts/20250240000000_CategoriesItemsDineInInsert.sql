@@ -1,4 +1,4 @@
-﻿-- Enable explicit ID insertion for Categories
+﻿
 SET IDENTITY_INSERT Categories ON;
 
 INSERT INTO [dbo].[Categories] (
@@ -35,57 +35,29 @@ VALUES
 SET IDENTITY_INSERT Categories OFF;
 GO
 
--- Enable explicit ID insertion for Items
 SET IDENTITY_INSERT Items ON;
 
-
-INSERT INTO Items (
-    [Id], [OrganizationId], [Pic], [Code], [Name], [Description], [MinQty], [MaxQty], [Discount], [Tax], [CostPrice], [RetailPrice], 
-    [CategoriesId], [StockType], [Unit], [ServingSize], [IsInventoryItem], [IsFavItem], [IsActive], [CreatedBy], [CreatedOn], [CreatedFrom], 
-    [UpdatedBy], [UpdatedOn], [UpdatedFrom], [IsSoftDeleted]
-)
-VALUES
-(1, 1, null, 'GTR001', 'Yamaha F310', 'Acoustic guitar for beginners', 1.00, 5.00, 0.000000, 5.000000, 12000.00, 14500.00, 9, 'Piece', 'Unit', '[{"Size":"Standard","Price":14500,"Pic":"https://localhost:7019/files/guitar1.jpg"},{"Size":"With Bag","Price":15500,"Pic":"https://localhost:7019/files/guitar1b.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
-(2, 1, null, 'GTR002', 'Fender Stratocaster', 'Electric guitar with classic tone', 1.00, 3.00, 5.000000, 10.000000, 60000.00, 72000.00, 9, 'Piece', 'Unit', '[{"Size":"Standard","Price":72000,"Pic":"https://localhost:7019/files/guitar2.jpg"},{"Size":"With Amp","Price":80000,"Pic":"https://localhost:7019/files/guitar2b.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
-(3, 1, null, 'KYB001', 'Casio CTK-3500', '61-key portable keyboard', 1.00, 4.00, 0.000000, 5.000000, 18000.00, 22000.00, 22, 'Piece', 'Unit', '[{"Size":"Standard","Price":22000,"Pic":"https://localhost:7019/files/keyboard1.jpg"},{"Size":"With Stand","Price":25000,"Pic":"https://localhost:7019/files/keyboard1b.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
-(4, 1, null, 'KYB002', 'Yamaha PSR-E373', 'Touch-sensitive keyboard with 622 voices', 1.00, 2.00, 0.000000, 5.000000, 32000.00, 38000.00, 22, 'Piece', 'Unit', '[{"Size":"Standard","Price":38000,"Pic":"https://localhost:7019/files/keyboard2.jpg"},{"Size":"With Adapter","Price":40000,"Pic":"https://localhost:7019/files/keyboard2b.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
-(5, 1, null, 'DRM001', 'Roland V-Drums TD-1K', 'Electronic drum kit for practice', 1.00, 2.00, 0.000000, 8.000000, 85000.00, 95000.00, 23, 'Set', 'Unit', '[{"Size":"5-Piece","Price":95000,"Pic":"https://localhost:7019/files/drum1.jpg"},{"Size":"With Stool","Price":99000,"Pic":"https://localhost:7019/files/drum1b.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
-(6, 1, null, 'DRM002', 'Yamaha Stage Custom', 'Acoustic drum set with birch shells', 1.00, 1.00, 0.000000, 10.000000, 95000.00, 110000.00, 23, 'Set', 'Unit', '[{"Size":"Standard","Price":110000,"Pic":"https://localhost:7019/files/drum2.jpg"},{"Size":"With Cymbals","Price":120000,"Pic":"https://localhost:7019/files/drum2b.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
-(7, 1, null, 'VLN001', 'Stentor Student II', 'Full-size beginner violin', 1.00, 5.00, 0.000000, 5.000000, 9000.00, 11000.00, 18, 'Piece', 'Unit', '[{"Size":"4/4","Price":11000,"Pic":"https://localhost:7019/files/violin1.jpg"},{"Size":"3/4","Price":9500,"Pic":"https://localhost:7019/files/violin1b.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
-(8, 1, null, 'VLN002', 'Cremona SV-500', 'Professional model with ebony fittings', 1.00, 3.00, 0.000000, 8.000000, 22000.00, 26000.00, 19, 'Piece', 'Unit', '[{"Size":"4/4","Price":26000,"Pic":"https://localhost:7019/files/violin2.jpg"},{"Size":"With Case","Price":28000,"Pic":"https://localhost:7019/files/violin2b.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
-(9, 1, null, 'AMP001', 'Marshall MG15', '15-watt practice amp with overdrive', 1.00, 5.00, 0.000000, 5.000000, 10000.00, 12500.00, 2, 'Piece', 'Unit', '[{"Size":"Standard","Price":12500,"Pic":"https://localhost:7019/files/amp1.jpg"},{"Size":"With Cables","Price":13500,"Pic":"https://localhost:7019/files/amp1b.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
-(10, 1, null, 'AMP002', 'Fender Frontman 10G', '10-watt electric guitar amp', 1.00, 4.00, 0.000000, 5.000000, 8500.00, 10000.00, 2, 'Piece', 'Unit', '[{"Size":"Standard","Price":10000,"Pic":"https://localhost:7019/files/amp2.jpg"},{"Size":"With Cable","Price":11000,"Pic":"https://localhost:7019/files/amp2b.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
-(11, 1, null, 'STD001', 'Adjustable Music Stand', 'Foldable sheet music stand', 1.00, 10.00, 0.000000, 6.000000, 2000.00, 2500.00, 14, 'Piece', 'Unit', '[{"Size":"Standard","Price":2500,"Pic":"https://localhost:7019/files/stand1.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
-(12, 1, null, 'STR001', 'Leather Guitar Strap', 'Comfortable leather strap for guitar', 1.00, 15.00, 0.000000, 7.000000, 1200.00, 1600.00, 15, 'Piece', 'Unit', '[{"Size":"Standard","Price":1600,"Pic":"https://localhost:7019/files/strap1.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
-(13, 1, null, 'STRG001', 'D’Addario EJ16', 'Phosphor Bronze Acoustic Guitar Strings', 1.00, 30.00, 0.000000, 8.000000, 600.00, 850.00, 16, 'Pack', 'Unit', '[{"Size":"Set","Price":850,"Pic":"https://localhost:7019/files/string1.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
-(14, 1, null, 'UKL001', 'Kala KA-15S', 'Soprano ukulele with mahogany body', 1.00, 4.00, 0.000000, 5.000000, 9000.00, 10500.00, 17, 'Piece', 'Unit', '[{"Size":"Standard","Price":10500,"Pic":"https://localhost:7019/files/ukulele1.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
-(15, 1, null, 'VLN003', 'Yamaha V5SC', 'Intermediate violin with case and bow', 1.00, 2.00, 0.000000, 5.000000, 30000.00, 36000.00, 18, 'Piece', 'Unit', '[{"Size":"4/4","Price":36000,"Pic":"https://localhost:7019/files/violin3.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
-(16, 1, null, 'INS001', 'Flute - Beginner Model', 'Closed hole silver-plated flute', 1.00, 5.00, 0.000000, 10.000000, 7000.00, 8800.00, 19, 'Piece', 'Unit', '[{"Size":"Standard","Price":8800,"Pic":"https://localhost:7019/files/instrument1.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
-(17, 1, null, 'REC001', 'Yamaha YRS-23', 'Soprano Recorder with Baroque Fingering', 1.00, 10.00, 0.000000, 11.000000, 800.00, 1000.00, 20, 'Piece', 'Unit', '[{"Size":"Standard","Price":1000,"Pic":"https://localhost:7019/files/recorder1.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
-(18, 1, null, 'CAP001', 'Kyser Quick-Change Capo', 'Capo for 6-string acoustic guitars', 1.00, 10.00, 0.000000, 12.000000, 1200.00, 1500.00, 7, 'Piece', 'Unit', '[{"Size":"Standard","Price":1500,"Pic":"https://localhost:7019/files/capo1.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
-(19, 1, null, 'BAG001', 'Padded Guitar Bag', 'Protective carrying bag for guitar', 1.00, 10.00, 0.000000, 13.000000, 2500.00, 3000.00, 4, 'Piece', 'Unit', '[{"Size":"Standard","Price":3000,"Pic":"https://localhost:7019/files/bag1.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0),
-(20, 1, null, 'SVC001', 'Guitar Tuning Service', 'Professional guitar tuning by expert', 1.00, 5.00, 0.000000, 14.000000, 1000.00, 1500.00, 21, 'Service', 'Unit', '[{"Size":"Per Session","Price":1500,"Pic":"https://localhost:7019/files/service1.jpg"}]', 1, 0, 1, 1, '2025-08-01 12:36:28.033', 'localhost', 1, '2025-08-01 12:36:28.033', 'localhost', 0);
-
-UPDATE Items SET PCTCode = 'YMH-F310' WHERE Code = 'GTR001';
-UPDATE Items SET PCTCode = 'FND-STRAT' WHERE Code = 'GTR002';
-UPDATE Items SET PCTCode = 'CS-CTK3500' WHERE Code = 'KYB001';
-UPDATE Items SET PCTCode = 'YMH-PSRE373' WHERE Code = 'KYB002';
-UPDATE Items SET PCTCode = 'RLD-TD1K' WHERE Code = 'DRM001';
-UPDATE Items SET PCTCode = 'YMH-STAGE' WHERE Code = 'DRM002';
-UPDATE Items SET PCTCode = 'STNT-STU2' WHERE Code = 'VLN001';
-UPDATE Items SET PCTCode = 'CRM-SV500' WHERE Code = 'VLN002';
-UPDATE Items SET PCTCode = 'MRSH-MG15' WHERE Code = 'AMP001';
-UPDATE Items SET PCTCode = 'FND-FRNT10G' WHERE Code = 'AMP002';
-UPDATE Items SET PCTCode = 'GEN-MUSSTD' WHERE Code = 'STD001';
-UPDATE Items SET PCTCode = 'GEN-GTRSTRP' WHERE Code = 'STR001';
-UPDATE Items SET PCTCode = 'DAD-EJ16' WHERE Code = 'STRG001';
-UPDATE Items SET PCTCode = 'KALA-KA15S' WHERE Code = 'UKL001';
-UPDATE Items SET PCTCode = 'YMH-V5SC' WHERE Code = 'VLN003';
-UPDATE Items SET PCTCode = 'GEN-FLUTE' WHERE Code = 'INS001';
-UPDATE Items SET PCTCode = 'YMH-YRS23' WHERE Code = 'REC001';
-UPDATE Items SET PCTCode = 'KYS-QCCAPO' WHERE Code = 'CAP001';
-UPDATE Items SET PCTCode = 'GEN-GTRBAG' WHERE Code = 'BAG001';
-UPDATE Items SET PCTCode = 'GEN-TUNINGSVC' WHERE Code = 'SVC001';
+INSERT INTO Items (Id, OrganizationId, Pic, Code, HSCode, Name, Description, MinQty, MaxQty, Discount, Tax, CostPrice, RetailPrice, CategoriesId, StockType, SaleTypeId, Unit, ServingSize) VALUES
+(1, 1, NULL, 'GTR001', '9202.90', 'YAMAHA F310', 'ACOUSTIC GUITAR FOR BEGINNERS', 1.00, 5.00, 0.000000, 5.000000, 12000.00, 14500.00, 9, 'ITEM', 1, 'PIECE', '[{"SIZE":"STANDARD","PRICE":14500,"PIC":"HTTPS://LOCALHOST:7019/FILES/GUITAR1.JPG"},{"SIZE":"WITH BAG","PRICE":15500,"PIC":"HTTPS://LOCALHOST:7019/FILES/GUITAR1B.JPG"}]'),
+(2, 1, NULL, 'GTR002', '9202.90', 'FENDER STRATOCASTER', 'ELECTRIC GUITAR WITH CLASSIC TONE', 1.00, 3.00, 5.000000, 10.000000, 60000.00, 72000.00, 9, 'ITEM', 1, 'PIECE', '[{"SIZE":"STANDARD","PRICE":72000,"PIC":"HTTPS://LOCALHOST:7019/FILES/GUITAR2.JPG"},{"SIZE":"WITH AMP","PRICE":80000,"PIC":"HTTPS://LOCALHOST:7019/FILES/GUITAR2B.JPG"}]'),
+(3, 1, NULL, 'KYB001', '9207.10', 'CASIO CTK-3500', '61-KEY PORTABLE KEYBOARD', 1.00, 4.00, 0.000000, 5.000000, 18000.00, 22000.00, 22, 'ITEM', 1, 'PIECE', '[{"SIZE":"STANDARD","PRICE":22000,"PIC":"HTTPS://LOCALHOST:7019/FILES/KEYBOARD1.JPG"},{"SIZE":"WITH STAND","PRICE":25000,"PIC":"HTTPS://LOCALHOST:7019/FILES/KEYBOARD1B.JPG"}]'),
+(4, 1, NULL, 'KYB002', '9207.10', 'YAMAHA PSR-E373', 'TOUCH-SENSITIVE KEYBOARD WITH 622 VOICES', 1.00, 2.00, 0.000000, 5.000000, 32000.00, 38000.00, 22, 'ITEM', 1, 'PIECE', '[{"SIZE":"STANDARD","PRICE":38000,"PIC":"HTTPS://LOCALHOST:7019/FILES/KEYBOARD2.JPG"},{"SIZE":"WITH ADAPTER","PRICE":40000,"PIC":"HTTPS://LOCALHOST:7019/FILES/KEYBOARD2B.JPG"}]'),
+(5, 1, NULL, 'DRM001', '9206.00', 'ROLAND V-DRUMS TD-1K', 'ELECTRONIC DRUM KIT FOR PRACTICE', 1.00, 2.00, 0.000000, 8.000000, 85000.00, 95000.00, 23, 'ITEM', 1, 'SET', '[{"SIZE":"5-PIECE","PRICE":95000,"PIC":"HTTPS://LOCALHOST:7019/FILES/DRUM1.JPG"},{"SIZE":"WITH STOOL","PRICE":99000,"PIC":"HTTPS://LOCALHOST:7019/FILES/DRUM1B.JPG"}]'),
+(6, 1, NULL, 'DRM002', '9206.00', 'YAMAHA STAGE CUSTOM', 'ACOUSTIC DRUM SET WITH BIRCH SHELLS', 1.00, 1.00, 0.000000, 10.000000, 95000.00, 110000.00, 23, 'ITEM', 1, 'SET', '[{"SIZE":"STANDARD","PRICE":110000,"PIC":"HTTPS://LOCALHOST:7019/FILES/DRUM2.JPG"},{"SIZE":"WITH CYMBALS","PRICE":120000,"PIC":"HTTPS://LOCALHOST:7019/FILES/DRUM2B.JPG"}]'),
+(7, 1, NULL, 'VLN001', '9202.10', 'STENTOR STUDENT II', 'FULL-SIZE BEGINNER VIOLIN', 1.00, 5.00, 0.000000, 5.000000, 9000.00, 11000.00, 18, 'ITEM', 1, 'PIECE', '[{"SIZE":"4/4","PRICE":11000,"PIC":"HTTPS://LOCALHOST:7019/FILES/VIOLIN1.JPG"},{"SIZE":"3/4","PRICE":9500,"PIC":"HTTPS://LOCALHOST:7019/FILES/VIOLIN1B.JPG"}]'),
+(8, 1, NULL, 'VLN002', '9202.10', 'CREMONA SV-500', 'PROFESSIONAL MODEL WITH EBONY FITTINGS', 1.00, 3.00, 0.000000, 8.000000, 22000.00, 26000.00, 19, 'ITEM', 1, 'PIECE', '[{"SIZE":"4/4","PRICE":26000,"PIC":"HTTPS://LOCALHOST:7019/FILES/VIOLIN2.JPG"},{"SIZE":"WITH CASE","PRICE":28000,"PIC":"HTTPS://LOCALHOST:7019/FILES/VIOLIN2B.JPG"}]'),
+(9, 1, NULL, 'AMP001', '8518.40', 'MARSHALL MG15', '15-WATT PRACTICE AMP WITH OVERDRIVE', 1.00, 5.00, 0.000000, 5.000000, 10000.00, 12500.00, 2, 'ITEM', 1, 'PIECE', '[{"SIZE":"STANDARD","PRICE":12500,"PIC":"HTTPS://LOCALHOST:7019/FILES/AMP1.JPG"},{"SIZE":"WITH CABLES","PRICE":13500,"PIC":"HTTPS://LOCALHOST:7019/FILES/AMP1B.JPG"}]'),
+(10, 1, NULL, 'AMP002', '8518.40', 'FENDER FRONTMAN 10G', '10-WATT ELECTRIC GUITAR AMP', 1.00, 4.00, 0.000000, 5.000000, 8500.00, 10000.00, 2, 'ITEM', 1, 'PIECE', '[{"SIZE":"STANDARD","PRICE":10000,"PIC":"HTTPS://LOCALHOST:7019/FILES/AMP2.JPG"},{"SIZE":"WITH CABLE","PRICE":11000,"PIC":"HTTPS://LOCALHOST:7019/FILES/AMP2B.JPG"}]'),
+(11, 1, NULL, 'STD001', '9209.92', 'ADJUSTABLE MUSIC STAND', 'FOLDABLE SHEET MUSIC STAND', 1.00, 10.00, 0.000000, 6.000000, 2000.00, 2500.00, 14, 'ITEM', 1, 'PIECE', '[{"SIZE":"STANDARD","PRICE":2500,"PIC":"HTTPS://LOCALHOST:7019/FILES/STAND1.JPG"}]'),
+(12, 1, NULL, 'STR001', '9209.92', 'LEATHER GUITAR STRAP', 'COMFORTABLE LEATHER STRAP FOR GUITAR', 1.00, 15.00, 0.000000, 7.000000, 1200.00, 1600.00, 15, 'ITEM', 1, 'PIECE', '[{"SIZE":"STANDARD","PRICE":1600,"PIC":"HTTPS://LOCALHOST:7019/FILES/STRAP1.JPG"}]'),
+(13, 1, NULL, 'STRG001', '9209.92', 'D’ADDARIO EJ16', 'PHOSPHOR BRONZE ACOUSTIC GUITAR STRINGS', 1.00, 30.00, 0.000000, 8.000000, 600.00, 850.00, 16, 'ITEM', 1, 'PACK', '[{"SIZE":"SET","PRICE":850,"PIC":"HTTPS://LOCALHOST:7019/FILES/STRING1.JPG"}]'),
+(14, 1, NULL, 'UKL001', '9202.90', 'KALA KA-15S', 'SOPRANO UKULELE WITH MAHOGANY BODY', 1.00, 4.00, 0.000000, 5.000000, 9000.00, 10500.00, 17, 'ITEM', 1, 'PIECE', '[{"SIZE":"STANDARD","PRICE":10500,"PIC":"HTTPS://LOCALHOST:7019/FILES/UKULELE1.JPG"}]'),
+(15, 1, NULL, 'VLN003', '9202.10', 'YAMAHA V5SC', 'INTERMEDIATE VIOLIN WITH CASE AND BOW', 1.00, 2.00, 0.000000, 5.000000, 30000.00, 36000.00, 18, 'ITEM', 1, 'PIECE', '[{"SIZE":"4/4","PRICE":36000,"PIC":"HTTPS://LOCALHOST:7019/FILES/VIOLIN3.JPG"}]'),
+(16, 1, NULL, 'INS001', '9205.90', 'FLUTE - BEGINNER MODEL', 'CLOSED HOLE SILVER-PLATED FLUTE', 1.00, 5.00, 0.000000, 10.000000, 7000.00, 8800.00, 19, 'ITEM', 1, 'PIECE', '[{"SIZE":"STANDARD","PRICE":8800,"PIC":"HTTPS://LOCALHOST:7019/FILES/INSTRUMENT1.JPG"}]'),
+(17, 1, NULL, 'REC001', '9205.90', 'YAMAHA YRS-23', 'SOPRANO RECORDER WITH BAROQUE FINGERING', 1.00, 10.00, 0.000000, 11.000000, 800.00, 1000.00, 20, 'ITEM', 1, 'PIECE', '[{"SIZE":"STANDARD","PRICE":1000,"PIC":"HTTPS://LOCALHOST:7019/FILES/RECORDER1.JPG"}]'),
+(18, 1, NULL, 'CAP001', '9209.92', 'KYSER QUICK-CHANGE CAPO', 'CAPO FOR 6-STRING ACOUSTIC GUITARS', 1.00, 10.00, 0.000000, 12.000000, 1200.00, 1500.00, 7, 'ITEM', 1, 'PIECE', '[{"SIZE":"STANDARD","PRICE":1500,"PIC":"HTTPS://LOCALHOST:7019/FILES/CAPO1.JPG"}]'),
+(19, 1, NULL, 'BAG001', '4202.92', 'PADDED GUITAR BAG', 'PROTECTIVE CARRYING BAG FOR GUITAR', 1.00, 10.00, 0.000000, 13.000000, 2500.00, 3000.00, 4, 'ITEM', 1, 'PIECE', '[{"SIZE":"STANDARD","PRICE":3000,"PIC":"HTTPS://LOCALHOST:7019/FILES/BAG1.JPG"}]'),
+(20, 1, NULL, 'SVC001', '9983.00', 'GUITAR TUNING SERVICE', 'PROFESSIONAL GUITAR TUNING BY EXPERT', 1.00, 5.00, 0.000000, 14.000000, 1000.00, 1500.00, 21, 'SERVICE', 1, 'SESSION', '[{"SIZE":"PER SESSION","PRICE":1500,"PIC":"HTTPS://LOCALHOST:7019/FILES/SERVICE1.JPG"}]');
 
 SET IDENTITY_INSERT Items OFF;
 GO

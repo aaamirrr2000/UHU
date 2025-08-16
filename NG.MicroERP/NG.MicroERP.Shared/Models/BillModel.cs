@@ -14,7 +14,7 @@ public class BillModel
     public Guid Guid { get; set; }
     public int? OrganizationId { get; set; } = 0;
     public string? SeqNo { get; set; } = string.Empty;
-    public string? BillType { get; set; } = string.Empty;
+    public string? InvoiceType { get; set; } = string.Empty;
     public string? Source { get; set; } = string.Empty;
     public int SalesId { get; set; } = 0;
     public int TableId { get; set; } = 0;
@@ -24,6 +24,7 @@ public class BillModel
     public string? PartyPhone { get; set; } = string.Empty;
     public string? PartyEmail { get; set; } = string.Empty;
     public string? PartyAddress { get; set; } = string.Empty;
+    public string? ScenarioId { get; set; } = string.Empty;
     public DateTime TranDate { get; set; } = DateTime.Today;
     public string ServiceType { get; set; } = string.Empty;
     public int PreprationTime { get; set; } = 0;
@@ -84,7 +85,7 @@ public class BillDetailModel
     public string StockType { get; set; } = string.Empty;
     public bool IsSelected { get; set; } = false;
     public string? SeqNo { get; set; } = string.Empty;
-    public string? BillType { get; set; } = string.Empty;
+    public string? InvoiceType { get; set; } = string.Empty;
     public int LocationId { get; set; } = 0;
     public string? LocationName { get; set; } = string.Empty;
     public int PartyId { get; set; } = 0;

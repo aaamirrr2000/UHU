@@ -11,7 +11,7 @@ public class BillMasterReportModel
     public int Id { get; set; }
     public Guid Guid { get; set; }
     public string SeqNo { get; set; } = string.Empty;
-    public string BillType { get; set; } = string.Empty;
+    public string InvoiceType { get; set; } = string.Empty;
     public string Source { get; set; } = string.Empty;
     public int OrganizationId { get; set; }
     public int LocationId { get; set; }
@@ -22,6 +22,10 @@ public class BillMasterReportModel
     public string PartyPhone { get; set; } = string.Empty;
     public string PartyEmail { get; set; } = string.Empty;
     public string PartyAddress { get; set; } = string.Empty;
+    public string? ScenarioId { get; set; } = string.Empty;
+    public string? Description_SaleType { get; set; } = string.Empty;
+    public string? BuyerType { get; set; } = string.Empty;
+    public string? Purpose_TaxContext { get; set; } = string.Empty;
     public int TableId { get; set; }
     public DateTime TranDate { get; set; }
     public decimal DiscountAmount { get; set; }

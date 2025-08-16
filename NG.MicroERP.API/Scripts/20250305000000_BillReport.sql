@@ -4,7 +4,7 @@ SELECT
     a.Id,
     a.Guid,
     a.SeqNo,
-    a.BillType,
+    a.InvoiceType,
     a.Source,
     a.OrganizationId,
     a.LocationId,
@@ -15,6 +15,10 @@ SELECT
     a.PartyPhone,
     a.PartyEmail,
     a.PartyAddress,
+    f.ScenarioId,
+    f.SaleType,
+    f.BuyerType,
+    f.TaxContext,
     a.TableId,
     a.TranDate,
     a.DiscountAmount,
@@ -77,6 +81,7 @@ LEFT JOIN Locations AS b ON b.Id = a.LocationId
 LEFT JOIN Parties AS c ON c.Id = a.PartyId
 LEFT JOIN Users AS d ON d.Id = a.CreatedBy
 LEFT JOIN Employees AS e ON e.Id = d.EmpId
+LEFT JOIN DigitalInvoiceScenarios AS f ON f.Id = a.ScenarioId
 WHERE a.IsSoftDeleted = 0;
 
 
@@ -89,7 +94,7 @@ SELECT
     f.BillId,
     a.SeqNo,
     f.ItemId,
-    g.PCTCode,
+    g.HSCode,
     g.Name AS ItemName,
     g.IsInventoryItem,
     f.ServingSize,
@@ -157,7 +162,7 @@ CREATE OR ALTER VIEW BillSummaryReport AS
 SELECT
     b.Id AS BillId,
     b.SeqNo,
-    b.BillType,
+    b.InvoiceType,
     b.Source,
     b.SalesId,
     emp.Fullname AS SalesPerson,
@@ -205,7 +210,7 @@ WHERE b.IsSoftDeleted = 0
 GROUP BY
     b.Id,
     b.SeqNo,
-    b.BillType,
+    b.InvoiceType,
     b.Source,
     b.SalesId,
     emp.Fullname,

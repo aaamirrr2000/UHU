@@ -258,7 +258,7 @@
             return;
 
         await Get(id);
-        Action = "DELETE";
+        Action = "SOFTDELETE";
         await Save();
     }
 
@@ -284,7 +284,7 @@
         {
             await Functions.ShowMessage(dialogService, "success", $"Record {Action} Successfully");
             TaxConfig = await Functions.GetAsync<List<TaxItemConfigModel>>($"TaxItems/SearchTaxItemConfig/ItemId={record.Id}", true) ?? new List<TaxItemConfigModel>();
-            Clear();
+            //Clear();
             isReadOnly = true;
         }
 

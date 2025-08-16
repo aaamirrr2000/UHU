@@ -4,7 +4,7 @@
     Guid                    UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
     OrganizationId          INT             NOT NULL,
     SeqNo                   VARCHAR(50)      NOT NULL,
-    BillType                VARCHAR(50)      NOT NULL DEFAULT 'SALE',
+    InvoiceType                VARCHAR(50)      NOT NULL DEFAULT 'SALE',
     Source                  VARCHAR(50)      NOT NULL DEFAULT 'MANUAL',
     SalesId                 INT              NULL,
     LocationId              INT              NULL DEFAULT NULL,
@@ -13,6 +13,7 @@
     PartyPhone              VARCHAR(50)      NULL DEFAULT NULL,
     PartyEmail              VARCHAR(50)      NULL DEFAULT NULL,
     PartyAddress            VARCHAR(255)     NULL DEFAULT NULL,
+    ScenarioId              INT,
     TableId                 INT              NULL,
     TranDate                DATETIME         NULL DEFAULT NULL,
     DiscountAmount          DECIMAL(16, 2)   NULL DEFAULT 0.00,
@@ -30,13 +31,14 @@
 	UpdatedFrom             VARCHAR(255)     NULL DEFAULT NULL,
     IsSoftDeleted           SMALLINT         NOT NULL DEFAULT 0,
     RowVersion              ROWVERSION,
-    FOREIGN KEY (SalesId)   REFERENCES Employees(Id),
-    FOREIGN KEY (TableId)   REFERENCES RestaurantTables(Id),
-    FOREIGN KEY (LocationId)   REFERENCES Locations(Id),
-    FOREIGN KEY (CreatedBy)    REFERENCES Users(Id),
-    FOREIGN KEY (UpdatedBy)    REFERENCES Users(Id),
-    FOREIGN KEY (PartyId)      REFERENCES Parties(Id),
-    FOREIGN KEY (OrganizationId)   REFERENCES Organizations(Id)
+    FOREIGN KEY (SalesId)           REFERENCES Employees(Id),
+    FOREIGN KEY (TableId)           REFERENCES RestaurantTables(Id),
+    FOREIGN KEY (LocationId)        REFERENCES Locations(Id),
+    FOREIGN KEY (CreatedBy)         REFERENCES Users(Id),
+    FOREIGN KEY (UpdatedBy)         REFERENCES Users(Id),
+    FOREIGN KEY (PartyId)           REFERENCES Parties(Id),
+    FOREIGN KEY (OrganizationId)    REFERENCES Organizations(Id),
+    FOREIGN KEY (ScenarioId)        REFERENCES DigitalInvoiceScenarios(Id)
 );
 
 CREATE TABLE BillDetail
@@ -58,9 +60,9 @@ CREATE TABLE BillDetail
     TranDate            DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
     IsSoftDeleted       SMALLINT         NOT NULL DEFAULT 0,
     RowVersion          ROWVERSION,
-    FOREIGN KEY (BillId)       REFERENCES Bill(Id),
-    FOREIGN KEY (ItemId)       REFERENCES Items(Id),
-    FOREIGN KEY (TaxId)       REFERENCES Items(Id)
+    FOREIGN KEY (BillId)        REFERENCES Bill(Id),
+    FOREIGN KEY (ItemId)        REFERENCES Items(Id),
+    FOREIGN KEY (TaxId)         REFERENCES Items(Id)
 );
 
 CREATE TABLE BillCharges
@@ -78,7 +80,7 @@ CREATE TABLE BillCharges
     ChargeCategory      VARCHAR(255)     NOT NULL,
     IsSoftDeleted       SMALLINT        NOT NULL DEFAULT 0,
     RowVersion          ROWVERSION,
-    FOREIGN KEY (BillId) REFERENCES Bill(Id),
+    FOREIGN KEY (BillId)    REFERENCES Bill(Id),
 );
 
 CREATE TABLE BillPayments
@@ -93,5 +95,5 @@ CREATE TABLE BillPayments
     IsSoftDeleted   SMALLINT NOT NULL DEFAULT 0,
     RowVersion      ROWVERSION,
 
-    FOREIGN KEY (BillId) REFERENCES Bill(Id)
+    FOREIGN KEY (BillId)    REFERENCES Bill(Id)
 );

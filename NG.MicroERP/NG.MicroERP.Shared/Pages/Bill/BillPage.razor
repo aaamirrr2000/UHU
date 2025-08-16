@@ -23,10 +23,10 @@
                     @* <p>@Act</p> *@
                     <!-- Bill Type Dropdown -->
                     <MudSelect T="string"
-                    @bind-Value="record.Bill.BillType"
-                    Dense="true"
-                    Variant="Variant.Filled"
-                    Style="min-width:150px;max-width:200px;">
+                        @bind-Value="record.Bill.InvoiceType"
+                        Dense="true"
+                        Variant="Variant.Filled"
+                        Style="min-width:150px;max-width:200px;">
                         @if (BillType?.Any() == true)
                         {
                             @foreach (var option in BillType)
@@ -1047,7 +1047,7 @@
         if (Act == "INSERT" && (Id == 0 || Id == null))
         {
             Disabled = false;
-            record.Bill.BillType = InvoiceType;
+            record.Bill.InvoiceType = InvoiceType;
             record.Bill.TranDate = DateTime.Now;
         }
         await GetAll();
@@ -1073,7 +1073,7 @@
         if (Act == "INSERT" && (Id == 0 || Id == null))
         {
             Disabled = false;
-            record.Bill.BillType = "SALE";
+            record.Bill.InvoiceType = "SALE";
             record.Bill.TranDate = DateTime.Now;
         }
         if (Act != "INSERT")
