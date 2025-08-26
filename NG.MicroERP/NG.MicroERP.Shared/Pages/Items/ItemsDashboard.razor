@@ -103,7 +103,7 @@
 
                     <TemplateColumn Title="Picture" CellStyle="width: 50px; min-width: 50px;">
                         <CellTemplate Context="row">
-                            <img src="@(!string.IsNullOrWhiteSpace(row.Item.Pic) ? row.Item.Pic : "images/no-image.png")" alt="Picture" style="width:30px; height:30px; border-radius: 50%;" />
+                            <AvatarDisplay Pic="@row.Item.Pic" Name="@row.Item.Name" Size="24" />
                         </CellTemplate>
                     </TemplateColumn>
 				<PropertyColumn Property="x => x.Code" Title="Code" Sortable="true" Filterable="true" />

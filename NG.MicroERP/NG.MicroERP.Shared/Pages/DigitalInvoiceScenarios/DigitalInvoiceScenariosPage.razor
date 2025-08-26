@@ -1,0 +1,205 @@
+﻿@page "/DigitalInvoiceScenariosPage/{Action}/{CurrentRecord?}"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+
+    <div class="text-end" style="margin-top:10px;">
+        @if (Action != "VIEW")
+        {
+            <MudButton Variant="Variant.Filled" OnClick="Save" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                @(Action == "INSERT" ? "Save" : "Update")
+            </MudButton>
+
+            @if (Action == "UPDATE")
+            {
+                <MudButton Variant="Variant.Filled" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                    Delete
+                </MudButton>
+            }
+        }
+    </div>
+
+    <br />
+
+    <MudExpansionPanels MultiExpansion="true">
+        <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
+
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded shadow-sm" style="gap: 10px;">
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold text-dark">@record.ScenarioID </MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">@record.SaleType </MudText>
+                    </div>
+                </div>
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-6 mb-3">
+                        <MudTextField Label="Scenario Id" id="ScenarioID" @bind-Value="record.ScenarioID" Variant="Variant.Filled" placeholder="Scenario Id" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.ScenarioID)" />
+                    </div>
+
+                    <div class="col-6 mb-3">
+                        <MudSelect T="string"
+                                   @bind-Value="record.BuyerType"
+                                   Label="Active"
+                                   Variant="Variant.Filled"
+                                   Dense="true"
+                                   Placeholder="Buyer Type"
+                                   HelperText="Select Buyer Type"
+                                   HelperTextOnFocus="true"
+                                   Clearable="true">
+
+                            <MudSelectItem T="string" Value=@("Registered")>Registered</MudSelectItem>
+                            <MudSelectItem T="string" Value=@("Unregistered")>Unregistered</MudSelectItem>
+                        </MudSelect>
+
+                        <ValidationMessage For="@(() => record.BuyerType)" />
+                    </div>
+
+                    <div class="col-12 mb-6">
+                        <MudTextField Label="Sale Type" id="SaleType" @bind-Value="record.SaleType" Variant="Variant.Filled" placeholder="Sale Type" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.SaleType)" />
+                    </div>
+
+                    <div class="col-12 mb-6">
+                        <MudTextField Label="Tax Context" id="TaxContext" @bind-Value="record.TaxContext" Variant="Variant.Filled" placeholder="Tax Context" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.TaxContext)" />
+                    </div>
+
+                </div>
+            </ChildContent>
+
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+
+</div>
+
+@code
+{
+    static DigitalInvoiceScenariosModel record = new();
+    List<TypeCodeModel> Sal = null!;
+    List<TypeCodeModel> Buy = null!;
+
+
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        Sal = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/SAL TYPE", true) ?? new List<TypeCodeModel>();
+        Buy = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/BUY TYPE", true) ?? new List<TypeCodeModel>();
+
+
+
+        if (Action == "INSERT")
+        {
+            record = new DigitalInvoiceScenariosModel();
+            isReadOnly = false;
+        }
+        else if (Action != "VIEW")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action != "VIEW")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<DigitalInvoiceScenariosModel>($"DigitalInvoiceScenarios/Get?Id={id}", true) ?? new DigitalInvoiceScenariosModel();
+        LoadingPanel = false;
+    }
+
+    protected void GetDefaultValues()
+    {
+        StateHasChanged();
+    }
+
+    protected async void Clear()
+    {
+        Action = "INSERT";
+        record = new DigitalInvoiceScenariosModel();
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        isReadOnly = true;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "DELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+        string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+        var result = await Functions.PostAsync<DigitalInvoiceScenariosModel>($"DigitalInvoiceScenarios/{url}", record, true);
+        if (result.Success == false)
+        {
+            await Functions.ShowMessage(dialogService, "error", $"Record Not Saved");
+        }
+        else
+        {
+            await Functions.ShowMessage(dialogService, "success", $"Record {Action} Successfully");
+            record = new();
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+        await _drawer.CloseDrawer();
+
+    }
+}
+

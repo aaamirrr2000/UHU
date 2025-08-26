@@ -24,7 +24,7 @@ public class BillModel
     public string? PartyPhone { get; set; } = string.Empty;
     public string? PartyEmail { get; set; } = string.Empty;
     public string? PartyAddress { get; set; } = string.Empty;
-    public string? ScenarioId { get; set; } = string.Empty;
+    public int ScenarioId { get; set; } = 0;
     public DateTime TranDate { get; set; } = DateTime.Today;
     public string ServiceType { get; set; } = string.Empty;
     public int PreprationTime { get; set; } = 0;
@@ -102,6 +102,8 @@ public class BillDetailModel
     }
 
     public double Item_Amount => (Qty * UnitPrice) + TaxAmount - DiscountAmount;
+
+    public List<BillDetailTaxesModel> AppliedTaxes { get; set; } = new();
 }
 
 
@@ -111,6 +113,7 @@ public class BillsModel
     public ObservableCollection<BillItemReportModel> BillDetails { get; set; } = new();
     public ObservableCollection<BillChargeModel> BillCharges { get; set; } = new();
     public ObservableCollection<BillPaymentModel> BillPayments { get; set; } = new();
+    public ObservableCollection<BillDetailTaxesModel> BillTaxes { get; set; } = new();
 }
 
 public class BillChargeModel
@@ -143,3 +146,11 @@ public class BillPaymentModel
     public byte[]? RowVersion { get; set; }
 }
 
+public class BillDetailTaxesModel
+{
+    public int Id { get; set; } = 0;
+    public int BillDetailId { get; set; } = 0;
+    public string? TaxId { get; set; } = string.Empty;
+    public double Rate { get; set; } = 0;
+
+}

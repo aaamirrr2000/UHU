@@ -67,6 +67,8 @@ public class BillItemReportModel
     public DateTime TranDate { get; set; }
     public int Rating { get; set; }
     public short IsSoftDeleted { get; set; } = 0;
+    public List<TaxItemsModel> AppliedTaxes { get; set; } = new();
+
 }
 
 public class BillPaymentsReportModel

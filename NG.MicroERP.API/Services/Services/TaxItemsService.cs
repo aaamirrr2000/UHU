@@ -6,10 +6,10 @@ namespace NG.MicroERP.API.Services.Services;
 
 public interface ITaxItemsService
 {
-    Task<(bool, List<TaxItemsModel>)>? Search(string Criteria = "");
+    Task<(bool, List<ItemTaxesModel>)>? Search(string Criteria = "");
     Task<(bool, List<TaxItemConfigModel>)>? SearchTaxItemConfig(string Criteria = "");
     Task<(bool, TaxItemsModel?)>? Get(int id);
-    Task<(bool, TaxItemsModel, string)> Post(TaxItemsModel obj);
+    Task<(bool, ItemTaxesModel, string)> Post(TaxItemsModel obj);
     Task<(bool, string)> Put(TaxItemsModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(TaxItemsModel obj);
@@ -20,16 +20,16 @@ public class TaxItemsService : ITaxItemsService
 {
     DapperFunctions dapper = new DapperFunctions();
 
-    public async Task<(bool, List<TaxItemsModel>)>? Search(string Criteria = "")
+    public async Task<(bool, List<ItemTaxesModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM TaxItems Where IsSoftDeleted=0 and IsActive=1";
+        string SQL = $@"SELECT * FROM ItemTaxes Where IsSoftDeleted=0";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;
 
         SQL += " Order by Id Desc";
 
-        List<TaxItemsModel> result = (await dapper.SearchByQuery<TaxItemsModel>(SQL)) ?? new List<TaxItemsModel>();
+        List<ItemTaxesModel> result = (await dapper.SearchByQuery<ItemTaxesModel>(SQL)) ?? new List<ItemTaxesModel>();
 
         if (result == null || result.Count == 0)
             return (false, null!);
@@ -64,7 +64,7 @@ public class TaxItemsService : ITaxItemsService
     }
 
 
-    public async Task<(bool, TaxItemsModel, string)> Post(TaxItemsModel obj)
+    public async Task<(bool, ItemTaxesModel, string)> Post(TaxItemsModel obj)
     {
 
         try
@@ -97,7 +97,7 @@ public class TaxItemsService : ITaxItemsService
             var res = await dapper.Insert(SQLInsert);
             if (res.Item1 == true)
             {
-                List<TaxItemsModel> Output = new List<TaxItemsModel>();
+                List<ItemTaxesModel> Output = new List<ItemTaxesModel>();
                 var result = await Search($"id={res.Item2}")!;
                 Output = result.Item2;
                 return (true, Output.FirstOrDefault()!, "");

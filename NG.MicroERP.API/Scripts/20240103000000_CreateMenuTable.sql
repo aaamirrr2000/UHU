@@ -204,8 +204,8 @@ VALUES
                               , 1 , GETDATE(), NULL
                               , 0),
 
-(25, 'FBR Submission' , NULL , 'FBR Submitted Invoice Status'
-                              , 'FbrSubmissionDashboard', 22
+(25, 'Scenarios' , NULL , 'Define FBR Digital Invoice Scenarios'
+                              , 'DigitalInvoiceScenariosDashboard', 22
                               , 'fas fa-receipt'            , 9070, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL

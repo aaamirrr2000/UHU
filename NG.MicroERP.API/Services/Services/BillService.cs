@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Mysqlx.Crud;
+using Newtonsoft.Json;
 
 using NG.MicroERP.API.Helper;
 using NG.MicroERP.Shared.Helper;
@@ -11,6 +12,7 @@ using System.Data.SqlTypes;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NG.MicroERP.API.Services;
 
@@ -54,11 +56,20 @@ public class BillService : IBillService
         List<BillItemReportModel> bill_detail = await dapper.SearchByQuery<BillItemReportModel>($"Select * from BillItemReport Where BillId={id}") ?? new List<BillItemReportModel>();
         List<BillChargeModel> bill_charge = await dapper.SearchByQuery<BillChargeModel>($"Select * from BillCharges Where BillId={id}") ?? new List<BillChargeModel>();
         List<BillPaymentModel> bill_payments = await dapper.SearchByQuery<BillPaymentModel>($"Select * from BillPayments Where BillId={id}") ?? new List<BillPaymentModel>();
+        List<BillDetailTaxesModel> bill_detail_taxes = new();
+
+        foreach (var i in bill_detail)
+        {
+            List<BillDetailTaxesModel> tax = new();
+            tax = await dapper.SearchByQuery<BillDetailTaxesModel>($"Select * from BillDetailTaxes Where BillDetailId={i.BillDetailId}") ?? new List<BillDetailTaxesModel>();
+            bill_detail_taxes.Add(tax.FirstOrDefault()!);
+        }
 
         result.Bill = bill.FirstOrDefault();
         result.BillDetails = new ObservableCollection<BillItemReportModel>(bill_detail);
         result.BillCharges = new ObservableCollection<BillChargeModel>(bill_charge);
         result.BillPayments = new ObservableCollection<BillPaymentModel>(bill_payments);
+        result.BillTaxes = new ObservableCollection<BillDetailTaxesModel>(bill_detail_taxes);
 
         return (true, result);
     }
@@ -81,10 +92,10 @@ public class BillService : IBillService
             string Code = dapper.GetCode("INV", "Bill", "SeqNo")!;
             string SQLInsert = $@"
                 INSERT INTO Bill (OrganizationId, SeqNo, InvoiceType, Source, SalesId, LocationId, PartyId, PartyName, PartyPhone, PartyEmail,
-                PartyAddress, TableId, TranDate, ServiceType, PreprationTime, DiscountAmount, Description, Status, CreatedBy, CreatedOn, CreatedFrom, IsSoftDeleted)
+                PartyAddress, ScenarioId, TableId, TranDate, ServiceType, PreprationTime, DiscountAmount, Description, Status, CreatedBy, CreatedOn, CreatedFrom, IsSoftDeleted)
                 VALUES ({obj.Bill.OrganizationId}, '{Code}', '{obj.Bill.InvoiceType!.ToUpper()}', '{obj.Bill.Source!.ToUpper()}', {obj.Bill.SalesId},
                 {obj.Bill.LocationId}, {obj.Bill.PartyId}, '{obj.Bill.PartyName!.ToUpper()}', '{obj.Bill.PartyPhone!.ToUpper()}',
-                '{obj.Bill.PartyEmail!.ToUpper()}', '{obj.Bill.PartyAddress!.ToUpper()}', {obj.Bill.TableId},
+                '{obj.Bill.PartyEmail!.ToUpper()}', '{obj.Bill.PartyAddress!.ToUpper()}', {obj.Bill.ScenarioId}, {obj.Bill.TableId},
                 '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', '{obj.Bill.ServiceType!.ToUpper()}', '{obj.Bill.PreprationTime}',
                 {obj.Bill.DiscountAmount}, '{obj.Bill.Description!.ToUpper()}',
                 '{obj.Bill.Status!.ToUpper()}', {obj.Bill.CreatedBy}, '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}',
@@ -98,10 +109,10 @@ public class BillService : IBillService
                 foreach (var detail in obj.BillDetails!)
                 {
                     string detailInsert = $@"
-                        INSERT INTO BillDetail (ItemId, StockCondition, ServingSize, Qty, UnitPrice, DiscountAmount, TaxAmount,
+                        INSERT INTO BillDetail (ItemId, StockCondition, ServingSize, Qty, UnitPrice, DiscountAmount,
                         BillId, Description, Status, Person, TranDate, IsSoftDeleted)
                         VALUES ({detail.ItemId}, '{detail.StockCondition!.ToUpper()}', '{detail.ServingSize}', {detail.Qty},
-                        {detail.UnitPrice}, {detail.DiscountAmount}, {detail.TaxAmount}, {insertedId}, '{detail.Instructions!.ToUpper()}',
+                        {detail.UnitPrice}, {detail.DiscountAmount}, {insertedId}, '{detail.Instructions!.ToUpper()}',
                         '{detail.Status!.ToUpper()}', {detail.Person}, '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', {detail.IsSoftDeleted})";
                     await dapper.Insert(detailInsert);
                 }
@@ -117,7 +128,6 @@ public class BillService : IBillService
                     await dapper.Insert(chargeInsert);
                 }
 
-
                 foreach (var payment in obj.BillPayments)
                 {
                     string paymentInsert = $@"
@@ -125,6 +135,13 @@ public class BillService : IBillService
                         VALUES ({insertedId}, '{payment.PaymentMethod}', '{payment.PaymentRef}', {payment.AmountPaid},
                         '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', '{payment.Notes?.Replace("'", "''")}', 0)";
                     await dapper.Insert(paymentInsert);
+                }
+
+                foreach (var tax in obj.BillTaxes)
+                {
+                        string TaxesInsert = $@"INSERT INTO BillDetailTaxes(BillDetailId,TaxId,Rate) VALUES
+                                            ({tax.BillDetailId}, '{tax.TaxId!.ToUpper()}', { tax.Rate}); ";
+                    await dapper.Insert(TaxesInsert);
                 }
 
                 var output = await Search($"Id = {res.Item2}")!;
@@ -155,7 +172,7 @@ public class BillService : IBillService
                 InvoiceType = '{obj.Bill.InvoiceType!.ToUpper()}', Source = '{obj.Bill.Source!.ToUpper()}', SalesId = {obj.Bill.SalesId},
                 LocationId = {obj.Bill.LocationId}, PartyId = {obj.Bill.PartyId}, PartyName = '{obj.Bill.PartyName!.ToUpper()}',
                 PartyPhone = '{obj.Bill.PartyPhone!.ToUpper()}', PartyEmail = '{obj.Bill.PartyEmail!.ToUpper()}',
-                PartyAddress = '{obj.Bill.PartyAddress!.ToUpper()}', TableId = {obj.Bill.TableId},
+                PartyAddress = '{obj.Bill.PartyAddress!.ToUpper()}', ScenarioId = {obj.Bill.ScenarioId},  TableId = {obj.Bill.TableId},
                 TranDate = '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', DiscountAmount = {obj.Bill.DiscountAmount},
                 Description = '{obj.Bill.Description!.ToUpper()}', Status = '{obj.Bill.Status!.ToUpper()}',
                 ServiceType = '{obj.Bill.ServiceType!.ToUpper()}', PreprationTime = '{obj.Bill.PreprationTime}',
@@ -171,10 +188,10 @@ public class BillService : IBillService
             foreach (var detail in obj.BillDetails!)
             {
                 string detailInsert = $@"
-                    INSERT INTO BillDetail (ItemId, StockCondition, ServingSize, Qty, UnitPrice, DiscountAmount, TaxAmount,
+                    INSERT INTO BillDetail (ItemId, StockCondition, ServingSize, Qty, UnitPrice, DiscountAmount, 
                     BillId, Description, Status, Person, TranDate, IsSoftDeleted)
                     VALUES ({detail.ItemId}, '{detail.StockCondition!.ToUpper()}', '{detail.ServingSize}', {detail.Qty},
-                    {detail.UnitPrice}, {detail.DiscountAmount}, {detail.TaxAmount}, {obj.Bill.Id},
+                    {detail.UnitPrice}, {detail.DiscountAmount}, {obj.Bill.Id},
                     '{detail.Instructions!.ToUpper()}', '{detail.Status!.ToUpper()}', {detail.Person},
                     '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', {detail.IsSoftDeleted})";
                 await dapper.Insert(detailInsert);
@@ -207,6 +224,16 @@ public class BillService : IBillService
                     VALUES ({obj.Bill.Id}, '{payment.PaymentMethod}', '{payment.PaymentRef}', {payment.AmountPaid},
                     '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', '{payment.Notes?.Replace("'", "''")}', 0)";
                 await dapper.Insert(paymentInsert);
+            }
+
+            //Bill Detail Taxes
+            await dapper.ExecuteQuery($"DELETE FROM BillDetailTaxes WHERE BillDetailId = {obj.BillDetails.FirstOrDefault()!.BillDetailId}");
+            
+            foreach (var tax in obj.BillTaxes)
+            {
+                string TaxesInsert = $@"INSERT INTO BillDetailTaxes(BillDetailId,TaxId,Rate) VALUES
+                                     ({tax.BillDetailId}, '{tax.TaxId!.ToUpper()}', {tax.Rate}); ";
+                await dapper.Insert(TaxesInsert);
             }
 
             List<BillModel> bill = await dapper.SearchByQuery<BillModel>($"Select * from Bill Where Id={obj.Bill.Id}") ?? new List<BillModel>();

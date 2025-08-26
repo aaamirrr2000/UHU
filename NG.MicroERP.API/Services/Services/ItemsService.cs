@@ -52,7 +52,7 @@ public class ItemsService : IItemsService
                     Categories.Code AS CategoryCode,
                     Categories.Name AS CategoryName,
                     Items.StockType,
-                    Items.SaleType,
+                    DigitalInvoiceSaleType.SaleType,
                     Items.Unit,
                     Items.ServingSize,
                     Items.IsFavItem,
@@ -68,6 +68,7 @@ public class ItemsService : IItemsService
                 FROM Items
                 LEFT JOIN Categories ON Categories.Id = Items.CategoriesId
                 LEFT JOIN BillDetail ON Items.Id = BillDetail.ItemId
+                LEFT JOIN DigitalInvoiceSaleType on DigitalInvoiceSaleType.Id=Items.SaleTypeId
                 WHERE Items.IsSoftDeleted = 0 {SQL}
                 GROUP BY
                     Items.Id,
@@ -87,7 +88,7 @@ public class ItemsService : IItemsService
                     Categories.Code,
                     Categories.Name,
                     Items.StockType,
-                    Items.SaleType,
+                    DigitalInvoiceSaleType.SaleType,
                     Items.Unit,
                     Items.ServingSize,
                     Items.IsFavItem,

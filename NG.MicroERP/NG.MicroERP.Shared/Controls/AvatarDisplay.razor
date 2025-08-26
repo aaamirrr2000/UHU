@@ -1,0 +1,37 @@
+﻿@using Microsoft.AspNetCore.Components
+
+<div>
+    @if (!string.IsNullOrWhiteSpace(Pic))
+    {
+        <img src="@Pic"
+             alt="@Name"
+             style="@ImageStyle" />
+    }
+    else
+    {
+        <div style="@FallbackStyle">
+            @Name?.Substring(0, 2).ToUpper()
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string? Pic { get; set; }
+    [Parameter] public string Name { get; set; } = string.Empty;
+    [Parameter] public int Size { get; set; } = 36; // Default size
+
+    private string ImageStyle => $"width: {Size}px; height: {Size}px; object-fit: cover; border-radius: 50%; margin-right: 10px; flex-shrink: 0;";
+    private string FallbackStyle => $@"
+        width: {Size}px;
+        height: {Size}px;
+        border-radius: 50%;
+        background-color: #ccc;
+        color: #333;
+        font-weight: bold;
+        font-size: {Size * 0.45}px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        flex-shrink: 0;";
+}

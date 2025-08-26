@@ -102,7 +102,6 @@ SELECT
     f.Qty,
     f.UnitPrice,
     f.DiscountAmount,
-
     ((f.Qty * f.UnitPrice) - f.DiscountAmount) AS ItemTotalAmount,
     f.Description AS Instructions,
     f.Status,

@@ -97,3 +97,12 @@ CREATE TABLE BillPayments
 
     FOREIGN KEY (BillId)    REFERENCES Bill(Id)
 );
+
+CREATE TABLE BillDetailTaxes
+(
+    Id              INT IDENTITY(1,1) PRIMARY KEY,
+    BillDetailId    INT NOT NULL,
+    TaxId           VARCHAR(50) NOT NULL,
+    Rate            DECIMAL(16, 2) NOT NULL,
+    FOREIGN KEY (BillDetailId)    REFERENCES BillDetail(Id)
+);
