@@ -11,7 +11,6 @@ using System.Text.Json;
 
 namespace NG.MicroERP.API.Services;
 
-
 public interface IItemsService
 {
     Task<(bool, List<ItemsModel>)>? Search(string Criteria = "", string TopN = "");

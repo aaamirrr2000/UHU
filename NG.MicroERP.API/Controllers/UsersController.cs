@@ -8,7 +8,7 @@ namespace NG.MicroERP.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
+[AllowAnonymous]
 public class UsersController : ControllerBase
 {
     UsersService Srv = new UsersService();

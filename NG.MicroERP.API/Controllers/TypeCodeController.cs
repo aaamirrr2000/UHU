@@ -13,8 +13,8 @@ public class TypeCodeController : ControllerBase
 {
     TypeCodeService Srv = new TypeCodeService();
 
-    [HttpGet("Search/{Value}")]
-    public async Task<IActionResult> Search(string Value)
+    [HttpGet("Search/{Value?}")]
+    public async Task<IActionResult> Search(string Value="")
     {
         var result = await Srv.Search($"ListName='{Value}'")!;
         if (result.Item1 == false)
