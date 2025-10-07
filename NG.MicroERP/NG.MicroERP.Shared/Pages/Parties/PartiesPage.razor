@@ -32,6 +32,23 @@
 
     <MudExpansionPanels MultiExpansion="true">
         <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
+
+             <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded shadow-sm" style="gap: 10px;">
+                    <img src="@record.Pic"
+                         alt="Item Image"
+                         class="img-thumbnail"
+                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 10%;" />
+
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">@record.Name</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">@record.PartyType</MudText>
+                    </div>
+                </div>
+
+            </TitleContent>
+
+            <ChildContent>
             <div class="row" style="width:100%; display: flex;">
                 <div class="col-6 mb-3">
                     <MudTextField Label="Code" id="Code" @bind-Value="record.Code" Variant="Variant.Filled" placeholder="Code" ReadOnly="@isReadOnly"></MudTextField>
@@ -45,13 +62,14 @@
 
                     <MudSelect T="string"
                                @bind-Value="record.PartyType"
-                               Label="PartyType"
+                               Label="Party Type"
                                Variant="Variant.Filled"
                                Dense="true"
-                               Placeholder="PartyType"
+                               Placeholder="Party Type"
                                HelperText="Select PartyType"
                                HelperTextOnFocus="true"
-                               Clearable="true">
+                               Clearable="true"
+                               @bind-Value:after="OnPartyTypeChanged">
 
                         @if (Par != null && Par.Any())
                         {
@@ -77,7 +95,7 @@
 
                     <MudSelect T="string"
                                @bind-Value="record.Province"
-                               Label="PartyType"
+                               Label="Province"
                                Variant="Variant.Filled"
                                Dense="true"
                                Placeholder="Province"
@@ -92,7 +110,7 @@
                                 record.Province = Pro.First().ListValue;
                             }
 
-                            foreach (var i in Par)
+                            foreach (var i in Pro)
                             {
                                 <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
                             }
@@ -121,32 +139,22 @@
 
                     <MudSelect T="string"
                                @bind-Value="record.RegistrationType"
-                               Label="RegistrationType"
+                               Label="Registration Type"
                                Variant="Variant.Filled"
                                Dense="true"
-                               Placeholder="RegistrationType"
-                               HelperText="Select RegistrationType"
+                               Placeholder="Registration Type"
+                               HelperText="Select Registration Type"
                                HelperTextOnFocus="true"
                                Clearable="true">
 
-                        @if (Reg != null && Reg.Any())
-                        {
-                            if (string.IsNullOrWhiteSpace(record.Province))
-                            {
-                                record.RegistrationType = Reg.First().ListValue;
-                            }
-
-                            foreach (var i in Par)
-                            {
-                                <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
-                            }
-                        }
+                        <MudSelectItem T="string" Value=@("REGISTERED")>REGISTERED</MudSelectItem>
+                        <MudSelectItem T="string" Value=@("UNREGISTERED")>UNREGISTERED</MudSelectItem>
                     </MudSelect>
 
-                    <ValidationMessage For="@(() => record.PartyType)" />
+                    <ValidationMessage For="@(() => record.RegistrationType)" />
                 </div>
                 <div class="col-6 mb-3">
-                    <MudNumericField Label="DiscountPercentage" @bind-Value="record.DiscountPercentage" Variant="Variant.Filled" placeholder="DiscountPercentage" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
+                    <MudNumericField Label="Discount Percentage" @bind-Value="record.DiscountPercentage" Variant="Variant.Filled" placeholder="Discount Percentage" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
                     <ValidationMessage For="@(() => record.DiscountPercentage)" />
                 </div>
                 <div class="col-6 mb-3">
@@ -243,6 +251,7 @@
                 </div>
 
             </div>
+            </ChildContent>
         </MudExpansionPanel>
     </MudExpansionPanels>
 
@@ -255,6 +264,8 @@
     List<TypeCodeModel> Pro = null!;
     List<TypeCodeModel> Reg = null!;
     List<ChartOfAccountsModel> Acc = new();
+    public string filter { get; set; } = string.Empty;
+    public string filterValue { get; set; } = string.Empty;
 
     [Parameter] public string Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
@@ -274,7 +285,7 @@
         Par = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PARTY TYPE", true) ?? new List<TypeCodeModel>();
         Pro = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PROVINCE", true) ?? new List<TypeCodeModel>();
         Reg = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/REGISTRATION STATUS", true) ?? new List<TypeCodeModel>();
-        Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search", true) ?? new List<ChartOfAccountsModel>();
+        
 
         if (Action == "INSERT")
         {
@@ -383,6 +394,28 @@
             SnackbarService.Add($"Exception: {ex.Message}", Severity.Error);
             record.Pic = null;
         }
+    }
+
+    private async Task OnPartyTypeChanged()
+    {
+        LoadingPanel = true;
+        switch (record.PartyType)
+        {
+            case "CUSTOMER":
+                filter = "InterfaceType='ACCOUNTS RECEIVABLE'";
+                break;
+
+            case "SUPPLIER":
+                filter = "InterfaceType='ACCOUNTS PAYABLE'";
+                break;
+
+            case "BANK":
+                filter = "InterfaceType='BANK'";
+                break;           
+        }
+
+        Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/{filter.ToUpper()}", true) ?? new List<ChartOfAccountsModel>();
+        LoadingPanel = false;
     }
 }
 

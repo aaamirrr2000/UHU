@@ -72,7 +72,7 @@ public class CategoriesService : ICategoriesService
         try
         {
 
-            string Code = dapper.GetCode("CAT", "Categories", "Code")!;
+            string Code = dapper.GetCode("", "Categories", "Code")!;
             string SQLDuplicate = $@"SELECT * FROM Categories WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
             string SQLInsert = $@"INSERT INTO Categories 
 			(

@@ -55,6 +55,28 @@ public class Config
     public string DefaultDB() => DefaultConnectionString;
     public string GlobalDB() => GlobalConnectionString;
 
+    public static bool IsSafeSearchCriteria(string criteria)
+    {
+        if (string.IsNullOrEmpty(criteria))
+            return true;
+
+        if (criteria.Length > 500)
+            return false;
+
+        var upperCriteria = criteria.ToUpperInvariant();
+
+        // Only block the most dangerous patterns
+        var dangerous = new[] { ";", "--", "/*", "*/", "DROP ", "DELETE ", "UPDATE ", "INSERT ", "EXEC " };
+
+        foreach (var danger in dangerous)
+        {
+            if (upperCriteria.Contains(danger))
+                return false;
+        }
+
+        return true;
+    }
+
     public static string GenerateRandomPassword(int iNumChars = 8)
     {
         string strDefault = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890";

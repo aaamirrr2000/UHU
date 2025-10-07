@@ -59,7 +59,7 @@ public class PartiesService : IPartiesService
 
         try
         {
-            string Code = dapper.GetCode("PTY", "Parties", "Code")!;
+            string Code = dapper.GetCode("", "Parties", "Code", 9)!;
             string SQLDuplicate = $@"SELECT * FROM Parties WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
             string SQLInsert = $@"INSERT INTO Parties 
 			(

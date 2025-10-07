@@ -155,17 +155,45 @@ public class DapperFunctions
 
     public string? GetCode(string Prefix, string TableName, string? Field = "Code", int CodeLength = 6, string? Connection = "Default")
     {
-        int prefix_length = Prefix.Length;
+        /*
+            GetCode("INV", "Orders") → Looks for codes like "INV000001", "INV000002"
+            GetCode("", "Orders") → Looks for numeric codes like "000001", "000002"
+            GetCode("CUST", "Customers", "CustomerCode", 8) → Uses "CUST" prefix with 8 - digit sequence
+        */
+
+        DBConnection = Connection == "Default" ? cfg.DefaultDB()! : cfg.GlobalDB()!;
+
+        string SQL;
         string format = new('0', CodeLength);
 
-                DBConnection = Connection == "Default" ? cfg.DefaultDB()! : cfg.GlobalDB()!;
-        string SQL = $@"Select MAX(CAST(SUBSTRING({Field}, {prefix_length}+1, LEN({Field}) - {prefix_length}) as INT)) as SEQNO from {TableName} Where LEFT({Field}, 3) = '{Prefix}'";
+        if (!string.IsNullOrEmpty(Prefix))
+        {
+            // With prefix: extract the numeric part after the prefix
+            SQL = $@"Select MAX(CAST(SUBSTRING({Field}, {Prefix.Length + 1}, LEN({Field}) - {Prefix.Length}) as INT)) as SEQNO 
+                 from {TableName} 
+                 Where LEFT({Field}, {Prefix.Length}) = '{Prefix}'";
+        }
+        else
+        {
+            // Without prefix: use the entire field as numeric
+            SQL = $@"Select MAX(CAST({Field} as INT)) as SEQNO 
+                 from {TableName} 
+                 Where ISNUMERIC({Field}) = 1";
+        }
 
         try
         {
             using IDbConnection cnn = new SqlConnection(DBConnection);
             string result = cnn.QueryFirstOrDefault<string>(SQL, new DynamicParameters())!;
-            return result == null ? Prefix + 1.ToString(format) : Prefix + (Convert.ToInt64(result) + 1).ToString(format);
+
+            if (!string.IsNullOrEmpty(Prefix))
+            {
+                return result == null ? Prefix + 1.ToString(format) : Prefix + (Convert.ToInt64(result) + 1).ToString(format);
+            }
+            else
+            {
+                return result == null ? 1.ToString(format) : (Convert.ToInt64(result) + 1).ToString(format);
+            }
         }
         catch (Exception ex)
         {

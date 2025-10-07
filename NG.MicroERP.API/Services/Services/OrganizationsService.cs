@@ -95,8 +95,7 @@ public class OrganizationsService : IOrganizationsService
 
         try
         {
-
-            string Code = dapper.GetCode("ORG", "Organizations", "Code")!;
+            string Code = dapper.GetCode("ORG", "Organizations", "Code", 4)!;
             string SQLInsert = $@"INSERT INTO Organizations 
 			(
 				Code, 
@@ -209,7 +208,6 @@ public class OrganizationsService : IOrganizationsService
 					TimeZone = '{obj.TimeZone!.ToUpper()}', 
 					GMT = {obj.GMT},
 					IsVerified = {obj.IsVerified}, 
-					Expiry = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					ParentId = {obj.ParentId}, 
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 

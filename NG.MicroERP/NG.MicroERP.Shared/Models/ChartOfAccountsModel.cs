@@ -11,6 +11,7 @@ public class ChartOfAccountsModel
     public int Id { get; set; } = 0;
     public Guid Guid { get; set; }
     public int OrganizationId { get; set; } = 0;
+    public string? Pic { get; set; } = string.Empty;
     public string? Code { get; set; } = string.Empty;
     public string? Name { get; set; } = string.Empty;
     public string? Type { get; set; } = string.Empty;
@@ -28,4 +29,8 @@ public class ChartOfAccountsModel
     public int IsSoftDeleted { get; set; } = 0;
     public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
 
+    public override string ToString()
+    {
+        return Name ?? string.Empty;
+    }
 }

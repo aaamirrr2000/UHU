@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using NG.MicroERP.Shared.Models;
 
 using NG.MicroERP.API.Services;
+using NG.MicroERP.API.Helper;
 
 namespace NG.MicroERP.API.Controllers;
 [Route("api/[controller]")]
@@ -17,6 +18,9 @@ public class RestaurantTablesController : ControllerBase
     [HttpGet("Search/{Criteria?}")]
     public async Task<IActionResult> Search(string Criteria = "")
     {
+        if (!string.IsNullOrEmpty(Criteria) && !Config.IsSafeSearchCriteria(Criteria))
+            return BadRequest("Invalid search criteria");
+
         var result = await Srv.Search(Criteria)!;
         if (result.Item1 == false)
             return NotFound("Record Not Found");

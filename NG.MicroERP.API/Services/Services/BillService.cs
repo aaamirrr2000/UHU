@@ -89,7 +89,7 @@ public class BillService : IBillService
     {
         try
         {
-            string Code = dapper.GetCode("INV", "Bill", "SeqNo")!;
+            string Code = dapper.GetCode("", "Bill", "SeqNo", 9)!;
             string SQLInsert = $@"
                 INSERT INTO Bill (OrganizationId, SeqNo, InvoiceType, Source, SalesId, LocationId, PartyId, PartyName, PartyPhone, PartyEmail,
                 PartyAddress, ScenarioId, TableId, TranDate, ServiceType, PreprationTime, DiscountAmount, Description, Status, CreatedBy, CreatedOn, CreatedFrom, IsSoftDeleted)

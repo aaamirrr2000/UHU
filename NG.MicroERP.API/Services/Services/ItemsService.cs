@@ -181,7 +181,7 @@ public class ItemsService : IItemsService
         try
         {
 
-            string Code = dapper.GetCode("LOC", "Items", "Code")!;
+            string Code = dapper.GetCode("", "Items", "Code", 12)!;
             string SQLDuplicate = $@"SELECT * FROM Items WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
             string SQLInsert = $@"INSERT INTO Items 
 			(

@@ -4,16 +4,20 @@
     @if (!string.IsNullOrWhiteSpace(Pic))
     {
         <img src="@Pic"
-             alt="@Name"
+             alt=""
              style="@ImageStyle" />
     }
     else
     {
         <div style="@FallbackStyle">
-            @Name?.Substring(0, 2).ToUpper()
+            @(!string.IsNullOrEmpty(Name) && Name.Length >= 2
+                    ? Name.Substring(0, 2).ToUpper()
+                    : Name?.ToUpper())
         </div>
     }
+
 </div>
+
 
 @code {
     [Parameter] public string? Pic { get; set; }

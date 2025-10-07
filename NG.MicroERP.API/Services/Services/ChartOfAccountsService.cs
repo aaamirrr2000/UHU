@@ -31,7 +31,7 @@ public class ChartOfAccountsService : IChartOfAccountsService
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;
 
-        SQL += " Order by Id Desc";
+        SQL += " Order by code, Id";
 
         List<ChartOfAccountsModel> result = (await dapper.SearchByQuery<ChartOfAccountsModel>(SQL)) ?? new List<ChartOfAccountsModel>();
 
@@ -57,12 +57,13 @@ public class ChartOfAccountsService : IChartOfAccountsService
         try
         {
 
-            string Code = dapper.GetCode("ACC", "ChartOfAccounts", "Code")!;
+            //string Code = dapper.GetCode("ACC", "ChartOfAccounts", "Code")!;
             string SQLDuplicate = $@"SELECT * FROM ChartOfAccounts WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
             string SQLInsert = $@"INSERT INTO ChartOfAccounts 
 			(
 				OrganizationId, 
-				Code, 
+				Code,
+                Pic,
 				Name, 
 				Type, 
 				InterfaceType, 
@@ -78,7 +79,8 @@ public class ChartOfAccountsService : IChartOfAccountsService
 			VALUES 
 			(
 				{obj.OrganizationId},
-				'{Code}', 
+				'{obj.Code.ToUpper()}', 
+				'{obj.Pic}', 
 				'{obj.Name!.ToUpper()}', 
 				'{obj.Type!.ToUpper()}', 
 				'{obj.InterfaceType!.ToUpper()}', 
@@ -118,7 +120,8 @@ public class ChartOfAccountsService : IChartOfAccountsService
             string SQLDuplicate = $@"SELECT * FROM ChartOfAccounts WHERE UPPER(code) = '{obj.Code!.ToUpper()}' and ID != {obj.Id};";
             string SQLUpdate = $@"UPDATE ChartOfAccounts SET 
 					OrganizationId = {obj.OrganizationId}, 
-					Code = '{obj.Code!.ToUpper()}', 
+					Code = '{obj.Code!.ToUpper()}',
+                    Pic = '{obj.Pic}',
 					Name = '{obj.Name!.ToUpper()}', 
 					Type = '{obj.Type!.ToUpper()}', 
 					InterfaceType = '{obj.InterfaceType!.ToUpper()}', 

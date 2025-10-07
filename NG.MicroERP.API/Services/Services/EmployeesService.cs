@@ -57,7 +57,7 @@ public class EmployeesService : IEmployeesService
 
         try
         {
-            string Code = dapper.GetCode("EMP", "Employees", "EmpId")!;
+            string Code = dapper.GetCode("", "Employees", "EmpId")!;
             string SQLDuplicate = $@"SELECT * FROM Employees WHERE UPPER(EmpId) = '{obj.EmpId!.ToUpper()}';";
             string SQLInsert = $@"INSERT INTO Employees 
 			(

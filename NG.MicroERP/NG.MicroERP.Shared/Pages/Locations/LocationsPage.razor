@@ -31,95 +31,115 @@
 
     <MudExpansionPanels MultiExpansion="true">
         <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
-            <div class="row" style="width:100%; display: flex;">
-                <div class="col-6 mb-3">
-                    <MudTextField Label="Code" id="Code" @bind-Value="record.Code" Variant="Variant.Filled" placeholder="Code" ReadOnly="@isReadOnly"></MudTextField>
-                    <ValidationMessage For="@(() => record.Code)" />
-                </div>
-                <div class="col-6 mb-3">
-                    <MudTextField Label="Name" id="Name" @bind-Value="record.Name" Variant="Variant.Filled" placeholder="Name" ReadOnly="@isReadOnly"></MudTextField>
-                    <ValidationMessage For="@(() => record.Name)" />
-                </div>
-                <div class="col-6 mb-3">
-                    <MudTextField Label="Address" id="Address" @bind-Value="record.Address" Variant="Variant.Filled" placeholder="Address" ReadOnly="@isReadOnly"></MudTextField>
-                    <ValidationMessage For="@(() => record.Address)" />
-                </div>
-                <div class="col-6 mb-3">
-                    <MudTextField Label="Point of Contact" id="PocName" @bind-Value="record.PocName" Variant="Variant.Filled" placeholder="Point of Contact" ReadOnly="@isReadOnly"></MudTextField>
-                    <ValidationMessage For="@(() => record.PocName)" />
-                </div>
-                <div class="col-6 mb-3">
-                    <MudTextField Label="Email" id="PocEmail" @bind-Value="record.PocEmail" Variant="Variant.Filled" placeholder="Email" ReadOnly="@isReadOnly"></MudTextField>
-                    <ValidationMessage For="@(() => record.PocEmail)" />
-                </div>
-                <div class="col-6 mb-3">
-                    <MudTextField Label="Phone" id="PocPhone" @bind-Value="record.PocPhone" Variant="Variant.Filled" placeholder="Phone" ReadOnly="@isReadOnly"></MudTextField>
-                    <ValidationMessage For="@(() => record.PocPhone)" />
-                </div>
-                <div class="col-6 mb-3">
 
-                    <MudSelect T="string"
-                               @bind-Value="record.LocationType"
-                               Label="Location Type"
-                               Variant="Variant.Filled"
-                               Dense="true"
-                               Placeholder="Location Type"
-                               HelperText="Select Location Type"
-                               HelperTextOnFocus="true"
-                               Clearable="true">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
 
-                        @if (Loc != null && Loc.Any())
-                        {
-                            if (string.IsNullOrWhiteSpace(record.LocationType))
+                    <i class="fa fa-info-circle"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">@record.Name</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Description</MudText>
+                    </div>
+                </div>
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Code</label>
+                        <MudTextField id="Code" @bind-Value="record.Code" placeholder="Code" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Code)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Name</label>
+                        <MudTextField id="Name" @bind-Value="record.Name" placeholder="Name" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Name)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Address</label>
+                        <MudTextField id="Address" @bind-Value="record.Address" placeholder="Address" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Address)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Pocname</label>
+                        <MudTextField id="PocName" @bind-Value="record.PocName" placeholder="PocName" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.PocName)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Pocemail</label>
+                        <MudTextField id="PocEmail" @bind-Value="record.PocEmail" placeholder="PocEmail" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.PocEmail)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Pocphone</label>
+                        <MudTextField id="PocPhone" @bind-Value="record.PocPhone" placeholder="PocPhone" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.PocPhone)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Location Type</label>
+
+                        <MudSelect T="string"
+                                   @bind-Value="record.LocationType"
+                                   Placeholder="LocationType"
+                                   Clearable="true">
+
+                            @if (Loc != null && Loc.Any())
                             {
-                                record.LocationType = Loc.First().ListValue;
+                                if (string.IsNullOrWhiteSpace(record.LocationType))
+                                {
+                                    record.LocationType = Loc.First().ListValue;
+                                }
+
+                                foreach (var i in Loc)
+                                {
+                                    <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+
+                        <ValidationMessage For="@(() => record.LocationType)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Latitude</label>
+                        <MudTextField id="Latitude" @bind-Value="record.Latitude" placeholder="Latitude" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Latitude)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Longitude</label>
+                        <MudTextField id="Longitude" @bind-Value="record.Longitude" placeholder="Longitude" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Longitude)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Radius</label>
+                        <MudNumericField @bind-Value="record.Radius" placeholder="Radius" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
+                        <ValidationMessage For="@(() => record.Radius)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Active</label>
+
+                        <MudSelect T="int"
+                                   @bind-Value="record.IsActive"
+                                   Placeholder="Active"
+                                   Clearable="true">
+
+                            @if (record.IsActive != 0 && record.IsActive != 1)
+                            {
+                                record.IsActive = 1;
                             }
 
-                            foreach (var i in Loc)
-                            {
-                                <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
-                            }
-                        }
-                    </MudSelect>
+                            <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                            <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                        </MudSelect>
 
-                    <ValidationMessage For="@(() => record.LocationType)" />
-                </div>
-                <div class="col-6 mb-3">
-                    <MudTextField Label="Latitude" id="Latitude" @bind-Value="record.Latitude" Variant="Variant.Filled" placeholder="Latitude" ReadOnly="@isReadOnly"></MudTextField>
-                    <ValidationMessage For="@(() => record.Latitude)" />
-                </div>
-                <div class="col-6 mb-3">
-                    <MudTextField Label="Longitude" id="Longitude" @bind-Value="record.Longitude" Variant="Variant.Filled" placeholder="Longitude" ReadOnly="@isReadOnly"></MudTextField>
-                    <ValidationMessage For="@(() => record.Longitude)" />
-                </div>
-                <div class="col-6 mb-3">
-                    <MudNumericField Label="Radius" @bind-Value="record.Radius" Variant="Variant.Filled" placeholder="Radius" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
-                    <ValidationMessage For="@(() => record.Radius)" />
-                </div>
-                <div class="col-6 mb-3">
+                        <ValidationMessage For="@(() => record.IsActive)" />
+                    </div>
 
-                    <MudSelect T="int"
-                               @bind-Value="record.IsActive"
-                               Label="Active"
-                               Variant="Variant.Filled"
-                               Dense="true"
-                               Placeholder="Active"
-                               HelperText="Select Active"
-                               HelperTextOnFocus="true"
-                               Clearable="true">
-
-                        @if (record.IsActive != 0 && record.IsActive != 1)
-                        {
-                            record.IsActive = 1;
-                        }
-
-                        <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
-                        <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
-                    </MudSelect>
-
-                    <ValidationMessage For="@(() => record.IsActive)" />
                 </div>
-            </div>
+            </ChildContent>
+
         </MudExpansionPanel>
     </MudExpansionPanels>
 
@@ -127,7 +147,7 @@
 
 @code
 {
-    static LocationsModel record = new();
+    LocationsModel record = new();
     List<TypeCodeModel> Loc = null!;
 
 
@@ -143,10 +163,16 @@
         await GetAll();
     }
 
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
     protected async Task GetAll()
     {
         LoadingPanel = true;
         Loc = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/LOCATION TYPE", true) ?? new List<TypeCodeModel>();
+
 
         if (Action == "INSERT")
         {
@@ -154,9 +180,15 @@
             record.IsActive = 1;
             isReadOnly = false;
         }
-        else
+        else if (Action != "UPDATE")
         {
             await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action != "VIEW")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
         }
 
         LoadingPanel = false;
@@ -169,12 +201,16 @@
         LoadingPanel = false;
     }
 
+    protected void GetDefaultValues()
+    {
+        StateHasChanged();
+    }
+
     protected async void Clear()
     {
         Action = "INSERT";
         record = new LocationsModel();
         record.IsActive = 1;
-        record.Radius = 10;
         isReadOnly = false;
         await _drawer.OpenDrawerAsync();
     }

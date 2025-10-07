@@ -183,7 +183,7 @@ VALUES
                               , 1 , GETDATE(), NULL
                               , 0),
 
-(22, 'Tax Setup'           , NULL , 'Configure Taxes'
+(22, 'Financial Setup'        , NULL , 'Configure Financial Settings'
                               , NULL                        , 0
                               , 'fas fa-cogs'               , 9000, 1
                               , 1 , GETDATE(), NULL
@@ -207,6 +207,13 @@ VALUES
 (25, 'Scenarios' , NULL , 'Define FBR Digital Invoice Scenarios'
                               , 'DigitalInvoiceScenariosDashboard', 22
                               , 'fas fa-receipt'            , 9070, 1
+                              , 1 , GETDATE(), NULL
+                              , 1 , GETDATE(), NULL
+                              , 0),
+
+(27, 'Chart of Accounts'    , NULL , 'Maintain organisation Chart of Acounts'
+                              , 'ChartOfAccountsDashboard'     , 22
+                              , 'fas fa-building'           , 9010, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
                               , 0);

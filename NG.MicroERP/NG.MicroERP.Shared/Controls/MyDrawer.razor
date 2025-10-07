@@ -3,28 +3,94 @@
 <MudDrawer @bind-Open="Open"
            Width="900px"
            Anchor="Anchor.Right"
-           Elevation="1"
+           Elevation="3"
            Variant="DrawerVariant.Temporary"
-           Style="height: 100vh; overflow: hidden;">
+           Class="professional-drawer">
 
-    <div class="d-flex justify-between align-center px-4 py-2" style="flex-shrink: 0;">
-        @if (!string.IsNullOrEmpty(FaIcon))
-        {
-            <i class="@FaIcon" style="margin-right: 8px;"></i>
-        }
-        <MudText Typo="Typo.h6">@(Title.ToUpper())</MudText>
-        <MudSpacer />
-        <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Inherit" OnClick="CloseDrawer" />
+    <!-- Clean Professional Header -->
+    <div class="drawer-header">
+        <div class="d-flex align-center flex-grow-1">
+            @if (!string.IsNullOrEmpty(FaIcon))
+            {
+                <div class="icon-container me-3">
+                    <i class="@FaIcon"></i>
+                </div>
+            }
+            <MudText Typo="Typo.h5" Class="drawer-title flex-grow-1 mb-0">@Title</MudText>
+        </div>
+        <MudIconButton Icon="@Icons.Material.Filled.Close"
+                       OnClick="CloseDrawer"
+                       Size="Size.Small" />
     </div>
 
-    <div class="flex-grow-1 overflow-auto px-4 py-2" style="max-height: calc(100vh - 140px);">
+    <!-- Content Area -->
+    <div class="drawer-content">
         @ChildContent
     </div>
 
-    <div class="d-flex justify-end gap-2 px-4 py-2" style="flex-shrink: 0;">
+    <!-- Footer -->
+    <div class="drawer-footer">
         @FooterContent
     </div>
 </MudDrawer>
+
+<style>
+    .professional-drawer {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+        .professional-drawer .drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            flex-shrink: 0;
+            width: 100%;
+            box-sizing: border-box;
+            margin: 0;
+            border-bottom: 1px solid var(--mud-palette-lines-default);
+        }
+
+        .professional-drawer .icon-container {
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .professional-drawer .icon-container i {
+                font-size: 1.5rem;
+            }
+
+        .professional-drawer .drawer-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            min-height: 0;
+        }
+
+        .professional-drawer .drawer-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--mud-palette-lines-default);
+            flex-shrink: 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Remove the default MudDrawer padding */
+        .professional-drawer .mud-drawer-content {
+            padding: 0 !important;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+</style>
 
 @code {
     [Parameter] public bool Open { get; set; } = false;
@@ -100,13 +166,3 @@
         await OpenDrawer();
     }
 }
-
-<style>
-    .soft-drawer {
-        background-color: #f9fafb !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
-        border-left: 2px solid #e0e0e0 !important;
-        border-bottom: 2px solid #e0e0e0 !important;
-        transition: all 0.3s ease-in-out !important;
-    }
-</style>

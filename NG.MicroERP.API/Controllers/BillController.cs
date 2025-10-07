@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 using MySqlX.XDevAPI.Common;
-
+using NG.MicroERP.API.Helper;
 using NG.MicroERP.API.Services;
 using NG.MicroERP.Shared.Models;
 
@@ -21,6 +21,9 @@ public class BillController : ControllerBase
     [HttpGet("Search/{Criteria?}")]
     public async Task<IActionResult> Search(string Criteria = "")
     {
+        if (!string.IsNullOrEmpty(Criteria) && !Config.IsSafeSearchCriteria(Criteria))
+            return BadRequest("Invalid search criteria");
+
         var result = await Srv.Search(Criteria)!;
         if (result.Item1 == false)
             return NotFound("Record Not Found");

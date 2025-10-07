@@ -1,0 +1,280 @@
+﻿@page "/ChartOfAccountsDashboard"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div style="margin:10px;">
+    
+    <div style="display:flex;">
+        <MudText Typo="Typo.h6">Chart of Accounts</MudText>
+        <MudSpacer />
+        <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Info" OnClick="@(() => Refresh())">Refresh</MudButton>
+        <MudButton StartIcon="@Icons.Material.TwoTone.Expand" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => ExpandAllNodes())">Expand All</MudButton>
+        <MudButton StartIcon="@Icons.Material.TwoTone.ExpandLess" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Error" OnClick="@(() => CollapseAllNodes())">Collapse All</MudButton>
+    </div>
+
+
+    <div class="row" style="margin: 2px; height: 90vh; display: flex;">
+        <MyDrawer @ref="_drawer" Title="ChartOfAccounts" FaIcon="fas fa-address-book">
+            <HeaderContent>
+            </HeaderContent>
+            <ChildContent>
+                <EditForm Model="record" OnSubmit="Save">
+                    <MudForm>
+                        <ChartOfAccountsPage Action="@Action" CurrentRecord="record.Id" />
+                    </MudForm>
+                </EditForm>
+            </ChildContent>
+            <FooterContent>
+            </FooterContent>
+        </MyDrawer>
+
+
+        <MudTreeView Items="@TreeItems"
+                        T="ChartOfAccountsModel"
+                        Hover="true"
+                        SelectedValueChanged="OnSelectedValueChanged"
+                     @ref="treeViewRef">
+            <ItemTemplate Context="item">
+                <MudTreeViewItem Items="@item.Children"
+                                    
+                                    Value="@item.Value">
+
+                    <BodyContent>
+                        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 40px;">
+                            <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
+                                <!-- Menu Button -->
+
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="false" Color="Color.Inherit">
+                                    <MudMenuItem OnClick="@(() => Clear(item.Value))">
+                                        <MudIcon Icon="@Icons.Material.TwoTone.Add" Class="me-2" /> Add
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => View(item.Value))">
+                                        <MudIcon Icon="@Icons.Material.TwoTone.Search" Class="me-2" /> View
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => Edit(item.Value))">
+                                        <MudIcon Icon="@Icons.Material.TwoTone.Edit" Class="me-2" /> Edit
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => Delete(item.Value))">
+                                        <MudIcon Icon="@Icons.Material.TwoTone.DeleteSweep" Class="me-2" /> Delete
+                                    </MudMenuItem>
+                                </MudMenu>
+
+                                <!-- Content -->
+                                @{
+                                    var color = @item.Value.Type switch
+                                    {
+                                        "ASSET" => Color.Primary,
+                                        "LIABILITY" => Color.Warning,
+                                        "EXPENSE" => Color.Error,
+                                        "REVENUE" => Color.Success,
+                                        "EQUITY" => Color.Dark,
+                                        _ => Color.Info
+                                    };
+                                }
+
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 2fr 1fr; gap: 8px; align-items: center;">
+                                    
+
+                                    <MudChip Size="Size.Small" Color="color" Style="width: 100px; border-radius:0px;">
+                                        @item.Value.Code
+                                    </MudChip>
+
+                                    <MudChip Size="Size.Small" Color="color" Variant="Variant.Outlined" Style="width: 100px; border-radius:0px;">
+                                        @item.Value.Type
+                                    </MudChip>
+
+                                    <MudText Typo="Typo.body1" Color="color"
+                                             Style="width: 200px; border-radius:0px;">
+                                        @item.Value.Name
+                                    </MudText>
+
+                                    @if (item.Value.OpeningBalance != 0)
+                                    {
+                                        <MudChip Size="Size.Small" Color="color" Variant="Variant.Text" Style="width: 100px; border-radius:0px;">
+                                            @item.Value.OpeningBalance.ToString("N")
+                                        </MudChip>
+
+                                    }
+                                    else
+                                    {
+                                        <div></div> @* Placeholder for empty balance cell *@
+                                    }
+                                </div>
+
+
+                            </div>
+                        </div>
+                    </BodyContent>
+                </MudTreeViewItem>
+            </ItemTemplate>
+        </MudTreeView>
+
+    </div>
+</div>
+@code
+{
+    private List<TreeItemData<ChartOfAccountsModel>> TreeItems { get; set; } = new();
+    List<ChartOfAccountsModel> data = new();
+    ChartOfAccountsModel record = new();
+    private ChartOfAccountsModel? SelectedItem;
+    private MudTreeView<ChartOfAccountsModel>? treeViewRef;
+
+    public string Action { get; set; } = "INSERT";
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        var data = await Functions.GetAsync<List<ChartOfAccountsModel>>("ChartOfAccounts/Search", true)
+                  ?? new List<ChartOfAccountsModel>();
+
+        TreeItems = BuildTree(data);
+
+        LoadingPanel = false;
+    }
+
+    private List<TreeItemData<ChartOfAccountsModel>> BuildTree(List<ChartOfAccountsModel> flatList, int parentId = 0)
+    {
+        return flatList
+            .Where(x => x.ParentId == parentId)
+            .Select(x => new TreeItemData<ChartOfAccountsModel>
+            {
+                Value = x,
+                Children = BuildTree(flatList, x.Id)
+            }).ToList();
+    }
+
+    private async Task ExpandAllNodes()
+    {
+        if (treeViewRef != null)
+        {
+            await treeViewRef.ExpandAllAsync();
+        }
+    }
+
+    private async Task CollapseAllNodes()
+    {
+        if (treeViewRef != null)
+        {
+            await treeViewRef.CollapseAllAsync();
+        }
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<ChartOfAccountsModel>($"ChartOfAccounts/Get?Id={id}", true) ?? new ChartOfAccountsModel();
+        LoadingPanel = false;
+    }
+
+    private async Task OnSelectedValueChanged(ChartOfAccountsModel? selectedItem)
+    {
+        SelectedItem = selectedItem;
+        if (SelectedItem != null)
+        {
+            SnackbarService.Add($"Clicked node ID: {SelectedItem.Id}, Name: {SelectedItem.Name}", Severity.Success);
+            //Console.WriteLine($"Clicked node ID: {SelectedItem.Id}, Name: {SelectedItem.Name}");
+        }
+        //await Get(selectedItem.Id);
+    }
+
+
+    protected async Task Clear(ChartOfAccountsModel item)
+    {
+        await Get(item.Id);
+        Action = "INSERT";
+
+        var parent = record.ParentId;
+        var code = record.Code;
+        var type = record.Type;
+
+        record = new ChartOfAccountsModel();
+        record.IsActive = 1;
+        record.ParentId = parent;
+        record.InterfaceType = "NONE";
+        record.Code = (Convert.ToInt16(code) + 1).ToString();
+        record.Type = type;
+
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+        StateHasChanged();
+    }
+
+    protected async Task Refresh()
+    {
+        await GetAll();
+    }
+
+    protected async Task View(ChartOfAccountsModel item)
+    {
+        await Get(item.Id);
+        Action = "VIEW";
+        isReadOnly = true;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(ChartOfAccountsModel item)
+    {
+        await Get(item.Id);
+        Action = "UPDATE";
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Delete(ChartOfAccountsModel item)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Get(item.Id);
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedFrom = Functions.GetComputerDetails();
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = Functions.GetComputerDetails();
+
+        var result = await Functions.PostAsync<ChartOfAccountsModel>($"ChartOfAccounts/{Action}", record, true);
+        if (result.Success == true)
+        {
+            SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
+        }
+        else
+        {
+            SnackbarService.Add($"Record Not Deleted", Severity.Error);
+            record = new();
+            isReadOnly = true;
+        }
+
+        await GetAll();
+        LoadingPanel = false;
+        await _drawer.CloseDrawer();
+
+    }
+
+}
+

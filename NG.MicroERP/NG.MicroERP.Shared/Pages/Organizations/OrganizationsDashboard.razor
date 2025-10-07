@@ -42,9 +42,9 @@
                     <TemplateColumn Title="Actions" CellStyle="width: 80px; min-width: 80px;">
                         <CellTemplate Context="row">
                             <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
-                                <MudMenuItem OnClick="@(() => View(row.Item.Id))">
+                               @*  <MudMenuItem OnClick="@(() => View(row.Item.Id))">
                                     <MudIcon Icon="@Icons.Material.TwoTone.Visibility" Size="Size.Small" Class="me-2" /> View
-                                </MudMenuItem>
+                                </MudMenuItem> *@
                                 <MudMenuItem OnClick="@(() => Edit(row.Item.Id))">
                                     <MudIcon Icon="@Icons.Material.TwoTone.Edit" Size="Size.Small" Class="me-2" /> Edit
                                 </MudMenuItem>
@@ -52,9 +52,9 @@
                                 @* <MudMenuItem OnClick="@(() => Delete(row.Item.Id))">
                                         <MudIcon Icon="@Icons.Material.TwoTone.Delete" Size="Size.Small" Class="me-2" /> Delete
                                     </MudMenuItem> *@
-                                <MudMenuItem OnClick="@(() => SetParent(row.Item.Id))">
+                                @* <MudMenuItem OnClick="@(() => SetParent(row.Item.Id))">
                                     <MudIcon Icon="@Icons.Material.TwoTone.Restore" Size="Size.Small" Class="me-2" /> Restore
-                                </MudMenuItem>
+                                </MudMenuItem> *@
                             </MudMenu>
                         </CellTemplate>
                     </TemplateColumn>

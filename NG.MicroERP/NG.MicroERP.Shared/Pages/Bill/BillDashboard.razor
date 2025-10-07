@@ -206,7 +206,7 @@
 
     protected void NewBill(string Action, int Id, string invoiceType = "SALE")
     {
-        var url = $"/BillPage2/{invoiceType}/{Action}/{Id}";
+        var url = $"/BillPage/{invoiceType}/{Action}/{Id}";
         JSRuntime.InvokeVoidAsync("open", url, "_blank");
     }
 

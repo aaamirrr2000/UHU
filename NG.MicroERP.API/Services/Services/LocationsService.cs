@@ -58,7 +58,7 @@ public class LocationsService : ILocationsService
         try
         {
 
-            string Code = dapper.GetCode("LOC", "Locations", "Code")!;
+            string Code = dapper.GetCode("", "Locations", "Code")!;
             string SQLDuplicate = $@"SELECT * FROM Locations WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
             string SQLInsert = $@"INSERT INTO Locations 
 			(
