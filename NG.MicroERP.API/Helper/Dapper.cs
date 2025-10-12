@@ -170,29 +170,27 @@ public class DapperFunctions
         {
             // With prefix: extract the numeric part after the prefix
             SQL = $@"Select MAX(CAST(SUBSTRING({Field}, {Prefix.Length + 1}, LEN({Field}) - {Prefix.Length}) as INT)) as SEQNO 
-                 from {TableName} 
-                 Where LEFT({Field}, {Prefix.Length}) = '{Prefix}'";
+                         from {TableName} 
+                         Where LEFT({Field}, {Prefix.Length}) = '{Prefix}'";
         }
         else
         {
             // Without prefix: use the entire field as numeric
-            SQL = $@"Select MAX(CAST({Field} as INT)) as SEQNO 
-                 from {TableName} 
-                 Where ISNUMERIC({Field}) = 1";
+            SQL = $@"Select MAX(CAST({Field} as INT)) as SEQNO from {TableName} Where ISNUMERIC({Field}) = 1";
         }
 
         try
         {
             using IDbConnection cnn = new SqlConnection(DBConnection);
-            string result = cnn.QueryFirstOrDefault<string>(SQL, new DynamicParameters())!;
+            var result = cnn.QueryFirstOrDefault<long?>(SQL, new DynamicParameters());
 
             if (!string.IsNullOrEmpty(Prefix))
             {
-                return result == null ? Prefix + 1.ToString(format) : Prefix + (Convert.ToInt64(result) + 1).ToString(format);
+                return result == null ? Prefix + 1.ToString(format) : Prefix + (result.Value + 1).ToString(format);
             }
             else
             {
-                return result == null ? 1.ToString(format) : (Convert.ToInt64(result) + 1).ToString(format);
+                return result == null ? 1.ToString(format) : (result.Value + 1).ToString(format);
             }
         }
         catch (Exception ex)

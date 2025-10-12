@@ -225,7 +225,7 @@ public class ItemsService : IItemsService
 				'{obj.Unit!.ToUpper()}', 
 				{obj.IsActive},
 				{obj.CreatedBy},
-				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
 				'{obj.CreatedFrom!.ToUpper()}', 
 				{obj.IsSoftDeleted}
 			);";
@@ -274,7 +274,7 @@ public class ItemsService : IItemsService
                     IsFavItem = {obj.IsFavItem}, 
                     IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
-					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
@@ -294,7 +294,7 @@ public class ItemsService : IItemsService
             string SQLUpdate = $@"UPDATE Items SET 
 					ServingSize = '{obj.ServingSize}', 
 					UpdatedBy = {obj.UpdatedBy}, 
-					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";

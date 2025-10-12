@@ -1,11 +1,9 @@
-﻿@page "/CategoriesPage/{Action}/{CurrentRecord?}"
+﻿@page "/AreasPage/{Action}/{CurrentRecord?}"
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
 @inject NavigationManager NavManager
 @inject ISnackbar SnackbarService
-@inject FileUploadService FileUploadService
-
 
 <Loading IsLoading="@LoadingPanel" />
 
@@ -42,8 +40,8 @@
                     </i>
 
                     <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">@record.Name</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted">@record.Name</MudText>
+                        <MudText Typo="Typo.h6" Class="fw-bold">@record.AreaName</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Description</MudText>
                     </div>
                 </div>
             </TitleContent>
@@ -51,20 +49,39 @@
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-6 flex-input">
-                        <label class="form-label">Code</label>
-                        <MudTextField id="Code" @bind-Value="record.Code" placeholder="Code" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.Code)" />
+                        <label class="form-label">Areaname</label>
+                        <MudTextField id="AreaName" @bind-Value="record.AreaName" placeholder="AreaName" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.AreaName)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Name</label>
-                        <MudTextField id="Name" @bind-Value="record.Name" placeholder="Name" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.Name)" />
+                        <label class="form-label">Areatype</label>
+
+                        <MudSelect T="string"
+                                   @bind-Value="record.AreaType"
+                                   Placeholder="AreaType"
+                                   Clearable="true">
+
+                            @if (Are != null && Are.Any())
+                            {
+                                if (string.IsNullOrWhiteSpace(record.AreaType))
+                                {
+                                    record.AreaType = Are.First().ListValue;
+                                }
+
+                                foreach (var i in Are)
+                                {
+                                    <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+
+                        <ValidationMessage For="@(() => record.AreaType)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Parent Category</label>
+                        <label class="form-label">Parentid</label>
 
                         <MudSelect @bind-Value="record.ParentId"
-                                   Placeholder="Parent Category"
+                                   Placeholder="Parent"
                                    Clearable="true">
 
                             @if (Par != null && Par.Any())
@@ -78,7 +95,7 @@
                         <ValidationMessage For="@(() => record.ParentId)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Active</label>
+                        <label class="form-label">Isactive</label>
 
                         <MudSelect T="int"
                                    @bind-Value="record.IsActive"
@@ -97,31 +114,6 @@
                         <ValidationMessage For="@(() => record.IsActive)" />
                     </div>
 
-                    <div class="w-100 d-flex justify-content-center">
-                        <div class="p-3 border rounded" style="width: 300px;">
-                            <label class="small fw-bold text-uppercase d-block mb-2 text-center">Items Image</label>
-
-                            <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
-                                @if (!string.IsNullOrEmpty(record.Pic))
-                                {
-                                    <img src="@record.Pic"
-                                         class="img-fluid rounded"
-                                         alt="Items Image"
-                                         style="max-height: 100%; max-width: 100%; object-fit: cover;" />
-                                }
-                                else
-                                {
-                                    <div class="d-flex align-items-center justify-content-center bg-secondary rounded-circle"
-                                         style="width: 120px; height: 120px;">
-                                        <i class="fas fa-image text-white fs-3"></i>
-                                    </div>
-                                }
-                            </div>
-
-                            <InputFile OnChange="OnFileInputChanged" />
-                        </div>
-                    </div>
-
                 </div>
             </ChildContent>
 
@@ -130,11 +122,13 @@
 
 </div>
 
-
 @code
 {
-    static CategoriesModel record = new();
-    List<CategoriesModel> Par = new();
+    AreasModel record = new();
+    List<OrganizationsModel> Org = new();
+    List<TypeCodeModel> Are = null!;
+    List<PartiesModel> Par = new();
+
 
     [Parameter] public string Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
@@ -148,20 +142,32 @@
         await GetAll();
     }
 
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
     protected async Task GetAll()
     {
         LoadingPanel = true;
-        Par = await Functions.GetAsync<List<CategoriesModel>>($"Categories/Search", true) ?? new List<CategoriesModel>();
+        Are = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/AREA TYPE", true) ?? new List<TypeCodeModel>();
+        Par = await Functions.GetAsync<List<PartiesModel>>($"Parent/Search", true) ?? new List<PartiesModel>();
 
         if (Action == "INSERT")
         {
-            record = new CategoriesModel();
+            record = new AreasModel();
             record.IsActive = 1;
             isReadOnly = false;
         }
-        else
+        else if (Action != "UPDATE")
         {
             await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action != "VIEW")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
         }
 
         LoadingPanel = false;
@@ -170,14 +176,26 @@
     protected async Task Get(int id)
     {
         LoadingPanel = true;
-        record = await Functions.GetAsync<CategoriesModel>($"Categories/Get?Id={id}", true) ?? new CategoriesModel();
+        record = await Functions.GetAsync<AreasModel>($"Areas/Get?Id={id}", true) ?? new AreasModel();
         LoadingPanel = false;
+    }
+
+    protected void GetDefaultValues()
+    {
+
+        if (Org != null && Org.Any() && record.OrganizationId == 0)
+            record.OrganizationId = Org.First().Id;
+        if (Par != null && Par.Any() && record.ParentId == 0)
+            record.ParentId = Par.First().Id;
+
+
+        StateHasChanged();
     }
 
     protected async void Clear()
     {
         Action = "INSERT";
-        record = new CategoriesModel();
+        record = new AreasModel();
         record.IsActive = 1;
         isReadOnly = false;
         await _drawer.OpenDrawerAsync();
@@ -222,7 +240,7 @@
         record.UpdatedFrom = Functions.GetComputerDetails();
 
         string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
-        var result = await Functions.PostAsync<CategoriesModel>($"Categories/{url}", record, true);
+        var result = await Functions.PostAsync<AreasModel>($"Areas/{url}", record, true);
         if (result.Success == false)
         {
             await Functions.ShowMessage(dialogService, "error", $"Record Not Saved");
@@ -237,29 +255,6 @@
         LoadingPanel = false;
         await _drawer.CloseDrawer();
 
-    }
-
-    private async Task OnFileInputChanged(InputFileChangeEventArgs e)
-    {
-        try
-        {
-            var result = await Functions.FileUpload(e, FileUploadService);
-
-            if (result.Item1 == true)
-            {
-                record.Pic = result.Item2;
-                SnackbarService.Add("File uploaded successfully!", Severity.Success);
-            }
-            else
-            {
-                SnackbarService.Add($"Error: {result.Item2}", Severity.Error);
-            }
-        }
-        catch (Exception ex)
-        {
-            SnackbarService.Add($"Exception: {ex.Message}", Severity.Error);
-            record.Pic = null;
-        }
     }
 }
 

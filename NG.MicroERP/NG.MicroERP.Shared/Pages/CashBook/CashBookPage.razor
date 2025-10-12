@@ -36,18 +36,30 @@
     <br />
 
     <MudExpansionPanels MultiExpansion="true">
+
         <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+
+                    <i class="fa fa-info-circle"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">@record.TranType</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Description</MudText>
+                    </div>
+                </div>
+            </TitleContent>
+            
+            <ChildContent>
             <div class="row" style="width:100%; display: flex;">
-                <div class="col-6 mb-3">
+                <div class="col-6 flex-input">
+                    <label class="form-label">Transaction Type</label>
 
                     <MudSelect T="string"
                                @bind-Value="record.TranType"
-                               Label="Tranaction Type"
-                               Variant="Variant.Filled"
-                               Dense="true"
                                Placeholder="Tranaction Type"
-                               HelperText="Select Tranaction Type"
-                               HelperTextOnFocus="true"
                                Clearable="true"
                                @bind-Value:after="OnTransactionTypeChanged">
 
@@ -67,19 +79,16 @@
 
                     <ValidationMessage For="@(() => record.TranType)" />
                 </div>
-                <div class="col-6 mb-3">
-                    <MudTextField Label="Transaction #" id="SeqNo" @bind-Value="record.SeqNo" Variant="Variant.Filled" placeholder="Transaction #" ReadOnly="true"></MudTextField>
+                <div class="col-6 flex-input">
+                    <label class="form-label">Transaction #</label>
+                    <MudTextField id="SeqNo" @bind-Value="record.SeqNo" placeholder="Transaction #" ReadOnly="true"></MudTextField>
                     <ValidationMessage For="@(() => record.SeqNo)" />
                 </div>
-                <div class="col-6 mb-3">
+                <div class="col-6 flex-input">
+                    <label class="form-label">Location</label>
 
                     <MudSelect @bind-Value="record.LocationId"
-                               Label="Location"
-                               Variant="Variant.Filled"
-                               Dense="true"
                                Placeholder="Location"
-                               HelperText="Select Location"
-                               HelperTextOnFocus="true"
                                Clearable="true">
 
                         @if (Loc != null && Loc.Any())
@@ -97,16 +106,12 @@
                     </MudSelect>
                     <ValidationMessage For="@(() => record.LocationId)" />
                 </div>
-                <div class="col-6 mb-3">
+                <div class="col-6 flex-input">
+                    <label class="form-label">Party</label>
 
                     <MudSelect @bind-Value="record.PartyId"
                                @key="record.PartyId"
-                               Label="@filterParties.Replace("'", "").Replace("partytype=", "")"
-                               Variant="Variant.Filled"
-                               Dense="true"
                                Placeholder="@filterParties.Replace("'", "").Replace("partytype=", "")"
-                               HelperText="@filterParties.Replace("'", "").Replace("partytype=", "")"
-                               HelperTextOnFocus="true"
                                Clearable="true">
 
                         @if (Par != null && Par.Any())
@@ -119,28 +124,27 @@
                     </MudSelect>
                     <ValidationMessage For="@(() => record.PartyId)" />
                 </div>
-                <div class="col-6 mb-3">
-                    <MudDatePicker Label="Tranaction Date" @bind-Value="record.TranDate" Format="yyyy-MM-dd" Variant="Variant.Filled" placeholder="Tranaction Date" ReadOnly="@isReadOnly"></MudDatePicker>
+                <div class="col-6 flex-input">
+                    <label class="form-label">Transaction Date</label>
+                    <MudDatePicker @bind-Value="record.TranDate" Format="yyyy-MM-dd" placeholder="Tranaction Date" ReadOnly="@isReadOnly"></MudDatePicker>
                     <ValidationMessage For="@(() => record.TranDate)" />
                 </div>
-                <div class="col-6 mb-3">
-                    <MudTextField Label="Description" id="Description" @bind-Value="record.Description" Variant="Variant.Filled" placeholder="Description" ReadOnly="@isReadOnly"></MudTextField>
+                <div class="col-6 flex-input">
+                    <label class="form-label">Description</label>
+                    <MudTextField id="Description" @bind-Value="record.Description" placeholder="Description" ReadOnly="@isReadOnly"></MudTextField>
                     <ValidationMessage For="@(() => record.Description)" />
                 </div>
-                <div class="col-6 mb-3">
-                    <MudNumericField Label="Amount" @bind-Value="record.Amount" Variant="Variant.Filled" placeholder="Amount" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
+                <div class="col-6 flex-input">
+                    <label class="form-label">Amount</label>
+                    <MudNumericField @bind-Value="record.Amount" placeholder="Amount" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
                     <ValidationMessage For="@(() => record.Amount)" />
                 </div>
-                <div class="col-6 mb-3">
+                <div class="col-6 flex-input">
+                    <label class="form-label">Account</label>
 
                     <MudSelect @bind-Value="record.AccountId"
                                @key="record.AccountId"
-                               Label="@filterCOA.Replace("'", "").Replace("InterfaceType=", "")"
-                               Variant="Variant.Filled"
-                               Dense="true"
                                Placeholder="@filterCOA.Replace("'", "").Replace("InterfaceType=", "")"
-                               HelperText="@filterCOA.Replace("'", "").Replace("InterfaceType=", "")"
-                               HelperTextOnFocus="true"
                                Clearable="true">
 
                         @if (Acc != null && Acc.Any())
@@ -153,16 +157,12 @@
                     </MudSelect>
                     <ValidationMessage For="@(() => record.AccountId)" />
                 </div>
-             
-                <div class="col-6 mb-3">
+
+                <div class="col-6 flex-input">
+                    <label class="form-label">Payment Method</label>
                     <MudSelect T="string"
                                @bind-Value="record.PaymentMethod"
-                               Label="Payment Method"
-                               Variant="Variant.Filled"
-                               Dense="true"
                                Placeholder="Payment Method"
-                               HelperText="Select Payment Method"
-                               HelperTextOnFocus="true"
                                Clearable="true">
 
                         @if (pm != null && pm.Any())
@@ -181,12 +181,14 @@
 
                     <ValidationMessage For="@(() => record.PaymentMethod)" />
                 </div>
-                <div class="col-6 mb-3">
-                    <MudTextField Label="Reference #" id="RefNo" @bind-Value="record.RefNo" Variant="Variant.Filled" placeholder="Reference #" ReadOnly="@isReadOnly"></MudTextField>
+                <div class="col-6 flex-input">
+                    <label class="form-label">Reference #</label>
+                    <MudTextField id="RefNo" @bind-Value="record.RefNo" placeholder="Reference #" ReadOnly="@isReadOnly"></MudTextField>
                     <ValidationMessage For="@(() => record.RefNo)" />
                 </div>
-                <div class="col-6 mb-3">
-                    <MudTextField Label="TranRef" id="Bill Transaction Reference" @bind-Value="record.TranRef" Variant="Variant.Filled" placeholder="Bill Transaction Reference" ReadOnly="@isReadOnly"></MudTextField>
+                <div class="col-6 flex-input">
+                    <label class="form-label">Bill Tran Reference</label>
+                    <MudTextField id="Bill Transaction Reference" @bind-Value="record.TranRef" placeholder="Bill Transaction Reference" ReadOnly="@isReadOnly"></MudTextField>
                     <ValidationMessage For="@(() => record.TranRef)" />
                 </div>
                 <div class="col-12 mb-3">
@@ -199,6 +201,7 @@
                 </div>
 
             </div>
+            </ChildContent>
         </MudExpansionPanel>
     </MudExpansionPanels>
 

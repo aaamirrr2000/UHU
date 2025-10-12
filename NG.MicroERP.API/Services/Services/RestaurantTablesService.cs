@@ -81,7 +81,7 @@ public class RestaurantTablesService : IRestaurantTablesService
 				'{obj.Notes!.ToUpper()}', 
 				{obj.IsActive},
 				{obj.CreatedBy},
-				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
 				'{obj.CreatedFrom!.ToUpper()}', 
 				{obj.IsSoftDeleted}
 			);";
@@ -119,7 +119,7 @@ public class RestaurantTablesService : IRestaurantTablesService
 					Notes = '{obj.Notes!.ToUpper()}', 
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
-					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
@@ -140,7 +140,7 @@ public class RestaurantTablesService : IRestaurantTablesService
     public async Task<(bool, string)> SoftDelete(RestaurantTablesModel obj)
     {
         string SQLUpdate = $@"UPDATE RestaurantTables SET 
-					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedBy = '{obj.UpdatedBy!}',
 					IsSoftDeleted = 1 
 				WHERE Id = {obj.Id};";

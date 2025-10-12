@@ -80,7 +80,7 @@ public class DigitalInvoiceConfigService : IDigitalInvoiceConfigService
 				'{obj.TargetApi!.ToUpper()}', 
 				{obj.IsDefault},
 				{obj.CreatedBy},
-				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
 				'{obj.CreatedFrom!.ToUpper()}', 
 				{obj.IsSoftDeleted}
 			);";
@@ -120,7 +120,7 @@ public class DigitalInvoiceConfigService : IDigitalInvoiceConfigService
 					TargetApi = '{obj.TargetApi!.ToUpper()}', 
 					IsDefault = {obj.IsDefault}, 
 					UpdatedBy = {obj.UpdatedBy}, 
-					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
@@ -141,7 +141,7 @@ public class DigitalInvoiceConfigService : IDigitalInvoiceConfigService
     public async Task<(bool, string)> SoftDelete(DigitalInvoiceConfigModel obj)
     {
         string SQLUpdate = $@"UPDATE DigitalInvoiceConfig SET 
-					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedBy = '{obj.UpdatedBy!}',
 					IsSoftDeleted = 1 
 				WHERE Id = {obj.Id};";

@@ -86,7 +86,7 @@ public class BillDetailService : IBillDetailService
         {
             string SQLUpdate = $@"UPDATE BillDetail SET 
 					                Status = '{Status!.ToUpper()}', 
-					                TranDate = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+					                TranDate = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
                                     IsSoftDeleted = {SoftDelete}
 				                WHERE Id = {BillDetailId};";
 

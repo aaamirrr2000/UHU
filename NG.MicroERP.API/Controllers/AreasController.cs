@@ -1,17 +1,18 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using NG.MicroERP.Shared.Models;
-using NG.MicroERP.API.Services;
 using NG.MicroERP.API.Helper;
+using NG.MicroERP.API.Services.Services;
+using NG.MicroERP.Shared.Models;
 
 namespace NG.MicroERP.API.Controllers;
+
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class PartiesController : ControllerBase
+public class AreasController : ControllerBase
 {
-    PartiesService Srv = new PartiesService();
+    AreasService Srv = new AreasService();
 
     [HttpGet("Search/{Criteria?}")]
     public async Task<IActionResult> Search(string Criteria = "")
@@ -39,7 +40,7 @@ public class PartiesController : ControllerBase
     }
 
     [HttpPost("Insert")]
-    public async Task<IActionResult> Insert(PartiesModel obj)
+    public async Task<IActionResult> Insert(AreasModel obj)
     {
         var result = await Srv.Post(obj)!;
         if (result.Item1 == true)
@@ -49,7 +50,7 @@ public class PartiesController : ControllerBase
     }
 
     [HttpPost("Update")]
-    public async Task<IActionResult> Update(PartiesModel obj)
+    public async Task<IActionResult> Update(AreasModel obj)
     {
         var result = await Srv.Put(obj)!;
         if (result.Item1 == true)
@@ -73,7 +74,7 @@ public class PartiesController : ControllerBase
     }
 
     [HttpPost("SoftDelete")]
-    public async Task<IActionResult> SoftDelete(PartiesModel obj)
+    public async Task<IActionResult> SoftDelete(AreasModel obj)
     {
         var result = await Srv.SoftDelete(obj)!;
         if (result.Item1 == true)

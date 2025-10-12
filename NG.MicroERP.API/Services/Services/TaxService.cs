@@ -79,7 +79,7 @@ public class TaxService : ITaxService
 				'{obj.EffectiveTo.ToString("yyyy-MM-dd")}',
                 {obj.IsActive},
 				{obj.CreatedBy},
-				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
 				'{obj.CreatedFrom!.ToUpper()}', 
 				{obj.IsSoftDeleted}
 			);";
@@ -118,10 +118,10 @@ public class TaxService : ITaxService
                     EffectiveTo = '{obj.EffectiveTo.ToString("yyyy-MM-dd")}',
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
-					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
 					IsSoftDeleted = {obj.IsSoftDeleted}, 
-					RowVersion = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}' 
+					RowVersion = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}' 
 				WHERE Id = {obj.Id};";
 
             return await dapper.Update(SQLUpdate, SQLDuplicate);
@@ -140,7 +140,7 @@ public class TaxService : ITaxService
     public async Task<(bool, string)> SoftDelete(TaxModel obj)
     {
         string SQLUpdate = $@"UPDATE Tax SET 
-					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedBy = '{obj.UpdatedBy!}',
 					IsSoftDeleted = 1 
 				WHERE Id = {obj.Id};";

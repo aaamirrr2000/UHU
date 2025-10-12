@@ -68,7 +68,7 @@ public class FbrSubmissionService : IFbrSubmissionService
 			(
 				{obj.BillId},
 				'{obj.JsonPayload!.ToUpper()}', 
-				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
 				'{obj.ResponseCode!.ToUpper()}', 
 				'{obj.IRN!.ToUpper()}', 
 				'{obj.DigitalInvoiceUrl!.ToUpper()}', 
@@ -76,7 +76,7 @@ public class FbrSubmissionService : IFbrSubmissionService
 				'{obj.ErrorMessage!.ToUpper()}', 
 				{obj.RetryCount},
 				'{obj.SubmissionMachineInfo!.ToUpper()}', 
-				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}'
+				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}'
 			);";
 
             var res = await dapper.Insert(SQLInsert);
@@ -105,7 +105,7 @@ public class FbrSubmissionService : IFbrSubmissionService
             string SQLUpdate = $@"UPDATE FbrSubmission SET 
 					BillId = {obj.BillId}, 
 					JsonPayload = '{obj.JsonPayload!.ToUpper()}', 
-					SubmissionDateTime = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					SubmissionDateTime = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					ResponseCode = '{obj.ResponseCode!.ToUpper()}', 
 					IRN = '{obj.IRN!.ToUpper()}', 
 					DigitalInvoiceUrl = '{obj.DigitalInvoiceUrl!.ToUpper()}', 
@@ -113,7 +113,7 @@ public class FbrSubmissionService : IFbrSubmissionService
 					ErrorMessage = '{obj.ErrorMessage!.ToUpper()}', 
 					RetryCount = {obj.RetryCount}, 
 					SubmissionMachineInfo = '{obj.SubmissionMachineInfo!.ToUpper()}', 
-					CreatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}' 
+					CreatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}' 
 				WHERE Id = {obj.Id};";
 
             return await dapper.Update(SQLUpdate);

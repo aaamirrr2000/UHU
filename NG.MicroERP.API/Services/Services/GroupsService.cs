@@ -75,7 +75,7 @@ public class GroupsService : IGroupsService
 				'{obj.Dashboard!.ToUpper()}', 
 				{obj.IsActive},
 				{obj.CreatedBy},
-				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
 				'{obj.CreatedFrom!.ToUpper()}', 
 				{obj.IsSoftDeleted}
 			);";
@@ -109,7 +109,7 @@ public class GroupsService : IGroupsService
 					Dashboard = '{obj.Dashboard!.ToUpper()}', 
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
-					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";

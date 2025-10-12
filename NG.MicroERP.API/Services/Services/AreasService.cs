@@ -4,31 +4,31 @@ using NG.MicroERP.Shared.Models;
 namespace NG.MicroERP.API.Services.Services;
 
 
-public interface IServiceChargesService
+public interface IAreasService
 {
-    Task<(bool, List<ServiceChargesModel>)>? Search(string Criteria = "");
-    Task<(bool, ServiceChargesModel?)>? Get(int id);
-    Task<(bool, ServiceChargesModel, string)> Post(ServiceChargesModel obj);
-    Task<(bool, string)> Put(ServiceChargesModel obj);
+    Task<(bool, List<AreasModel>)>? Search(string Criteria = "");
+    Task<(bool, AreasModel?)>? Get(int id);
+    Task<(bool, AreasModel, string)> Post(AreasModel obj);
+    Task<(bool, string)> Put(AreasModel obj);
     Task<(bool, string)> Delete(int id);
-    Task<(bool, string)> SoftDelete(ServiceChargesModel obj);
+    Task<(bool, string)> SoftDelete(AreasModel obj);
 }
 
 
-public class ServiceChargesService : IServiceChargesService
+public class AreasService : IAreasService
 {
     DapperFunctions dapper = new DapperFunctions();
 
-    public async Task<(bool, List<ServiceChargesModel>)>? Search(string Criteria = "")
+    public async Task<(bool, List<AreasModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM ServiceCharges Where IsSoftDeleted=0 and IsActive=1";
+        string SQL = $@"SELECT * FROM Areas Where IsSoftDeleted=0 and IsActive=1";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;
 
         SQL += " Order by Id Desc";
 
-        List<ServiceChargesModel> result = (await dapper.SearchByQuery<ServiceChargesModel>(SQL)) ?? new List<ServiceChargesModel>();
+        List<AreasModel> result = (await dapper.SearchByQuery<AreasModel>(SQL)) ?? new List<AreasModel>();
 
         if (result == null || result.Count == 0)
             return (false, null!);
@@ -36,9 +36,9 @@ public class ServiceChargesService : IServiceChargesService
             return (true, result);
     }
 
-    public async Task<(bool, ServiceChargesModel?)>? Get(int id)
+    public async Task<(bool, AreasModel?)>? Get(int id)
     {
-        ServiceChargesModel result = (await dapper.SearchByID<ServiceChargesModel>("ServiceCharges", id)) ?? new ServiceChargesModel();
+        AreasModel result = (await dapper.SearchByID<AreasModel>("Areas", id)) ?? new AreasModel();
         if (result == null || result.Id == 0)
             return (false, null);
         else
@@ -46,35 +46,32 @@ public class ServiceChargesService : IServiceChargesService
     }
 
 
-    public async Task<(bool, ServiceChargesModel, string)> Post(ServiceChargesModel obj)
+    public async Task<(bool, AreasModel, string)> Post(AreasModel obj)
     {
 
         try
         {
-            string SQLInsert = $@"INSERT INTO ServiceCharges 
+            string SQLInsert = $@"INSERT INTO Areas 
 			(
-				ChargeName, 
-				ChargeType, 
-				Amount, 
-				AppliesTo, 
-				EffectiveFrom, 
-				EffectiveTo, 
 				OrganizationId, 
+				AreaName, 
+				AreaType, 
+				ParentId, 
 				IsActive, 
 				CreatedBy, 
 				CreatedOn, 
 				CreatedFrom, 
+				UpdatedBy, 
+				UpdatedOn, 
+				UpdatedFrom, 
 				IsSoftDeleted
 			) 
 			VALUES 
 			(
-				'{obj.ChargeName!.ToUpper()}', 
-				'{obj.ChargeType!.ToUpper()}', 
-				{obj.Amount},
-				{obj.AppliesTo},
-				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
-				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
 				{obj.OrganizationId},
+				'{obj.AreaName!.ToUpper()}', 
+				'{obj.AreaType!.ToUpper()}', 
+				{obj.ParentId},
 				{obj.IsActive},
 				{obj.CreatedBy},
 				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
@@ -85,7 +82,7 @@ public class ServiceChargesService : IServiceChargesService
             var res = await dapper.Insert(SQLInsert);
             if (res.Item1 == true)
             {
-                List<ServiceChargesModel> Output = new List<ServiceChargesModel>();
+                List<AreasModel> Output = new List<AreasModel>();
                 var result = await Search($"id={res.Item2}")!;
                 Output = result.Item2;
                 return (true, Output.FirstOrDefault()!, "");
@@ -101,18 +98,15 @@ public class ServiceChargesService : IServiceChargesService
         }
     }
 
-    public async Task<(bool, string)> Put(ServiceChargesModel obj)
+    public async Task<(bool, string)> Put(AreasModel obj)
     {
         try
         {
-            string SQLUpdate = $@"UPDATE ServiceCharges SET 
-					ChargeName = '{obj.ChargeName!.ToUpper()}', 
-					ChargeType = '{obj.ChargeType!.ToUpper()}', 
-					Amount = {obj.Amount}, 
-					AppliesTo = {obj.AppliesTo}, 
-					EffectiveFrom = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
-					EffectiveTo = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
+            string SQLUpdate = $@"UPDATE Areas SET 
 					OrganizationId = {obj.OrganizationId}, 
+					AreaName = '{obj.AreaName!.ToUpper()}', 
+					AreaType = '{obj.AreaType!.ToUpper()}', 
+					ParentId = {obj.ParentId}, 
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
@@ -130,12 +124,12 @@ public class ServiceChargesService : IServiceChargesService
 
     public async Task<(bool, string)> Delete(int id)
     {
-        return await dapper.Delete("ServiceCharges", id);
+        return await dapper.Delete("Areas", id);
     }
 
-    public async Task<(bool, string)> SoftDelete(ServiceChargesModel obj)
+    public async Task<(bool, string)> SoftDelete(AreasModel obj)
     {
-        string SQLUpdate = $@"UPDATE ServiceCharges SET 
+        string SQLUpdate = $@"UPDATE Areas SET 
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedBy = '{obj.UpdatedBy!}',
 					IsSoftDeleted = 1 
@@ -144,3 +138,5 @@ public class ServiceChargesService : IServiceChargesService
         return await dapper.Update(SQLUpdate);
     }
 }
+
+

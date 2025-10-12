@@ -87,7 +87,7 @@ public class ChargeRulesService : IChargeRulesService
 				'{obj.EffectiveTo.ToString("yyyy-MM-dd HH:mm:ss")}',
 				{obj.IsActive},
 				{obj.CreatedBy},
-				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
 				'{obj.CreatedFrom!.ToUpper()}', 
 				{obj.IsSoftDeleted}
 			);";
@@ -130,7 +130,7 @@ public class ChargeRulesService : IChargeRulesService
 					EffectiveTo = '{obj.EffectiveTo.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
-					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
@@ -151,7 +151,7 @@ public class ChargeRulesService : IChargeRulesService
     public async Task<(bool, string)> SoftDelete(ChargeRulesModel obj)
     {
         string SQLUpdate = $@"UPDATE ChargeRules SET 
-					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedBy = '{obj.UpdatedBy!}',
 					IsSoftDeleted = 1 
 				WHERE Id = {obj.Id};";

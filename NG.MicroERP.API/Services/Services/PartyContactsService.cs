@@ -1,32 +1,34 @@
-﻿
-using NG.MicroERP.API.Helper;
+﻿using NG.MicroERP.API.Helper;
 using NG.MicroERP.Shared.Models;
 
-public interface ITaxMasterService
+namespace NG.MicroERP.API.Services.Services;
+
+
+public interface IPartyContactsService
 {
-    Task<(bool, List<TaxMasterModel>)>? Search(string Criteria = "");
-    Task<(bool, TaxMasterModel?)>? Get(int id);
-    Task<(bool, TaxMasterModel, string)> Post(TaxMasterModel obj);
-    Task<(bool, string)> Put(TaxMasterModel obj);
+    Task<(bool, List<PartyContactsModel>)>? Search(string Criteria = "");
+    Task<(bool, PartyContactsModel?)>? Get(int id);
+    Task<(bool, PartyContactsModel, string)> Post(PartyContactsModel obj);
+    Task<(bool, string)> Put(PartyContactsModel obj);
     Task<(bool, string)> Delete(int id);
-    Task<(bool, string)> SoftDelete(TaxMasterModel obj);
+    Task<(bool, string)> SoftDelete(PartyContactsModel obj);
 }
 
 
-public class TaxMasterService : ITaxMasterService
+public class PartyContactsService : IPartyContactsService
 {
     DapperFunctions dapper = new DapperFunctions();
 
-    public async Task<(bool, List<TaxMasterModel>)>? Search(string Criteria = "")
+    public async Task<(bool, List<PartyContactsModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM TaxMaster Where IsSoftDeleted=0 and IsActive=1";
+        string SQL = $@"SELECT * FROM PartyContacts Where IsSoftDeleted=0 and IsActive=1";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;
 
         SQL += " Order by Id Desc";
 
-        List<TaxMasterModel> result = (await dapper.SearchByQuery<TaxMasterModel>(SQL)) ?? new List<TaxMasterModel>();
+        List<PartyContactsModel> result = (await dapper.SearchByQuery<PartyContactsModel>(SQL)) ?? new List<PartyContactsModel>();
 
         if (result == null || result.Count == 0)
             return (false, null!);
@@ -34,9 +36,9 @@ public class TaxMasterService : ITaxMasterService
             return (true, result);
     }
 
-    public async Task<(bool, TaxMasterModel?)>? Get(int id)
+    public async Task<(bool, PartyContactsModel?)>? Get(int id)
     {
-        TaxMasterModel result = (await dapper.SearchByID<TaxMasterModel>("TaxMaster", id)) ?? new TaxMasterModel();
+        PartyContactsModel result = (await dapper.SearchByID<PartyContactsModel>("PartyContacts", id)) ?? new PartyContactsModel();
         if (result == null || result.Id == 0)
             return (false, null);
         else
@@ -44,17 +46,18 @@ public class TaxMasterService : ITaxMasterService
     }
 
 
-    public async Task<(bool, TaxMasterModel, string)> Post(TaxMasterModel obj)
+    public async Task<(bool, PartyContactsModel, string)> Post(PartyContactsModel obj)
     {
+
         try
         {
-
-            string SQLInsert = $@"INSERT INTO TaxMaster 
+            string SQLInsert = $@"INSERT INTO PartyContacts 
 			(
-				OrganizationId, 
-				TaxType, 
-				TaxName, 
-				TaxRate, 
+				PartyId, 
+				ContactType, 
+				ContactValue, 
+				IsPrimary, 
+				PointOfContact, 
 				IsActive, 
 				CreatedBy, 
 				CreatedOn, 
@@ -63,10 +66,11 @@ public class TaxMasterService : ITaxMasterService
 			) 
 			VALUES 
 			(
-				{obj.OrganizationId}, 
-				'{obj.TaxType!.ToUpper()}', 
-				'{obj.TaxName!.ToUpper()}', 
-				{obj.TaxRate},
+				{obj.PartyId},
+				'{obj.ContactType!.ToUpper()}', 
+				'{obj.ContactValue!}', 
+				{obj.IsPrimary},
+				'{obj.PointOfContact!.ToUpper()}', 
 				{obj.IsActive},
 				{obj.CreatedBy},
 				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
@@ -77,7 +81,7 @@ public class TaxMasterService : ITaxMasterService
             var res = await dapper.Insert(SQLInsert);
             if (res.Item1 == true)
             {
-                List<TaxMasterModel> Output = new List<TaxMasterModel>();
+                List<PartyContactsModel> Output = new List<PartyContactsModel>();
                 var result = await Search($"id={res.Item2}")!;
                 Output = result.Item2;
                 return (true, Output.FirstOrDefault()!, "");
@@ -93,15 +97,16 @@ public class TaxMasterService : ITaxMasterService
         }
     }
 
-    public async Task<(bool, string)> Put(TaxMasterModel obj)
+    public async Task<(bool, string)> Put(PartyContactsModel obj)
     {
         try
         {
-            string SQLUpdate = $@"UPDATE TaxMaster SET 
-					OrganizationId = {obj.OrganizationId}, 
-					TaxType = '{obj.TaxType!.ToUpper()}', 
-					TaxName = '{obj.TaxName!.ToUpper()}', 
-					TaxRate = {obj.TaxRate}, 
+            string SQLUpdate = $@"UPDATE PartyContacts SET 
+					PartyId = {obj.PartyId}, 
+					ContactType = '{obj.ContactType!.ToUpper()}', 
+					ContactValue = '{obj.ContactValue!}', 
+					IsPrimary = {obj.IsPrimary}, 
+					PointOfContact = '{obj.PointOfContact!.ToUpper()}', 
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
@@ -119,12 +124,12 @@ public class TaxMasterService : ITaxMasterService
 
     public async Task<(bool, string)> Delete(int id)
     {
-        return await dapper.Delete("TaxMaster", id);
+        return await dapper.Delete("PartyContacts", id);
     }
 
-    public async Task<(bool, string)> SoftDelete(TaxMasterModel obj)
+    public async Task<(bool, string)> SoftDelete(PartyContactsModel obj)
     {
-        string SQLUpdate = $@"UPDATE TaxMaster SET 
+        string SQLUpdate = $@"UPDATE PartyContacts SET 
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedBy = '{obj.UpdatedBy!}',
 					IsSoftDeleted = 1 
@@ -133,3 +138,5 @@ public class TaxMasterService : ITaxMasterService
         return await dapper.Update(SQLUpdate);
     }
 }
+
+

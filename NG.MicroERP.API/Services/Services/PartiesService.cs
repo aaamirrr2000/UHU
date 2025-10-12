@@ -22,7 +22,6 @@ public interface IPartiesService
 }
 
 
-
 public class PartiesService : IPartiesService
 {
     DapperFunctions dapper = new DapperFunctions();
@@ -34,7 +33,7 @@ public class PartiesService : IPartiesService
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;
 
-        //SQL += " Order by Id Desc";
+        SQL += " Order by Id Desc";
 
         List<PartiesModel> result = (await dapper.SearchByQuery<PartiesModel>(SQL)) ?? new List<PartiesModel>();
 
@@ -59,62 +58,51 @@ public class PartiesService : IPartiesService
 
         try
         {
-            string Code = dapper.GetCode("", "Parties", "Code", 9)!;
-            string SQLDuplicate = $@"SELECT * FROM Parties WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
+
+            string Code = dapper.GetCode("", "Parties", "Code")!;
+            //string SQLDuplicate = $@"SELECT * FROM Parties WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
             string SQLInsert = $@"INSERT INTO Parties 
 			(
 				OrganizationId, 
 				Code, 
+				Pic, 
 				Name, 
 				PartyType, 
+				PartyTypeCode, 
+				ParentId, 
 				Address, 
-                Province,				
-                Phone, 
-				Email, 
-                NTN,
-                CNIC,
-                RegistrationType,
-				DiscountPercentage, 
-				AccountId, 
+				CityId, 
 				Latitude, 
 				Longitude, 
 				Radius, 
-				Username, 
-				Password, 
 				IsActive, 
 				CreatedBy, 
 				CreatedOn, 
 				CreatedFrom, 
-				IsSoftDeleted
+				IsSoftDeleted 
 			) 
 			VALUES 
 			(
 				{obj.OrganizationId},
-				'{Code!}', 
+				'{Code}', 
+				'{obj.Pic!}', 
 				'{obj.Name!.ToUpper()}', 
 				'{obj.PartyType!.ToUpper()}', 
+				'{obj.PartyTypeCode!.ToUpper()}', 
+				{obj.ParentId},
 				'{obj.Address!.ToUpper()}', 
-                '{obj.Province!.ToUpper()}',
-				'{obj.Phone!.ToUpper()}', 
-				'{obj.Email!.ToUpper()}',
-                '{obj.NTN}',
-                '{obj.CNIC}',
-                '{obj.RegistrationType!.ToUpper()}',
-				{obj.DiscountPercentage},
-				{obj.AccountId},
+				{obj.CityId},
 				'{obj.Latitude!.ToUpper()}', 
 				'{obj.Longitude!.ToUpper()}', 
 				{obj.Radius},
-				'{obj.Username!.ToUpper()}', 
-				'{obj.Password!.ToUpper()}', 
 				{obj.IsActive},
 				{obj.CreatedBy},
-				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
 				'{obj.CreatedFrom!.ToUpper()}', 
 				{obj.IsSoftDeleted}
 			);";
 
-            var res = await dapper.Insert(SQLInsert, SQLDuplicate);
+            var res = await dapper.Insert(SQLInsert);
             if (res.Item1 == true)
             {
                 List<PartiesModel> Output = new List<PartiesModel>();
@@ -137,31 +125,25 @@ public class PartiesService : IPartiesService
     {
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM Parties WHERE UPPER(code) = '{obj.Code!.ToUpper()}' and ID != {obj.Id};";
+            string SQLDuplicate = $@"SELECT * FROM Parties WHERE UPPER(code) = '{obj.Code!.ToUpper()}' and Id != {obj.Id};";
             string SQLUpdate = $@"UPDATE Parties SET 
 					OrganizationId = {obj.OrganizationId}, 
 					Code = '{obj.Code!.ToUpper()}', 
+					Pic = '{obj.Pic!.ToUpper()}', 
 					Name = '{obj.Name!.ToUpper()}', 
 					PartyType = '{obj.PartyType!.ToUpper()}', 
-					Address = '{obj.Address!.ToUpper()}',
-                    Province = '{obj.Province!.ToUpper()}',
-					Phone = '{obj.Phone!.ToUpper()}', 
-					Email = '{obj.Email!.ToUpper()}',
-                    NTN = '{obj.NTN}',
-                    CNIC = '{obj.CNIC}',
-                    RegistrationType = '{obj.RegistrationType!.ToUpper()}',
-					DiscountPercentage = {obj.DiscountPercentage}, 
-					AccountId = {obj.AccountId}, 
+					PartyTypeCode = '{obj.PartyTypeCode!.ToUpper()}', 
+					ParentId = {obj.ParentId}, 
+					Address = '{obj.Address!.ToUpper()}', 
+					CityId = {obj.CityId}, 
 					Latitude = '{obj.Latitude!.ToUpper()}', 
 					Longitude = '{obj.Longitude!.ToUpper()}', 
 					Radius = {obj.Radius}, 
-					Username = '{obj.Username!.ToUpper()}', 
-					Password = '{obj.Password!.ToUpper()}', 
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
-					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
-					IsSoftDeleted = {obj.IsSoftDeleted} 
+					IsSoftDeleted = {obj.IsSoftDeleted}
 				WHERE Id = {obj.Id};";
 
             return await dapper.Update(SQLUpdate, SQLDuplicate);
@@ -180,7 +162,7 @@ public class PartiesService : IPartiesService
     public async Task<(bool, string)> SoftDelete(PartiesModel obj)
     {
         string SQLUpdate = $@"UPDATE Parties SET 
-					UpdatedOn = '{DateTime.UtcNow}', 
+					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedBy = '{obj.UpdatedBy!}',
 					IsSoftDeleted = 1 
 				WHERE Id = {obj.Id};";

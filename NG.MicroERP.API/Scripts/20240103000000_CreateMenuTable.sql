@@ -216,6 +216,13 @@ VALUES
                               , 'fas fa-building'           , 9010, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
+                              , 0),
+
+(28, 'Areas'    , NULL , 'Maintain Cities, Regions, Province and Countries'
+                              , 'AreasDashboard'     , 14
+                              , 'fas fa-building'           , 9010, 1
+                              , 1 , GETDATE(), NULL
+                              , 1 , GETDATE(), NULL
                               , 0);
 
 SET IDENTITY_INSERT dbo.Menu OFF;

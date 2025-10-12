@@ -112,7 +112,7 @@
                 <PropertyColumn Property="x => x.CategoryName" Title="Category" Sortable="true" Filterable="true" />
                 @* <PropertyColumn Property="x => x.Description" Title="Description" Sortable="true" Filterable="true" /> *@
 				<PropertyColumn Property="x => x.StockType" Title="Stock Type" Sortable="true" Filterable="true" />
-                <PropertyColumn Property="x => x.SaleType" Title="Sale Type" Sortable="true" Filterable="true" />
+                @* <PropertyColumn Property="x => x.SaleType" Title="Sale Type" Sortable="true" Filterable="true" /> *@
 				<PropertyColumn Property="x => x.Unit" Title="Unit" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.RetailPrice" Title="Retail Price" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
 				@* <PropertyColumn Property="x => x.ServingSize" Title="Serving Size JSon" Sortable="true" Filterable="true" /> *@
@@ -240,11 +240,11 @@
         var result = await Functions.PostAsync<ItemsModel>($"Items/{Action}", record, true);
         if (result.Success == true)
         {
-            SnackbarService.Add($"Record Not Deleted", Severity.Error);
+            SnackbarService.Add($"Record Not Updated", Severity.Error);
         }
         else
         {
-            SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
+            SnackbarService.Add($"Record Updated Successfully", Severity.Success);
             record = new();
             isReadOnly = true;
         }

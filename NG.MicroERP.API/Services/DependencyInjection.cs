@@ -23,6 +23,7 @@ public static class DependencyInjection
     public static void AddServices(this IServiceCollection services)
     {
         services.AddHttpClient();
+
         services.AddSingleton<IUsersService, UsersService>();
         services.AddSingleton<IOrganizationsService, OrganizationsService>();
         services.AddSingleton<IMyMenuService, MyMenuService>();
@@ -47,6 +48,11 @@ public static class DependencyInjection
         services.AddSingleton<ITaxMasterService, TaxMasterService>();
         services.AddSingleton<ITaxItemsService, TaxItemsService>();
         services.AddSingleton<IDigitalInvoiceScenariosService, DigitalInvoiceScenariosService>();
+        services.AddSingleton<IAreasService, AreasService>();
+
+        services.AddSingleton<IPartiesService, PartiesService>();
+        services.AddSingleton<IPartyBankDetailsService, PartyBankDetailsService>();
+        services.AddSingleton<IPartyContactsService, PartyContactsService>();
 
         services.AddScoped<Globals>();
         services.AddScoped<FileUploadService>();

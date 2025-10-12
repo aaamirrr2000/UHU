@@ -46,15 +46,10 @@
 
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
-                    <div class="col-6 mb-3">
-
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Tax</label>
                         <MudSelect @bind-Value="record.TaxId"
-                        Label="Tax Type"
-                        Variant="Variant.Filled"
-                        Dense="true"
                         Placeholder="Tax"
-                        HelperText="Select Tax"
-                        HelperTextOnFocus="true"
                         Clearable="true">
 
                             @if (TaxMaster != null && TaxMaster.Any())
@@ -68,16 +63,12 @@
                         <ValidationMessage For="@(() => record.TaxId)" />
                     </div>
 
-                    <div class="col-6 mb-3">
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Invoice Type</label>
 
                         <MudSelect T="string"
                         @bind-Value="record.InvoiceType"
-                        Label="Invoice Type"
-                        Variant="Variant.Filled"
-                        Dense="true"
                         Placeholder="Invoice Type"
-                        HelperText="Select Invoice Type"
-                        HelperTextOnFocus="true"
                         Clearable="true">
 
                             <MudSelectItem T="string" Value="@("SALE")">SALE</MudSelectItem>
@@ -88,16 +79,12 @@
                         <ValidationMessage For="@(() => record.InvoiceType)" />
                     </div>
 
-                    <div class="col-6 mb-3">
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Active</label>
 
                         <MudSelect T="int"
                         @bind-Value="record.IsActive"
-                        Label="Active"
-                        Variant="Variant.Filled"
-                        Dense="true"
                         Placeholder="Active"
-                        HelperText="Select Active"
-                        HelperTextOnFocus="true"
                         Clearable="true">
 
                             @if (record.IsActive != 0 && record.IsActive != 1)

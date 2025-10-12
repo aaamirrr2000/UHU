@@ -253,7 +253,7 @@ public class BillService : IBillService
             string SQLUpdate = $@"UPDATE Bill SET
 									Status='{Status}'
 									UpdatedBy = {obj.UpdatedBy}, 
-									UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+									UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 									UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}'
 							   WHERE Id = {obj.Id};";
             var res = await dapper.Update(SQLUpdate);
@@ -305,7 +305,7 @@ public class BillService : IBillService
     {
         string SQLUpdate = $@"UPDATE Bill SET
                                 Status = 'DELETED',
-								UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+								UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 								UpdatedBy = {obj.UpdatedBy!},
 								IsSoftDeleted = 1 
 							WHERE Id = {obj.Id};";

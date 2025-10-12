@@ -43,21 +43,18 @@
 
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
-                    <div class="col-6 mb-3">
-                        <MudTextField Label="Rule Name" id="Rule Name" @bind-Value="record.RuleName" Variant="Variant.Filled" placeholder="RuleName" ReadOnly="@isReadOnly"></MudTextField>
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Rule Name</label>
+                        <MudTextField id="Rule Name" @bind-Value="record.RuleName" placeholder="RuleName" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.RuleName)" />
                     </div>
-                    <div class="col-6 mb-3">
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Rule Type</label>
 
                         <MudSelect T="string"
                                    @bind-Value="record.RuleType"
-                                   Label="Rule Type"
-                                   Variant="Variant.Filled"
-                                   Dense="true"
                                    Placeholder="Rule Type"
-                                   HelperText="Select RuleType"
-                                   HelperTextOnFocus="true"
-                                   Clearable="true">
+                                  Clearable="true">
 
                             @if (Rul != null && Rul.Any())
                             {
@@ -78,21 +75,21 @@
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                         <!-- Left Column, Row 1 -->
-                        <div style="background-color: rgba(128, 128, 128, 0.15); border-radius: 3px; padding: 10px;">
-                            <label class="mud-label">Type</label>
+                        <div style="background-color: rgba(128, 128, 128, 0.15); border:1px solid gray; border-radius: 5px; padding: 10px; font-size:12px;">
+                            <label class="form-label">Type</label>
                             <MudRadioGroup T="string"
                                            Label="Type"
                                            @bind-SelectedOption="record.AmountType"
                                            Row="true">
-                                <MudRadio T="string" Option="PERCENTAGE">PERCENTAGE</MudRadio>
+                                <MudRadio T="string" Option="PERCENTAGE" >PERCENTAGE</MudRadio>
                                 <MudRadio T="string" Option="FLAT">FLAT</MudRadio>
                             </MudRadioGroup>
                             <ValidationMessage For="@(() => record.AmountType)" />
                         </div>
 
                         <!-- Right Column, Spans 2 Rows -->
-                        <div style="background-color: rgba(128, 128, 128, 0.15); border-radius: 3px; padding: 10px; grid-row: span 2;">
-                            <label class="mud-label">Calculation Base</label>
+                        <div style="background-color: rgba(128, 128, 128, 0.15); border:1px solid gray; border-radius: 5px; padding: 10px; font-size:12px;">
+                            <label class="form-label">Calculation Base</label>
                             <MudRadioGroup T="string"
                                            Label="Calculation Base"
                                            @bind-SelectedOption="record.CalculationBase"
@@ -104,8 +101,8 @@
                         </div>
 
                         <!-- Left Column, Row 2 -->
-                        <div style="background-color: rgba(128, 128, 128, 0.15); border-radius: 3px; padding: 10px;">
-                            <label class="mud-label">Charge Category</label>
+                        <div style="background-color: rgba(128, 128, 128, 0.15); border:1px solid gray; border-radius: 5px; padding: 10px; font-size:12px;">
+                            <label class="form-label">Charge Category</label>
                             <MudRadioGroup T="string"
                                            Label="Charge Category"
                                            @bind-SelectedOption="record.ChargeCategory"
@@ -118,35 +115,35 @@
                     </div>
 
 
-                    <div class="col-6 mb-3">
-                        <MudNumericField Label="Amount" @bind-Value="record.Amount" Variant="Variant.Filled" placeholder="Amount" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Amount</label>
+                        <MudNumericField @bind-Value="record.Amount" placeholder="Amount" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
                         <ValidationMessage For="@(() => record.Amount)" />
                     </div>
 
-                    <div class="col-6 mb-3">
-                        <MudNumericField Label="Sequence Order" @bind-Value="record.SequenceOrder" Variant="Variant.Filled" placeholder="Sequence Order" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Sequence</label>
+                        <MudNumericField @bind-Value="record.SequenceOrder" placeholder="Sequence Order" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
                         <ValidationMessage For="@(() => record.SequenceOrder)" />
                     </div>
-                  
-                    <div class="col-6 mb-3">
-                        <MudDatePicker Label="Effective From" @bind-Value="record.EffectiveFrom" Format="yyyy-MM-dd" Variant="Variant.Filled" placeholder="Effective From" ReadOnly="@isReadOnly"></MudDatePicker>
+
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Effective From</label>
+                        <MudDatePicker @bind-Value="record.EffectiveFrom" Format="yyyy-MM-dd" placeholder="Effective From" ReadOnly="@isReadOnly"></MudDatePicker>
                         <ValidationMessage For="@(() => record.EffectiveFrom)" />
                     </div>
-                    <div class="col-6 mb-3">
-                        <MudDatePicker Label="Effective To" @bind-Value="record.EffectiveTo" Format="yyyy-MM-dd" Variant="Variant.Filled" placeholder="Effective To" ReadOnly="@isReadOnly"></MudDatePicker>
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Effective To</label>
+                        <MudDatePicker @bind-Value="record.EffectiveTo" Format="yyyy-MM-dd" placeholder="Effective To" ReadOnly="@isReadOnly"></MudDatePicker>
                         <ValidationMessage For="@(() => record.EffectiveTo)" />
                     </div>
-                    <div class="col-6 mb-3">
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Active</label>
 
                         <MudSelect T="int"
                                    @bind-Value="record.IsActive"
-                                   Label="Active"
-                                   Variant="Variant.Filled"
-                                   Dense="true"
-                                   Placeholder="Active"
-                                   HelperText="Select Active"
-                                   HelperTextOnFocus="true"
-                                   Clearable="true">
+                               Placeholder="Active"
+                                Clearable="true">
 
                             @if (record.IsActive != 0 && record.IsActive != 1)
                             {

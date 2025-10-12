@@ -108,10 +108,10 @@ public class UsersService : IUsersService
 				{obj.LocationId},
 				{obj.IsActive},
 				{obj.CreatedBy},
-				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
 				'{obj.CreatedFrom!.ToUpper()}', 
 				{obj.UpdatedBy},
-				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
 				'{obj.UpdatedFrom!.ToUpper()}', 
 				{obj.IsSoftDeleted}
 			);";
@@ -149,10 +149,10 @@ public class UsersService : IUsersService
 					LocationId = {obj.LocationId}, 
 					IsActive = {obj.IsActive}, 
 					CreatedBy = {obj.CreatedBy}, 
-					CreatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					CreatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					CreatedFrom = '{obj.CreatedFrom!.ToUpper()}', 
 					UpdatedBy = {obj.UpdatedBy}, 
-					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
@@ -173,7 +173,7 @@ public class UsersService : IUsersService
     public async Task<(bool, string)> SoftDelete(UsersModel obj)
     {
         string SQLUpdate = $@"UPDATE Users SET 
-					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedBy = '{obj.UpdatedBy!}',
 					IsSoftDeleted = 1 
 				WHERE Id = {obj.Id};";

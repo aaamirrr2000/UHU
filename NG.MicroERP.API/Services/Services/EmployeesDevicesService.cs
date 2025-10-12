@@ -79,12 +79,12 @@ public class EmployeesDevicesService : IEmployeesDevicesService
 				'{obj.DeviceOs!.ToUpper()}', 
 				'{obj.DeviceType!.ToUpper()}', 
 				'{obj.DeviceSr!.ToUpper()}', 
-				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
 				{obj.IssueBy},
 				{obj.DeviceLife},
 				{obj.IsActive},
 				{obj.CreatedBy},
-				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
 				'{obj.CreatedFrom!.ToUpper()}', 
 				{obj.IsSoftDeleted}
 			);";
@@ -119,12 +119,12 @@ public class EmployeesDevicesService : IEmployeesDevicesService
 					DeviceOs = '{obj.DeviceOs!.ToUpper()}', 
 					DeviceType = '{obj.DeviceType!.ToUpper()}', 
 					DeviceSr = '{obj.DeviceSr!.ToUpper()}', 
-					IssuedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					IssuedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					IssueBy = {obj.IssueBy}, 
 					DeviceLife = {obj.DeviceLife}, 
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
-					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";

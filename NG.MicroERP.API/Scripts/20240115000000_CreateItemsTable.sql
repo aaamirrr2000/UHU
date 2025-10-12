@@ -10,6 +10,7 @@
     Description           VARCHAR(255)     NOT NULL,
     MinQty                DECIMAL(16, 2)   NOT NULL DEFAULT 0.00,
     MaxQty                DECIMAL(16, 2)   NOT NULL DEFAULT 0.00,
+    ReOrderQty            DECIMAL(16, 2)   NOT NULL DEFAULT 0.00,
     Discount              DECIMAL(16, 6)   NOT NULL DEFAULT 0.00,
     Tax                   DECIMAL(16, 6)   NOT NULL DEFAULT 0.00,
     CostPrice             DECIMAL(8, 2)    NOT NULL DEFAULT 0.00,

@@ -8,19 +8,49 @@
 <Loading IsLoading="@LoadingPanel" />
 
 <div class="row" style="margin: 2px; height: 90vh; display: flex;">
+
     <MyDrawer @ref="_drawer" Title="Parties" FaIcon="fas fa-address-book">
         <HeaderContent>
         </HeaderContent>
         <ChildContent>
             <EditForm Model="record" OnSubmit="Save">
                 <MudForm>
-                    <PartiesPage Action="@Action" CurrentRecord="record.Id"/>
+                    <PartiesPage Action="@Action" CurrentRecord="record.Id" />
                 </MudForm>
             </EditForm>
         </ChildContent>
         <FooterContent>
         </FooterContent>
     </MyDrawer>
+
+    <MyDrawer @ref="_drawerBankDetails" Title="Party Bank Details" FaIcon="fas fa-address-book">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <PartyBankDetailsPage Action="@Action" CurrentRecord="record.Id" />
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    <MyDrawer @ref="_drawerContacts" Title="Party Bank Details" FaIcon="fas fa-address-book">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <PartyContactsPage Action="@Action" CurrentRecord="record.Id" />
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
 
     @if (data == null)
     {
@@ -29,7 +59,7 @@
     else
     {
         <div class="row">
-            <MudDataGrid T="PartiesModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Class="custom-grid">
+            <MudDataGrid T="PartiesModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
                 <ToolBarContent>
                     <MudText Typo="Typo.h6">Parties Managment</MudText>
                     <MudSpacer />
@@ -38,6 +68,7 @@
                 </ToolBarContent>
 
                 <Columns>
+                  
                     <TemplateColumn Title="Actions" CellStyle="width: 60px; min-width: 60px;">
                         <CellTemplate Context="row">
                             <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Dense="true">
@@ -50,25 +81,33 @@
                                 <MudMenuItem OnClick="@(() => Delete(row.Item.Id))" Color="Color.Error">
                                     <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
                                 </MudMenuItem>
+                                <MudMenuItem OnClick="@(() => BankDetails(row.Item.Id))">
+                                    <MudIcon Icon="@Icons.Material.Filled.Money" Class="me-2" /> Banking Details
+                                </MudMenuItem>
+                                <MudMenuItem OnClick="@(() => Contacts(row.Item.Id))">
+                                    <MudIcon Icon="@Icons.Material.Filled.Person" Class="me-2" /> Contacts
+                                </MudMenuItem>
                             </MudMenu>
                         </CellTemplate>
                     </TemplateColumn>
 
-                <PropertyColumn Property="x => x.Code" Title="Code" Sortable="true" Filterable="true" />
                     <TemplateColumn Title="Picture" CellStyle="width: 50px; min-width: 50px;">
                         <CellTemplate Context="row">
-                            <img src="@(!string.IsNullOrWhiteSpace(row.Item.Pic) ? row.Item.Pic : "images/no-image.png")" alt="Picture" style="width:30px; height:30px; border-radius: 50%;" />
+                            <AvatarDisplay Pic="@row.Item.Pic" Name="@row.Item.Name" Size="24" />
                         </CellTemplate>
                     </TemplateColumn>
-				<PropertyColumn Property="x => x.Name" Title="Name" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.PartyType" Title="Party Type" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.Address" Title="Address" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.Phone" Title="Phone" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.Email" Title="Email" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.NTN" Title="NTN" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.CNIC" Title="CNIC" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.Username" Title="Username" Sortable="true" Filterable="true" />
-				@* <PropertyColumn Property="x => x.Password" Title="Password" Sortable="true" Filterable="true" /> *@
+                    <PropertyColumn Property="x => x.Code" Title="Code" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Name" Title="Name" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.PartyType" Title="PartyType" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.PartyTypeCode" Title="PartyTypeCode" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.ParentId" Title="ParentId" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
+                    <PropertyColumn Property="x => x.Address" Title="Address" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.CityId" Title="CityId" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
+                    <PropertyColumn Property="x => x.Latitude" Title="Latitude" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Longitude" Title="Longitude" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Radius" Title="Radius" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
+                    <PropertyColumn Property="x => x.IsActive" Title="IsActive" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
+
 
                 </Columns>
 
@@ -82,14 +121,16 @@
 
 @code
 {
-    static List<PartiesModel> data = new();
-    static PartiesModel record = new();
+    List<PartiesModel> data = new();
+    PartiesModel record = new();
 
     public string Action { get; set; } = "INSERT";
 
     bool isReadOnly = true;
     private bool LoadingPanel { get; set; } = false;
     private MyDrawer _drawer = new();
+    private MyDrawer _drawerBankDetails = new();
+    private MyDrawer _drawerContacts = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -121,7 +162,7 @@
 
     protected async Task Refresh()
     {
-        data = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search", true) ?? new List<PartiesModel>();
+        await GetAll();
     }
 
     protected async Task View(int id)
@@ -135,9 +176,25 @@
     protected async Task Edit(int id)
     {
         await Get(id);
-        Action = "UPDATE"; 
+        Action = "UPDATE";
         isReadOnly = false;
         await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task BankDetails(int id)
+    {
+        await Get(id);
+        Action = "INSERT";
+        isReadOnly = false;
+        await _drawerBankDetails.OpenDrawerAsync();
+    }
+
+     protected async Task Contacts(int id)
+    {
+        await Get(id);
+        Action = "INSERT";
+        isReadOnly = false;
+        await _drawerContacts.OpenDrawerAsync();
     }
 
     protected async Task Delete(int id)
@@ -154,7 +211,7 @@
     protected async Task Save()
     {
         LoadingPanel = true;
-         
+
         record.OrganizationId = Globals.User.OrganizationId;
         record.CreatedBy = Globals.User.Id;
         record.CreatedOn = DateTime.Now;
@@ -166,19 +223,19 @@
         var result = await Functions.PostAsync<PartiesModel>($"Parties/{Action}", record, true);
         if (result.Success == true)
         {
-            SnackbarService.Add($"Record Not Deleted", Severity.Error);
+            SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
         }
         else
         {
-            SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
+            SnackbarService.Add($"Record Not Deleted", Severity.Error);
             record = new();
             isReadOnly = true;
         }
-    
-        data = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search", true) ?? new List<PartiesModel>();
+
+        await GetAll();
         LoadingPanel = false;
         await _drawer.CloseDrawer();
-     
+
     }
 
 }

@@ -58,10 +58,4 @@
 	  <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.3" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Update="wwwroot\Images\background.jpg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
 </Project>

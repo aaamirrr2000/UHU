@@ -1,0 +1,387 @@
+﻿@page "/PartyBankDetailsPage/{Action}/{CurrentRecord?}"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+
+    <div class="text-end" style="margin-top:10px;">
+        @if (Action != "VIEW")
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Clear" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
+                <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-1" />
+                New
+            </MudButton>
+
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                @(Action == "INSERT" ? "Save" : "Update")
+            </MudButton>
+
+        }
+    </div>
+
+    <br />
+
+    <MudExpansionPanels MultiExpansion="true">
+        <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
+
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+
+                    <i class="fa fa-info-circle"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Parties Bank Account Details</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Parites Bank Account(s)</MudText>
+                    </div>
+                </div>
+                <hr/>
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Bank</label>
+
+                        <MudSelect @bind-Value="record.BankId"
+                                   Placeholder="Bank"
+                                   Clearable="true">
+
+                            @if (Ban != null && Ban.Any())
+                            {
+                                foreach (var i in Ban)
+                                {
+                                    <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.BankId)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Account Title</label>
+                        <MudTextField id="AccountTitle" @bind-Value="record.AccountTitle" placeholder="Account Title" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.AccountTitle)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Account Number</label>
+                        <MudTextField id="AccountNumber" @bind-Value="record.AccountNumber" placeholder="Account Number" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.AccountNumber)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label">IBAN</label>
+                        <MudTextField id="IBAN" @bind-Value="record.IBAN" placeholder="IBAN" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.IBAN)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Branch Code</label>
+                        <MudTextField id="BranchCode" @bind-Value="record.BranchCode" placeholder="Branch Code" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.BranchCode)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Is Primary</label>
+
+                        <MudSelect T="int"
+                                   @bind-Value="record.IsPrimary"
+                                   Placeholder="Primary"
+                                   Clearable="true">
+
+                            @if (record.IsPrimary != 0 && record.IsPrimary != 1)
+                            {
+                                record.IsPrimary = 1;
+                            }
+
+                            <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                            <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                        </MudSelect>
+
+                        <ValidationMessage For="@(() => record.IsPrimary)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label">Active</label>
+
+                        <MudSelect T="int"
+                                   @bind-Value="record.IsActive"
+                                   Placeholder="Active"
+                                   Clearable="true">
+
+                            @if (record.IsActive != 0 && record.IsActive != 1)
+                            {
+                                record.IsActive = 1;
+                            }
+
+                            <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                            <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                        </MudSelect>
+
+                        <ValidationMessage For="@(() => record.IsActive)" />
+                    </div>
+
+                </div>
+
+
+                @if (BankDetails == null)
+                {
+                    <SimpleLoading />
+                }
+                else
+                {
+                    <div class="row">
+
+                        <MudTable T="PartyBankDetailsModel"
+                                  Items="@BankDetails"
+                                  Hover="true"
+                                  Dense="true"
+                                  Striped="true"
+                                  Virtualize="true"
+                                  Style="border-radius: 0px; box-shadow: none; border: none; overflow: hidden; margin: 0; min-height:500px;">
+
+                            <ToolBarContent>
+
+                            </ToolBarContent>
+
+                            <HeaderContent>
+                                <MudTh>Actions</MudTh>
+                                <MudTh>Bank</MudTh>
+                                <MudTh>Account Title</MudTh>
+                                <MudTh>Account Number</MudTh>
+                                <MudTh>IBAN</MudTh>
+                                <MudTh>Branch Code</MudTh>
+                                <MudTh>Primary?</MudTh>
+                                <MudTh>Active</MudTh>
+                            </HeaderContent>
+
+                            <RowTemplate>
+                                <MudTd DataLabel="Actions" Style="width: 60px; min-width: 60px;">
+
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Dense="true">
+                                    <MudMenuItem OnClick="@(() => View(context.Id))">
+                                        <MudIcon Icon="@Icons.Material.Filled.Search" Class="me-2" /> View
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => Edit(context.Id))">
+                                        <MudIcon Icon="@Icons.Material.Filled.Edit" Class="me-2" /> Edit
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => Delete(context.Id))" Color="Color.Error">
+                                        <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
+                                    </MudMenuItem>
+                                       
+                                </MudMenu>
+
+                                </MudTd>
+
+                                <MudTd DataLabel="Bank" Style="text-align: right; white-space: nowrap; width: auto;">
+                                    @context.BankName
+                                </MudTd>
+                                <MudTd DataLabel="AccountTitle" Style="white-space: nowrap; width: auto;">
+                                    @context.AccountTitle
+                                </MudTd>
+                                <MudTd DataLabel="AccountNumber" Style="white-space: nowrap; width: auto;">
+                                    @context.AccountNumber
+                                </MudTd>
+                                <MudTd DataLabel="IBAN" Style="white-space: nowrap; width: auto;">
+                                    @context.IBAN
+                                </MudTd>
+                                <MudTd DataLabel="BranchCode" Style="white-space: nowrap; width: auto;">
+                                    @context.BranchCode
+                                </MudTd>
+                                <MudTd DataLabel="IsPrimary" Style="white-space: nowrap; width: auto;">
+                                    @(context.IsPrimary == 1 ? "True" : "False")
+                                </MudTd>
+                                <MudTd DataLabel="IsActive" Style="white-space: nowrap; width: auto;">
+                                    @(context.IsActive == 1 ? "True" : "False")
+                                </MudTd>
+
+
+                            </RowTemplate>
+
+                        </MudTable>
+
+
+
+                     
+                    </div>
+                }
+            </ChildContent>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+
+</div>
+
+@code
+{
+    PartiesModel PartyRecord = new();
+    PartyBankDetailsModel record = new();
+    List<PartiesModel> Par = new();
+    List<PartiesModel> Ban = new();
+    List<PartyBankDetailsModel> BankDetails = new();
+
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
+    protected async Task GetAll()
+    {
+        try
+        {
+            LoadingPanel = true;
+
+            Par = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search", true) ?? new List<PartiesModel>();
+            Ban = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search/PARTYTYPE='BANK'", true) ?? new List<PartiesModel>();
+
+            switch (Action)
+            {
+                case "INSERT":
+                    Clear(); 
+                    isReadOnly = false;
+                    break;
+                case "UPDATE":
+                case "VIEW":
+                    await Get(CurrentRecord);
+                    isReadOnly = (Action == "VIEW");
+                    break;
+                default:
+                    isReadOnly = true;
+                    break;
+            }
+
+            BankDetails = await Functions.GetAsync<List<PartyBankDetailsModel>>($"PartyBankDetails/Search/partyid={CurrentRecord}", true)?? new List<PartyBankDetailsModel>();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading data: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+            StateHasChanged();
+        }
+    }
+
+    protected async Task Get(int id)
+    {
+        try
+        {
+            LoadingPanel = true;
+            PartyRecord = await Functions.GetAsync<PartiesModel>($"Parties/Get?Id={id}", true) ?? new PartiesModel();
+            record = await Functions.GetAsync<PartyBankDetailsModel>($"PartyBankDetails/Get?Id={id}", true) ?? new PartyBankDetailsModel();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading record: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    protected void GetDefaultValues()
+    {
+        if (CurrentRecord > 0 && record.PartyId == 0)
+            record.PartyId = CurrentRecord;
+
+        if (Ban != null && Ban.Any() && record.BankId == 0)
+            record.BankId = Ban.First().Id;
+
+        StateHasChanged();
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new PartyBankDetailsModel();
+        record.PartyId = CurrentRecord; 
+        record.IsActive = 1;
+        record.IsPrimary = 0;
+        record.IsSoftDeleted = 0;
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        isReadOnly = true;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        await Get(id);
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        try
+        {
+            LoadingPanel = true;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Functions.GetComputerDetails();
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Functions.GetComputerDetails();
+
+            string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<PartyBankDetailsModel>($"PartyBankDetails/{url}", record, true);
+            if (result.Success == false)
+            {
+                await Functions.ShowMessage(dialogService, "error", $"Record Not Saved");
+            }
+            else
+            {
+                await Functions.ShowMessage(dialogService, "success", $"Record {Action} Successfully");
+                await Clear();
+                await GetAll();
+                isReadOnly = true;
+            }
+
+        }
+        catch (Exception ex)
+        {
+            await Functions.ShowMessage(dialogService, "error", $"Record Not Saved, {ex.Message}");
+        }
+        finally
+        {
+            LoadingPanel = false;
+            await _drawer.CloseDrawer();
+        }
+
+    }
+}
+

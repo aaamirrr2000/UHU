@@ -87,17 +87,17 @@ public class StockReceivingService : IStockReceivingService
 			VALUES 
 			(
 				{obj.OrganizationId},
-				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
 				{obj.ItemId},
 				'{obj.StockCondition!.ToUpper()}', 
 				{obj.Qty},
 				{obj.Price},
 				'{obj.Description!.ToUpper()}', 
-				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
 				{obj.PartyId},
 				{obj.LocationId},
 				{obj.CreatedBy},
-				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
 				'{obj.CreatedFrom!.ToUpper()}' 
 			);";
 
@@ -126,17 +126,17 @@ public class StockReceivingService : IStockReceivingService
         {
             string SQLUpdate = $@"UPDATE Stock SET 
 					OrganizationId = {obj.OrganizationId}, 
-					TranDate = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					TranDate = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					ItemId = {obj.ItemId}, 
 					StockCondition = '{obj.StockCondition!.ToUpper()}', 
 					Qty = {obj.Qty}, 
 					Price = {obj.Price}, 
 					Description = '{obj.Description!.ToUpper()}', 
-					ExpDate = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					ExpDate = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					PartyId = {obj.PartyId}, 
 					LocationId = {obj.LocationId}, 
 					UpdatedBy = {obj.UpdatedBy}, 
-					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}' 
 				WHERE Id = {obj.Id};";
 

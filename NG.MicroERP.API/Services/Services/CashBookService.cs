@@ -28,7 +28,7 @@ public class CashBookService : ICashBookService
 
     public async Task<(bool, List<CashBookModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM Cashbook Where IsSoftDeleted=0 and IsActive=1";
+        string SQL = $@"SELECT * FROM Cashbook Where IsSoftDeleted=0";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;
@@ -95,7 +95,7 @@ public class CashBookService : ICashBookService
                 '{obj.FileAttachment}',
 				{obj.LocationId},
 				{obj.PartyId},
-				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
 				'{obj.Description!.ToUpper()}', 
 				{obj.Amount},
 				{obj.AccountId},
@@ -104,7 +104,7 @@ public class CashBookService : ICashBookService
 				'{obj.RefNo!.ToUpper()}', 
 				'{obj.TranRef!.ToUpper()}', 
 				{obj.CreatedBy},
-				'{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}',
+				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
 				'{obj.CreatedFrom!.ToUpper()}', 
 				{obj.IsSoftDeleted}
 			);";
@@ -139,7 +139,7 @@ public class CashBookService : ICashBookService
                     FileAttachment = '{obj.FileAttachment}', 
 					LocationId = {obj.LocationId}, 
 					PartyId = {obj.PartyId}, 
-					TranDate = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					TranDate = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					Description = '{obj.Description!.ToUpper()}', 
 					Amount = {obj.Amount}, 
 					AccountId = {obj.AccountId}, 
@@ -148,7 +148,7 @@ public class CashBookService : ICashBookService
 					RefNo = '{obj.RefNo!.ToUpper()}', 
 					TranRef = '{obj.TranRef!.ToUpper()}',  
 					UpdatedBy = {obj.UpdatedBy}, 
-					UpdatedOn = '{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";

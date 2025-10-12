@@ -32,24 +32,22 @@
     <MudExpansionPanels MultiExpansion="true">
         <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
             <div class="row" style="width:100%; display: flex;">
-                <div class="col-6 mb-3">
-                    <MudTextField Label="User Name" id="Username" @bind-Value="record.Username" Variant="Variant.Filled" placeholder="User Name" ReadOnly="@isReadOnly"></MudTextField>
+                <div class="col-6 flex-input">
+                    <label class="form-label">Username</label>
+                    <MudTextField id="Username" @bind-Value="record.Username" placeholder="User Name" ReadOnly="@isReadOnly"></MudTextField>
                     <ValidationMessage For="@(() => record.Username)" />
                 </div>
-                <div class="col-6 mb-3">
-                    <MudTextField Label="Password" id="Password" @bind-Value="record.Password" Variant="Variant.Filled" placeholder="Password" ReadOnly="@isReadOnly"></MudTextField>
+                <div class="col-6 flex-input">
+                    <label class="form-label">Password</label>
+                    <MudTextField id="Password" @bind-Value="record.Password" placeholder="Password" ReadOnly="@isReadOnly"></MudTextField>
                     <ValidationMessage For="@(() => record.Password)" />
                 </div>
-                <div class="col-6 mb-3">
+                <div class="col-6 flex-input">
+                    <label class="form-label">User Type</label>
 
                     <MudSelect T="string"
                                @bind-Value="record.UserType"
-                               Label="UserType"
-                               Variant="Variant.Filled"
-                               Dense="true"
                                Placeholder="User Type"
-                               HelperText="Select User Type"
-                               HelperTextOnFocus="true"
                                Clearable="true">
 
                         @if (User != null && User.Any())
@@ -68,16 +66,12 @@
 
                     <ValidationMessage For="@(() => record.UserType)" />
                     </div>
-                    <div class="col-6 mb-3">
+                <div class="col-6 flex-input">
+                    <label class="form-label">Initial Theme</label>
 
                         <MudSelect T="int"
                                     @bind-Value="record.DarKLightTheme"
-                               Label="Theme"
-                                    Variant="Variant.Filled"
-                                    Dense="true"
                                     Placeholder="Theme"
-                                    HelperText="Select Theme"
-                                    HelperTextOnFocus="true"
                                     Clearable="true">
 
                         @if (record.DarKLightTheme != 0 && record.DarKLightTheme != 1)
@@ -91,15 +85,11 @@
 
                         <ValidationMessage For="@(() => record.DarKLightTheme)" />
                     </div>
-                <div class="col-6 mb-3">
+                <div class="col-6 flex-input">
+                    <label class="form-label">Linked Employee</label>
 
                     <MudSelect @bind-Value="record.EmpId"
-                               Label="Employee"
-                               Variant="Variant.Filled"
-                               Dense="true"
                                Placeholder="Employee"
-                               HelperText="Select Employee"
-                               HelperTextOnFocus="true"
                                Clearable="true">
 
                         @if (Emp != null && Emp.Any())
@@ -117,15 +107,11 @@
                     </MudSelect>
                     <ValidationMessage For="@(() => record.EmpId)" />
                 </div>
-                <div class="col-6 mb-3">
+                <div class="col-6 flex-input">
+                    <label class="form-label">Group</label>
 
                     <MudSelect @bind-Value="record.GroupId"
-                               Label="Group"
-                               Variant="Variant.Filled"
-                               Dense="true"
                                Placeholder="Group"
-                               HelperText="Select Group"
-                               HelperTextOnFocus="true"
                                Clearable="true">
 
                         @if (Gro != null && Gro.Any())
@@ -143,15 +129,11 @@
                     </MudSelect>
                     <ValidationMessage For="@(() => record.GroupId)" />
                 </div>
-                <div class="col-6 mb-3">
+                <div class="col-6 flex-input">
+                    <label class="form-label">Location</label>
 
                     <MudSelect @bind-Value="record.LocationId"
-                               Label="Location"
-                               Variant="Variant.Filled"
-                               Dense="true"
                                Placeholder="Location"
-                               HelperText="Select Location"
-                               HelperTextOnFocus="true"
                                Clearable="true">
 
                         @if (Loc != null && Loc.Any())
@@ -169,16 +151,12 @@
                     </MudSelect>
                     <ValidationMessage For="@(() => record.LocationId)" />
                 </div>
-                <div class="col-6 mb-3">
+                <div class="col-6 flex-input">
+                    <label class="form-label">Active</label>
 
                     <MudSelect T="int"
                                @bind-Value="record.IsActive"
-                               Label="Active"
-                               Variant="Variant.Filled"
-                               Dense="true"
                                Placeholder="Active"
-                               HelperText="Select Active"
-                               HelperTextOnFocus="true"
                                Clearable="true">
 
                         @if (record.IsActive != 0 && record.IsActive != 1)

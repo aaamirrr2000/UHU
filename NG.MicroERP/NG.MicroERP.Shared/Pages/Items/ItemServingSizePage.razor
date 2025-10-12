@@ -31,12 +31,14 @@
             <ChildContent>
 
                 <div class="row" style="width:100%; display: flex;">
-                    <div class="col-6 mb-3">
-                        <MudTextField Label="Size" @bind-Value="servingSize.Size" Variant="Variant.Filled" Placeholder="Size" />
+                <div class="col-6 flex-input">
+                    <label class="form-label">Size</label>
+                        <MudTextField @bind-Value="servingSize.Size" Placeholder="Size" />
                         <ValidationMessage For="@(() => servingSize.Size)" />
                     </div>
-                    <div class="col-6 mb-3">
-                        <MudNumericField Label="Price" @bind-Value="servingSize.Price" Variant="Variant.Filled" Placeholder="Price" Format="#,##0.00" />
+                <div class="col-6 flex-input">
+                    <label class="form-label">Price</label>
+                        <MudNumericField  @bind-Value="servingSize.Price" Placeholder="Price" Format="#,##0.00" />
                         <ValidationMessage For="@(() => servingSize.Price)" />
                     </div>
                 </div>
@@ -82,8 +84,16 @@
         </HeaderContent>
         <RowTemplate Context="item">
             <MudTd>
-                <MudIconButton Icon="@Icons.Material.TwoTone.Edit" Size="MudBlazor.Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="() => Edit(item)" />
-                <MudIconButton Icon="@Icons.Material.TwoTone.DeleteSweep" Size="MudBlazor.Size.Small" Variant="Variant.Filled" Color="Color.Error" OnClick="() => Delete(item)" />
+
+                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true" Color="Color.Inherit">
+                    <MudMenuItem OnClick="() => Edit(item)">
+                        <MudIcon Icon="@Icons.Material.TwoTone.Edit" Class="me-2" /> Edit
+                    </MudMenuItem>
+                    <MudMenuItem OnClick="() => Delete(item)">
+                        <MudIcon Icon="@Icons.Material.TwoTone.DeleteSweep" Class="me-2" /> Delete
+                    </MudMenuItem>
+                </MudMenu>
+
             </MudTd>
             <MudTd>
                 <img src="@(!string.IsNullOrWhiteSpace(item.Pic) ? item.Pic : "images/no-image.png")" alt="Picture" style="width:30px; height:30px; border-radius: 50%;" />
