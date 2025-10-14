@@ -13,7 +13,6 @@
     PartyPhone              VARCHAR(50)      NULL DEFAULT NULL,
     PartyEmail              VARCHAR(50)      NULL DEFAULT NULL,
     PartyAddress            VARCHAR(255)     NULL DEFAULT NULL,
-    ScenarioId              INT,
     TableId                 INT              NULL,
     TranDate                DATETIME         NULL DEFAULT NULL,
     DiscountAmount          DECIMAL(16, 2)   NULL DEFAULT 0.00,
@@ -37,8 +36,7 @@
     FOREIGN KEY (CreatedBy)         REFERENCES Users(Id),
     FOREIGN KEY (UpdatedBy)         REFERENCES Users(Id),
     FOREIGN KEY (PartyId)           REFERENCES Parties(Id),
-    FOREIGN KEY (OrganizationId)    REFERENCES Organizations(Id),
-    FOREIGN KEY (ScenarioId)        REFERENCES DigitalInvoiceScenarios(Id)
+    FOREIGN KEY (OrganizationId)    REFERENCES Organizations(Id)
 );
 
 CREATE TABLE BillDetail
@@ -94,7 +92,6 @@ CREATE TABLE BillPayments
     Notes           VARCHAR(255) NULL,
     IsSoftDeleted   SMALLINT NOT NULL DEFAULT 0,
     RowVersion      ROWVERSION,
-
     FOREIGN KEY (BillId)    REFERENCES Bill(Id)
 );
 

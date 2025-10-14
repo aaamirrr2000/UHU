@@ -29,7 +29,7 @@
         <ChildContent>
             <EditForm Model="record" OnSubmit="Save">
                 <MudForm>
-                    <PartyBankDetailsPage Action="@Action" CurrentRecord="record.Id" />
+                    <PartyBankDetailsPage Action="NO ACTION" CurrentRecord="record.Id" />
                 </MudForm>
             </EditForm>
         </ChildContent>
@@ -37,13 +37,13 @@
         </FooterContent>
     </MyDrawer>
 
-    <MyDrawer @ref="_drawerContacts" Title="Party Bank Details" FaIcon="fas fa-address-book">
+    <MyDrawer @ref="_drawerContacts" Title="Party Contact" FaIcon="fas fa-address-book">
         <HeaderContent>
         </HeaderContent>
         <ChildContent>
             <EditForm Model="record" OnSubmit="Save">
                 <MudForm>
-                    <PartyContactsPage Action="@Action" CurrentRecord="record.Id" />
+                    <PartyContactsPage Action="NO ACTION" CurrentRecord="record.Id" />
                 </MudForm>
             </EditForm>
         </ChildContent>
@@ -51,6 +51,47 @@
         </FooterContent>
     </MyDrawer>
 
+    <MyDrawer @ref="_drawerDocuments" Title="Party Documents" FaIcon="fas fa-address-book">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <PartyDocumentsPage Action="NO ACTION" CurrentRecord="record.Id" />
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    <MyDrawer @ref="_drawerFinancials" Title="Party Financials" FaIcon="fas fa-address-book">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <PartyFinancialsPage Action="NO ACTION" CurrentRecord="record.Id" />
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    <MyDrawer @ref="_drawerVehicles" Title="Party Financials" FaIcon="fas fa-address-book">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <PartyVehiclesPage Action="NO ACTION" CurrentRecord="record.Id" />
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
 
     @if (data == null)
     {
@@ -81,11 +122,22 @@
                                 <MudMenuItem OnClick="@(() => Delete(row.Item.Id))" Color="Color.Error">
                                     <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
                                 </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => BankDetails(row.Item.Id))">
-                                    <MudIcon Icon="@Icons.Material.Filled.Money" Class="me-2" /> Banking Details
-                                </MudMenuItem>
+                                <hr />
                                 <MudMenuItem OnClick="@(() => Contacts(row.Item.Id))">
                                     <MudIcon Icon="@Icons.Material.Filled.Person" Class="me-2" /> Contacts
+                                </MudMenuItem>
+                                <MudMenuItem OnClick="@(() => Documents(row.Item.Id))">
+                                    <MudIcon Icon="@Icons.Material.Filled.Book" Class="me-2" /> Documents
+                                </MudMenuItem>
+                                <MudMenuItem OnClick="@(() => Vehicles(row.Item.Id))">
+                                    <MudIcon Icon="@Icons.Material.Filled.CarCrash" Class="me-2" /> Vehicles
+                                </MudMenuItem>
+                                <hr />
+                                <MudMenuItem OnClick="@(() => BankDetails(row.Item.Id))">
+                                    <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Class="me-2" /> Banking Details
+                                </MudMenuItem>
+                                <MudMenuItem OnClick="@(() => Financials(row.Item.Id))">
+                                    <MudIcon Icon="@Icons.Material.Filled.Money" Class="me-2" /> Financials
                                 </MudMenuItem>
                             </MudMenu>
                         </CellTemplate>
@@ -97,18 +149,17 @@
                         </CellTemplate>
                     </TemplateColumn>
                     <PropertyColumn Property="x => x.Code" Title="Code" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.Name" Title="Name" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.PartyType" Title="PartyType" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.PartyTypeCode" Title="PartyTypeCode" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.ParentId" Title="ParentId" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
+                    <PropertyColumn Property="x => x.Name" Title="Party" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.PartyType" Title="Party Type" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.PartyTypeCode" Title="Party Type Code" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.ParentName" Title="Parent" Sortable="true" Filterable="true"/>
                     <PropertyColumn Property="x => x.Address" Title="Address" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.CityId" Title="CityId" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
-                    <PropertyColumn Property="x => x.Latitude" Title="Latitude" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.Longitude" Title="Longitude" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.Radius" Title="Radius" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
-                    <PropertyColumn Property="x => x.IsActive" Title="IsActive" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
-
-
+                    <PropertyColumn Property="x => x.City" Title="City" Sortable="true" Filterable="true"/>
+                    <TemplateColumn Title="Active" CellStyle="width: 50px; min-width: 50px;">
+                        <CellTemplate Context="row">
+                            @((row.Item.IsActive == 1) ? "" : "Locked")
+                        </CellTemplate>
+                    </TemplateColumn>
                 </Columns>
 
                 <PagerContent>
@@ -131,6 +182,9 @@
     private MyDrawer _drawer = new();
     private MyDrawer _drawerBankDetails = new();
     private MyDrawer _drawerContacts = new();
+    private MyDrawer _drawerDocuments = new();
+    private MyDrawer _drawerFinancials = new();
+    private MyDrawer _drawerVehicles = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -195,6 +249,30 @@
         Action = "INSERT";
         isReadOnly = false;
         await _drawerContacts.OpenDrawerAsync();
+    }
+
+    protected async Task Documents(int id)
+    {
+        await Get(id);
+        Action = "INSERT";
+        isReadOnly = false;
+        await _drawerDocuments.OpenDrawerAsync();
+    }
+
+    protected async Task Financials(int id)
+    {
+        await Get(id);
+        Action = "INSERT";
+        isReadOnly = false;
+        await _drawerFinancials.OpenDrawerAsync();
+    }
+
+    protected async Task Vehicles(int id)
+    {
+        await Get(id);
+        Action = "INSERT";
+        isReadOnly = false;
+        await _drawerVehicles.OpenDrawerAsync();
     }
 
     protected async Task Delete(int id)

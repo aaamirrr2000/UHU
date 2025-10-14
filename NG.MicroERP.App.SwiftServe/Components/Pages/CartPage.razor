@@ -209,7 +209,7 @@
         var request = new BillsModel
         {
             Bill = bill,
-            BillDetails = new ObservableCollection<BillItemReportModel>(billDetails)
+            //BillDetails = new ObservableCollection<BillItemReportModel>(billDetails)
         };
 
         var result = await Functions.PostAsync<BillsModel>("Bill/Insert", request, true);

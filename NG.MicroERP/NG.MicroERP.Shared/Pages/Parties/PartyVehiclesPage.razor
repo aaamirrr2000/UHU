@@ -1,4 +1,4 @@
-﻿@page "/PartyContactsPage/{Action}/{CurrentRecord?}"
+﻿@page "/PartyVehiclesPage/{Action}/{CurrentRecord?}"
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
@@ -17,14 +17,13 @@
                 New
             </MudButton>
 
-            @if (Action != "NO ACTION")
+            @if(Action!="NO ACTION")
             {
                 <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
                     <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
                     @(Action == "INSERT" ? "Save" : "Update")
                 </MudButton>
             }
-
         }
     </div>
 
@@ -41,69 +40,84 @@
                     </i>
 
                     <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">Party Contacts</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Party's' Contacts</MudText>
+                        <MudText Typo="Typo.h6" Class="fw-bold">Party's Vehicles</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Party's Vehicles</MudText>
                     </div>
                 </div>
                 <hr />
             </TitleContent>
 
             <ChildContent>
-                 @if (IsVisible)
+                @if (IsVisible)
                 {
                     <div class="row" style="width:100%; display: flex;">
                         <div class="col-6 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Contact Type</label>
+                            <label class="form-label" style="font-weight: bold;">Registration No.</label>
+                            <MudTextField id="VehicleRegNo" @bind-Value="record.VehicleRegNo" placeholder="Vehicle Registration No." ReadOnly="@isReadOnly"></MudTextField>
+                            <ValidationMessage For="@(() => record.VehicleRegNo)" />
+                        </div>
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Engine No.</label>
+                            <MudTextField id="EngineNo" @bind-Value="record.EngineNo" placeholder="Engine No" ReadOnly="@isReadOnly"></MudTextField>
+                            <ValidationMessage For="@(() => record.EngineNo)" />
+                        </div>
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Chasis No.</label>
+                            <MudTextField id="ChasisNo" @bind-Value="record.ChasisNo" placeholder="Chasis No" ReadOnly="@isReadOnly"></MudTextField>
+                            <ValidationMessage For="@(() => record.ChasisNo)" />
+                        </div>
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Vehicle Type</label>
 
                             <MudSelect T="string"
-                                       @bind-Value="record.ContactType"
-                                       Placeholder="Contact Type"
+                                       @bind-Value="record.VehicleType"
+                                       Placeholder="Vehicle Type"
                                        Clearable="true">
 
-                                @if (Con != null && Con.Any())
+                                @if (Veh != null && Veh.Any())
                                 {
-                                    if (string.IsNullOrWhiteSpace(record.ContactType))
+                                    if (string.IsNullOrWhiteSpace(record.VehicleType))
                                     {
-                                        record.ContactType = Con.First().ListValue;
+                                        record.VehicleType = Veh.First().ListValue;
                                     }
 
-                                    foreach (var i in Con)
+                                    foreach (var i in Veh)
                                     {
                                         <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
                                     }
                                 }
                             </MudSelect>
 
-                            <ValidationMessage For="@(() => record.ContactType)" />
+                            <ValidationMessage For="@(() => record.VehicleType)" />
                         </div>
                         <div class="col-6 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Contact Value</label>
-                            <MudTextField id="ContactValue" @bind-Value="record.ContactValue" placeholder="Contact Value" ReadOnly="@isReadOnly"></MudTextField>
-                            <ValidationMessage For="@(() => record.ContactValue)" />
-                        </div>
-                        <div class="col-6 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Isprimary</label>
+                            <label class="form-label" style="font-weight: bold;">Make</label>
 
-                            <MudSelect T="int"
-                                       @bind-Value="record.IsPrimary"
-                                       Placeholder="Primary"
+                            <MudSelect T="string"
+                                       @bind-Value="record.MakeType"
+                                       Placeholder="Make"
                                        Clearable="true">
 
-                                @if (record.IsPrimary != 0 && record.IsPrimary != 1)
+                                @if (Mak != null && Mak.Any())
                                 {
-                                    record.IsPrimary = 1;
-                                }
+                                    if (string.IsNullOrWhiteSpace(record.MakeType))
+                                    {
+                                        record.MakeType = Mak.First().ListValue;
+                                    }
 
-                                <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
-                                <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                                    foreach (var i in Mak)
+                                    {
+                                        <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                    }
+                                }
                             </MudSelect>
 
-                            <ValidationMessage For="@(() => record.IsPrimary)" />
+                            <ValidationMessage For="@(() => record.MakeType)" />
                         </div>
                         <div class="col-6 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Point of contact</label>
-                            <MudTextField id="PointOfContact" @bind-Value="record.PointOfContact" placeholder="Point Of Contact" ReadOnly="@isReadOnly"></MudTextField>
-                            <ValidationMessage For="@(() => record.PointOfContact)" />
+                            <label class="form-label" style="font-weight: bold;">Model</label>
+                            <MudTextField id="Model" @bind-Value="record.Model" placeholder="Model" ReadOnly="@isReadOnly"></MudTextField>
+                            <ValidationMessage For="@(() => record.Model)" />
                         </div>
                         <div class="col-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Active</label>
@@ -124,6 +138,7 @@
 
                             <ValidationMessage For="@(() => record.IsActive)" />
                         </div>
+                     
 
                     </div>
                 }
@@ -135,7 +150,7 @@
                 {
                     <div class="row">
 
-                        <MudTable T="PartyContactsModel"
+                        <MudTable T="PartyVehiclesModel"
                                   Items="@data"
                                   Hover="true"
                                   Dense="true"
@@ -149,11 +164,14 @@
 
                             <HeaderContent>
                                 <MudTh>Actions</MudTh>
-                                <MudTh>Contact Type</MudTh>
-                                <MudTh>Value</MudTh>
-                                <MudTh>Is Primary</MudTh>
-                                <MudTh>Point of Contact</MudTh>
-                                <MudTh>Active</MudTh>
+                                <MudTh>Registration No</MudTh>
+                                <MudTh>Engine No</MudTh>
+                                <MudTh>Chasis No</MudTh>
+                                <MudTh>Vehicle Type</MudTh>
+                                <MudTh>MakeType</MudTh>
+                                <MudTh>Model</MudTh>
+                                <MudTh>IsActive</MudTh>
+
                             </HeaderContent>
 
                             <RowTemplate>
@@ -171,23 +189,27 @@
                                     </MudMenu>
                                 </MudTd>
 
-                                <MudTd DataLabel="Contact Type" Style="text-align: right; white-space: nowrap; width: auto;">
-                                    @context.ContactType
+                                <MudTd DataLabel="Registration No." Style="text-align: left; white-space: nowrap; width: auto;">
+                                    @context.VehicleRegNo
                                 </MudTd>
-                                <MudTd DataLabel="Contact Value" Style="text-align: right; white-space: nowrap; width: auto;">
-                                    @context.ContactValue
+                                <MudTd DataLabel="Engine No." Style="text-align: left; white-space: nowrap; width: auto;">
+                                    @context.EngineNo
                                 </MudTd>
-                                <MudTd DataLabel="Point Of Contact" Style="text-align: right; white-space: nowrap; width: auto;">
-                                    @context.PointOfContact
+                                <MudTd DataLabel="Chasis No." Style="text-align: left; white-space: nowrap; width: auto;">
+                                    @context.ChasisNo
                                 </MudTd>
-                                <MudTd DataLabel="IsPrimary" Style="white-space: nowrap; width: auto;">
-                                    @(context.IsPrimary == 1 ? "True" : "")
+                                <MudTd DataLabel="Vehicle Type" Style="text-align: left; white-space: nowrap; width: auto;">
+                                    @context.VehicleType
                                 </MudTd>
-                                <MudTd DataLabel="IsActive" Style="white-space: nowrap; width: auto;">
+                                <MudTd DataLabel="Make" Style="text-align: left; white-space: nowrap; width: auto;">
+                                    @context.MakeType
+                                </MudTd>
+                                <MudTd DataLabel="Model" Style="text-align: left; white-space: nowrap; width: auto;">
+                                    @context.Model
+                                </MudTd>
+                                <MudTd DataLabel="Active" Style="white-space: nowrap; width: auto;">
                                     @(context.IsActive == 1 ? "" : "Locked")
                                 </MudTd>
-
-
                             </RowTemplate>
                         </MudTable>
                     </div>
@@ -201,13 +223,14 @@
 @code
 {
     PartiesModel MasterRecord = new();
-    PartyContactsModel record = new();
+    PartyVehiclesModel record = new();
     List<PartiesModel> Par = new();
-    List<TypeCodeModel> Con = null!;
+    List<TypeCodeModel> Veh = null!;
+    List<TypeCodeModel> Mak = null!;
 
-    List<PartyContactsModel> data = new();
+    List<PartyVehiclesModel> data = new();
 
-    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public string Action { get; set; }
     [Parameter] public int CurrentRecord { get; set; } = 0;
 
     bool isReadOnly = true;
@@ -231,7 +254,8 @@
             LoadingPanel = true;
 
             Par = await Functions.GetAsync<List<PartiesModel>>($"Party/Search", true) ?? new List<PartiesModel>();
-            Con = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/CONTACT TYPE", true) ?? new List<TypeCodeModel>();
+            Veh = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/VEHICLE TYPE", true) ?? new List<TypeCodeModel>();
+            Mak = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/VEHICLE MAKE TYPE", true) ?? new List<TypeCodeModel>();
 
             switch (Action)
             {
@@ -249,7 +273,7 @@
                     break;
             }
 
-            data = await Functions.GetAsync<List<PartyContactsModel>>($"PartyContacts/Search/partyid={CurrentRecord}", true) ?? new List<PartyContactsModel>();
+            data = await Functions.GetAsync<List<PartyVehiclesModel>>($"PartyVehicles/Search/partyid={CurrentRecord}", true) ?? new List<PartyVehiclesModel>();
         }
         catch (Exception ex)
         {
@@ -268,7 +292,7 @@
         {
             LoadingPanel = true;
             MasterRecord = await Functions.GetAsync<PartiesModel>($"Parties/Get?Id={id}", true) ?? new PartiesModel();
-            record = await Functions.GetAsync<PartyContactsModel>($"PartyContacts/Get?Id={id}", true) ?? new PartyContactsModel();
+            record = await Functions.GetAsync<PartyVehiclesModel>($"PartyVehicles/Get?Id={id}", true) ?? new PartyVehiclesModel();
         }
         catch (Exception ex)
         {
@@ -291,10 +315,9 @@
     protected async Task Clear()
     {
         Action = "INSERT";
-        record = new PartyContactsModel();
+        record = new PartyVehiclesModel();
         record.PartyId = CurrentRecord;
         record.IsActive = 1;
-        record.IsPrimary = 0;
         record.IsSoftDeleted = 0;
         isReadOnly = false;
         IsVisible = true;
@@ -340,7 +363,7 @@
             record.UpdatedFrom = Functions.GetComputerDetails();
 
             string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
-            var result = await Functions.PostAsync<PartyContactsModel>($"PartyContacts/{url}", record, true);
+            var result = await Functions.PostAsync<PartyVehiclesModel>($"PartyVehicles/{url}", record, true);
             if (result.Success == false)
             {
                 await Functions.ShowMessage(dialogService, "error", $"Record Not Saved");

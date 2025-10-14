@@ -6,6 +6,7 @@
 	Code                VARCHAR(50)			NOT NULL,
 	Attribute           VARCHAR(255)		NULL,			--RAW MATERIAL, FINISHED GOODS, CATEGORY, SUB CATEGORY
 	Name                VARCHAR(255)		NOT NULL,
+	CategoryType        VARCHAR(50)			NOT NULL,		--Raw, Finished Goods
 	ParentId            INT					NOT NULL DEFAULT 0,
 	IsActive            SMALLINT			NOT NULL DEFAULT 1,
 	CreatedBy			INT					NULL DEFAULT NULL,

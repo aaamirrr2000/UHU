@@ -12,14 +12,14 @@
     <div class="text-end" style="margin-top:10px;">
         @if (Action != "VIEW")
         {
-            <MudButton Variant="Variant.Filled" OnClick="Save" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
                 <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
                 @(Action == "INSERT" ? "Save" : "Update")
             </MudButton>
 
             @if (Action == "UPDATE")
             {
-                <MudButton Variant="Variant.Filled" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
                     <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
                     Delete
                 </MudButton>
@@ -33,17 +33,17 @@
         <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
             <div class="row" style="width:100%; display: flex;">
                 <div class="col-6 flex-input">
-                    <label class="form-label">Username</label>
+                    <label class="form-label" style="font-weight: bold;">Username</label>
                     <MudTextField id="Username" @bind-Value="record.Username" placeholder="User Name" ReadOnly="@isReadOnly"></MudTextField>
                     <ValidationMessage For="@(() => record.Username)" />
                 </div>
                 <div class="col-6 flex-input">
-                    <label class="form-label">Password</label>
+                    <label class="form-label" style="font-weight: bold;">Password</label>
                     <MudTextField id="Password" @bind-Value="record.Password" placeholder="Password" ReadOnly="@isReadOnly"></MudTextField>
                     <ValidationMessage For="@(() => record.Password)" />
                 </div>
                 <div class="col-6 flex-input">
-                    <label class="form-label">User Type</label>
+                    <label class="form-label" style="font-weight: bold;">User Type</label>
 
                     <MudSelect T="string"
                                @bind-Value="record.UserType"
@@ -67,7 +67,7 @@
                     <ValidationMessage For="@(() => record.UserType)" />
                     </div>
                 <div class="col-6 flex-input">
-                    <label class="form-label">Initial Theme</label>
+                    <label class="form-label" style="font-weight: bold;">Initial Theme</label>
 
                         <MudSelect T="int"
                                     @bind-Value="record.DarKLightTheme"
@@ -86,7 +86,7 @@
                         <ValidationMessage For="@(() => record.DarKLightTheme)" />
                     </div>
                 <div class="col-6 flex-input">
-                    <label class="form-label">Linked Employee</label>
+                    <label class="form-label" style="font-weight: bold;">Linked Employee</label>
 
                     <MudSelect @bind-Value="record.EmpId"
                                Placeholder="Employee"
@@ -108,7 +108,7 @@
                     <ValidationMessage For="@(() => record.EmpId)" />
                 </div>
                 <div class="col-6 flex-input">
-                    <label class="form-label">Group</label>
+                    <label class="form-label" style="font-weight: bold;">Group</label>
 
                     <MudSelect @bind-Value="record.GroupId"
                                Placeholder="Group"
@@ -130,7 +130,7 @@
                     <ValidationMessage For="@(() => record.GroupId)" />
                 </div>
                 <div class="col-6 flex-input">
-                    <label class="form-label">Location</label>
+                    <label class="form-label" style="font-weight: bold;">Location</label>
 
                     <MudSelect @bind-Value="record.LocationId"
                                Placeholder="Location"
@@ -152,7 +152,7 @@
                     <ValidationMessage For="@(() => record.LocationId)" />
                 </div>
                 <div class="col-6 flex-input">
-                    <label class="form-label">Active</label>
+                    <label class="form-label" style="font-weight: bold;">Active</label>
 
                     <MudSelect T="int"
                                @bind-Value="record.IsActive"

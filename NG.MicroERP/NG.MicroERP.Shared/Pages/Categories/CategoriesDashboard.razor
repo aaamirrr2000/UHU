@@ -54,14 +54,9 @@
                         </CellTemplate>
                     </TemplateColumn>
 
-                    <TemplateColumn Title="Picture" CellStyle="width: 50px; min-width: 50px;">
-                        <CellTemplate Context="row">
-                            <img src="@(!string.IsNullOrWhiteSpace(row.Item.Pic) ? row.Item.Pic : "images/no-image.png")" alt="Picture" style="width:30px; height:30px; border-radius: 50%;" />
-                        </CellTemplate>
-                    </TemplateColumn>
-
                 <PropertyColumn Property="x => x.Code" Title="Code" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.Name" Title="Name" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Name" Title="Name" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.CategoryType" Title="Category Type" Sortable="true" Filterable="true" />
                 </Columns>
 
                 <PagerContent>

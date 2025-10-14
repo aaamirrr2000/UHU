@@ -201,15 +201,98 @@ public class Functions
             _ => "#2c3e50"
         };
 
-        // SweetAlert-style HTML
+        // 3D Vector Icon Style HTML
         string html = $@"
-        <div style='text-align:center; padding:20px; font-family:Arial, sans-serif;'>
-            <div style='font-size:60px; margin-bottom:10px;'>{icon}</div>
-            <div style='font-size:28px; font-weight:bold; color:{color}; margin-bottom:10px;'>
-                {titleText}
-            </div>
-            <div style='font-size:18px; line-height:1.5; color:#FFC107;'>
-                {message}
+        <div style='
+            width: 450px; 
+            height: 220px; 
+            padding: 25px; 
+            font-family: Arial, sans-serif; 
+            box-sizing: border-box;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            color: white;
+            position: relative;
+            overflow: hidden;
+            border: 3px solid rgba(255,255,255,0.3);
+        '>
+            <!-- Background pattern/alphas INSIDE the border -->
+            <div style='
+                position: absolute;
+                top: -50px;
+                right: -50px;
+                width: 200px;
+                height: 200px;
+                background: rgba(255,255,255,0.1);
+                border-radius: 50%;
+            '></div>
+            <div style='
+                position: absolute;
+                bottom: -30px;
+                left: -30px;
+                width: 150px;
+                height: 150px;
+                background: rgba(255,255,255,0.05);
+                border-radius: 50%;
+            '></div>
+    
+            <div style='
+                display: grid;
+                grid-template-columns: 100px 1fr;
+                grid-template-rows: 1fr auto;
+                gap: 20px;
+                height: 100%;
+                position: relative;
+                z-index: 2;
+            '>
+                <!-- 3D Icon on left -->
+                <div style='
+                    grid-column: 1;
+                    grid-row: 1;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 60px;
+                    background: rgba(255,255,255,0.2);
+                    border-radius: 15px;
+                    backdrop-filter: blur(10px);
+                    border: 2px solid rgba(255,255,255,0.3);
+                    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+                    transform: perspective(500px) rotateY(-5deg);
+                '>
+                    {icon}
+                </div>
+        
+                <!-- Content on right -->
+                <div style='
+                    grid-column: 2;
+                    grid-row: 1;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    padding-right: 10px;
+                '>
+                    <div style='
+                        font-size: 28px;
+                        font-weight: bold;
+                        margin-bottom: 12px;
+                        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+                        color: white;
+                    '>
+                        {titleText}
+                    </div>
+                    <div style='
+                        font-size: 16px;
+                        line-height: 1.5;
+                        color: rgba(255,255,255,0.9);
+                        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+                    '>
+                        {message}
+                    </div>
+                </div>
+        
+               
             </div>
         </div>";
 

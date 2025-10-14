@@ -24,17 +24,6 @@
                             }
  }
                     </MudSelect>
-                    <!-- Digital Invoice Scenario -->
-                    <MudSelect T="int" @bind-Value="record.Bill.ScenarioId" Disabled="@Disabled" Dense="true" Style="@controlStyle">
-                        @if (Scenariosdata != null)
-                        {
-                            @foreach(var option in Scenariosdata) {
-                                <MudSelectItem T="int" Value="@option.Id">
-                                    <div style="display: flex; flex-direction: column; line-height: 1.2;"><span style="font-weight: bold; font-size: 16px; padding-bottom: 5px;">Scenario: @option.ScenarioID</span><span>Sale Type: @option.SaleType</span><span>Tax Context: @option.TaxContext</span></div>
-                                </MudSelectItem>
-                            }
- }
-                    </MudSelect>
 
                     <!-- Transaction Date -->
                     <InputDate @bind-Value="record.Bill.TranDate" Format="yyyy-MM-dd" Style="@controlStyle" />
@@ -307,8 +296,6 @@
                                                 onmouseover="this.style.backgroundColor='rgba(0,0,0,0.1)'"
                                                 onmouseout="this.style.backgroundColor='transparent'">
 
-                                            <AvatarDisplay Pic="@category.Pic" Name="@category.Name" Size="24" />
-
                                             <span style="font-weight: 600; font-size: 14px; color: #212529; white-space: nowrap;">
                                                 @category.Name (@category.ItemCount)
                                             </span>
@@ -316,7 +303,6 @@
                                     }
                                 </div>
                             </div>
-
 
                             <!-- Right Column: Items -->
                             <div class="flex-grow-1">
@@ -1072,11 +1058,6 @@
     private double TotalDiscountAmount => record.BillDetails.Sum(i => i.DiscountAmount);
     private double TotalTaxAmount => record.BillDetails.Sum(i => i.TaxAmount);
 
-    // =======================
-    // 11. Tax
-    // =======================
-    static List<DigitalInvoiceScenariosModel> Scenariosdata = new();
-
     // -------------------------- Lifecycle --------------------------
     protected override async Task OnInitializedAsync()
     {
@@ -1139,7 +1120,6 @@
             BillStatus = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/BILL STATUS", true) ?? new List<TypeCodeModel>();
             Tables = await Functions.GetAsync<List<RestaurantTablesModel>>($"RestaurantTables/Search", true) ?? new List<RestaurantTablesModel>();
             SalesId = await Functions.GetAsync<List<EmployeesModel>>($"Employees/Search", true) ?? new List<EmployeesModel>();
-            Scenariosdata = await Functions.GetAsync<List<DigitalInvoiceScenariosModel>>($"DigitalInvoiceScenarios/Search", true) ?? new List<DigitalInvoiceScenariosModel>();
 
             string Prty = "SUPPLIER";
             if (InvoiceType == "SALE")
@@ -1173,9 +1153,6 @@
             if (SalesId != null && SalesId.Any())
                 record.Bill.SalesId = SalesId.First().Id;
             
-            // Set default scenario Id if available
-            if (Scenariosdata != null && Scenariosdata.Any())
-                record.Bill.ScenarioId = Scenariosdata.First().Id;
             }
         catch (Exception ex)
         {

@@ -43,16 +43,19 @@ public static class DependencyInjection
         services.AddSingleton<IServiceChargesService, ServiceChargesService>();
         services.AddSingleton<ITaxService, TaxService>();
         services.AddSingleton<IChargeRulesService, ChargeRulesService>();
-        services.AddSingleton<IDigitalInvoiceConfigService, DigitalInvoiceConfigService>();
         services.AddSingleton<IFbrSubmissionService, FbrSubmissionService>();
         services.AddSingleton<ITaxMasterService, TaxMasterService>();
         services.AddSingleton<ITaxItemsService, TaxItemsService>();
-        services.AddSingleton<IDigitalInvoiceScenariosService, DigitalInvoiceScenariosService>();
         services.AddSingleton<IAreasService, AreasService>();
 
         services.AddSingleton<IPartiesService, PartiesService>();
         services.AddSingleton<IPartyBankDetailsService, PartyBankDetailsService>();
         services.AddSingleton<IPartyContactsService, PartyContactsService>();
+        services.AddSingleton<IPartyDocumentsService, PartyDocumentsService>();
+        services.AddSingleton<IPartyFinancialsService, PartyFinancialsService>();
+        services.AddSingleton<IPartyVehiclesService, PartyVehiclesService>();
+
+        services.AddSingleton<IBankService, BankService>();
 
         services.AddScoped<Globals>();
         services.AddScoped<FileUploadService>();

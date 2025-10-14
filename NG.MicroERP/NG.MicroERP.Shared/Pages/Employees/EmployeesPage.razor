@@ -13,14 +13,14 @@
     <div class="text-end" style="margin-top:10px;">
         @if (Action != "VIEW")
         {
-            <MudButton Variant="Variant.Filled" OnClick="Save" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
                 <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
                 @(Action == "INSERT" ? "Save" : "Update")
             </MudButton>
 
             @if (Action == "UPDATE")
             {
-                <MudButton Variant="Variant.Filled" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
                     <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
                     Delete
                 </MudButton>
@@ -50,37 +50,37 @@
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-6 flex-input">
-                        <label class="form-label">Empid</label>
+                        <label class="form-label" style="font-weight: bold;">Empid</label>
                         <MudTextField id="EmpId" @bind-Value="record.EmpId" placeholder="EmpId" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.EmpId)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Fullname</label>
+                        <label class="form-label" style="font-weight: bold;">Fullname</label>
                         <MudTextField id="Fullname" @bind-Value="record.Fullname" placeholder="Fullname" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Fullname)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Phone</label>
+                        <label class="form-label" style="font-weight: bold;">Phone</label>
                         <MudTextField id="Phone" @bind-Value="record.Phone" placeholder="Phone" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Phone)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Email</label>
+                        <label class="form-label" style="font-weight: bold;">Email</label>
                         <MudTextField id="Email" @bind-Value="record.Email" placeholder="Email" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Email)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">CNIC</label>
+                        <label class="form-label" style="font-weight: bold;">CNIC</label>
                         <MudTextField id="Cnic" @bind-Value="record.Cnic" placeholder="CNIC" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Cnic)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Empaddress</label>
+                        <label class="form-label" style="font-weight: bold;">Empaddress</label>
                         <MudTextField id="Address" @bind-Value="record.EmpAddress" placeholder="Address" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.EmpAddress)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Employee Type</label>
+                        <label class="form-label" style="font-weight: bold;">Employee Type</label>
 
                         <MudSelect T="string"
                                    @bind-Value="record.EmpType"
@@ -104,12 +104,12 @@
                         <ValidationMessage For="@(() => record.EmpType)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Empdept</label>
+                        <label class="form-label" style="font-weight: bold;">Empdept</label>
                         <MudTextField id="Department" @bind-Value="record.EmpDept" placeholder="Department" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.EmpDept)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Location</label>
+                        <label class="form-label" style="font-weight: bold;">Location</label>
 
                         <MudSelect @bind-Value="record.LocationId"
                                    Placeholder="Location"
@@ -126,7 +126,7 @@
                         <ValidationMessage For="@(() => record.LocationId)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Active</label>
+                        <label class="form-label" style="font-weight: bold;">Active</label>
 
                         <MudSelect T="int"
                                    @bind-Value="record.IsActive"

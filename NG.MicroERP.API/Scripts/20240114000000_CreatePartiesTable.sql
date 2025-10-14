@@ -1,20 +1,21 @@
 ﻿-- Parties Table
 CREATE TABLE Parties
 (
-	Id               INT PRIMARY KEY IDENTITY(1,1),
-	Guid             UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
-	OrganizationId   INT NOT NULL DEFAULT 1,
-	Code             VARCHAR(50) NOT NULL,
-	Pic              VARCHAR(255),
-	Name             VARCHAR(100) NOT NULL,
-	PartyType        VARCHAR(100) NULL,     -- CUSTOMER / SUPPLIER / BANK
-	PartyTypeCode    VARCHAR(100) NULL,     -- DEALER / DISTRIBUTOR / RETAILER etc.
-	ParentId         INT NULL,              -- Parent party link (optional)
-	Address          VARCHAR(255) NULL,
-	CityId           INT NULL,
-	Latitude         VARCHAR(30) NULL,
-	Longitude        VARCHAR(30) NULL,
-	Radius           INT NULL,
+	Id					INT PRIMARY KEY IDENTITY(1,1),
+	Guid				UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
+	OrganizationId		INT NOT NULL DEFAULT 1,
+	Code				VARCHAR(50) NOT NULL,
+	Pic					VARCHAR(255),
+	Name				VARCHAR(100) NOT NULL,
+	PartyType			VARCHAR(100) NULL,     -- CUSTOMER / SUPPLIER / BANK
+	PartyTypeCode		VARCHAR(100) NULL,     -- DEALER / DISTRIBUTOR / RETAILER etc.
+	ParentId			INT NULL,              -- Parent party link (optional)
+	Address				VARCHAR(255) NULL,
+	CityId				INT NULL,
+	AccountId			INT NULL,
+	Latitude			VARCHAR(30) NULL,
+	Longitude			VARCHAR(30) NULL,
+	Radius				INT NULL,
 	IsActive            SMALLINT			NOT NULL DEFAULT 1,
 	CreatedBy			INT					NULL DEFAULT NULL,
 	CreatedOn           DATETIME			NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -27,6 +28,7 @@ CREATE TABLE Parties
 	FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
 	FOREIGN KEY (UpdatedBy) REFERENCES Users(Id),
 	FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
+	FOREIGN KEY (AccountId) REFERENCES ChartOfAccounts(Id),
 	FOREIGN KEY (CityId) REFERENCES Areas(Id)
 );
 
@@ -60,7 +62,7 @@ CREATE TABLE PartyFinancials
 	Id					INT PRIMARY KEY IDENTITY(1,1),
 	Guid				UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
 	PartyId				INT NOT NULL,
-	AccountId			INT NULL,
+
 	Description			VARCHAR(100) NULL,    -- e.g. 'Credit Limit', 'Trade Discount'
 	ValueType			VARCHAR(20) NULL,     -- PERCENTAGE / AMOUNT / DAYS
 	Value				DECIMAL(18,4) NULL,
@@ -74,7 +76,6 @@ CREATE TABLE PartyFinancials
 	IsSoftDeleted       SMALLINT			NOT NULL DEFAULT 0,
 	RowVersion          ROWVERSION,
 	FOREIGN KEY (PartyId) REFERENCES Parties(Id),
-	FOREIGN KEY (AccountId) REFERENCES ChartOfAccounts(Id),
 	FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
 	FOREIGN KEY (UpdatedBy) REFERENCES Users(Id)
 );
@@ -87,7 +88,7 @@ CREATE TABLE PartyDocuments
 	PartyId				INT NOT NULL,
 	DocumentType		VARCHAR(50) NOT NULL,   -- NTN / CNIC / GST / LICENSE / IMEI / GSM
 	DocumentNumber		VARCHAR(50) NOT NULL,
-	PointOfContact		VARCHAR(100) NULL,
+	PercentageAmount	VARCHAR(100) NULL,
 	IsActive            SMALLINT			NOT NULL DEFAULT 1,
 	CreatedBy			INT					NULL DEFAULT NULL,
 	CreatedOn           DATETIME			NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -111,9 +112,9 @@ CREATE TABLE PartyVehicles
 	VehicleRegNo		VARCHAR(50) NULL,
 	EngineNo			VARCHAR(50) NULL,
 	ChasisNo			VARCHAR(50) NULL,
-	DateOfInstallation	DATETIME NULL,
-	DateOfExpiry		DATETIME NULL,
-	IsWarrantyCustomer	SMALLINT NULL,
+	VehicleType			VARCHAR(50) NULL,
+	MakeType			VARCHAR(50) NULL,
+	Model				VARCHAR(50) NULL,
 	IsActive            SMALLINT			NOT NULL DEFAULT 1,
 	CreatedBy			INT					NULL DEFAULT NULL,
 	CreatedOn           DATETIME			NOT NULL DEFAULT CURRENT_TIMESTAMP,

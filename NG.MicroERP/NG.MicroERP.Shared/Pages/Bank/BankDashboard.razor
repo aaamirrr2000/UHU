@@ -1,4 +1,4 @@
-﻿@page "/DigitalInvoiceScenariosDashboard"
+﻿@page "/BankDashboard"
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
@@ -8,13 +8,13 @@
 <Loading IsLoading="@LoadingPanel" />
 
 <div class="row" style="margin: 2px; height: 90vh; display: flex;">
-    <MyDrawer @ref="_drawer" Title="DigitalInvoiceScenarios" FaIcon="fas fa-address-book">
+    <MyDrawer @ref="_drawer" Title="Bank" FaIcon="fas fa-address-book">
         <HeaderContent>
         </HeaderContent>
         <ChildContent>
             <EditForm Model="record" OnSubmit="Save">
                 <MudForm>
-                    <DigitalInvoiceScenariosPage Action="@Action" CurrentRecord="record.Id"/>
+                    <BankPage Action="@Action" CurrentRecord="record.Id"/>
                 </MudForm>
             </EditForm>
         </ChildContent>
@@ -29,15 +29,16 @@
     else
     {
         <div class="row">
-            <MudDataGrid T="DigitalInvoiceScenariosModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
+            <MudDataGrid T="BankModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
                 <ToolBarContent>
-                    <MudText Typo="Typo.h6">Digital Invoice Scenarios</MudText>
+                    <MudText Typo="Typo.h6">Bank Managment</MudText>
                     <MudSpacer />
                     <MudButton StartIcon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Clear())">New</MudButton>
                     <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Info" OnClick="@(() => Refresh())">Refresh</MudButton>
                 </ToolBarContent>
 
                 <Columns>
+
                     <TemplateColumn Title="Actions" CellStyle="width: 60px; min-width: 60px;">
                         <CellTemplate Context="row">
                             <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Dense="true">
@@ -54,14 +55,28 @@
                         </CellTemplate>
                     </TemplateColumn>
 
-                <PropertyColumn Property="x => x.ScenarioID" Title="Scenario Id" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.SaleType" Title="Sale Type" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.BuyerType" Title="Buyer Type" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.TaxContext" Title="Tax Context" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.Code" Title="Code" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.BankName" Title="BankName" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.BranchCode" Title="BranchCode" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.BranchName" Title="BranchName" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.AccountTitle" Title="AccountTitle" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.AccountNumber" Title="AccountNumber" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.IBAN" Title="IBAN" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.Address" Title="Address" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.AreaName" Title="Area" Sortable="true" Filterable="true"/>
+				<PropertyColumn Property="x => x.Account" Title="Account" Sortable="true" Filterable="true"/>
+				<PropertyColumn Property="x => x.Phone" Title="Phone" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.Email" Title="Email" Sortable="true" Filterable="true" />
+                <TemplateColumn Title="Active" Sortable="true" Filterable="true">
+                    <CellTemplate Context="row">
+                        @(row.Item.IsActive==1 ? "" : "Locked")
+                    </CellTemplate>
+                </TemplateColumn>
+
                 </Columns>
 
                 <PagerContent>
-                    <MudDataGridPager T="DigitalInvoiceScenariosModel" />
+                    <MudDataGridPager T="BankModel" />
                 </PagerContent>
             </MudDataGrid>
         </div>
@@ -70,8 +85,8 @@
 
 @code
 {
-    static List<DigitalInvoiceScenariosModel> data = new();
-    static DigitalInvoiceScenariosModel record = new();
+    List<BankModel> data = new();
+    BankModel record = new();
 
     public string Action { get; set; } = "INSERT";
 
@@ -87,28 +102,29 @@
     protected async Task GetAll()
     {
         LoadingPanel = true;
-        data = await Functions.GetAsync<List<DigitalInvoiceScenariosModel>>($"DigitalInvoiceScenarios/Search", true) ?? new List<DigitalInvoiceScenariosModel>();
+        data = await Functions.GetAsync<List<BankModel>>($"Bank/Search", true) ?? new List<BankModel>();
         LoadingPanel = false;
     }
 
     protected async Task Get(int id)
     {
         LoadingPanel = true;
-        record = await Functions.GetAsync<DigitalInvoiceScenariosModel>($"DigitalInvoiceScenarios/Get?Id={id}", true) ?? new DigitalInvoiceScenariosModel();
+        record = await Functions.GetAsync<BankModel>($"Bank/Get?Id={id}", true) ?? new BankModel();
         LoadingPanel = false;
     }
 
     protected async Task Clear()
     {
         Action = "INSERT";
-        record = new DigitalInvoiceScenariosModel();
+        record = new BankModel();
+        record.IsActive = 1;
         isReadOnly = false;
         await _drawer.OpenDrawerAsync();
     }
 
     protected async Task Refresh()
     {
-        data = await Functions.GetAsync<List<DigitalInvoiceScenariosModel>>($"DigitalInvoiceScenarios/Search", true) ?? new List<DigitalInvoiceScenariosModel>();
+        await GetAll();
     }
 
     protected async Task View(int id)
@@ -133,7 +149,7 @@
         if (res == false)
             return;
 
-        Action = "DELETE";
+        Action = "SOFTDELETE";
         await Get(id);
         await Save();
     }
@@ -141,20 +157,28 @@
     protected async Task Save()
     {
         LoadingPanel = true;
+         
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedFrom = Functions.GetComputerDetails();
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = Functions.GetComputerDetails();
 
-        var result = await Functions.PostAsync<DigitalInvoiceScenariosModel>($"DigitalInvoiceScenarios/{Action}", record, true);
+        var result = await Functions.PostAsync<BankModel>($"Bank/{Action}", record, true);
         if (result.Success == true)
         {
-            SnackbarService.Add($"Record Not Deleted", Severity.Error);
+            SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
         }
         else
         {
-            SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
+            SnackbarService.Add($"Record Not Deleted", Severity.Error);
             record = new();
             isReadOnly = true;
         }
     
-        data = await Functions.GetAsync<List<DigitalInvoiceScenariosModel>>($"DigitalInvoiceScenarios/Search", true) ?? new List<DigitalInvoiceScenariosModel>();
+        await GetAll();
         LoadingPanel = false;
         await _drawer.CloseDrawer();
      

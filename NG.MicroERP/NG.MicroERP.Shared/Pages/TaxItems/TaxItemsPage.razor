@@ -12,7 +12,7 @@
     <div class="text-end" style="margin-top:10px;">
         @if (Action != "VIEW")
         {
-            <MudButton Variant="Variant.Filled" OnClick="Save" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
                 <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
                 @(Action == "INSERT" ? "Save" : "Update")
             </MudButton>
@@ -47,7 +47,7 @@
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-6 flex-input">
-                        <label class="form-label">Tax</label>
+                        <label class="form-label" style="font-weight: bold;">Tax</label>
                         <MudSelect @bind-Value="record.TaxId"
                         Placeholder="Tax"
                         Clearable="true">
@@ -64,7 +64,7 @@
                     </div>
 
                     <div class="col-6 flex-input">
-                        <label class="form-label">Invoice Type</label>
+                        <label class="form-label" style="font-weight: bold;">Invoice Type</label>
 
                         <MudSelect T="string"
                         @bind-Value="record.InvoiceType"
@@ -80,7 +80,7 @@
                     </div>
 
                     <div class="col-6 flex-input">
-                        <label class="form-label">Active</label>
+                        <label class="form-label" style="font-weight: bold;">Active</label>
 
                         <MudSelect T="int"
                         @bind-Value="record.IsActive"

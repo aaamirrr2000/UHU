@@ -190,37 +190,23 @@ VALUES
                               , 1 , GETDATE(), NULL
                               , 0),
 
-(23, 'Taxes Master' , NULL , 'Configure Different types of taxes against differnt types of invoices'
-                              , 'TaxMasterDashboard', 22
-                              , 'fas fa-receipt'            , 9070, 1
-                              , 1 , GETDATE(), NULL
-                              , 1 , GETDATE(), NULL
-                              , 0),
-
-(24, 'Digital Invoice' , NULL , 'Define Digital Invoice Configuration'
-                              , 'DigitalInvoiceConfigDashboard', 22
-                              , 'fas fa-receipt'            , 9070, 1
-                              , 1 , GETDATE(), NULL
-                              , 1 , GETDATE(), NULL
-                              , 0),
-
-(25, 'Scenarios' , NULL , 'Define FBR Digital Invoice Scenarios'
-                              , 'DigitalInvoiceScenariosDashboard', 22
-                              , 'fas fa-receipt'            , 9070, 1
-                              , 1 , GETDATE(), NULL
-                              , 1 , GETDATE(), NULL
-                              , 0),
-
-(27, 'Chart of Accounts'    , NULL , 'Maintain organisation Chart of Acounts'
+(23, 'Chart of Accounts'    , NULL , 'Maintain organisation Chart of Acounts'
                               , 'ChartOfAccountsDashboard'     , 22
                               , 'fas fa-building'           , 9010, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
                               , 0),
 
-(28, 'Areas'    , NULL , 'Maintain Cities, Regions, Province and Countries'
+(24, 'Areas'    , NULL , 'Maintain Cities, Regions, Province and Countries'
                               , 'AreasDashboard'     , 14
                               , 'fas fa-building'           , 9010, 1
+                              , 1 , GETDATE(), NULL
+                              , 1 , GETDATE(), NULL
+                              , 0),
+                              
+(25, 'Bank'       , NULL , 'Maintain banks and branches'
+                              , 'BankDashboard'        , 14
+                              , 'fas fa-map-marker-alt'     , 9020, 1
                               , 1 , GETDATE(), NULL
                               , 1 , GETDATE(), NULL
                               , 0);

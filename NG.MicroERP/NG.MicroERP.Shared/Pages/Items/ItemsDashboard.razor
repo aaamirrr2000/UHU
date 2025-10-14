@@ -79,12 +79,14 @@
                                 <MudMenuItem OnClick="@(() => Delete(row.Item.Id))">
                                     <MudIcon Icon="@Icons.Material.TwoTone.DeleteSweep" Class="me-2" /> Delete
                                 </MudMenuItem>
+                                <hr />
                                 <MudMenuItem OnClick="@(() => UpdateFavorite(row.Item))">
                                     <MudIcon Icon="@Icons.Material.TwoTone.Favorite" Class="me-2" /> Favorite
                                 </MudMenuItem>
                                 <MudMenuItem OnClick="@(() => ServingSize(row.Item.Id))">
-                                    <MudIcon Icon="@Icons.Material.TwoTone.Explore" Class="me-2" /> Features
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Explore" Class="me-2" /> Features / Serving Size
                                 </MudMenuItem>
+                                <hr />
                                 <MudMenuItem OnClick="@(() => ItemTax(row.Item.Id))">
                                     <MudIcon Icon="@Icons.Material.TwoTone.Money" Class="me-2" /> Taxes
                                 </MudMenuItem>

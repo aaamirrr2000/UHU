@@ -10,13 +10,14 @@ namespace NG.MicroERP.API.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class DigitalInvoiceConfigController : ControllerBase
+public class PartyVehiclesController : ControllerBase
 {
-    DigitalInvoiceConfigService Srv = new DigitalInvoiceConfigService();
+    PartyVehiclesService Srv = new PartyVehiclesService();
 
     [HttpGet("Search/{Criteria?}")]
     public async Task<IActionResult> Search(string Criteria = "")
     {
+
         if (!string.IsNullOrEmpty(Criteria) && !Config.IsSafeSearchCriteria(Criteria))
             return BadRequest("Invalid search criteria");
 
@@ -39,7 +40,7 @@ public class DigitalInvoiceConfigController : ControllerBase
     }
 
     [HttpPost("Insert")]
-    public async Task<IActionResult> Insert(DigitalInvoiceConfigModel obj)
+    public async Task<IActionResult> Insert(PartyVehiclesModel obj)
     {
         var result = await Srv.Post(obj)!;
         if (result.Item1 == true)
@@ -49,7 +50,7 @@ public class DigitalInvoiceConfigController : ControllerBase
     }
 
     [HttpPost("Update")]
-    public async Task<IActionResult> Update(DigitalInvoiceConfigModel obj)
+    public async Task<IActionResult> Update(PartyVehiclesModel obj)
     {
         var result = await Srv.Put(obj)!;
         if (result.Item1 == true)
@@ -73,7 +74,7 @@ public class DigitalInvoiceConfigController : ControllerBase
     }
 
     [HttpPost("SoftDelete")]
-    public async Task<IActionResult> SoftDelete(DigitalInvoiceConfigModel obj)
+    public async Task<IActionResult> SoftDelete(PartyVehiclesModel obj)
     {
         var result = await Srv.SoftDelete(obj)!;
         if (result.Item1 == true)

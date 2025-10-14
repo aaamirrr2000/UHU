@@ -13,14 +13,14 @@
     <div class="text-end" style="margin-top:10px;">
         @if (Action != "VIEW")
         {
-            <MudButton Variant="Variant.Filled" OnClick="Save" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
                 <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
                 @(Action == "INSERT" ? "Save" : "Update")
             </MudButton>
 
             @if (Action == "UPDATE")
             {
-                <MudButton Variant="Variant.Filled" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
                     <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
                     Delete
                 </MudButton>
@@ -41,97 +41,150 @@
                     </i>
 
                     <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">@record.Name</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted">@record.PartyType</MudText>
+                        <MudText Typo="Typo.h6" Class="fw-bold">Parties Basic Details</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Parties i.e. Customers, Suppliers, Banks</MudText>
                     </div>
                 </div>
+                <hr />
             </TitleContent>
 
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
                   
-                    <div class="col-6 flex-input">
-                        <label class="form-label">Code</label>
-                        <MudTextField id="Code" @bind-Value="record.Code" placeholder="Code" ReadOnly="true"></MudTextField>
-                        <ValidationMessage For="@(() => record.Code)" />
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="col-12 flex-input">
+                                <label class="form-label" style="font-weight: bold;">Code</label>
+                                <MudTextField id="Code" @bind-Value="record.Code" placeholder="Code" ReadOnly="true"></MudTextField>
+                                <ValidationMessage For="@(() => record.Code)" />
+                            </div>
+
+                            <div class="col-12 flex-input">
+                                <label class="form-label" style="font-weight: bold;">Name</label>
+                                <MudTextField id="Name" @bind-Value="record.Name" placeholder="Name" ReadOnly="@isReadOnly"></MudTextField>
+                                <ValidationMessage For="@(() => record.Name)" />
+                            </div>
+                            <div class="col-12 flex-input">
+                                <label class="form-label" style="font-weight: bold;">Party Type</label>
+
+                                <MudSelect T="string"
+                                           @bind-Value="record.PartyType"
+                                           Placeholder="PartyType"
+                                           Clearable="true"
+                                           @bind-Value:after="OnPartyTypeChanged">
+
+                                    @if (Par != null && Par.Any())
+                                    {
+                                        if (string.IsNullOrWhiteSpace(record.PartyType))
+                                        {
+                                            record.PartyType = Par.First().ListValue;
+                                        }
+
+                                        foreach (var i in Par)
+                                        {
+                                            <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                        }
+                                    }
+                                </MudSelect>
+
+                                <ValidationMessage For="@(() => record.PartyType)" />
+                            </div>
+                            <div class="col-12 flex-input">
+                                <label class="form-label" style="font-weight: bold;">Sub Type</label>
+
+                                <MudSelect T="string"
+                                           @bind-Value="record.PartyTypeCode"
+                                           Placeholder="Sub Type"
+                                           Clearable="true">
+
+                                    @if (Sub != null && Sub.Any())
+                                    {
+                                        if (string.IsNullOrWhiteSpace(record.PartyTypeCode))
+                                        {
+                                            record.PartyTypeCode = Sub.First().ListValue;
+                                        }
+
+                                        foreach (var i in Sub)
+                                        {
+                                            <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                        }
+                                    }
+                                </MudSelect>
+                                <ValidationMessage For="@(() => record.PartyTypeCode)" />
+                            </div>
+                            <div class="col-12 flex-input">
+                                <label class="form-label" style="font-weight: bold;">Parent Party</label>
+
+                                <MudSelect @bind-Value="record.ParentId"
+                                           Placeholder="Parent Party"
+                                           Clearable="true">
+
+                                    @if (Parties != null && Parties.Any())
+                                    {
+                                        foreach (var i in Parties)
+                                        {
+                                            <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                                        }
+                                    }
+                                </MudSelect>
+                                <ValidationMessage For="@(() => record.ParentId)" />
+                            </div>
+                            <div class="col-12 flex-input">
+                                <label class="form-label" style="font-weight: bold;">Account</label>
+
+                                <MudSelect @bind-Value="record.AccountId"
+                                           Placeholder="Account"
+                                           Clearable="true">
+
+                                    @if (Acc != null && Acc.Any())
+                                    {
+                                        foreach (var i in Acc)
+                                        {
+                                            <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                                        }
+                                    }
+                                </MudSelect>
+                                <ValidationMessage For="@(() => record.AccountId)" />
+                            </div>
+
+
+                        </div>
+                        <div class="col-6">
+                            <div class="w-100 d-flex justify-content-center">
+                                <div class="p-3 border rounded" style="width: 300px;">
+                                    <label class="small fw-bold text-uppercase d-block mb-2 text-center">Items Image</label>
+
+                                    <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
+                                        @if (!string.IsNullOrEmpty(record.Pic))
+                                        {
+                                            <img src="@record.Pic"
+                                                 class="img-fluid rounded"
+                                                 alt="Items Image"
+                                                 style="max-height: 100%; max-width: 100%; object-fit: cover;" />
+                                        }
+                                        else
+                                        {
+                                            <div class="d-flex align-items-center justify-content-center bg-secondary rounded-circle"
+                                                 style="width: 120px; height: 120px;">
+                                                <i class="fas fa-image text-white fs-3"></i>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <InputFile OnChange="OnFileInputChanged" />
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
-                  
-                    <div class="col-6 flex-input">
-                        <label class="form-label">Name</label>
-                        <MudTextField id="Name" @bind-Value="record.Name" placeholder="Name" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.Name)" />
-                    </div>
-                    <div class="col-6 flex-input">
-                        <label class="form-label">Party Type</label>
 
-                        <MudSelect T="string"
-                                   @bind-Value="record.PartyType"
-                                   Placeholder="PartyType"
-                                   Clearable="true">
-
-                            @if (Par != null && Par.Any())
-                            {
-                                if (string.IsNullOrWhiteSpace(record.PartyType))
-                                {
-                                    record.PartyType = Par.First().ListValue;
-                                }
-
-                                foreach (var i in Par)
-                                {
-                                    <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
-                                }
-                            }
-                        </MudSelect>
-
-                        <ValidationMessage For="@(() => record.PartyType)" />
-                    </div>
-                    <div class="col-6 flex-input">
-                        <label class="form-label">Sub Type</label>
-
-                        <MudSelect T="string"
-                                   @bind-Value="record.PartyTypeCode"
-                                   Placeholder="Sub Type"
-                                   Clearable="true">
-
-                            @if (Sub != null && Sub.Any())
-                            {
-                                if (string.IsNullOrWhiteSpace(record.PartyTypeCode))
-                                {
-                                    record.PartyTypeCode = Sub.First().ListValue;
-                                }
-
-                                foreach (var i in Sub)
-                                {
-                                    <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
-                                }
-                            }
-                        </MudSelect>
-                        <ValidationMessage For="@(() => record.PartyTypeCode)" />
-                    </div>
-                    <div class="col-6 flex-input">
-                        <label class="form-label">Parent Party</label>
-
-                        <MudSelect @bind-Value="record.ParentId"
-                                   Placeholder="Parent Party"
-                                   Clearable="true">
-
-                            @if (Parties != null && Parties.Any())
-                            {
-                                foreach (var i in Parties)
-                                {
-                                    <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
-                                }
-                            }
-                        </MudSelect>
-                        <ValidationMessage For="@(() => record.ParentId)" />
-                    </div>
-                    <div class="col-6 flex-input">
-                        <label class="form-label">Address</label>
+                    <div class="col-12 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Address</label>
                         <MudTextField id="Address" @bind-Value="record.Address" placeholder="Address" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Address)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">City</label>
+                        <label class="form-label" style="font-weight: bold;">City</label>
 
                         <MudSelect @bind-Value="record.CityId"
                                    Placeholder="City"
@@ -147,23 +200,9 @@
                         </MudSelect>
                         <ValidationMessage For="@(() => record.CityId)" />
                     </div>
+
                     <div class="col-6 flex-input">
-                        <label class="form-label">Latitude</label>
-                        <MudTextField id="Latitude" @bind-Value="record.Latitude" placeholder="Latitude" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.Latitude)" />
-                    </div>
-                    <div class="col-6 flex-input">
-                        <label class="form-label">Longitude</label>
-                        <MudTextField id="Longitude" @bind-Value="record.Longitude" placeholder="Longitude" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.Longitude)" />
-                    </div>
-                    <div class="col-6 flex-input">
-                        <label class="form-label">Radius (meters)</label>
-                        <MudNumericField @bind-Value="record.Radius" placeholder="Radius" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
-                        <ValidationMessage For="@(() => record.Radius)" />
-                    </div>
-                    <div class="col-6 flex-input">
-                        <label class="form-label">Active Status</label>
+                        <label class="form-label" style="font-weight: bold;">Active Status</label>
 
                         <MudSelect T="int"
                                    @bind-Value="record.IsActive"
@@ -182,30 +221,33 @@
                         <ValidationMessage For="@(() => record.IsActive)" />
                     </div>
 
-                    <div class="w-100 d-flex justify-content-center">
-                        <div class="p-3 border rounded" style="width: 300px;">
-                            <label class="small fw-bold text-uppercase d-block mb-2 text-center">Items Image</label>
 
-                            <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
-                                @if (!string.IsNullOrEmpty(record.Pic))
-                                {
-                                    <img src="@record.Pic"
-                                         class="img-fluid rounded"
-                                         alt="Items Image"
-                                         style="max-height: 100%; max-width: 100%; object-fit: cover;" />
-                                }
-                                else
-                                {
-                                    <div class="d-flex align-items-center justify-content-center bg-secondary rounded-circle"
-                                         style="width: 120px; height: 120px;">
-                                        <i class="fas fa-image text-white fs-3"></i>
-                                    </div>
-                                }
-                            </div>
 
-                            <InputFile OnChange="OnFileInputChanged" />
+
+                    <div class="row">
+                    <br />
+                        <p style="font-weight: bold; margin:5px;">Party's Physical Location</p>
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Latitude</label>
+                            <MudTextField id="Latitude" @bind-Value="record.Latitude" placeholder="Latitude" ReadOnly="@isReadOnly"></MudTextField>
+                            <ValidationMessage For="@(() => record.Latitude)" />
                         </div>
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Longitude</label>
+                            <MudTextField id="Longitude" @bind-Value="record.Longitude" placeholder="Longitude" ReadOnly="@isReadOnly"></MudTextField>
+                            <ValidationMessage For="@(() => record.Longitude)" />
+                        </div>
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Radius (meters)</label>
+                            <MudNumericField @bind-Value="record.Radius" placeholder="Radius" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
+                            <ValidationMessage For="@(() => record.Radius)" />
+                        </div>
+
                     </div>
+
+                  
+
+                   
                 </div>
             </ChildContent>
 
@@ -222,7 +264,7 @@
     List<TypeCodeModel> Sub = null!;
     List<PartiesModel> Parties = new();
     List<AreasModel> Cit = new();
-
+    List<ChartOfAccountsModel> Acc = new();
 
     [Parameter] public string Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
@@ -248,7 +290,7 @@
         Sub = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PARTY TYPE CODE", true) ?? new List<TypeCodeModel>();
         Parties = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search", true) ?? new List<PartiesModel>();
         Cit = await Functions.GetAsync<List<AreasModel>>($"Areas/Search", true) ?? new List<AreasModel>();
-
+        Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search", true) ?? new List<ChartOfAccountsModel>();
 
         if (Action == "INSERT")
         {
@@ -296,6 +338,7 @@
         Action = "INSERT";
         record = new PartiesModel();
         record.IsActive = 1;
+        record.Radius = 10;
         isReadOnly = false;
         await _drawer.OpenDrawerAsync();
     }
@@ -354,6 +397,21 @@
         LoadingPanel = false;
         await _drawer.CloseDrawer();
 
+    }
+
+    private async void OnPartyTypeChanged()
+    {
+        string AccountType = "";
+        if (record.PartyType != "SUPPLIER")
+        {
+            AccountType = "ACCOUNTS RECEIVABLE";
+        }
+        else
+        {
+            AccountType = "ACCOUNTS PAYABLE";
+        }
+
+        Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/InterfaceType='{AccountType}'", true) ?? new List<ChartOfAccountsModel>();
     }
 
     private async Task OnFileInputChanged(InputFileChangeEventArgs e)

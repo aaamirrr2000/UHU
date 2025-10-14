@@ -18,6 +18,7 @@ public class ItemsModel
     public string? Description { get; set; } = string.Empty;
     public double MinQty { get; set; } = 0;
     public double MaxQty { get; set; } = 0;
+    public double ReorderQty { get; set; } = 0;
     public double Discount { get; set; } = 0;
     public double Tax { get; set; } = 0;
     public double CostPrice { get; set; } = 0;

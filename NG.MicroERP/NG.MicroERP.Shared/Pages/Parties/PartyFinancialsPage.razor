@@ -1,4 +1,4 @@
-﻿@page "/PartyContactsPage/{Action}/{CurrentRecord?}"
+﻿@page "/PartyFinancialsPage/{Action}/{CurrentRecord?}"
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
@@ -41,77 +41,73 @@
                     </i>
 
                     <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">Party Contacts</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Party's' Contacts</MudText>
+                        <MudText Typo="Typo.h6" Class="fw-bold">Party's Financials</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Party's Financials</MudText>
                     </div>
                 </div>
                 <hr />
             </TitleContent>
 
             <ChildContent>
-                 @if (IsVisible)
+                @if (IsVisible)
                 {
                     <div class="row" style="width:100%; display: flex;">
+                    
                         <div class="col-6 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Contact Type</label>
+                            <label class="form-label" style="font-weight: bold;">Expense</label>
 
                             <MudSelect T="string"
-                                       @bind-Value="record.ContactType"
-                                       Placeholder="Contact Type"
-                                       Clearable="true">
+                                        @bind-Value="record.ValueType"
+                                        Placeholder="Expense"
+                                        Clearable="true">
 
-                                @if (Con != null && Con.Any())
+                                @if (Val != null && Val.Any())
                                 {
-                                    if (string.IsNullOrWhiteSpace(record.ContactType))
+                                    if (string.IsNullOrWhiteSpace(record.ValueType))
                                     {
-                                        record.ContactType = Con.First().ListValue;
+                                        record.ValueType = Val.First().ListValue;
                                     }
 
-                                    foreach (var i in Con)
+                                    foreach (var i in Val)
                                     {
                                         <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
                                     }
                                 }
                             </MudSelect>
 
-                            <ValidationMessage For="@(() => record.ContactType)" />
+                            <ValidationMessage For="@(() => record.ValueType)" />
                         </div>
                         <div class="col-6 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Contact Value</label>
-                            <MudTextField id="ContactValue" @bind-Value="record.ContactValue" placeholder="Contact Value" ReadOnly="@isReadOnly"></MudTextField>
-                            <ValidationMessage For="@(() => record.ContactValue)" />
+                            <label class="form-label" style="font-weight: bold;">Value</label>
+                            <MudNumericField @bind-Value="record.Value" placeholder="Value" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
+                            <ValidationMessage For="@(() => record.Value)" />
                         </div>
                         <div class="col-6 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Isprimary</label>
+                            <label class="form-label" style="font-weight: bold;">Percentage / Amount</label>
 
-                            <MudSelect T="int"
-                                       @bind-Value="record.IsPrimary"
-                                       Placeholder="Primary"
-                                       Clearable="true">
+                            <MudSelect T="string"
+                                        @bind-Value="record.PercentageAmount"
+                                        Placeholder="Percentage or Amount"
+                                        Clearable="true">
 
-                                @if (record.IsPrimary != 0 && record.IsPrimary != 1)
+                                @if (record.PercentageAmount != null && record.PercentageAmount.Any())
                                 {
-                                    record.IsPrimary = 1;
+                                    record.IsActive = 1;
                                 }
 
-                                <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
-                                <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                                <MudSelectItem T="string" Value=@("PERCENTAGE")>Percentage</MudSelectItem>
+                                <MudSelectItem T="string" Value=@("AMOUNT")>Amount</MudSelectItem>
                             </MudSelect>
 
-                            <ValidationMessage For="@(() => record.IsPrimary)" />
-                        </div>
-                        <div class="col-6 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Point of contact</label>
-                            <MudTextField id="PointOfContact" @bind-Value="record.PointOfContact" placeholder="Point Of Contact" ReadOnly="@isReadOnly"></MudTextField>
-                            <ValidationMessage For="@(() => record.PointOfContact)" />
+                            <ValidationMessage For="@(() => record.PercentageAmount)" />
                         </div>
                         <div class="col-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Active</label>
 
                             <MudSelect T="int"
-                                       @bind-Value="record.IsActive"
-                                       Placeholder="Active"
-                                       Clearable="true">
+                                        @bind-Value="record.IsActive"
+                                        Placeholder="Active"
+                                        Clearable="true">
 
                                 @if (record.IsActive != 0 && record.IsActive != 1)
                                 {
@@ -124,24 +120,30 @@
 
                             <ValidationMessage For="@(() => record.IsActive)" />
                         </div>
-
+                        <div class="col-12 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Description</label>
+                            <MudTextField id="Description" @bind-Value="record.Description" placeholder="Description" ReadOnly="@isReadOnly"></MudTextField>
+                            <ValidationMessage For="@(() => record.Description)" />
+                        </div>
                     </div>
                 }
+
                 @if (data == null)
                 {
                     <SimpleLoading />
                 }
                 else
                 {
+                    
                     <div class="row">
 
-                        <MudTable T="PartyContactsModel"
-                                  Items="@data"
-                                  Hover="true"
-                                  Dense="true"
-                                  Striped="true"
-                                  Virtualize="true"
-                                  Style="border-radius: 0px; box-shadow: none; border: none; overflow: hidden; margin: 0; min-height:500px;">
+                        <MudTable T="PartyFinancialsModel"
+                                    Items="@data"
+                                    Hover="true"
+                                    Dense="true"
+                                    Striped="true"
+                                    Virtualize="true"
+                                    Style="border-radius: 0px; box-shadow: none; border: none; overflow: hidden; margin: 0; min-height:500px;">
 
                             <ToolBarContent>
 
@@ -149,10 +151,10 @@
 
                             <HeaderContent>
                                 <MudTh>Actions</MudTh>
-                                <MudTh>Contact Type</MudTh>
+                                <MudTh>Description</MudTh>
+                                <MudTh>Expense</MudTh>
                                 <MudTh>Value</MudTh>
-                                <MudTh>Is Primary</MudTh>
-                                <MudTh>Point of Contact</MudTh>
+                                <MudTh>Type</MudTh>
                                 <MudTh>Active</MudTh>
                             </HeaderContent>
 
@@ -171,19 +173,19 @@
                                     </MudMenu>
                                 </MudTd>
 
-                                <MudTd DataLabel="Contact Type" Style="text-align: right; white-space: nowrap; width: auto;">
-                                    @context.ContactType
+                                <MudTd DataLabel="Description" Style="white-space: nowrap; width: auto;">
+                                    @context.Description
                                 </MudTd>
-                                <MudTd DataLabel="Contact Value" Style="text-align: right; white-space: nowrap; width: auto;">
-                                    @context.ContactValue
+                                <MudTd DataLabel="Expense" Style="white-space: nowrap; width: auto;">
+                                    @context.ValueType
                                 </MudTd>
-                                <MudTd DataLabel="Point Of Contact" Style="text-align: right; white-space: nowrap; width: auto;">
-                                    @context.PointOfContact
+                                <MudTd DataLabel="Value" Style="text-align: right; white-space: nowrap; width: auto;">
+                                    @context.Value
                                 </MudTd>
-                                <MudTd DataLabel="IsPrimary" Style="white-space: nowrap; width: auto;">
-                                    @(context.IsPrimary == 1 ? "True" : "")
+                                <MudTd DataLabel="Type" Style="text-align: right; white-space: nowrap; width: auto;">
+                                    @context.PercentageAmount
                                 </MudTd>
-                                <MudTd DataLabel="IsActive" Style="white-space: nowrap; width: auto;">
+                                <MudTd DataLabel="Active" Style="white-space: nowrap; width: auto;">
                                     @(context.IsActive == 1 ? "" : "Locked")
                                 </MudTd>
 
@@ -191,6 +193,7 @@
                             </RowTemplate>
                         </MudTable>
                     </div>
+                    
                 }
             </ChildContent>
         </MudExpansionPanel>
@@ -201,18 +204,17 @@
 @code
 {
     PartiesModel MasterRecord = new();
-    PartyContactsModel record = new();
+    PartyFinancialsModel record = new();
     List<PartiesModel> Par = new();
-    List<TypeCodeModel> Con = null!;
-
-    List<PartyContactsModel> data = new();
+    List<TypeCodeModel> Val = null!;
+    List<PartyFinancialsModel> data = new();
 
     [Parameter] public string Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
 
     bool isReadOnly = true;
-    private bool IsVisible { get; set; } = false;
     private bool LoadingPanel { get; set; } = false;
+    private bool IsVisible { get; set; } = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -231,7 +233,8 @@
             LoadingPanel = true;
 
             Par = await Functions.GetAsync<List<PartiesModel>>($"Party/Search", true) ?? new List<PartiesModel>();
-            Con = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/CONTACT TYPE", true) ?? new List<TypeCodeModel>();
+            Val = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/FINANCIAL COMPONENT TYPE", true) ?? new List<TypeCodeModel>();
+
 
             switch (Action)
             {
@@ -249,7 +252,7 @@
                     break;
             }
 
-            data = await Functions.GetAsync<List<PartyContactsModel>>($"PartyContacts/Search/partyid={CurrentRecord}", true) ?? new List<PartyContactsModel>();
+            data = await Functions.GetAsync<List<PartyFinancialsModel>>($"PartyFinancials/Search/partyid={CurrentRecord}", true) ?? new List<PartyFinancialsModel>();
         }
         catch (Exception ex)
         {
@@ -268,7 +271,7 @@
         {
             LoadingPanel = true;
             MasterRecord = await Functions.GetAsync<PartiesModel>($"Parties/Get?Id={id}", true) ?? new PartiesModel();
-            record = await Functions.GetAsync<PartyContactsModel>($"PartyContacts/Get?Id={id}", true) ?? new PartyContactsModel();
+            record = await Functions.GetAsync<PartyFinancialsModel>($"PartyFinancials/Get?Id={id}", true) ?? new PartyFinancialsModel();
         }
         catch (Exception ex)
         {
@@ -291,10 +294,10 @@
     protected async Task Clear()
     {
         Action = "INSERT";
-        record = new PartyContactsModel();
+        record = new PartyFinancialsModel();
         record.PartyId = CurrentRecord;
         record.IsActive = 1;
-        record.IsPrimary = 0;
+        record.Value = 5;
         record.IsSoftDeleted = 0;
         isReadOnly = false;
         IsVisible = true;
@@ -340,7 +343,7 @@
             record.UpdatedFrom = Functions.GetComputerDetails();
 
             string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
-            var result = await Functions.PostAsync<PartyContactsModel>($"PartyContacts/{url}", record, true);
+            var result = await Functions.PostAsync<PartyFinancialsModel>($"PartyFinancials/{url}", record, true);
             if (result.Success == false)
             {
                 await Functions.ShowMessage(dialogService, "error", $"Record Not Saved");
@@ -350,9 +353,7 @@
                 await Functions.ShowMessage(dialogService, "success", $"Record {Action} Successfully");
                 await GetAll();
                 await Clear();
-                IsVisible = false;
             }
-
         }
         catch (Exception ex)
         {

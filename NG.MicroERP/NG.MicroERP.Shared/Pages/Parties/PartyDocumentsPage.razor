@@ -1,4 +1,4 @@
-﻿@page "/PartyContactsPage/{Action}/{CurrentRecord?}"
+﻿@page "/PartyDocumentsPage/{Action}/{CurrentRecord?}"
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
@@ -41,67 +41,48 @@
                     </i>
 
                     <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">Party Contacts</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Party's' Contacts</MudText>
+                        <MudText Typo="Typo.h6" Class="fw-bold">Party's' Documents</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Party's Documents</MudText>
                     </div>
                 </div>
                 <hr />
             </TitleContent>
 
             <ChildContent>
-                 @if (IsVisible)
+                @if(IsVisible)
                 {
                     <div class="row" style="width:100%; display: flex;">
                         <div class="col-6 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Contact Type</label>
+                            <label class="form-label" style="font-weight: bold;">Document Type</label>
 
                             <MudSelect T="string"
-                                       @bind-Value="record.ContactType"
-                                       Placeholder="Contact Type"
+                                       @bind-Value="record.DocumentType"
+                                       Placeholder="DocumentType"
                                        Clearable="true">
 
-                                @if (Con != null && Con.Any())
+                                @if (Doc != null && Doc.Any())
                                 {
-                                    if (string.IsNullOrWhiteSpace(record.ContactType))
+                                    if (string.IsNullOrWhiteSpace(record.DocumentType))
                                     {
-                                        record.ContactType = Con.First().ListValue;
+                                        record.DocumentType = Doc.First().ListValue;
                                     }
 
-                                    foreach (var i in Con)
+                                    foreach (var i in Doc)
                                     {
                                         <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
                                     }
                                 }
                             </MudSelect>
 
-                            <ValidationMessage For="@(() => record.ContactType)" />
+                            <ValidationMessage For="@(() => record.DocumentType)" />
                         </div>
                         <div class="col-6 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Contact Value</label>
-                            <MudTextField id="ContactValue" @bind-Value="record.ContactValue" placeholder="Contact Value" ReadOnly="@isReadOnly"></MudTextField>
-                            <ValidationMessage For="@(() => record.ContactValue)" />
+                            <label class="form-label" style="font-weight: bold;">Document Number</label>
+                            <MudTextField id="DocumentNumber" @bind-Value="record.DocumentNumber" placeholder="Document Number" ReadOnly="@isReadOnly"></MudTextField>
+                            <ValidationMessage For="@(() => record.DocumentNumber)" />
                         </div>
                         <div class="col-6 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Isprimary</label>
-
-                            <MudSelect T="int"
-                                       @bind-Value="record.IsPrimary"
-                                       Placeholder="Primary"
-                                       Clearable="true">
-
-                                @if (record.IsPrimary != 0 && record.IsPrimary != 1)
-                                {
-                                    record.IsPrimary = 1;
-                                }
-
-                                <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
-                                <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
-                            </MudSelect>
-
-                            <ValidationMessage For="@(() => record.IsPrimary)" />
-                        </div>
-                        <div class="col-6 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Point of contact</label>
+                            <label class="form-label" style="font-weight: bold;">Point of Contact</label>
                             <MudTextField id="PointOfContact" @bind-Value="record.PointOfContact" placeholder="Point Of Contact" ReadOnly="@isReadOnly"></MudTextField>
                             <ValidationMessage For="@(() => record.PointOfContact)" />
                         </div>
@@ -126,7 +107,10 @@
                         </div>
 
                     </div>
+
                 }
+                
+
                 @if (data == null)
                 {
                     <SimpleLoading />
@@ -134,8 +118,8 @@
                 else
                 {
                     <div class="row">
-
-                        <MudTable T="PartyContactsModel"
+                        
+                        <MudTable T="PartyDocumentsModel"
                                   Items="@data"
                                   Hover="true"
                                   Dense="true"
@@ -149,11 +133,11 @@
 
                             <HeaderContent>
                                 <MudTh>Actions</MudTh>
-                                <MudTh>Contact Type</MudTh>
-                                <MudTh>Value</MudTh>
-                                <MudTh>Is Primary</MudTh>
+                                <MudTh>Document Type</MudTh>
+                                <MudTh>Document Name</MudTh>
                                 <MudTh>Point of Contact</MudTh>
                                 <MudTh>Active</MudTh>
+
                             </HeaderContent>
 
                             <RowTemplate>
@@ -171,17 +155,14 @@
                                     </MudMenu>
                                 </MudTd>
 
-                                <MudTd DataLabel="Contact Type" Style="text-align: right; white-space: nowrap; width: auto;">
-                                    @context.ContactType
+                                <MudTd DataLabel="Document Type" Style="text-align: right; white-space: nowrap; width: auto;">
+                                    @context.DocumentType
                                 </MudTd>
-                                <MudTd DataLabel="Contact Value" Style="text-align: right; white-space: nowrap; width: auto;">
-                                    @context.ContactValue
+                                <MudTd DataLabel="Document Number" Style="text-align: right; white-space: nowrap; width: auto;">
+                                    @context.DocumentNumber
                                 </MudTd>
                                 <MudTd DataLabel="Point Of Contact" Style="text-align: right; white-space: nowrap; width: auto;">
                                     @context.PointOfContact
-                                </MudTd>
-                                <MudTd DataLabel="IsPrimary" Style="white-space: nowrap; width: auto;">
-                                    @(context.IsPrimary == 1 ? "True" : "")
                                 </MudTd>
                                 <MudTd DataLabel="IsActive" Style="white-space: nowrap; width: auto;">
                                     @(context.IsActive == 1 ? "" : "Locked")
@@ -201,11 +182,11 @@
 @code
 {
     PartiesModel MasterRecord = new();
-    PartyContactsModel record = new();
+    PartyDocumentsModel record = new();
     List<PartiesModel> Par = new();
-    List<TypeCodeModel> Con = null!;
+    List<TypeCodeModel> Doc = null!;
 
-    List<PartyContactsModel> data = new();
+    List<PartyDocumentsModel> data = new();
 
     [Parameter] public string Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
@@ -231,7 +212,8 @@
             LoadingPanel = true;
 
             Par = await Functions.GetAsync<List<PartiesModel>>($"Party/Search", true) ?? new List<PartiesModel>();
-            Con = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/CONTACT TYPE", true) ?? new List<TypeCodeModel>();
+            Doc = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/DOCUMENT TYPE", true) ?? new List<TypeCodeModel>();
+
 
             switch (Action)
             {
@@ -249,7 +231,7 @@
                     break;
             }
 
-            data = await Functions.GetAsync<List<PartyContactsModel>>($"PartyContacts/Search/partyid={CurrentRecord}", true) ?? new List<PartyContactsModel>();
+            data = await Functions.GetAsync<List<PartyDocumentsModel>>($"PartyDocuments/Search/partyid={CurrentRecord}", true) ?? new List<PartyDocumentsModel>();
         }
         catch (Exception ex)
         {
@@ -268,7 +250,7 @@
         {
             LoadingPanel = true;
             MasterRecord = await Functions.GetAsync<PartiesModel>($"Parties/Get?Id={id}", true) ?? new PartiesModel();
-            record = await Functions.GetAsync<PartyContactsModel>($"PartyContacts/Get?Id={id}", true) ?? new PartyContactsModel();
+            record = await Functions.GetAsync<PartyDocumentsModel>($"PartyDocuments/Get?Id={id}", true) ?? new PartyDocumentsModel();
         }
         catch (Exception ex)
         {
@@ -291,10 +273,9 @@
     protected async Task Clear()
     {
         Action = "INSERT";
-        record = new PartyContactsModel();
+        record = new PartyDocumentsModel();
         record.PartyId = CurrentRecord;
         record.IsActive = 1;
-        record.IsPrimary = 0;
         record.IsSoftDeleted = 0;
         isReadOnly = false;
         IsVisible = true;
@@ -340,7 +321,7 @@
             record.UpdatedFrom = Functions.GetComputerDetails();
 
             string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
-            var result = await Functions.PostAsync<PartyContactsModel>($"PartyContacts/{url}", record, true);
+            var result = await Functions.PostAsync<PartyDocumentsModel>($"PartyDocuments/{url}", record, true);
             if (result.Success == false)
             {
                 await Functions.ShowMessage(dialogService, "error", $"Record Not Saved");

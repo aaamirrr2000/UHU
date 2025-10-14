@@ -15,10 +15,6 @@ SELECT
     a.PartyPhone,
     a.PartyEmail,
     a.PartyAddress,
-    f.ScenarioId,
-    f.SaleType,
-    f.BuyerType,
-    f.TaxContext,
     a.TableId,
     a.TranDate,
     a.DiscountAmount,
@@ -81,7 +77,6 @@ LEFT JOIN Locations AS b ON b.Id = a.LocationId
 LEFT JOIN Parties AS c ON c.Id = a.PartyId
 LEFT JOIN Users AS d ON d.Id = a.CreatedBy
 LEFT JOIN Employees AS e ON e.Id = d.EmpId
-LEFT JOIN DigitalInvoiceScenarios AS f ON f.Id = a.ScenarioId
 WHERE a.IsSoftDeleted = 0;
 
 

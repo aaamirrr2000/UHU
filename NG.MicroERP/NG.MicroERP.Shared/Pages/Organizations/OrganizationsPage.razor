@@ -13,7 +13,7 @@
     <div class="text-end" style="margin-top:10px;">
         @if (Action != "VIEW")
         {
-            <MudButton Variant="Variant.Filled" OnClick="Save" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
                 <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
                 @(Action == "INSERT" ? "Save" : "Update")
             </MudButton>
@@ -47,32 +47,32 @@
                         <ValidationMessage For="@(() => record.Code)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Name</label>
+                        <label class="form-label" style="font-weight: bold;">Name</label>
                         <MudTextField id="Name" @bind-Value="record.Name" placeholder="Name" ReadOnly="false"></MudTextField>
                         <ValidationMessage For="@(() => record.Name)" />
                     </div>
                     <div class="col-12 flex-input">
-                        <label class="form-label">Description</label>
+                        <label class="form-label" style="font-weight: bold;">Description</label>
                         <MudTextField id="Description" @bind-Value="record.Description" placeholder="Description" ReadOnly="false"></MudTextField>
                         <ValidationMessage For="@(() => record.Description)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Phone</label>
+                        <label class="form-label" style="font-weight: bold;">Phone</label>
                         <MudTextField id="Phone" @bind-Value="record.Phone" placeholder="Phone" ReadOnly="false"></MudTextField>
                         <ValidationMessage For="@(() => record.Phone)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Email</label>
+                        <label class="form-label" style="font-weight: bold;">Email</label>
                         <MudTextField id="Email" @bind-Value="record.Email" placeholder="Email" ReadOnly="false"></MudTextField>
                         <ValidationMessage For="@(() => record.Email)" />
                     </div>
                     <div class="col-12 flex-input">
-                        <label class="form-label">Address</label>
+                        <label class="form-label" style="font-weight: bold;">Address</label>
                         <MudTextField id="Address" @bind-Value="record.Address" placeholder="Address" ReadOnly="false"></MudTextField>
                         <ValidationMessage For="@(() => record.Address)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Industry</label>
+                        <label class="form-label" style="font-weight: bold;">Industry</label>
                         <MudSelect T="string" @bind-Value="record.Industry" ReadOnly="true">
                             @if (Industry != null)
                             {
@@ -86,12 +86,12 @@
                         <ValidationMessage For="@(() => record.Industry)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Website</label>
+                        <label class="form-label" style="font-weight: bold;">Website</label>
                         <MudTextField id="Website" @bind-Value="record.Website" placeholder="Website" ReadOnly="false"></MudTextField>
                         <ValidationMessage For="@(() => record.Website)" />
                     </div>
                     <div class="col-12 flex-input">
-                        <label class="form-label">Time Zone</label>
+                        <label class="form-label" style="font-weight: bold;">Time Zone</label>
                         <MudSelect T="string" @bind-Value="record.TimeZone" ReadOnly="false">
                             @if (timeZones != null)
                             {
@@ -105,17 +105,17 @@
                         <ValidationMessage For="@(() => record.TimeZone)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">GMT</label>
+                        <label class="form-label" style="font-weight: bold;">GMT</label>
                         <MudNumericField @bind-Value="record.GMT" placeholder="GMT" ReadOnly="false" Format="#,##0.00"></MudNumericField>
                         <ValidationMessage For="@(() => record.GMT)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Expiry</label>
+                        <label class="form-label" style="font-weight: bold;">Expiry</label>
                         <MudDatePicker @bind-Value="record.Expiry" Format="yyyy-MM-dd" placeholder="Expiry" ReadOnly="true"></MudDatePicker>
                         <ValidationMessage For="@(() => record.Expiry)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Parent Organization</label>
+                        <label class="form-label" style="font-weight: bold;">Parent Organization</label>
 
                         <MudSelect @bind-Value="record.ParentId"
                                    Placeholder="Parent"
@@ -132,7 +132,7 @@
                         <ValidationMessage For="@(() => record.ParentId)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Active</label>
+                        <label class="form-label" style="font-weight: bold;">Active</label>
 
                         <MudSelect T="int"
                                    @bind-Value="record.IsActive"

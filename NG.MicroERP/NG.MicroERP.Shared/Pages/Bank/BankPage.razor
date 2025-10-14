@@ -1,4 +1,4 @@
-﻿@page "/AreasPage/{Action}/{CurrentRecord?}"
+﻿@page "/BankPage/{Action}/{CurrentRecord?}"
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
@@ -12,7 +12,7 @@
     <div class="text-end" style="margin-top:10px;">
         @if (Action != "VIEW")
         {
-            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
                 <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
                 @(Action == "INSERT" ? "Save" : "Update")
             </MudButton>
@@ -40,62 +40,101 @@
                     </i>
 
                     <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">@record.AreaName</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted">Description</MudText>
+                        <MudText Typo="Typo.h6" Class="fw-bold">Bank</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Bank</MudText>
                     </div>
                 </div>
+                <hr />
             </TitleContent>
 
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Areaname</label>
-                        <MudTextField id="AreaName" @bind-Value="record.AreaName" placeholder="AreaName" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.AreaName)" />
+                        <label class="form-label" style="font-weight: bold;">Code</label>
+                        <MudTextField id="Code" @bind-Value="record.Code" placeholder="Code" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Code)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Areatype</label>
+                        <label class="form-label" style="font-weight: bold;">Bank Name</label>
+                        <MudTextField id="BankName" @bind-Value="record.BankName" placeholder="BankName" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.BankName)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Branch Code</label>
+                        <MudTextField id="BranchCode" @bind-Value="record.BranchCode" placeholder="BranchCode" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.BranchCode)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Branch Name</label>
+                        <MudTextField id="BranchName" @bind-Value="record.BranchName" placeholder="BranchName" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.BranchName)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Account Title</label>
+                        <MudTextField id="AccountTitle" @bind-Value="record.AccountTitle" placeholder="AccountTitle" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.AccountTitle)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Account Number</label>
+                        <MudTextField id="AccountNumber" @bind-Value="record.AccountNumber" placeholder="AccountNumber" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.AccountNumber)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">IBAN</label>
+                        <MudTextField id="IBAN" @bind-Value="record.IBAN" placeholder="IBAN" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.IBAN)" />
+                    </div>
+                    <div class="col-12 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Address</label>
+                        <MudTextField id="Address" @bind-Value="record.Address" placeholder="Address" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Address)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">City</label>
 
-                        <MudSelect T="string"
-                                   @bind-Value="record.AreaType"
-                                   Placeholder="AreaType"
+                        <MudSelect @bind-Value="record.CityId"
+                                   Placeholder="City"
                                    Clearable="true">
 
-                            @if (Are != null && Are.Any())
+                            @if (Cit != null && Cit.Any())
                             {
-                                if (string.IsNullOrWhiteSpace(record.AreaType))
+                                foreach (var i in Cit)
                                 {
-                                    record.AreaType = Are.First().ListValue;
-                                }
-
-                                foreach (var i in Are)
-                                {
-                                    <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                    <MudSelectItem T="int" Value="@i.Id">@i.AreaName</MudSelectItem>
                                 }
                             }
                         </MudSelect>
-
-                        <ValidationMessage For="@(() => record.AreaType)" />
+                        <ValidationMessage For="@(() => record.CityId)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Parentid</label>
+                        <label class="form-label" style="font-weight: bold;">Account</label>
 
-                        <MudSelect @bind-Value="record.ParentId"
-                                   Placeholder="Parent"
+                        <MudSelect @bind-Value="record.AccountId"
+                                   Placeholder="Account"
                                    Clearable="true">
 
-                            @if (Par != null && Par.Any())
+                            @if (Acc != null && Acc.Any())
                             {
-                                foreach (var i in Par)
+                                foreach (var i in Acc)
                                 {
                                     <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
                                 }
                             }
                         </MudSelect>
-                        <ValidationMessage For="@(() => record.ParentId)" />
+                        <ValidationMessage For="@(() => record.AccountId)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Isactive</label>
+                        <label class="form-label" style="font-weight: bold;">Phone</label>
+                        <MudTextField id="Phone" @bind-Value="record.Phone" placeholder="Phone" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Phone)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Email</label>
+                        <MudTextField id="Email" @bind-Value="record.Email" placeholder="Email" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Email)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Active</label>
 
                         <MudSelect T="int"
                                    @bind-Value="record.IsActive"
@@ -124,10 +163,10 @@
 
 @code
 {
-    AreasModel record = new();
+    BankModel record = new();
     List<OrganizationsModel> Org = new();
-    List<TypeCodeModel> Are = null!;
-    List<PartiesModel> Par = new();
+    List<AreasModel> Cit = new();
+    List<ChartOfAccountsModel> Acc = new();
 
 
     [Parameter] public string Action { get; set; } = "INSERT";
@@ -150,12 +189,12 @@
     protected async Task GetAll()
     {
         LoadingPanel = true;
-        Are = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/AREA TYPE", true) ?? new List<TypeCodeModel>();
-        Par = await Functions.GetAsync<List<PartiesModel>>($"Parent/Search", true) ?? new List<PartiesModel>();
+        Cit = await Functions.GetAsync<List<AreasModel>>($"Areas/Search", true) ?? new List<AreasModel>();
+        Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/InterfaceType='BANK'", true) ?? new List<ChartOfAccountsModel>();
 
         if (Action == "INSERT")
         {
-            record = new AreasModel();
+            record = new BankModel();
             record.IsActive = 1;
             isReadOnly = false;
         }
@@ -176,7 +215,7 @@
     protected async Task Get(int id)
     {
         LoadingPanel = true;
-        record = await Functions.GetAsync<AreasModel>($"Areas/Get?Id={id}", true) ?? new AreasModel();
+        record = await Functions.GetAsync<BankModel>($"Bank/Get?Id={id}", true) ?? new BankModel();
         LoadingPanel = false;
     }
 
@@ -185,8 +224,10 @@
 
         if (Org != null && Org.Any() && record.OrganizationId == 0)
             record.OrganizationId = Org.First().Id;
-        if (Par != null && Par.Any() && record.ParentId == 0)
-            record.ParentId = Par.First().Id;
+        if (Cit != null && Cit.Any() && record.CityId == 0)
+            record.CityId = Cit.First().Id;
+        if (Acc != null && Acc.Any() && record.AccountId == 0)
+            record.AccountId = Acc.First().Id;
 
 
         StateHasChanged();
@@ -195,7 +236,7 @@
     protected async void Clear()
     {
         Action = "INSERT";
-        record = new AreasModel();
+        record = new BankModel();
         record.IsActive = 1;
         isReadOnly = false;
         await _drawer.OpenDrawerAsync();
@@ -240,7 +281,7 @@
         record.UpdatedFrom = Functions.GetComputerDetails();
 
         string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
-        var result = await Functions.PostAsync<AreasModel>($"Areas/{url}", record, true);
+        var result = await Functions.PostAsync<BankModel>($"Bank/{url}", record, true);
         if (result.Success == false)
         {
             await Functions.ShowMessage(dialogService, "error", $"Record Not Saved");

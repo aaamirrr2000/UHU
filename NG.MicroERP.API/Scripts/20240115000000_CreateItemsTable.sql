@@ -10,14 +10,13 @@
     Description           VARCHAR(255)     NOT NULL,
     MinQty                DECIMAL(16, 2)   NOT NULL DEFAULT 0.00,
     MaxQty                DECIMAL(16, 2)   NOT NULL DEFAULT 0.00,
-    ReOrderQty            DECIMAL(16, 2)   NOT NULL DEFAULT 0.00,
+    ReorderQty            DECIMAL(16, 2)   NOT NULL DEFAULT 0.00,
     Discount              DECIMAL(16, 6)   NOT NULL DEFAULT 0.00,
     Tax                   DECIMAL(16, 6)   NOT NULL DEFAULT 0.00,
     CostPrice             DECIMAL(8, 2)    NOT NULL DEFAULT 0.00,
     RetailPrice           DECIMAL(8, 2)    NOT NULL DEFAULT 0.00,
     CategoriesId          INT              NOT NULL,
     StockType             VARCHAR(50)      NULL,
-    SaleTypeId            INT              NULL,
     Unit                  VARCHAR(50),
     ServingSize           VARCHAR(MAX),
     IsInventoryItem       INT              DEFAULT 1,
@@ -35,6 +34,5 @@
     FOREIGN KEY (CreatedBy)          REFERENCES Users(Id),
     FOREIGN KEY (UpdatedBy)          REFERENCES Users(Id),
     FOREIGN KEY (CategoriesId)       REFERENCES Categories(Id),
-    FOREIGN KEY (OrganizationId)     REFERENCES Organizations(Id),
-    FOREIGN KEY (SaleTypeId)         REFERENCES DigitalInvoiceSaleType(Id)
+    FOREIGN KEY (OrganizationId)     REFERENCES Organizations(Id)
 );

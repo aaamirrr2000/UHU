@@ -17,10 +17,13 @@
                 New
             </MudButton>
 
-            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
-                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
-                @(Action == "INSERT" ? "Save" : "Update")
-            </MudButton>
+            @if (Action != "NO ACTION")
+            {
+                <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                    @(Action == "INSERT" ? "Save" : "Update")
+                </MudButton>
+            }
 
         }
     </div>
@@ -46,86 +49,88 @@
             </TitleContent>
 
             <ChildContent>
-                <div class="row" style="width:100%; display: flex;">
+                @if (IsVisible)
+                {
+                    <div class="row" style="width:100%; display: flex;">
                     
-                    <div class="col-6 flex-input">
-                        <label class="form-label">Bank</label>
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Bank</label>
 
-                        <MudSelect @bind-Value="record.BankId"
-                                   Placeholder="Bank"
-                                   Clearable="true">
+                            <MudSelect @bind-Value="record.BankId"
+                                       Placeholder="Bank"
+                                       Clearable="true">
 
-                            @if (Ban != null && Ban.Any())
-                            {
-                                foreach (var i in Ban)
+                                @if (Ban != null && Ban.Any())
                                 {
-                                    <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                                    foreach (var i in Ban)
+                                    {
+                                        <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                                    }
                                 }
-                            }
-                        </MudSelect>
-                        <ValidationMessage For="@(() => record.BankId)" />
+                            </MudSelect>
+                            <ValidationMessage For="@(() => record.BankId)" />
+                        </div>
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Account Title</label>
+                            <MudTextField id="AccountTitle" @bind-Value="record.AccountTitle" placeholder="Account Title" ReadOnly="@isReadOnly"></MudTextField>
+                            <ValidationMessage For="@(() => record.AccountTitle)" />
+                        </div>
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Account Number</label>
+                            <MudTextField id="AccountNumber" @bind-Value="record.AccountNumber" placeholder="Account Number" ReadOnly="@isReadOnly"></MudTextField>
+                            <ValidationMessage For="@(() => record.AccountNumber)" />
+                        </div>
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">IBAN</label>
+                            <MudTextField id="IBAN" @bind-Value="record.IBAN" placeholder="IBAN" ReadOnly="@isReadOnly"></MudTextField>
+                            <ValidationMessage For="@(() => record.IBAN)" />
+                        </div>
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Branch Code</label>
+                            <MudTextField id="BranchCode" @bind-Value="record.BranchCode" placeholder="Branch Code" ReadOnly="@isReadOnly"></MudTextField>
+                            <ValidationMessage For="@(() => record.BranchCode)" />
+                        </div>
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Is Primary</label>
+
+                            <MudSelect T="int"
+                                       @bind-Value="record.IsPrimary"
+                                       Placeholder="Primary"
+                                       Clearable="true">
+
+                                @if (record.IsPrimary != 0 && record.IsPrimary != 1)
+                                {
+                                    record.IsPrimary = 1;
+                                }
+
+                                <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                                <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                            </MudSelect>
+
+                            <ValidationMessage For="@(() => record.IsPrimary)" />
+                        </div>
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Active</label>
+
+                            <MudSelect T="int"
+                                       @bind-Value="record.IsActive"
+                                       Placeholder="Active"
+                                       Clearable="true">
+
+                                @if (record.IsActive != 0 && record.IsActive != 1)
+                                {
+                                    record.IsActive = 1;
+                                }
+
+                                <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                                <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                            </MudSelect>
+
+                            <ValidationMessage For="@(() => record.IsActive)" />
+                        </div>
+
                     </div>
-                    <div class="col-6 flex-input">
-                        <label class="form-label">Account Title</label>
-                        <MudTextField id="AccountTitle" @bind-Value="record.AccountTitle" placeholder="Account Title" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.AccountTitle)" />
-                    </div>
-                    <div class="col-6 flex-input">
-                        <label class="form-label">Account Number</label>
-                        <MudTextField id="AccountNumber" @bind-Value="record.AccountNumber" placeholder="Account Number" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.AccountNumber)" />
-                    </div>
-                    <div class="col-6 flex-input">
-                        <label class="form-label">IBAN</label>
-                        <MudTextField id="IBAN" @bind-Value="record.IBAN" placeholder="IBAN" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.IBAN)" />
-                    </div>
-                    <div class="col-6 flex-input">
-                        <label class="form-label">Branch Code</label>
-                        <MudTextField id="BranchCode" @bind-Value="record.BranchCode" placeholder="Branch Code" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.BranchCode)" />
-                    </div>
-                    <div class="col-6 flex-input">
-                        <label class="form-label">Is Primary</label>
-
-                        <MudSelect T="int"
-                                   @bind-Value="record.IsPrimary"
-                                   Placeholder="Primary"
-                                   Clearable="true">
-
-                            @if (record.IsPrimary != 0 && record.IsPrimary != 1)
-                            {
-                                record.IsPrimary = 1;
-                            }
-
-                            <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
-                            <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
-                        </MudSelect>
-
-                        <ValidationMessage For="@(() => record.IsPrimary)" />
-                    </div>
-                    <div class="col-6 flex-input">
-                        <label class="form-label">Active</label>
-
-                        <MudSelect T="int"
-                                   @bind-Value="record.IsActive"
-                                   Placeholder="Active"
-                                   Clearable="true">
-
-                            @if (record.IsActive != 0 && record.IsActive != 1)
-                            {
-                                record.IsActive = 1;
-                            }
-
-                            <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
-                            <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
-                        </MudSelect>
-
-                        <ValidationMessage For="@(() => record.IsActive)" />
-                    </div>
-
-                </div>
-
+                }
 
                 @if (BankDetails == null)
                 {
@@ -192,19 +197,16 @@
                                     @context.BranchCode
                                 </MudTd>
                                 <MudTd DataLabel="IsPrimary" Style="white-space: nowrap; width: auto;">
-                                    @(context.IsPrimary == 1 ? "True" : "False")
+                                    @(context.IsPrimary == 1 ? "True" : "")
                                 </MudTd>
                                 <MudTd DataLabel="IsActive" Style="white-space: nowrap; width: auto;">
-                                    @(context.IsActive == 1 ? "True" : "False")
+                                    @(context.IsActive == 1 ? "" : "Locked")
                                 </MudTd>
 
 
                             </RowTemplate>
 
                         </MudTable>
-
-
-
                      
                     </div>
                 }
@@ -226,8 +228,8 @@
     [Parameter] public int CurrentRecord { get; set; } = 0;
 
     bool isReadOnly = true;
+    private bool IsVisible { get; set; } = false;
     private bool LoadingPanel { get; set; } = false;
-    private MyDrawer _drawer = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -251,7 +253,7 @@
             switch (Action)
             {
                 case "INSERT":
-                    Clear(); 
+                    await Clear(); 
                     isReadOnly = false;
                     break;
                 case "UPDATE":
@@ -315,7 +317,7 @@
         record.IsPrimary = 0;
         record.IsSoftDeleted = 0;
         isReadOnly = false;
-        await _drawer.OpenDrawerAsync();
+        IsVisible = true;
     }
 
     protected async Task View(int id)
@@ -323,7 +325,7 @@
         await Get(id);
         Action = "VIEW";
         isReadOnly = true;
-        await _drawer.OpenDrawerAsync();
+        IsVisible = true;
     }
 
     protected async Task Edit(int id)
@@ -331,7 +333,7 @@
         await Get(id);
         Action = "UPDATE";
         isReadOnly = false;
-        await _drawer.OpenDrawerAsync();
+        IsVisible = true;
     }
 
     protected async Task Delete(int id)
@@ -366,9 +368,9 @@
             else
             {
                 await Functions.ShowMessage(dialogService, "success", $"Record {Action} Successfully");
-                await Clear();
                 await GetAll();
-                isReadOnly = true;
+                await Clear();
+                IsVisible = false;
             }
 
         }
@@ -379,7 +381,6 @@
         finally
         {
             LoadingPanel = false;
-            await _drawer.CloseDrawer();
         }
 
     }

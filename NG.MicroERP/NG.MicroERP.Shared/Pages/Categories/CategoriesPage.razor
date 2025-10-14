@@ -4,8 +4,6 @@
 @inject IDialogService dialogService
 @inject NavigationManager NavManager
 @inject ISnackbar SnackbarService
-@inject FileUploadService FileUploadService
-
 
 <Loading IsLoading="@LoadingPanel" />
 
@@ -14,14 +12,14 @@
     <div class="text-end" style="margin-top:10px;">
         @if (Action != "VIEW")
         {
-            <MudButton Variant="Variant.Filled" OnClick="Save" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
                 <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
                 @(Action == "INSERT" ? "Save" : "Update")
             </MudButton>
 
             @if (Action == "UPDATE")
             {
-                <MudButton Variant="Variant.Filled" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
                     <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
                     Delete
                 </MudButton>
@@ -51,17 +49,17 @@
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-6 flex-input">
-                        <label class="form-label">Code</label>
-                        <MudTextField id="Code" @bind-Value="record.Code" placeholder="Code" ReadOnly="@isReadOnly"></MudTextField>
+                        <label class="form-label" style="font-weight: bold;">Code</label>
+                        <MudTextField id="Code" @bind-Value="record.Code" placeholder="Code" ReadOnly="true"></MudTextField>
                         <ValidationMessage For="@(() => record.Code)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Name</label>
+                        <label class="form-label" style="font-weight: bold;">Name</label>
                         <MudTextField id="Name" @bind-Value="record.Name" placeholder="Name" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Name)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Parent Category</label>
+                        <label class="form-label" style="font-weight: bold;">Parent Category</label>
 
                         <MudSelect @bind-Value="record.ParentId"
                                    Placeholder="Parent Category"
@@ -78,7 +76,30 @@
                         <ValidationMessage For="@(() => record.ParentId)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label">Active</label>
+                        <label class="form-label" style="font-weight: bold;">Sub Type</label>
+
+                        <MudSelect T="string"
+                                   @bind-Value="record.CategoryType"
+                                   Placeholder="Category Type"
+                                   Clearable="true">
+
+                            @if (Cat != null && Cat.Any())
+                            {
+                                if (string.IsNullOrWhiteSpace(record.CategoryType))
+                                {
+                                    record.CategoryType = Cat.First().ListValue;
+                                }
+
+                                foreach (var i in Cat)
+                                {
+                                    <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.CategoryType)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Active</label>
 
                         <MudSelect T="int"
                                    @bind-Value="record.IsActive"
@@ -96,32 +117,6 @@
 
                         <ValidationMessage For="@(() => record.IsActive)" />
                     </div>
-
-                    <div class="w-100 d-flex justify-content-center">
-                        <div class="p-3 border rounded" style="width: 300px;">
-                            <label class="small fw-bold text-uppercase d-block mb-2 text-center">Items Image</label>
-
-                            <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
-                                @if (!string.IsNullOrEmpty(record.Pic))
-                                {
-                                    <img src="@record.Pic"
-                                         class="img-fluid rounded"
-                                         alt="Items Image"
-                                         style="max-height: 100%; max-width: 100%; object-fit: cover;" />
-                                }
-                                else
-                                {
-                                    <div class="d-flex align-items-center justify-content-center bg-secondary rounded-circle"
-                                         style="width: 120px; height: 120px;">
-                                        <i class="fas fa-image text-white fs-3"></i>
-                                    </div>
-                                }
-                            </div>
-
-                            <InputFile OnChange="OnFileInputChanged" />
-                        </div>
-                    </div>
-
                 </div>
             </ChildContent>
 
@@ -135,6 +130,7 @@
 {
     static CategoriesModel record = new();
     List<CategoriesModel> Par = new();
+    List<TypeCodeModel> Cat = null!;
 
     [Parameter] public string Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
@@ -151,6 +147,7 @@
     protected async Task GetAll()
     {
         LoadingPanel = true;
+        Cat = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/CATEGORY TYPE", true) ?? new List<TypeCodeModel>();
         Par = await Functions.GetAsync<List<CategoriesModel>>($"Categories/Search", true) ?? new List<CategoriesModel>();
 
         if (Action == "INSERT")
@@ -237,29 +234,6 @@
         LoadingPanel = false;
         await _drawer.CloseDrawer();
 
-    }
-
-    private async Task OnFileInputChanged(InputFileChangeEventArgs e)
-    {
-        try
-        {
-            var result = await Functions.FileUpload(e, FileUploadService);
-
-            if (result.Item1 == true)
-            {
-                record.Pic = result.Item2;
-                SnackbarService.Add("File uploaded successfully!", Severity.Success);
-            }
-            else
-            {
-                SnackbarService.Add($"Error: {result.Item2}", Severity.Error);
-            }
-        }
-        catch (Exception ex)
-        {
-            SnackbarService.Add($"Exception: {ex.Message}", Severity.Error);
-            record.Pic = null;
-        }
     }
 }
 

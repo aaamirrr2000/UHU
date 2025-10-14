@@ -23,10 +23,10 @@
     <EmbeddedResource Include="Scripts\20240109000000_CreatePermissionsTable.sql" />
     <EmbeddedResource Include="Scripts\20240110000000_CreateChartOfAccountsTable.sql" />
     <EmbeddedResource Include="Scripts\20240111000000_CreateLocationTable.sql" />
+    <EmbeddedResource Include="Scripts\20240113200000_CreateBankTable.sql" />
     <EmbeddedResource Include="Scripts\20240114000000_CreatePartiesTable.sql" />
     <EmbeddedResource Include="Scripts\20240113000000_CreateAreasTable.sql" />
-    <EmbeddedResource Include="Scripts\20240113000000_CreateCategoriesTable.sql" />
-    <EmbeddedResource Include="Scripts\20240114200000_CreateDigitalInvoiceSaleTypeTable.sql" />
+    <EmbeddedResource Include="Scripts\20240113100000_CreateCategoriesTable.sql" />
     <EmbeddedResource Include="Scripts\20240115200000_CreateSaleItemsView.sql" />
     <EmbeddedResource Include="Scripts\20240115100000_CreateBundleTable.sql" />
     <EmbeddedResource Include="Scripts\20240115000000_CreateItemsTable.sql" />
@@ -36,12 +36,10 @@
     <EmbeddedResource Include="Scripts\20240117300000_CreateItemTaxesView.sql" />
     <EmbeddedResource Include="Scripts\20240117200000_CreateItemTaxesTable.sql" />
     <EmbeddedResource Include="Scripts\20240116200000_CreateTaxesMasterTable.sql" />
-    <EmbeddedResource Include="Scripts\20240114300000_CreateDigitalInvoiceScenariosTable.sql" />
     <EmbeddedResource Include="Scripts\20240117000000_CreateBillTable.sql" />
     <EmbeddedResource Include="Scripts\20240118000000_CreateStockReceivingTable.sql" />
     <EmbeddedResource Include="Scripts\20240117400000_CreateChargesRuleTable.sql" />
     <EmbeddedResource Include="Scripts\20240120000000_CreateDevicesTable.sql" />
-    <EmbeddedResource Include="Scripts\20240114100000_CreateDigitalInvoiceConfig.sql" />
     <EmbeddedResource Include="Scripts\20250220000000_CreateAttendance.sql" />
     <EmbeddedResource Include="Scripts\20250250000000_DineInOrderStatusView.sql" />
     <EmbeddedResource Include="Scripts\20250303000000_GroupMenuView.sql" />

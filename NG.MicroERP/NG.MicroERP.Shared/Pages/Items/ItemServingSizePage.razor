@@ -8,10 +8,12 @@
 @inject FileUploadService FileUploadService
 
 <MudExpansionPanels MultiExpansion="true">
-    <MudButton Variant="Variant.Filled" OnClick="Save" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
-        <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
-        Save
-    </MudButton>
+    <div class="text-end" style="margin-top:10px;">
+        <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
+            <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+            Save
+        </MudButton>
+    </div>
     <MudExpansionPanel Expanded="true" Style="margin-bottom:10px;">
           <TitleContent>
             <div class="d-flex align-items-center p-2 rounded shadow-sm" style="gap: 10px;">
@@ -31,43 +33,47 @@
             <ChildContent>
 
                 <div class="row" style="width:100%; display: flex;">
-                <div class="col-6 flex-input">
-                    <label class="form-label">Size</label>
-                        <MudTextField @bind-Value="servingSize.Size" Placeholder="Size" />
-                        <ValidationMessage For="@(() => servingSize.Size)" />
-                    </div>
-                <div class="col-6 flex-input">
-                    <label class="form-label">Price</label>
-                        <MudNumericField  @bind-Value="servingSize.Price" Placeholder="Price" Format="#,##0.00" />
-                        <ValidationMessage For="@(() => servingSize.Price)" />
-                    </div>
-                </div>
-
-                <div class="w-100 d-flex justify-content-center">
-                    <div class="p-3 border rounded" style="width: 300px;">
-                        <label class="small fw-bold text-uppercase d-block mb-2 text-center">Items Image</label>
-
-                        <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
-                            @if (!string.IsNullOrEmpty(servingSize.Pic))
-                            {
-                                <img src="@servingSize.Pic"
-                                     class="img-fluid rounded"
-                                     alt="Items Image"
-                                     style="max-height: 100%; max-width: 100%; object-fit: cover;" />
-                            }
-                            else
-                            {
-                                <div class="d-flex align-items-center justify-content-center bg-secondary rounded-circle"
-                                     style="width: 120px; height: 120px;">
-                                    <i class="fas fa-image text-white fs-3"></i>
-                                </div>
-                            }
+                
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="col-12 flex-input">
+                                <label class="form-label" style="font-weight: bold;">Size</label>
+                                <MudTextField @bind-Value="servingSize.Size" Placeholder="Size" />
+                                <ValidationMessage For="@(() => servingSize.Size)" />
+                            </div>
+                            <div class="col-12 flex-input">
+                                <label class="form-label" style="font-weight: bold;">Price</label>
+                                <MudNumericField @bind-Value="servingSize.Price" Placeholder="Price" Format="#,##0.00" />
+                                <ValidationMessage For="@(() => servingSize.Price)" />
+                            </div>
                         </div>
 
-                        <InputFile OnChange="OnFileInputChanged" />
-                    </div>
-                </div>
+                        <div class="col-6">
+                            <div class="p-3 border rounded" style="width: 300px;">
+                                <label class="small fw-bold text-uppercase d-block mb-2 text-center">Items Image</label>
 
+                                <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
+                                    @if (!string.IsNullOrEmpty(servingSize.Pic))
+                                    {
+                                        <img src="@servingSize.Pic"
+                                             class="img-fluid rounded"
+                                             alt="Items Image"
+                                             style="max-height: 100%; max-width: 100%; object-fit: cover;" />
+                                    }
+                                    else
+                                    {
+                                        <div class="d-flex align-items-center justify-content-center bg-secondary rounded-circle"
+                                             style="width: 120px; height: 120px;">
+                                            <i class="fas fa-image text-white fs-3"></i>
+                                        </div>
+                                    }
+                                </div>
+
+                                <InputFile OnChange="OnFileInputChanged" />
+                            </div>
+                       </div>
+                </div>
+                    </div>
                 <MudButton OnClick="AddSize" Color="Color.Primary" Variant="Variant.Filled" Style="margin: 10px 0;">
                     Add
                 </MudButton>
@@ -214,7 +220,7 @@
         {
             SnackbarService.Add($"Serving Size Saved Successfully", Severity.Success);
             record = new();
-            servingSizes = new();
+            //servingSizes = new();
         }
 
         LoadingPanel = false;

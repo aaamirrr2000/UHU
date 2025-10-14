@@ -28,7 +28,11 @@ public class PartiesService : IPartiesService
 
     public async Task<(bool, List<PartiesModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM Parties Where IsSoftDeleted=0 and IsActive=1";
+        string SQL = $@"SELECT a.*, b.Name as ParentName, c.AreaName as City, d.Name as Account FROM Parties as a
+                        left join Parties as b on b.id=a.ParentId
+                        left join Areas as c on c.id=a.CityId
+                        left join ChartOfAccounts as d on d.id=a.AccountId
+                        Where a.IsSoftDeleted=0";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;
@@ -71,7 +75,8 @@ public class PartiesService : IPartiesService
 				PartyTypeCode, 
 				ParentId, 
 				Address, 
-				CityId, 
+				CityId,
+                AccountId,
 				Latitude, 
 				Longitude, 
 				Radius, 
@@ -92,6 +97,7 @@ public class PartiesService : IPartiesService
 				{obj.ParentId},
 				'{obj.Address!.ToUpper()}', 
 				{obj.CityId},
+                {obj.AccountId},
 				'{obj.Latitude!.ToUpper()}', 
 				'{obj.Longitude!.ToUpper()}', 
 				{obj.Radius},
@@ -136,6 +142,7 @@ public class PartiesService : IPartiesService
 					ParentId = {obj.ParentId}, 
 					Address = '{obj.Address!.ToUpper()}', 
 					CityId = {obj.CityId}, 
+                    AccountId = {obj.AccountId}, 
 					Latitude = '{obj.Latitude!.ToUpper()}', 
 					Longitude = '{obj.Longitude!.ToUpper()}', 
 					Radius = {obj.Radius}, 

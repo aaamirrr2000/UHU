@@ -25,7 +25,7 @@ public class CategoriesService : ICategoriesService
 
     public async Task<(bool, List<CategoriesModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM Categories Where IsSoftDeleted=0 and IsActive=1";
+        string SQL = $@"SELECT * FROM Categories Where IsSoftDeleted=0";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;
@@ -78,8 +78,8 @@ public class CategoriesService : ICategoriesService
 			(
 				OrganizationId, 
 				Code,
-                Pic,
-				Name, 
+ 				Name, 
+                CategoryType,
 				ParentId, 
 				IsActive, 
 				CreatedBy, 
@@ -91,8 +91,8 @@ public class CategoriesService : ICategoriesService
 			(
 				{obj.OrganizationId},
 				'{Code!}', 
-                '{obj.Pic}', 
-				'{obj.Name!.ToUpper()}', 
+ 				'{obj.Name!.ToUpper()}', 
+				'{obj.CategoryType!.ToUpper()}', 
 				{obj.ParentId},
 				{obj.IsActive},
 				{obj.CreatedBy},
@@ -128,8 +128,8 @@ public class CategoriesService : ICategoriesService
             string SQLUpdate = $@"UPDATE Categories SET 
 					OrganizationId = {obj.OrganizationId}, 
 					Code = '{obj.Code!.ToUpper()}', 
-                    Pic = '{obj.Pic}', 
-					Name = '{obj.Name!.ToUpper()}', 
+ 					Name = '{obj.Name!.ToUpper()}',
+                    CategoryType = '{obj.CategoryType!.ToUpper()}',
 					ParentId = {obj.ParentId}, 
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
