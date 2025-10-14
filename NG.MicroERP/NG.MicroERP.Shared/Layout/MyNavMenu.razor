@@ -64,6 +64,25 @@
             <SimpleLoading />
         }
     </MudNavMenu>
+
+    <!-- ORGANIZATION INFO AT BOTTOM -->
+    <div style="text-align: center; padding-top: 15px; border-top: 1px solid #ddd; margin-top: auto;">
+        @if (Globals.Organization != null)
+        {
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                @if (!string.IsNullOrWhiteSpace(Globals.Organization.Logo))
+                {
+                    <img src="@Globals.Organization.Logo" alt="Organization Logo"
+                         style="width: 64px; height: 64px; border-radius: 50%; margin-bottom: 10px; object-fit: cover;" />
+                }
+                <MudText Typo="Typo.h6" Align="Align.Center" Color="Color.Primary"
+                         Style="font-weight: bold; font-size: 1.1rem; letter-spacing: 0.5px;">
+                    @Globals.Organization.Name
+                </MudText>
+            </div>
+        }
+    </div>
+
 </div>
 
 @code {

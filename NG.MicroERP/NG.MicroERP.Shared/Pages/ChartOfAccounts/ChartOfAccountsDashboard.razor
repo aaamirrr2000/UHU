@@ -17,9 +17,8 @@
         <MudButton StartIcon="@Icons.Material.TwoTone.ExpandLess" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Error" OnClick="@(() => CollapseAllNodes())">Collapse All</MudButton>
     </div>
 
-
     <div class="row" style="margin: 2px; height: 90vh; display: flex;">
-        <MyDrawer @ref="_drawer" Title="ChartOfAccounts" FaIcon="fas fa-address-book">
+        <MyDrawer @ref="_drawer" Title="Chart Of Accounts" FaIcon="fas fa-address-book">
             <HeaderContent>
             </HeaderContent>
             <ChildContent>
@@ -32,7 +31,6 @@
             <FooterContent>
             </FooterContent>
         </MyDrawer>
-
 
         <MudTreeView Items="@TreeItems"
                         T="ChartOfAccountsModel"
@@ -75,6 +73,8 @@
                                         "EQUITY" => Color.Dark,
                                         _ => Color.Info
                                     };
+
+                                    color = Color.Dark;
                                 }
 
 
@@ -103,7 +103,7 @@
                                     }
                                     else
                                     {
-                                        <div></div> @* Placeholder for empty balance cell *@
+                                        <div></div>
                                     }
                                 </div>
 
