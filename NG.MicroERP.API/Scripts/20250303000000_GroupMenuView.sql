@@ -23,7 +23,7 @@ select
 	a.*,
 	 CASE
      WHEN
-         b.privilege IS NULL THEN 'NOT DEFINED'
+         b.privilege IS NULL THEN ''
      ELSE
          b.privilege
  END AS My_Privilege

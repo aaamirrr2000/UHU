@@ -40,7 +40,7 @@ public class DapperFunctions
 
     public async Task<List<T>?> SearchByQuery<T>(string SQL, string Connection = "Default")
     {
-                DBConnection = Connection == "Default" ? cfg.DefaultDB()! : cfg.GlobalDB()!;
+        DBConnection = Connection == "Default" ? cfg.DefaultDB()! : cfg.GlobalDB()!;
         try
         {
             using IDbConnection cnn = new SqlConnection(DBConnection);

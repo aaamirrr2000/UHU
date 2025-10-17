@@ -48,6 +48,17 @@ public class PermissionsController : ControllerBase
 
     }
 
+    [HttpPost("Save")]
+    public async Task<IActionResult> Save(PermissionsModel obj)
+    {
+        var result = await Srv.Save(obj)!;
+        if (result == true)
+            return Ok(result);
+        else
+            return BadRequest(result);
+    }
+
+
     [HttpPost("Insert")]
     public async Task<IActionResult> Insert(PermissionsModel obj)
     {

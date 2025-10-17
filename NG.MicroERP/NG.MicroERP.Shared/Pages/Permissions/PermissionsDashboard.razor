@@ -1,210 +1,304 @@
 ﻿@page "/PermissionsDashboard"
-@inject IJSRuntime js
+
+@inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
 @inject NavigationManager NavManager
 @inject ISnackbar SnackbarService
-@inject Globals Globals
 
 <Loading IsLoading="@LoadingPanel" />
-<div class="row">
-    <MyModelDialog Width="20%" Height="45%" @ref="_myDialog" Title="Permission">
-        <HeaderContent>
-            <div class="text-center" style="overflow-x: hidden;">
-                <p>A Permissions Management System allows organizations to define and control user access to various system functionalities based on predefined permission levels. This ensures that users can only perform actions that align with their roles and responsibilities, enhancing security and operational efficiency.</p>
-            </div>
-        </HeaderContent>
-        <ChildContent>
-            <EditForm Model="record" OnSubmit="Save">
-                <MudForm>
-                    <MudSelect T="string" Label="Permission" @bind-Value="Permission" class="w-100">
-                        <MudSelectItem T="string" Value=@("NO ACCESS")>NO ACCESS</MudSelectItem>
-                        <MudSelectItem T="string" Value=@("VIEW ONLY")>VIEW ONLY</MudSelectItem>
-                        <MudSelectItem T="string" Value=@("FULL ACCESS")>FULL ACCESS</MudSelectItem>
-                    </MudSelect>
-                </MudForm>
-            </EditForm>
-        </ChildContent>
-        <FooterContent>
-            <div class="mt-5 text-center">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save" Class="px-4 py-2">
-                    Save
-                </MudButton>
-            </div>
-        </FooterContent>
-    </MyModelDialog>
-    @if (data == null)
+
+<MyModelDialog Width="20%" Height="45%" @ref="_myDialog" Title="Permission">
+    <HeaderContent>
+        <div class="text-center" style="overflow-x: hidden;">
+            <p>A Permissions Management System allows organizations to define and control user access to various system functionalities based on predefined permission levels. This ensures that users can only perform actions that align with their roles and responsibilities, enhancing security and operational efficiency.</p>
+        </div>
+    </HeaderContent>
+    <ChildContent>
+        <EditForm Model="record" OnSubmit="Save">
+            <MudForm>
+                <MudSelect T="string" Label="Permission" @bind-Value="record.My_Privilege" class="w-100">
+                    <MudSelectItem T="string" Value=@("NO ACCESS")>NO ACCESS</MudSelectItem>
+                    <MudSelectItem T="string" Value=@("VIEW ONLY")>VIEW ONLY</MudSelectItem>
+                    <MudSelectItem T="string" Value=@("FULL ACCESS")>FULL ACCESS</MudSelectItem>
+                </MudSelect>
+            </MudForm>
+        </EditForm>
+    </ChildContent>
+    <FooterContent>
+        <div class="mt-5 text-center">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save" Class="px-4 py-2">
+                Save
+            </MudButton>
+        </div>
+    </FooterContent>
+</MyModelDialog>
+
+<div class="row" style="margin: 2px; height: 90vh; display: flex; align-items: flex-start;">
+
+    <div class="row w-100">
+        <div class="col-9 flex-input">
+            <MudText Typo="Typo.h6">Permissions Managment</MudText>
+        </div>
+        <div class="col-3 flex-input">
+            <label class="form-label" style="font-weight: bold;">Group</label>
+            <MudSelect T="int" @bind-Value="selectedGroup" @bind-Value:after="OnGroupChanged">
+                @if (GroupsData != null)
+                {
+                    @foreach (var a in GroupsData)
+                    {
+                        <MudSelectItem T="int" Value="@a.Id">@a.Name</MudSelectItem>
+                    }
+                }
+            </MudSelect>
+        </div>
+    
+    
+
+    @if (PreData == null)
     {
-        <p>Loading ...</p>
+        <SimpleLoading />
     }
     else
     {
-        <div class="row">
-            <MudDataGrid T="GroupMenuModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple"
-            Filterable="true" Hideable="true" RowsPerPage="12">
-                <ToolBarContent>
-                    <div class="row w-100">
-                        <div class="col-md-4"><MudText Typo="Typo.h6">Permissions</MudText></div>
-                        <div class="col-md-6"></div>
-                        <div class="col-md-2">
-                            <MudSelect T="int" @bind-Value="selectedGroup">
-                                @if (gp != null)
-                                {
-                                    @foreach (var a in gp)
+            <div class="row">
+                <MudDataGrid T="GroupMenuModel"
+                             MultiSelection="false"
+                             Items="@PreData"
+                             SortMode="SortMode.Multiple"
+                             Filterable="true"
+                             Hideable="true"
+                             RowsPerPage="10"
+                             Dense="true">
+
+@*                     <ToolBarContent>
+                        <MudText Typo="Typo.h6" Color="Color.Primary">Menu Permissions</MudText>
+                        <MudSpacer />
+                    </ToolBarContent> *@
+
+                    <Columns>
+
+                        <!-- Actions Column -->
+                        <TemplateColumn Title="Actions" Style="width: 120px; min-width: 120px;">
+                            <CellTemplate Context="row">
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Dense="true">
+
+                                    <!-- No Access Option -->
+                                    <MudMenuItem OnClick="@(() => NoAccess(row.Item.MenuId))">
+                                        <MudIcon Icon="@Icons.Material.Filled.Block"
+                                                 Color="Color.Error"
+                                                 Class="me-2" />
+                                        <MudText Typo="Typo.body2" Style="display: inline;">No Access</MudText>
+                                    </MudMenuItem>
+
+                                    <!-- Read Only Option -->
+                                    @if (row.Item.ParentId != 0)
                                     {
-                                        <MudSelectItem T="int" Value="@a.Id">@a.Name</MudSelectItem>
+                                        <MudMenuItem OnClick="@(() => ReadOnly(row.Item.MenuId))">
+                                            <MudIcon Icon="@Icons.Material.Filled.RemoveRedEye"
+                                            Color="Color.Warning"
+                                            Class="me-2" />
+                                            <MudText Typo="Typo.body2" Style="display: inline;">Read Only</MudText>
+                                        </MudMenuItem>
                                     }
-                                }
-                            </MudSelect>
-                        </div>
-                    </div>
-                </ToolBarContent>
-                <Columns>
-                    <TemplateColumn Title="Actions" Style="width: 40px; min-width: 40px;">
-                        <CellTemplate Context="row">
-                            @if (!@isReadOnly)
-                            {
-                                <MudIconButton Icon="@Icons.Material.Outlined.Edit" Size="MudBlazor.Size.Small" OnClick="@(() => Edit(row.Item.MenuId))" />
-                            }
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <PropertyColumn Property="x => x.MenuCaption" Title="Page" Sortable="true" Filterable="true" />
-                    <TemplateColumn Title="Permission" Style="width: 80px; min-width: 80px;">
-                        <CellTemplate Context="row">
-                            <div style="display: flex; align-items: center;">
-                                @if (row.Item.My_Privilege == "NO ACCESS")
-                                {
-                                    <MudIcon Icon="@Icons.Material.Filled.Block" Style="font-size: 1rem;" Color="Color.Secondary" Title="No Access" />
-                                }
-                                else if (row.Item.My_Privilege == "VIEW ONLY")
-                                {
-                                    <MudIcon Icon="@Icons.Material.Filled.Visibility" Style="font-size: 1rem;" Color="Color.Secondary" Title="View Only" />
-                                }
-                                else if (row.Item.My_Privilege == "FULL ACCESS")
-                                {
-                                    <MudIcon Icon="@Icons.Material.Filled.LockOpen" Style="font-size: 1rem;" Color="Color.Secondary" Title="Full Access" />
-                                }
-                                else
-                                {
-                                    <MudIcon Icon="@Icons.Material.Filled.HelpOutline" Style="font-size: 1rem;" Color="Color.Secondary" Title="Undefined" />
-                                }
-                                <span style="margin-left: 8px;">@row.Item.My_Privilege</span>
-                            </div>
-                        </CellTemplate>
-                    </TemplateColumn>
-                </Columns>
-                <PagerContent>
-                    <MudDataGridPager T="GroupMenuModel" />
-                </PagerContent>
-            </MudDataGrid>
-        </div>
+                                    <MudDivider />
+
+                                    <!-- Full Access Option -->
+                                    <MudMenuItem OnClick="@(() => FullAccess(row.Item.MenuId))">
+                                        <MudIcon Icon="@Icons.Material.Filled.Verified"
+                                                 Color="Color.Success"
+                                                 Class="me-2" />
+                                        <MudText Typo="Typo.body2" Style="display: inline;">Full Access</MudText>
+                                    </MudMenuItem>
+                                </MudMenu>
+                            </CellTemplate>
+                        </TemplateColumn>
+
+                        <!-- Menu Information Column -->
+                        <!-- Combined Menu Item - Compact -->
+                        <TemplateColumn Title="Menu Item" Sortable="true" Filterable="true" Width="280px">
+                            <CellTemplate Context="row">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    @if (row.Item.ParentId == 0)
+                                    {
+                                        <MudTooltip Text="">
+                                            <MudIcon Icon="@Icons.Material.Filled.Dashboard"
+                                                     Style="font-size: 1.2rem;"
+                                                     Color="Color.Primary" />
+                                        </MudTooltip>
+                                    }
+                                    else
+                                    {
+                                        <MudTooltip Text="">
+                                            <MudIcon Icon="@Icons.Material.Filled.MenuOpen"
+                                                     Style="font-size: 1rem; margin-left: 4px;"
+                                                     Color="Color.Secondary" />
+                                        </MudTooltip>
+                                    }
+
+                                    <MudText Typo="Typo.body1" Style="@(row.Item.ParentId == 0 ? "font-weight: 600;" : "font-weight: 400; margin-left: 4px;")">
+                                        @row.Item.MenuCaption
+                                    </MudText>
+                                </div>
+                            </CellTemplate>
+                        </TemplateColumn>
+
+                        <!-- Current Permission Column -->
+                        <TemplateColumn Title="Current Access" Style="width: 150px; min-width: 150px;">
+                            <CellTemplate Context="row">
+                                <div style="display: flex; align-items: center; justify-content: center;">
+
+
+                                    @if (row.Item.My_Privilege == "NO ACCESS")
+                                    {
+                                        <MudChip Color="Color.Error" Variant="Variant.Filled" Size="Size.Small">
+                                            <MudIcon Icon="@Icons.Material.Filled.Block" Size="Size.Small" Class="me-1" />
+                                            No Access
+                                        </MudChip>
+                                    }
+                                    else if (row.Item.My_Privilege == "READ ONLY")
+                                    {
+                                        <MudChip Color="Color.Warning" Variant="Variant.Filled" Size="Size.Small">
+                                            <MudIcon Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Class="me-1" />
+                                            Read Only
+                                        </MudChip>
+                                    }
+                                    else if (row.Item.My_Privilege == "FULL ACCESS")
+                                    {
+                                        <MudChip Color="Color.Success" Variant="Variant.Filled" Size="Size.Small">
+                                            <MudIcon Icon="@Icons.Material.Filled.Verified" Size="Size.Small" Class="me-1" />
+                                            Full Access
+                                        </MudChip>
+                                    }
+                                    else
+                                    {
+                                        <MudChip Color="Color.Default" Variant="Variant.Filled" Size="Size.Small">
+                                            <MudIcon Icon="@Icons.Material.Filled.Help" Size="Size.Small" Class="me-1" />
+                                            Undefined
+                                        </MudChip>
+                                    }
+
+                                </div>
+                            </CellTemplate>
+                        </TemplateColumn>
+
+                    
+
+                    </Columns>
+
+                    <PagerContent>
+                        <MudDataGridPager T="GroupMenuModel" />
+                    </PagerContent>
+                </MudDataGrid>
+            </div>
     }
+    </div>
 </div>
 
-@code {
-    private bool LoadingPanel { get; set; } = false;
-    private static List<GroupMenuModel>? data = null;
-    private static GroupMenuModel? gridrow = null;
-    private static PermissionsModel record = new();
-    public List<string> toolbar = ["Search"];
-    private static List<GroupsModel> gp = new();
-    private int selectedGroup = 2;
-    private int selectedOrg = 1;
-    private int menu_id = 0;
-    [CascadingParameter]
-    private bool isReadOnly { get; set; }
+@code
+{
+    List<GroupMenuModel> PreData = new();
+    GroupMenuModel record = new();
     public MyModelDialog? _myDialog;
-    private string Permission = "";
-    private readonly bool isVisible = false;
+
+    private static List<GroupsModel> GroupsData = new();
+    private int selectedGroup = 2;
+    private int selectedMenu = 1;
+    private string selectedAccessLevel = "NO ACCESS";
+
+
+    public string Action { get; set; } = "INSERT";
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
 
     protected override async Task OnInitializedAsync()
     {
-        LoadingPanel = true;
-        gp = await Functions.GetAsync<List<GroupsModel>>($"Groups/Search", true) ?? new List<GroupsModel>();
-        await GetData();
-        LoadingPanel = false;
+       
+        await GetAll();
     }
 
-    protected async Task GetData()
+    protected async Task GetAll()
     {
-        data = await Functions.GetAsync<List<GroupMenuModel>>($"Permissions/SearchGroupMenu/{selectedOrg}/{selectedGroup}", true) ?? new List<GroupMenuModel>();
+        LoadingPanel = true;
+        GroupsData = await Functions.GetAsync<List<GroupsModel>>($"Groups/Search", true) ?? new List<GroupsModel>();
+        await OnGroupChanged();
+        LoadingPanel = false;
     }
 
     protected async Task Get(int id)
     {
         LoadingPanel = true;
-        var res = await Functions.GetAsync<List<GroupMenuModel>>($"Permissions/SearchGroupMenu/{selectedOrg}/{selectedGroup}", true) ?? new List<GroupMenuModel>();
-        if (res != null)
-        {
-            if (res.Count > 0)
-            {
-                gridrow = res.FirstOrDefault();
-                selectedGroup = gridrow!.GroupId;
-            }
-        }
-
+        record = await Functions.GetAsync<GroupMenuModel>($"GroupMenu/Search/GroupId={id}", true) ?? new GroupMenuModel();
         LoadingPanel = false;
     }
-    protected void Edit(int id)
+
+    protected async Task NoAccess(int id)
     {
-        _myDialog!.Show();
-        menu_id = id;
+        selectedAccessLevel = "NO ACCESS";
+        selectedMenu = id;
+        await Save();
     }
-    protected async Task ReadWrite(int id)
+
+    protected async Task ReadOnly(int id)
     {
-        await Get(id);
+        selectedAccessLevel = "READ ONLY";
+        selectedMenu = id; 
+        await Save();
     }
-    protected async Task Visibility(int id)
+
+    protected async Task FullAccess(int id)
     {
-        await Get(id);
+        selectedAccessLevel = "FULL ACCESS";
+        selectedMenu = id; 
+        await Save();
     }
 
     protected async Task Save()
     {
-        _myDialog!.Hide();
-
         LoadingPanel = true;
 
-        List<GroupMenuModel> pre = data!.Where(x => x.GroupId == selectedGroup && x.MenuId == menu_id).ToList();
-        if (pre != null)
+        PermissionsModel rec = new();
+
+        rec.GroupId = selectedGroup;
+        rec.MenuId = selectedMenu;
+        rec.Privilege = selectedAccessLevel;
+        rec.OrganizationId = Globals.User.OrganizationId;
+        rec.CreatedBy = Globals.User.Id;
+        rec.CreatedOn = DateTime.Now;
+        rec.CreatedFrom = Functions.GetComputerDetails();
+        rec.UpdatedBy = Globals.User.Id;
+        rec.UpdatedOn = DateTime.Now;
+        rec.UpdatedFrom = Functions.GetComputerDetails();
+
+        var result = await Functions.PostAsync<PermissionsModel>($"Permissions/Save", rec, true);
+        if (result.Success == true)
         {
-            if (pre.Count > 0)
-            {
-                GroupMenuModel? this_Record = pre.FirstOrDefault();
-                PermissionsModel MyPre = new()
-                    {
-                        GroupId = this_Record!.GroupId,
-                        MenuId = this_Record.MenuId,
-                        Privilege = Permission
-                    };
-
-                     var result = await Functions.PostAsync<PermissionsModel>($"Permissions/Post", record, true);
-                    if (result.Success == false)
-                    {
-                        SnackbarService.Add($"Record Save Fail.", Severity.Error);
-                    }
-                    else
-                    {
-                        SnackbarService.Add($"Record Saved Successfully", Severity.Success);
-                        record = new();
-                        isReadOnly = true;
-                    }
-
-                // (bool, PermissionsModel, string) rec = await PermissionService.Post(MyPre);
-
-                // if (rec.Item1 == false)
-                // {
-                //     SnackbarService.Add(rec.Item3, Severity.Error);
-                // }
-                // else
-                // {
-                //     await GetData();
-                //     record = new();
-                //     SnackbarService.Add("Record Saved Successfully", Severity.Success);
-                // }
-            }
+            SnackbarService.Add($"Record Saved Successfully", Severity.Success);
         }
+        else
+        {
+            SnackbarService.Add($"Record Not Saved", Severity.Error);
+            record = new();
+            isReadOnly = true;
+        }
+
+        await OnGroupChanged();
         LoadingPanel = false;
     }
 
-   
+    private async Task OnGroupChanged()
+    {
+        LoadingPanel = true;
+        PreData = await Functions.GetAsync<List<GroupMenuModel>>($"Permissions/SearchGroupPermissions/{Globals.User.OrganizationId}/GroupId={selectedGroup}", true) ?? new List<GroupMenuModel>();
+        PreData = PreData
+            .OrderBy(x => x.ParentId == 0 ? x.MenuId : PreData.FirstOrDefault(p => p.MenuId == x.ParentId)?.MenuId ?? x.MenuId)
+            .ThenBy(x => x.ParentId)
+            .ThenBy(x => x.MenuId)
+            .ToList();
+        StateHasChanged();
+        LoadingPanel = false;
+    }
+
 }
+

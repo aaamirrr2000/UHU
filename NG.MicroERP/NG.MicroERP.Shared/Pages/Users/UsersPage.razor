@@ -12,7 +12,7 @@
     <div class="text-end" style="margin-top:10px;">
         @if (Action != "VIEW")
         {
-            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
                 <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
                 @(Action == "INSERT" ? "Save" : "Update")
             </MudButton>
@@ -31,147 +31,149 @@
 
     <MudExpansionPanels MultiExpansion="true">
         <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
-            <div class="row" style="width:100%; display: flex;">
-                <div class="col-6 flex-input">
-                    <label class="form-label" style="font-weight: bold;">Username</label>
-                    <MudTextField id="Username" @bind-Value="record.Username" placeholder="User Name" ReadOnly="@isReadOnly"></MudTextField>
-                    <ValidationMessage For="@(() => record.Username)" />
-                </div>
-                <div class="col-6 flex-input">
-                    <label class="form-label" style="font-weight: bold;">Password</label>
-                    <MudTextField id="Password" @bind-Value="record.Password" placeholder="Password" ReadOnly="@isReadOnly"></MudTextField>
-                    <ValidationMessage For="@(() => record.Password)" />
-                </div>
-                <div class="col-6 flex-input">
-                    <label class="form-label" style="font-weight: bold;">User Type</label>
 
-                    <MudSelect T="string"
-                               @bind-Value="record.UserType"
-                               Placeholder="User Type"
-                               Clearable="true">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
 
-                        @if (User != null && User.Any())
-                        {
-                            if (string.IsNullOrWhiteSpace(record.UserType))
-                            {
-                                record.UserType = User.First().ListValue;
-                            }
+                    <i class="fa fa-info-circle"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
 
-                            foreach (var i in User)
-                            {
-                                <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
-                            }
-                        }
-                    </MudSelect>
-
-                    <ValidationMessage For="@(() => record.UserType)" />
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Users</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Users</MudText>
                     </div>
-                <div class="col-6 flex-input">
-                    <label class="form-label" style="font-weight: bold;">Initial Theme</label>
+                </div>
+                <hr />
+            </TitleContent>
 
-                        <MudSelect T="int"
-                                    @bind-Value="record.DarKLightTheme"
-                                    Placeholder="Theme"
-                                    Clearable="true">
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">User Name</label>
+                        <MudTextField id="Username" @bind-Value="record.Username" placeholder="User Name" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Username)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Password</label>
+                        <MudTextField id="Password" @bind-Value="record.Password" placeholder="Password" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Password)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">User Type</label>
 
-                        @if (record.DarKLightTheme != 0 && record.DarKLightTheme != 1)
-                        {
-                            record.DarKLightTheme = 1;
-                        }
+                        <MudSelect T="string"
+                                   @bind-Value="record.UserType"
+                                   Placeholder="User Type"
+                                   Clearable="true">
 
-                        <MudSelectItem T="int" Value="1">DarK Theme</MudSelectItem>
-                        <MudSelectItem T="int" Value="0">Light Theme</MudSelectItem>
+                            @if (Use != null && Use.Any())
+                            {
+                                if (string.IsNullOrWhiteSpace(record.UserType))
+                                {
+                                    record.UserType = Use.First().ListValue;
+                                }
+
+                                foreach (var i in Use)
+                                {
+                                    <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                }
+                            }
                         </MudSelect>
 
+                        <ValidationMessage For="@(() => record.UserType)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Theme</label>
+                        <MudSelect T="int"
+                                   @bind-Value="record.DarKLightTheme"
+                                   Placeholder="Theme"
+                                   Clearable="true">
+
+                            @if (record.DarKLightTheme != 0 && record.DarKLightTheme != 1)
+                            {
+                                record.DarKLightTheme = 1;
+                            }
+
+                            <MudSelectItem T="int" Value="1">Light</MudSelectItem>
+                            <MudSelectItem T="int" Value="0">Dark</MudSelectItem>
+                        </MudSelect>                        
                         <ValidationMessage For="@(() => record.DarKLightTheme)" />
                     </div>
-                <div class="col-6 flex-input">
-                    <label class="form-label" style="font-weight: bold;">Linked Employee</label>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Employee</label>
 
-                    <MudSelect @bind-Value="record.EmpId"
-                               Placeholder="Employee"
-                               Clearable="true">
+                        <MudSelect @bind-Value="record.EmpId"
+                                   Placeholder="Emp"
+                                   Clearable="true">
 
-                        @if (Emp != null && Emp.Any())
-                        {
-                            if (record.EmpId == 0)
+                            @if (Emp != null && Emp.Any())
                             {
-                                record.EmpId = Emp.First().Id;
+                                foreach (var i in Emp)
+                                {
+                                    <MudSelectItem T="int" Value="@i.Id">@i.Fullname</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.EmpId)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Group</label>
+
+                        <MudSelect @bind-Value="record.GroupId"
+                                   Placeholder="Group"
+                                   Clearable="true">
+
+                            @if (Gro != null && Gro.Any())
+                            {
+                                foreach (var i in Gro)
+                                {
+                                    <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.GroupId)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Location</label>
+
+                        <MudSelect @bind-Value="record.LocationId"
+                                   Placeholder="Location"
+                                   Clearable="true">
+
+                            @if (Loc != null && Loc.Any())
+                            {
+                                foreach (var i in Loc)
+                                {
+                                    <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.LocationId)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Active</label>
+
+                        <MudSelect T="int"
+                                   @bind-Value="record.IsActive"
+                                   Placeholder="Active"
+                                   Clearable="true">
+
+                            @if (record.IsActive != 0 && record.IsActive != 1)
+                            {
+                                record.IsActive = 1;
                             }
 
-                            foreach (var i in Emp)
-                            {
-                                <MudSelectItem T="int" Value="@i.Id">@i.Fullname</MudSelectItem>
-                            }
-                        }
-                    </MudSelect>
-                    <ValidationMessage For="@(() => record.EmpId)" />
+                            <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                            <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                        </MudSelect>
+
+                        <ValidationMessage For="@(() => record.IsActive)" />
+                    </div>
+
                 </div>
-                <div class="col-6 flex-input">
-                    <label class="form-label" style="font-weight: bold;">Group</label>
+            </ChildContent>
 
-                    <MudSelect @bind-Value="record.GroupId"
-                               Placeholder="Group"
-                               Clearable="true">
-
-                        @if (Gro != null && Gro.Any())
-                        {
-                            if (record.GroupId == 0)
-                            {
-                                record.GroupId = Gro.First().Id;
-                            }
-
-                            foreach (var i in Gro)
-                            {
-                                <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
-                            }
-                        }
-                    </MudSelect>
-                    <ValidationMessage For="@(() => record.GroupId)" />
-                </div>
-                <div class="col-6 flex-input">
-                    <label class="form-label" style="font-weight: bold;">Location</label>
-
-                    <MudSelect @bind-Value="record.LocationId"
-                               Placeholder="Location"
-                               Clearable="true">
-
-                        @if (Loc != null && Loc.Any())
-                        {
-                            if (record.LocationId == 0)
-                            {
-                                record.LocationId = Loc.First().Id;
-                            }
-
-                            foreach (var i in Loc)
-                            {
-                                <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
-                            }
-                        }
-                    </MudSelect>
-                    <ValidationMessage For="@(() => record.LocationId)" />
-                </div>
-                <div class="col-6 flex-input">
-                    <label class="form-label" style="font-weight: bold;">Active</label>
-
-                    <MudSelect T="int"
-                               @bind-Value="record.IsActive"
-                               Placeholder="Active"
-                               Clearable="true">
-
-                        @if (record.IsActive != 0 && record.IsActive != 1)
-                        {
-                            record.IsActive = 1;
-                        }
-
-                        <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
-                        <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
-                    </MudSelect>
-
-                    <ValidationMessage For="@(() => record.IsActive)" />
-                </div>
-
-            </div>
         </MudExpansionPanel>
     </MudExpansionPanels>
 
@@ -179,8 +181,8 @@
 
 @code
 {
-    static UsersModel record = new();
-    List<TypeCodeModel> User = null!;
+    UsersModel record = new();
+    List<TypeCodeModel> Use = null!;
     List<EmployeesModel> Emp = new();
     List<GroupsModel> Gro = new();
     List<LocationsModel> Loc = new();
@@ -198,13 +200,19 @@
         await GetAll();
     }
 
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
     protected async Task GetAll()
     {
         LoadingPanel = true;
-        User = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/USER TYPE", true) ?? new List<TypeCodeModel>();
+        Use = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/USE TYPE", true) ?? new List<TypeCodeModel>();
         Emp = await Functions.GetAsync<List<EmployeesModel>>($"Employees/Search", true) ?? new List<EmployeesModel>();
         Gro = await Functions.GetAsync<List<GroupsModel>>($"Groups/Search", true) ?? new List<GroupsModel>();
         Loc = await Functions.GetAsync<List<LocationsModel>>($"Locations/Search", true) ?? new List<LocationsModel>();
+
 
 
         if (Action == "INSERT")
@@ -213,9 +221,15 @@
             record.IsActive = 1;
             isReadOnly = false;
         }
-        else
+        else if (Action != "UPDATE")
         {
             await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action != "VIEW")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
         }
 
         LoadingPanel = false;
@@ -226,6 +240,20 @@
         LoadingPanel = true;
         record = await Functions.GetAsync<UsersModel>($"Users/Get?Id={id}", true) ?? new UsersModel();
         LoadingPanel = false;
+    }
+
+    protected void GetDefaultValues()
+    {
+
+        if (Emp != null && Emp.Any() && record.EmpId == 0)
+            record.EmpId = Emp.First().Id;
+        if (Gro != null && Gro.Any() && record.GroupId == 0)
+            record.GroupId = Gro.First().Id;
+        if (Loc != null && Loc.Any() && record.LocationId == 0)
+            record.LocationId = Loc.First().Id;
+
+
+        StateHasChanged();
     }
 
     protected async void Clear()

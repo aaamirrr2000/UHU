@@ -1,13 +1,17 @@
-﻿using System;
+﻿using Dapper;
+using Microsoft.Data.SqlClient;
+using NG.MicroERP.API.Helper;
+using NG.MicroERP.API.Services;
+using NG.MicroERP.Shared.Helper;
+using NG.MicroERP.Shared.Models;
+using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NG.MicroERP.Shared.Helper;
-using NG.MicroERP.Shared.Models;
-using NG.MicroERP.API.Services;
-using NG.MicroERP.API.Helper;
 
 namespace NG.MicroERP.API.Services;
 
@@ -53,12 +57,59 @@ public class PermissionsService : IPermissionsService
             return (true, result);
     }
 
+    public async Task<bool> Save(PermissionsModel obj)
+    {
+        try
+        {
+            Config cfg = new Config();
+            string SQLExistYN = $"SELECT * FROM Permissions where MenuId={obj.MenuId} and GroupId={obj.GroupId} and OrganizationId={obj.OrganizationId}";
+            string DBConnection = cfg.DefaultDB();
+
+            using IDbConnection cnn = new SqlConnection(DBConnection);
+
+            int count = await cnn.ExecuteScalarAsync<int>(SQLExistYN);
+
+            if (count > 0)
+            {
+                var res = await Put(obj);
+                return res.Item1;
+            }
+            else
+            {
+                var res = await Post(obj);
+                return res.Item1;
+            }
+
+
+            /*
+            IEnumerable<PermissionsModel> result = await cnn.QueryAsync<PermissionsModel>(SQLExistYN, new DynamicParameters());
+
+            if (result.FirstOrDefault() != null && Convert.ToInt32(result.FirstOrDefault()) > 0)
+            {
+                var res = await Put(obj);
+                return res.Item1;
+            }
+            else
+            {
+                var res = await Post(obj);
+                return res.Item1;
+            }
+
+            */
+
+        }
+        catch (Exception ex)
+        {
+            return false;
+        }
+    }
 
     public async Task<(bool, PermissionsModel, string)> Post(PermissionsModel obj)
     {
 
         try
         {
+ 
             string SQLInsert = $@"INSERT INTO Permissions 
 			(
 				OrganizationId, 
@@ -117,7 +168,7 @@ public class PermissionsService : IPermissionsService
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
 					IsSoftDeleted = {obj.IsSoftDeleted} 
-				WHERE Id = {obj.Id};";
+				WHERE MenuId={obj.MenuId} and GroupId={obj.GroupId} and OrganizationId={obj.OrganizationId};";
 
             return await dapper.Update(SQLUpdate);
         }

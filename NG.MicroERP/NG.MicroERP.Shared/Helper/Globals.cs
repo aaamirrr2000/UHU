@@ -203,4 +203,35 @@ public class Globals
 
         return Bill;
     }
+
+    public static (bool canAccess, bool canEdit) PageAccess(List<PermissionsModel> userPermissions, int targetMenuId)
+    {
+        // If user has GroupId 1 (presumably admin), grant full access
+        if (userPermissions.Any(p => p.GroupId == 1))
+        {
+            return (true, true);
+        }
+
+        // Find permission for the specific menu
+        var menuPermission = userPermissions.FirstOrDefault(p =>
+            p.MenuId == targetMenuId &&
+            p.IsActive == 1 &&
+            p.IsSoftDeleted == 0);
+
+        if (menuPermission == null)
+        {
+            return (false, false); // No permission found for this menu
+        }
+
+        // Check privilege type
+        switch (menuPermission.Privilege?.ToLower())
+        {
+            case "FULL ACCESS":
+                return (true, true);
+            case "READ ONLY":
+                return (true, false);
+            default:
+                return (false, false); // No access or invalid privilege
+        }
+    }
 }

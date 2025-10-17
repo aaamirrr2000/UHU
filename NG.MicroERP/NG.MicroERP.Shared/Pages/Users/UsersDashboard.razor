@@ -8,13 +8,13 @@
 <Loading IsLoading="@LoadingPanel" />
 
 <div class="row" style="margin: 2px; height: 90vh; display: flex;">
-    <MyDrawer @ref="_drawer" Title="Users" FaIcon="fa fa-user">
+    <MyDrawer @ref="_drawer" Title="Users" FaIcon="fas fa-address-book">
         <HeaderContent>
         </HeaderContent>
         <ChildContent>
             <EditForm Model="record" OnSubmit="Save">
                 <MudForm>
-                    <UsersPage Action="@Action" CurrentRecord="record.Id"/>
+                    <UsersPage Action="@Action" CurrentRecord="record.Id" />
                 </MudForm>
             </EditForm>
         </ChildContent>
@@ -54,11 +54,18 @@
                         </CellTemplate>
                     </TemplateColumn>
 
-                <PropertyColumn Property="x => x.Username" Title="Username" Sortable="true" Filterable="true" />
-                <PropertyColumn Property="x => x.FullName" Title="Name" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.UserType" Title="User Type" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.LocationName" Title="Location" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.Email" Title="Email" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Username" Title="User Name" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.UserType" Title="User Type" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.DarKLightTheme" Title="Theme" Sortable="true" Filterable="true"/>
+                    <PropertyColumn Property="x => x.FullName" Title="Employee" Sortable="true" Filterable="true"  />
+                    <PropertyColumn Property="x => x.GroupName" Title="Group" Sortable="true" Filterable="true"  />
+                    <PropertyColumn Property="x => x.LocationName" Title="Location" Sortable="true" Filterable="true"  />
+                    <TemplateColumn Title="Active" CellStyle="width: 50px; min-width: 50px;">
+                        <CellTemplate Context="row">
+                            @((row.Item.IsActive == 1) ? "" : "Locked")
+                        </CellTemplate>
+                    </TemplateColumn>
+
 
                 </Columns>
 
@@ -72,8 +79,8 @@
 
 @code
 {
-    static List<UsersModel> data = new();
-    static UsersModel record = new();
+    List<UsersModel> data = new();
+    UsersModel record = new();
 
     public string Action { get; set; } = "INSERT";
 
@@ -111,7 +118,7 @@
 
     protected async Task Refresh()
     {
-        data = await Functions.GetAsync<List<UsersModel>>($"Users/Search", true) ?? new List<UsersModel>();
+        await GetAll();
     }
 
     protected async Task View(int id)
@@ -125,7 +132,7 @@
     protected async Task Edit(int id)
     {
         await Get(id);
-        Action = "UPDATE"; 
+        Action = "UPDATE";
         isReadOnly = false;
         await _drawer.OpenDrawerAsync();
     }
@@ -144,7 +151,7 @@
     protected async Task Save()
     {
         LoadingPanel = true;
-         
+
         record.OrganizationId = Globals.User.OrganizationId;
         record.CreatedBy = Globals.User.Id;
         record.CreatedOn = DateTime.Now;
@@ -156,19 +163,19 @@
         var result = await Functions.PostAsync<UsersModel>($"Users/{Action}", record, true);
         if (result.Success == true)
         {
-            SnackbarService.Add($"Record Not Deleted", Severity.Error);
+            SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
         }
         else
         {
-            SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
+            SnackbarService.Add($"Record Not Deleted", Severity.Error);
             record = new();
             isReadOnly = true;
         }
-    
-        data = await Functions.GetAsync<List<UsersModel>>($"Users/Search", true) ?? new List<UsersModel>();
+
+        await GetAll();
         LoadingPanel = false;
         await _drawer.CloseDrawer();
-     
+
     }
 
 }

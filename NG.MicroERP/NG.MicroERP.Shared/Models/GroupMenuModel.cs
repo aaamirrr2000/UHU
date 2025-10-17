@@ -20,7 +20,8 @@ public class GroupMenuModel
     public string? Icon { get; set; } = string.Empty;
     public int SeqNo { get; set; } = 0;
     public int Live { get; set; } = 0;
+    public int OrganizationId { get; set; } = 0;
     public string? My_Privilege { get; set; } = string.Empty;
     public bool IsToggled { get; set; } = false;
-    public int OrganizationId { get; set; } = 0;
+
 }

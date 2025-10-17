@@ -12,7 +12,7 @@
     <div class="text-end" style="margin-top:10px;">
         @if (Action != "VIEW")
         {
-            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
                 <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
                 @(Action == "INSERT" ? "Save" : "Update")
             </MudButton>
@@ -31,39 +31,57 @@
 
     <MudExpansionPanels MultiExpansion="true">
         <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
-            <div class="row" style="width:100%; display: flex;">
-                <div class="col-6 mb-3">
-                    <MudTextField Label="Name" id="Name" @bind-Value="record.Name" Variant="Variant.Filled" placeholder="Name" ReadOnly="@isReadOnly"></MudTextField>
-                    <ValidationMessage For="@(() => record.Name)" />
+
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+
+                    <i class="fa fa-info-circle"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Groups</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Groups</MudText>
+                    </div>
                 </div>
-                <div class="col-6 mb-3">
-                    <MudTextField Label="Dashboard" id="Dashboard" @bind-Value="record.Dashboard" Variant="Variant.Filled" placeholder="Dashboard" ReadOnly="@isReadOnly"></MudTextField>
-                    <ValidationMessage For="@(() => record.Dashboard)" />
+                <hr />
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Name</label>
+                        <MudTextField id="Name" @bind-Value="record.Name" placeholder="Name" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Name)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Dashboard</label>
+                        <MudTextField id="Dashboard" @bind-Value="record.Dashboard" placeholder="Dashboard" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Dashboard)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Active</label>
+
+                        <MudSelect T="int"
+                                   @bind-Value="record.IsActive"
+                                   Placeholder="Active"
+                                   Clearable="true">
+
+                            @if (record.IsActive != 0 && record.IsActive != 1)
+                            {
+                                record.IsActive = 1;
+                            }
+
+                            <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                            <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                        </MudSelect>
+
+                        <ValidationMessage For="@(() => record.IsActive)" />
+                    </div>
+
                 </div>
-                <div class="col-6 mb-3">
+            </ChildContent>
 
-                    <MudSelect T="int"
-                               @bind-Value="record.IsActive"
-                               Label="Active"
-                               Variant="Variant.Filled"
-                               Dense="true"
-                               Placeholder="Active"
-                               HelperText="Select Active"
-                               HelperTextOnFocus="true"
-                               Clearable="true">
-
-                        @if (record.IsActive != 0 && record.IsActive != 1)
-                        {
-                            record.IsActive = 1;
-                        }
-
-                        <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
-                        <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
-                    </MudSelect>
-
-                    <ValidationMessage For="@(() => record.IsActive)" />
-                </div>
-            </div>
         </MudExpansionPanel>
     </MudExpansionPanels>
 
@@ -71,7 +89,9 @@
 
 @code
 {
-    static GroupsModel record = new();
+    GroupsModel record = new();
+    List<OrganizationsModel> Org = new();
+
 
     [Parameter] public string Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
@@ -85,6 +105,11 @@
         await GetAll();
     }
 
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
     protected async Task GetAll()
     {
         LoadingPanel = true;
@@ -95,9 +120,15 @@
             record.IsActive = 1;
             isReadOnly = false;
         }
-        else
+        else if (Action != "UPDATE")
         {
             await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action != "VIEW")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
         }
 
         LoadingPanel = false;
@@ -108,6 +139,16 @@
         LoadingPanel = true;
         record = await Functions.GetAsync<GroupsModel>($"Groups/Get?Id={id}", true) ?? new GroupsModel();
         LoadingPanel = false;
+    }
+
+    protected void GetDefaultValues()
+    {
+
+        if (Org != null && Org.Any() && record.OrganizationId == 0)
+            record.OrganizationId = Org.First().Id;
+
+
+        StateHasChanged();
     }
 
     protected async void Clear()
