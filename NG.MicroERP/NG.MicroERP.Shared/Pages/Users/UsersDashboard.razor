@@ -50,6 +50,10 @@
                                 <MudMenuItem OnClick="@(() => Delete(row.Item.Id))" Color="Color.Error">
                                     <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
                                 </MudMenuItem>
+                                <hr />
+                                <MudMenuItem OnClick="@(() => ResetPassword(row.Item.Id))" Color="Color.Error">
+                                    <MudIcon Icon="@Icons.Material.Filled.Key" Class="me-2" /> Reset Password
+                                </MudMenuItem>
                             </MudMenu>
                         </CellTemplate>
                     </TemplateColumn>
@@ -146,6 +150,16 @@
         Action = "SOFTDELETE";
         await Get(id);
         await Save();
+    }
+
+    protected async Task ResetPassword(int id)
+    {
+        /*
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+        */
     }
 
     protected async Task Save()

@@ -38,4 +38,17 @@ public class LoginController : ControllerBase
         }
         return NotFound("Record Not Found");
     }
+
+    [HttpGet("ForgotPassword/{Email}")]
+    public async Task<IActionResult> ForgotPassword(string Email)
+    {
+        var result = await Srv.ForgotPassword(Email)!;
+        if (result.Item1 == true)
+        {
+            return Ok();
+        }
+        return NotFound("Record Not Found");
+    }
 }
+
+

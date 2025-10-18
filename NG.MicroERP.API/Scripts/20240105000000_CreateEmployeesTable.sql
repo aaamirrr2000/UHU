@@ -53,7 +53,7 @@ VALUES (
     'AAMIR RASHID',
     NULL,
     '123-456-7890',
-    'johndoe@example.com',
+    'aaamirrr2000@gmail.com',
     '12345-6789012-3',
     '123 Main St, City, Country',
     'Permanent',

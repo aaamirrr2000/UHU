@@ -257,4 +257,27 @@ public class UsersService : IUsersService
         }
     }
 
+    public async Task<(bool, EmployeesModel)> ForgotPassword(string Email)
+    {
+        string SQL = $@"Select * from Employees where lower(email) = '{Email.ToLower()}';";
+        List<EmployeesModel>? res = await dapper.SearchByQuery<EmployeesModel>(SQL);
+        
+        if (res != null)
+        {
+            if (res.Count > 0)
+            {
+                EmployeesModel result = res[0];
+                string NewPassword = Config.GenerateRandomPassword();
+                bool EmailSent = Config.sendEmail(Email, "Password Change", $"New Password is {NewPassword}");
+                
+                return (true, result);
+
+            }
+            return (false, new EmployeesModel { });
+        }
+        else
+        {
+            return (false, new EmployeesModel { });
+        }
+    }
 }
