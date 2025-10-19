@@ -17,6 +17,7 @@ public interface IGroupMenuService
     Task<(bool, List<GroupMenuModel>)>? Search(string Criteria = "");
     Task<(bool, GroupMenuModel?)>? Get(int id);
     Task<(bool, List<GroupMenuModel>)>? SearchGroupMenu(string Criteria = "");
+    Task<(bool, string)> AccessLevel(int userId, string pageName = "");
 }
 
 public class GroupMenuService : IGroupMenuService
@@ -71,6 +72,28 @@ public class GroupMenuService : IGroupMenuService
 
         List<GroupMenuModel> result = (await dapper.SearchByQuery<GroupMenuModel>(SQL)) ?? [];
         return (true, result);
+    }
+
+    public async Task<(bool, string)> AccessLevel(int userId, string pageName = "")
+    {
+        // 1. Get User Group
+        string userSql = $"SELECT * FROM Users WHERE Id = {userId}";
+        var user = (await dapper.SearchByQuery<UsersModel>(userSql))?.FirstOrDefault();
+
+        if (user == null)
+            return (false, "NO ACCESS");
+
+        if (user.GroupId == 1)
+            return (true, "FULL ACCESS");
+
+        // 2. Get Access Level
+        string accessSql = $"SELECT * FROM GroupMenu WHERE GroupId = {user.GroupId} AND lower(PageName) = '{pageName.ToLower()}'";
+        var accessLevel = (await dapper.SearchByQuery<GroupMenuModel>(accessSql))?.FirstOrDefault();
+
+        if (accessLevel == null)
+            return (false, "NO ACCESS");
+        else
+            return (true, accessLevel.My_Privilege ?? "NO ACCESS");
     }
 
 }

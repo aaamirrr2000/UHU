@@ -1,0 +1,20 @@
+﻿CREATE TABLE acsevent (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    event_uid VARCHAR(100) UNIQUE,
+    event_time DATETIME NOT NULL,
+    device_name VARCHAR(100),
+    device_id VARCHAR(50),
+    major INT,
+    minor INT,
+    card_no VARCHAR(50),
+    person_name VARCHAR(100),
+    employee_no VARCHAR(50),
+    verify_mode VARCHAR(50),
+    picture_url VARCHAR(255),
+    in_out_direction ENUM('in','out') DEFAULT NULL,
+    mask_detected BOOLEAN,
+    temperature DECIMAL(4,1),
+    reader_id INT,
+    door_no INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

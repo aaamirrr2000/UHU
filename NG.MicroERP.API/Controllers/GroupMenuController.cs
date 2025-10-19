@@ -39,4 +39,14 @@ public class GroupMenuController : ControllerBase
 
     }
 
+    [HttpGet("GetAccessLevel/{UserId}/{PageName}")]
+    public async Task<IActionResult> GetAccessLevel(int UserId, string PageName)
+    {
+        var result = await Srv.AccessLevel(UserId, PageName)!;
+        if (result.Item1 == false)
+            return NotFound("Record Not Found");
+
+        return Ok(result.Item2);
+
+    }
 }

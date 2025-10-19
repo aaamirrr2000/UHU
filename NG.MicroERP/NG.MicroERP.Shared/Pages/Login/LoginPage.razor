@@ -6,7 +6,7 @@
 
 <Loading IsLoading="@LoadingPanel" />
 
-<div class="login-page" style="background: url('_content/NG.MicroERP.Shared/images/background.jpg') no-repeat center center fixed; background-size: cover;">
+<div class="login-page" style="background: url('_content/NG.MicroERP.Shared/images/background.png') no-repeat center center fixed; background-size: cover;">
     <div class="top-bar">
         <div class="clock-container">
             <div id="clock" class="clock"></div>
@@ -15,9 +15,9 @@
     </div>
     <div class="login-container">
         <div class="login-header">
-            <h2 style="font-size:16px;letter-spacing:2px;">NexGen Tech Studios</h2>
+            <h2 style="font-size:16px;letter-spacing:2px;">Minitry of IT and Telecom</h2>
             <p>Welcome back! Please login to your account.</p>
-            <p id="expiry" style="font-size:12px;" class="expiry">AI Enabled</p>
+            @* <p id="expiry" style="font-size:12px;" class="expiry">AI Enabled</p> *@
         </div>
         <div class="login-form">
             <div class="form-group">
@@ -69,8 +69,8 @@
             }
             else
             {
-                //await Task.Delay(5000); 
-                Nav.NavigateTo("/Home");
+                await Task.Delay(5000); 
+                Nav.NavigateTo($"/{Globals.User.Dashboard}");
             }
         }
         catch (Exception ex)

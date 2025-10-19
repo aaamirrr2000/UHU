@@ -1,0 +1,297 @@
+﻿@page "/OverallAttendanceReport"
+@using MudBlazor
+@using System.Linq
+
+<MudPaper Class="pa-6 ma-3" Elevation="4" Rounded="true" Style="width:100%; background-color:#fafafa;">
+
+    <!-- Header -->
+    <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudText Typo="Typo.h6" Color="Color.Primary" Class="font-weight-bold">
+            Attendance Status
+        </MudText>
+
+        <MudText Typo="Typo.subtitle2" Color="Color.Secondary">
+            @selectedDate.ToString("dddd, MMM dd, yyyy")
+        </MudText>
+    </MudStack>
+
+    <!-- Divider -->
+    <MudDivider Class="mb-4" />
+
+    <!-- Summary Cards -->
+    <MudGrid GutterSize="2" Class="mb-6">
+        <MudItem xs="12" sm="6" md="2">
+            <MudPaper Class="pa-3 text-center" Elevation="1" Rounded="true">
+                <MudText Typo="Typo.h6" Color="Color.Success">@onTimeArrivalCount</MudText>
+                <MudText Typo="Typo.caption">On Time Arrival</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="2">
+            <MudPaper Class="pa-3 text-center" Elevation="1" Rounded="true">
+                <MudText Typo="Typo.h6" Color="Color.Warning">@lateCount</MudText>
+                <MudText Typo="Typo.caption">Late Arrival</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="2">
+            <MudPaper Class="pa-3 text-center" Elevation="1" Rounded="true">
+                <MudText Typo="Typo.h6" Color="Color.Success">@onTimeLeavingCount</MudText>
+                <MudText Typo="Typo.caption">On Time Leaving</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="2">
+            <MudPaper Class="pa-3 text-center" Elevation="1" Rounded="true">
+                <MudText Typo="Typo.h6" Color="Color.Secondary">@beforeTimeCount</MudText>
+                <MudText Typo="Typo.caption">Left Early</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="2">
+            <MudPaper Class="pa-3 text-center" Elevation="1" Rounded="true">
+                <MudText Typo="Typo.h6" Color="Color.Info">@incompleteCount</MudText>
+                <MudText Typo="Typo.caption">Incomplete Day</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Charts -->
+    <MudGrid GutterSize="3">
+        <!-- Arrival Chart -->
+        <MudItem xs="12" md="6">
+                <MudText Typo="Typo.subtitle1" Class="mb-3 font-weight-bold" Color="Color.Primary">
+                    Arrival Status
+                </MudText>
+                <MudChart ChartType="ChartType.Donut"
+                          InputData="@ArrivalData"
+                          InputLabels="@ArrivalLabels"
+                          Height="300"
+                          Class="w-100"
+                          ChartPalette="ChartPalette.Material" />
+                <!-- Chart Legend -->
+              @*   <div class="mt-3">
+                    @for (int i = 0; i < ArrivalLabels.Length; i++)
+                    {
+                        <MudChip Color="GetStatusColor(ArrivalLabels[i])" Variant="Variant.Filled" Size="Size.Small" Class="ma-1">
+                            @ArrivalLabels[i]: @ArrivalData[i]
+                        </MudChip>
+                    }
+                </div> *@
+        </MudItem>
+
+        <!-- Leaving Chart -->
+        <MudItem xs="12" md="6">
+                <MudText Typo="Typo.subtitle1" Class="mb-3 font-weight-bold" Color="Color.Primary">
+                    Leaving Status
+                </MudText>
+                <MudChart ChartType="ChartType.Donut"
+                          InputData="@LeavingData"
+                          InputLabels="@LeavingLabels"
+                          Height="300"
+                          Class="w-100"
+                          ChartPalette="ChartPalette.Material" />
+                <!-- Chart Legend -->
+             @*    <div class="mt-3">
+                    @for (int i = 0; i < LeavingLabels.Length; i++)
+                    {
+                        <MudChip Color="GetStatusColor(LeavingLabels[i])" Variant="Variant.Filled" Size="Size.Small" Class="ma-1">
+                            @LeavingLabels[i]: @LeavingData[i]
+                        </MudChip>
+                    }
+                </div> *@
+        </MudItem>
+    </MudGrid>
+
+    <!-- Download Button -->
+  @*   <MudStack Row Justify="Justify.Center" Class="mt-6">
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Success" 
+                   StartIcon="Icons.Material.Filled.Download"
+                   OnClick="DownloadExcelReport"
+                   Disabled="@LoadingPanel"
+                   Size="Size.Large">
+            Download Excel Report
+        </MudButton>
+    </MudStack> *@
+
+    <!-- Loading Indicator -->
+    @if (LoadingPanel)
+    {
+        <div class="text-center mt-5">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+        </div>
+    }
+
+</MudPaper>
+
+@code {
+    private double[] ArrivalData = Array.Empty<double>();
+    private string[] ArrivalLabels = Array.Empty<string>();
+
+    private double[] LeavingData = Array.Empty<double>();
+    private string[] LeavingLabels = Array.Empty<string>();
+
+    private List<DailyAttendanceModel> data = new();
+    private bool LoadingPanel { get; set; }
+
+    [Parameter] public DateTime selectedDate { get; set; }
+
+    // Summary counts
+    private int onTimeArrivalCount = 0;
+    private int lateCount = 0;
+    private int onTimeLeavingCount = 0;
+    private int beforeTimeCount = 0;
+    private int incompleteCount = 0;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await GetAll();
+    }
+
+    private async Task GetAll()
+    {
+        LoadingPanel = true;
+
+        data = await Functions.GetAsync<List<DailyAttendanceModel>>(
+            $"DailyAttendance/Search/InDate='{selectedDate:yyyy-MM-dd}'", true
+        ) ?? new List<DailyAttendanceModel>();
+
+        GenerateCharts();
+        CalculateSummaryCounts();
+
+        LoadingPanel = false;
+        StateHasChanged();
+    }
+
+    private void GenerateCharts()
+    {
+        // Arrival chart - normalize status names
+        var arrivalCounts = data
+            .Where(d => !string.IsNullOrWhiteSpace(d.ArrivalStatus))
+            .GroupBy(d => NormalizeStatus(d.ArrivalStatus))
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToList();
+
+        ArrivalLabels = arrivalCounts.Select(s => s.Status).ToArray();
+        ArrivalData = arrivalCounts.Select(s => (double)s.Count).ToArray();
+
+        // Leaving chart - normalize status names
+        var leavingCounts = data
+            .Where(d => !string.IsNullOrWhiteSpace(d.LeavingStatus))
+            .GroupBy(d => NormalizeStatus(d.LeavingStatus))
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToList();
+
+        LeavingLabels = leavingCounts.Select(s => s.Status).ToArray();
+        LeavingData = leavingCounts.Select(s => (double)s.Count).ToArray();
+    }
+
+    private void CalculateSummaryCounts()
+    {
+        onTimeArrivalCount = data.Count(r => 
+            r.ArrivalStatus?.Equals("ON TIME", StringComparison.OrdinalIgnoreCase) == true);
+
+        lateCount = data.Count(r => 
+            r.ArrivalStatus?.Equals("LATE", StringComparison.OrdinalIgnoreCase) == true);
+
+        onTimeLeavingCount = data.Count(r => 
+            r.LeavingStatus?.Equals("ON TIME", StringComparison.OrdinalIgnoreCase) == true);
+
+        beforeTimeCount = data.Count(r => 
+            r.LeavingStatus?.Equals("BEFORE TIME", StringComparison.OrdinalIgnoreCase) == true);
+
+        incompleteCount = data.Count(r => 
+            r.LeavingStatus?.Equals("INCOMPLETE", StringComparison.OrdinalIgnoreCase) == true);
+    }
+
+    private string NormalizeStatus(string status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+            return "UNKNOWN";
+
+        return status.Trim().ToUpper() switch
+        {
+            "ON TIME" => "ON TIME",
+            "LATE" => "LATE",
+            "INCOMPLETE" => "INCOMPLETE",
+            "BEFORE TIME" => "BEFORE TIME",
+            _ => status.Trim().ToUpper()
+        };
+    }
+
+    private Color GetStatusColor(string status)
+    {
+        return status.ToUpper() switch
+        {
+            "ON TIME" => Color.Success,
+            "LATE" => Color.Warning,
+            "INCOMPLETE" => Color.Info,
+            "BEFORE TIME" => Color.Secondary,
+            _ => Color.Default
+        };
+    }
+
+    // private async Task DownloadExcelReport()
+    // {
+    //     try
+    //     {
+    //         LoadingPanel = true;
+    //         StateHasChanged();
+
+    //         // Convert to Excel model
+    //         var excelData = data.Select(record => new
+    //         {
+    //             Date = selectedDate.ToString("yyyy-MM-dd"),
+    //             EmployeeId = record.EmpId,
+    //             EmployeeName = record.Fullname,
+    //             Department = record.Department,
+    //             Division = record.Division,
+    //             ArrivalStatus = record.ArrivalStatus,
+    //             LeavingStatus = record.LeavingStatus,
+    //             ScheduledIn = record.ScheduledIn,
+    //             ActualIn = record.InTime,
+    //             InDifference = record.InDiff,
+    //             ScheduledOut = record.ScheduledOut,
+    //             ActualOut = record.OutTime ?? "N/A",
+    //             OutDifference = record.OutDiff ?? "N/A",
+    //             EventCount = record.EventCount,
+    //             DayType = record.DayType
+    //         }).ToList();
+
+    //         // Call your Excel generation service
+    //         var result = await Functions.PostAsync<object, byte[]>(
+    //             "Reports/GenerateAttendanceExcel",
+    //             new
+    //             {
+    //                 AttendanceData = excelData,
+    //                 Summary = new
+    //                 {
+    //                     TotalEmployees = data.Count,
+    //                     OnTimeArrivalCount = onTimeArrivalCount,
+    //                     LateCount = lateCount,
+    //                     OnTimeLeavingCount = onTimeLeavingCount,
+    //                     BeforeTimeCount = beforeTimeCount,
+    //                     IncompleteCount = incompleteCount
+    //                 },
+    //                 ReportDate = selectedDate
+    //             },
+    //             true
+    //         );
+
+    //         if (result != null)
+    //         {
+    //             var fileName = $"Attendance_Report_{selectedDate:yyyyMMdd}.xlsx";
+    //             await JSRuntime.InvokeVoidAsync("downloadFile", Convert.ToBase64String(result), fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    //         }
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         // Handle error - you might want to show a snackbar here
+    //         Console.WriteLine($"Error generating report: {ex.Message}");
+    //     }
+    //     finally
+    //     {
+    //         LoadingPanel = false;
+    //         StateHasChanged();
+    //     }
+    // }
+
+    [Inject] private IJSRuntime JSRuntime { get; set; }
+}

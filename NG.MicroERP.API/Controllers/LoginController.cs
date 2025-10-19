@@ -49,6 +49,28 @@ public class LoginController : ControllerBase
         }
         return NotFound("Record Not Found");
     }
+
+    [HttpGet("ChangePassword/{UserId}/{NewPassword}")]
+    public async Task<IActionResult> ChangePassword(int UserId, string NewPassword)
+    {
+        var result = await Srv.ChangePassword(UserId, NewPassword)!;
+        if (result.Item1 == true)
+        {
+            return Ok();
+        }
+        return NotFound("Record Not Found");
+    }
+
+    [HttpGet("ResetPassword/{UserId}")]
+    public async Task<IActionResult> ResetPassword(int UserId)
+    {
+        var result = await Srv.ResetPassword(UserId)!;
+        if (result.Item1 == true)
+        {
+            return Ok();
+        }
+        return NotFound("Record Not Found");
+    }
 }
 
 

@@ -194,43 +194,7 @@ public class UsersService : IUsersService
         }
     }
 
-    public async Task<(bool, string)> ResetPassword(int User_id)
-    {
-        UsersService usersService = new();
-        var usrs = await Search($"Users.Id = {User_id}")!;
-
-        if (usrs.Item1 == true)
-        {
-            if (usrs.Item2.Count > 0)
-            {
-                _ = new UsersModel();
-                UsersModel u = usrs.Item2.FirstOrDefault()!;
-                string cpass = Config.GenerateRandomPassword();
-                string SQL = $@"Update Users set password = '" + cpass + "' where Id = " + u.Id + ";";
-                (bool, string) r = await dapper.ExecuteQuery(SQL);
-                if (r.Item1 == false)
-                {
-                    return (false, "User Not Found");
-                }
-                else
-                {
-                    if (u.Email.Length > 0)
-                    {
-                        Config.sendEmail(u.Email, $"Password Reset", $"Your new Passord is {cpass}.");
-                    }
-                    return (true, "Password Saved and Emailed to User.");
-                }
-            }
-            else
-            {
-                return (false, "User Not found.");
-            }
-        }
-        else
-        {
-            return (false, "User Not found.");
-        }
-    }
+   
 
     public async Task<(bool, UsersModel)> Login(string UserName, string Password)
     {
@@ -267,11 +231,17 @@ public class UsersService : IUsersService
             if (res.Count > 0)
             {
                 EmployeesModel result = res[0];
-                string NewPassword = Config.GenerateRandomPassword();
-                bool EmailSent = Config.sendEmail(Email, "Password Change", $"New Password is {NewPassword}");
-                
-                return (true, result);
 
+                string NewPassword = Config.GenerateRandomPassword();
+                string SQLUpdate = $@"UPDATE Users SET Password = '{NewPassword}' WHERE EmpId = {result.Id};";
+
+                var result1 = await dapper.Update(SQLUpdate);
+                if(result1.Item1 == true)
+                {
+                    bool EmailSent = Config.sendEmail(Email, "Password Change", $"New Password is {NewPassword}");
+                    return (true, result);
+                }
+                return (false, new EmployeesModel { });
             }
             return (false, new EmployeesModel { });
         }
@@ -279,5 +249,73 @@ public class UsersService : IUsersService
         {
             return (false, new EmployeesModel { });
         }
+    }
+
+    public async Task<(bool, string)> ResetPassword(int UserId)
+    {
+        UsersService usersService = new();
+        var usrs = await Search($"Users.Id = {UserId}")!;
+
+        if (usrs.Item1 == true)
+        {
+            if (usrs.Item2.Count > 0)
+            {
+                _ = new UsersModel();
+                UsersModel u = usrs.Item2.FirstOrDefault()!;
+                string cpass = Config.GenerateRandomPassword();
+                string SQL = $@"Update Users set password = '" + cpass + "' where Id = " + u.Id + ";";
+                (bool, string) r = await dapper.ExecuteQuery(SQL);
+                if (r.Item1 == false)
+                {
+                    return (false, "User Not Found");
+                }
+                else
+                {
+                    if (u.Email.Length > 0)
+                    {
+                        Config.sendEmail(u.Email, $"Password Reset", $"Your new Passord is {cpass}.");
+                    }
+                    return (true, "Password Saved and Emailed to User.");
+                }
+            }
+            else
+            {
+                return (false, "User Not found.");
+            }
+        }
+        else
+        {
+            return (false, "User Not found.");
+        }
+    }
+
+    public async Task<(bool, string)> ChangePassword(int UserId, string NewPassword)
+    {
+        string SQL = $@"Select * from Users where Id = {UserId};";
+        List<UsersModel>? Users = await dapper.SearchByQuery<UsersModel>(SQL);
+        UsersModel User = Users.FirstOrDefault();
+
+        if(User!=null)
+        {
+
+            SQL = $@"Select * from Employees where Id = {User!.EmpId};";
+            List<EmployeesModel>? Employees = await dapper.SearchByQuery<EmployeesModel>(SQL);
+            EmployeesModel Employee = Employees.FirstOrDefault();
+
+            //Changing Password and Sending Email
+            SQL = $@"Update Users set password = '" + NewPassword + "' where Id = " + UserId + ";";
+            (bool, string) result = await dapper.ExecuteQuery(SQL);
+            if (result.Item1 == false)
+            {
+                return (false, "User Not Updated");
+            }
+            else
+            {
+                Config.sendEmail(Employee.Email, $"Password Reset", $"Your new Passord is {NewPassword}.");
+                return (true, "Password Saved and Emailed to User.");
+            }
+        }
+        else
+            return (false, "User Not Found");
     }
 }

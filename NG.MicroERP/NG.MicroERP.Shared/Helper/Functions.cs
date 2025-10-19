@@ -31,25 +31,42 @@ public class Functions
             string uri = $"{Globals.BaseURI}api/{url}";
 
             using HttpClient httpClient = new();
-            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            httpClient.DefaultRequestHeaders.Accept.Add(
+                new MediaTypeWithQualityHeaderValue("application/json"));
 
             if (useTokenAuthorize && !string.IsNullOrEmpty(Globals.Token))
             {
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Globals.Token);
+                httpClient.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", Globals.Token);
             }
 
-            //HttpResponseMessage response = await httpClient.GetAsync(uri).ConfigureAwait(false);
             HttpResponseMessage response = await httpClient.GetAsync(uri);
 
             if (response.IsSuccessStatusCode)
             {
                 string resultMessage = await response.Content.ReadAsStringAsync();
+
+                // ✅ If empty or "null", treat as success (return an empty T instance)
+                if (string.IsNullOrWhiteSpace(resultMessage) || resultMessage == "null")
+                {
+                    // Try creating an empty instance if T is a class
+                    if (typeof(T).IsClass && Activator.CreateInstance(typeof(T)) is T emptyObj)
+                        return emptyObj;
+
+                    return default;
+                }
+
                 T? result = JsonConvert.DeserializeObject<T>(resultMessage);
                 return result;
             }
             else
             {
                 string content = await response.Content.ReadAsStringAsync();
+
+                // ✅ For error response, still handle safely
+                if (string.IsNullOrWhiteSpace(content) || content == "null")
+                    return default;
+
                 T? errorResponse = JsonConvert.DeserializeObject<T>(content);
                 return errorResponse;
             }
@@ -57,9 +74,10 @@ public class Functions
         catch (Exception ex)
         {
             _ = ex.Message;
-           return default;
+            return default;
         }
     }
+
 
     public static async Task<(bool Success, T? Result)> PostAsync<T>(string url, object? data = null, bool useTokenAuthorize = false)
     {
@@ -78,21 +96,29 @@ public class Functions
             string jsonData = data != null ? JsonConvert.SerializeObject(data) : string.Empty;
             StringContent content = new(jsonData, Encoding.UTF8, "application/json");
 
-            HttpResponseMessage resultMessage = await httpClient.PostAsync(uri, content).ConfigureAwait(false);
-            string response = await resultMessage.Content.ReadAsStringAsync();
+            HttpResponseMessage response = await httpClient.PostAsync(uri, content).ConfigureAwait(false);
+            string responseContent = await response.Content.ReadAsStringAsync();
 
-            if (resultMessage.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode)
             {
+                if (string.IsNullOrWhiteSpace(responseContent) || responseContent == "null")
+                {
+                    if (typeof(T).IsClass && Activator.CreateInstance(typeof(T)) is T emptyObj)
+                        return (true, emptyObj);
+
+                    return (true, default);
+                }
+
                 if (typeof(T) == typeof(string))
                 {
-                    object plainText = response;
+                    object plainText = responseContent;
                     return (true, (T)plainText);
                 }
                 else
                 {
                     try
                     {
-                        T? result = JsonConvert.DeserializeObject<T>(response);
+                        T? result = JsonConvert.DeserializeObject<T>(responseContent);
                         return (true, result);
                     }
                     catch (JsonException)
@@ -103,12 +129,23 @@ public class Functions
             }
             else
             {
-                // Optional: handle non-successful status code
-                return (false, default);
+                if (string.IsNullOrWhiteSpace(responseContent) || responseContent == "null")
+                    return (false, default);
+
+                try
+                {
+                    T? errorResponse = JsonConvert.DeserializeObject<T>(responseContent);
+                    return (false, errorResponse);
+                }
+                catch (JsonException)
+                {
+                    return (false, default);
+                }
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            _ = ex.Message;
             return (false, default);
         }
     }
@@ -149,24 +186,78 @@ public class Functions
         }
     }
 
-    public static async Task<bool> ShowConfirmation(IDialogService dialogService, string message, string icon = "🔔", string color = "#ff9800", string titleText = "Confirmation")
+    public static async Task<bool> ShowConfirmation(
+        IDialogService dialogService,
+        string message,
+        string icon = "🔔",
+        string color = "#FF9800",
+        string titleText = "Confirmation",
+        string confirmLabel = "Confirm",
+        string cancelLabel = "Cancel")
     {
         string html = $@"
-        <div style='text-align:center; padding:20px; font-family:Arial, sans-serif;'>
-            <div style='font-size:60px; margin-bottom:10px;'>{icon}</div>
-            <div style='font-size:28px; font-weight:bold; color:{color}; margin-bottom:10px;'>
-                {titleText}
+            <style>
+              .cg-card {{
+                width: 100%;
+                max-width: 420px;
+                margin: 0 auto;
+                background: #ffffff;
+                border-radius: 12px;
+                box-shadow: none; /* removed shadow */
+                overflow: hidden;
+                font-family: 'Roboto', Arial, sans-serif;
+                color: #263238;
+              }}
+              .cg-body {{
+                padding: 22px 20px;
+                text-align: center;
+              }}
+              .cg-icon {{
+                width: 72px;
+                height: 72px;
+                margin: 0 auto 12px auto;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 34px;
+                background: linear-gradient(135deg, {color}33, {color}55);
+              }}
+              .cg-title {{
+                font-size: 20px;
+                font-weight: 600;
+                margin-bottom: 8px;
+                color: {color};
+              }}
+              .cg-message {{
+                font-size: 15px;
+                line-height: 1.45;
+                margin-bottom: 6px;
+                color: #455A64;
+                padding: 0 6px;
+                white-space: pre-wrap;
+              }}
+
+              @media (max-width: 420px) {{
+                .cg-card {{ border-radius: 10px; }}
+                .cg-icon {{ width:64px; height:64px; font-size:30px; }}
+              }}
+            </style>
+
+            <div class='cg-card' role='dialog' aria-labelledby='cg-title' aria-describedby='cg-message'>
+              <div class='cg-body'>
+                <div class='cg-icon' aria-hidden='true'>{icon}</div>
+                <div id='cg-title' class='cg-title'>{titleText}</div>
+                <div id='cg-message' class='cg-message'>{System.Net.WebUtility.HtmlEncode(message)}</div>
+              </div>
             </div>
-            <div style='font-size:18px; line-height:1.5; color:#FFC107;'>
-                {message}
-            </div>
-        </div>";
+            ";
 
         bool? result = await dialogService.ShowMessageBox(
-            title: "", // no plain title so we control HTML
+            title: "", // keep host title blank so our HTML stays central
             markupMessage: (MarkupString)html,
-            yesText: "✅ Confirm",
-            cancelText: "❌ Cancel"
+            yesText: $"✅ {confirmLabel}",
+            cancelText: $"✖️ {cancelLabel}"
         );
 
         return result ?? false;
@@ -201,104 +292,76 @@ public class Functions
             _ => "#2c3e50"
         };
 
-        // 3D Vector Icon Style HTML
         string html = $@"
-        <div style='
-            width: 450px; 
-            height: 220px; 
-            padding: 25px; 
-            font-family: Arial, sans-serif; 
-            box-sizing: border-box;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            color: white;
-            position: relative;
-            overflow: hidden;
-            border: 3px solid rgba(255,255,255,0.3);
-        '>
-            <!-- Background pattern/alphas INSIDE the border -->
-            <div style='
-                position: absolute;
-                top: -50px;
-                right: -50px;
-                width: 200px;
-                height: 200px;
-                background: rgba(255,255,255,0.1);
-                border-radius: 50%;
-            '></div>
-            <div style='
-                position: absolute;
-                bottom: -30px;
-                left: -30px;
-                width: 150px;
-                height: 150px;
-                background: rgba(255,255,255,0.05);
-                border-radius: 50%;
-            '></div>
-    
-            <div style='
-                display: grid;
-                grid-template-columns: 100px 1fr;
-                grid-template-rows: 1fr auto;
-                gap: 20px;
-                height: 100%;
-                position: relative;
-                z-index: 2;
-            '>
-                <!-- 3D Icon on left -->
-                <div style='
-                    grid-column: 1;
-                    grid-row: 1;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 60px;
-                    background: rgba(255,255,255,0.2);
-                    border-radius: 15px;
-                    backdrop-filter: blur(10px);
-                    border: 2px solid rgba(255,255,255,0.3);
-                    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-                    transform: perspective(500px) rotateY(-5deg);
-                '>
-                    {icon}
-                </div>
-        
-                <!-- Content on right -->
-                <div style='
-                    grid-column: 2;
-                    grid-row: 1;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                    padding-right: 10px;
-                '>
-                    <div style='
-                        font-size: 28px;
-                        font-weight: bold;
-                        margin-bottom: 12px;
-                        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-                        color: white;
-                    '>
-                        {titleText}
-                    </div>
-                    <div style='
-                        font-size: 16px;
-                        line-height: 1.5;
-                        color: rgba(255,255,255,0.9);
-                        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-                    '>
-                        {message}
-                    </div>
-                </div>
-        
-               
-            </div>
-        </div>";
+                        <style>
+                         .cg-container {{
+                                width: 600px;
+                                height: 320px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                margin: auto;
+                            }}
+                          .cg-card {{
+                            width: 100%;
+                            max-width: 420px;
+                            margin: 0 auto;
+                            background: #ffffff;
+                            border-radius: 12px;
+                            box-shadow: none;
+                            overflow: hidden;
+                            font-family: 'Roboto', Arial, sans-serif;
+                            color: #263238;
+                          }}
+                          .cg-body {{
+                            padding: 22px 20px;
+                            text-align: center;
+                          }}
+                          .cg-icon {{
+                            width: 72px;
+                            height: 72px;
+                            margin: 0 auto 12px auto;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 34px;
+                            background: linear-gradient(135deg, {color}33, {color}55);
+                          }}
+                          .cg-title {{
+                            font-size: 20px;
+                            font-weight: 600;
+                            margin-bottom: 8px;
+                            color: {color};
+                          }}
+                          .cg-message {{
+                            font-size: 15px;
+                            line-height: 1.45;
+                            color: #455A64;
+                            padding: 0 6px;
+                            white-space: pre-wrap;
+                          }}
 
-        MarkupString markupMessage = (MarkupString)html;
+                          @media (max-width: 420px) {{
+                            .cg-card {{ border-radius: 10px; }}
+                            .cg-icon {{ width:64px; height:64px; font-size:30px; }}
+                          }}
+                        </style>
 
-        await dialogService.ShowMessageBox("", markupMessage, "OK");
+                        <div class='cg-card' role='dialog' aria-labelledby='cg-title' aria-describedby='cg-message'>
+                          <div class='cg-body'>
+                            <div class='cg-icon' aria-hidden='true'>{icon}</div>
+                            <div id='cg-title' class='cg-title'>{titleText}</div>
+                            <div id='cg-message' class='cg-message'>{System.Net.WebUtility.HtmlEncode(message)}</div>
+                          </div>
+                        </div>
+                        ";
+
+        await dialogService.ShowMessageBox(
+            title: "",
+            markupMessage: (MarkupString)html,
+            yesText: "OK"
+        );
     }
 
 

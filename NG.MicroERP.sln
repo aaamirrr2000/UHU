@@ -17,9 +17,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NG.MicroERP.Web", "NG.Micro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NG.MicroERP.API", "NG.MicroERP.API\NG.MicroERP.API.csproj", "{DF5010ED-2D67-618B-00B5-3666C67B8B78}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NG.MicroERP.App.SwiftServe", "NG.MicroERP.App.SwiftServe\NG.MicroERP.App.SwiftServe.csproj", "{2FB63F7F-E9D7-4187-95CB-578ED418B6B9}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NG.MicroERP.POS", "NG.MicroERP.POS\NG.MicroERP.POS.csproj", "{0A894A50-BDA2-43A3-B059-6E8AD2980DBA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HikConnect", "NG.MicroERP.HikConnect\HikConnect\HikConnect.csproj", "{6939F734-58AC-4ADB-FCEA-A55E5BE388F7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -56,15 +54,10 @@ Global
 		{DF5010ED-2D67-618B-00B5-3666C67B8B78}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF5010ED-2D67-618B-00B5-3666C67B8B78}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DF5010ED-2D67-618B-00B5-3666C67B8B78}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2FB63F7F-E9D7-4187-95CB-578ED418B6B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2FB63F7F-E9D7-4187-95CB-578ED418B6B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2FB63F7F-E9D7-4187-95CB-578ED418B6B9}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
-		{2FB63F7F-E9D7-4187-95CB-578ED418B6B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2FB63F7F-E9D7-4187-95CB-578ED418B6B9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0A894A50-BDA2-43A3-B059-6E8AD2980DBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0A894A50-BDA2-43A3-B059-6E8AD2980DBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0A894A50-BDA2-43A3-B059-6E8AD2980DBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0A894A50-BDA2-43A3-B059-6E8AD2980DBA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6939F734-58AC-4ADB-FCEA-A55E5BE388F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6939F734-58AC-4ADB-FCEA-A55E5BE388F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6939F734-58AC-4ADB-FCEA-A55E5BE388F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6939F734-58AC-4ADB-FCEA-A55E5BE388F7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

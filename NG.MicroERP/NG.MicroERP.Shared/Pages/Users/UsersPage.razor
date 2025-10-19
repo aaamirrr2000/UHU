@@ -117,6 +117,7 @@
                         </MudSelect>
                         <ValidationMessage For="@(() => record.EmpId)" />
                     </div>
+
                     <div class="col-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Group</label>
 
@@ -213,20 +214,18 @@
         Gro = await Functions.GetAsync<List<GroupsModel>>($"Groups/Search", true) ?? new List<GroupsModel>();
         Loc = await Functions.GetAsync<List<LocationsModel>>($"Locations/Search", true) ?? new List<LocationsModel>();
 
-
-
         if (Action == "INSERT")
         {
             record = new UsersModel();
             record.IsActive = 1;
             isReadOnly = false;
         }
-        else if (Action != "UPDATE")
+        else if (Action == "UPDATE")
         {
             await Get(CurrentRecord);
             isReadOnly = false;
         }
-        else if (Action != "VIEW")
+        else if (Action == "VIEW")
         {
             await Get(CurrentRecord);
             isReadOnly = true;
@@ -262,7 +261,6 @@
         record = new UsersModel();
         record.IsActive = 1;
         isReadOnly = false;
-        await _drawer.OpenDrawerAsync();
     }
 
     protected async Task View(int id)
@@ -270,7 +268,6 @@
         await Get(id);
         Action = "VIEW";
         isReadOnly = true;
-        await _drawer.OpenDrawerAsync();
     }
 
     protected async Task Edit(int id)
@@ -278,7 +275,6 @@
         await Get(id);
         Action = "UPDATE";
         isReadOnly = false;
-        await _drawer.OpenDrawerAsync();
     }
 
     protected async Task Delete()

@@ -1,5 +1,5 @@
 ﻿using DbUp;
-using Microsoft.Data.SqlClient;
+using MySql.Data.MySqlClient;
 using Microsoft.Extensions.Configuration;
 
 using System;
@@ -19,11 +19,11 @@ public class DatabaseMigrator(IConfiguration configuration)
             return;
         }
 
-        SqlConnectionStringBuilder builder = new(_connectionString);
-        string server = builder.DataSource;
+        MySqlConnectionStringBuilder builder = new(_connectionString);
+        string server = builder.Server;
         string userId = builder.UserID;
         string password = builder.Password;
-        string databaseName = builder.InitialCatalog;
+        string databaseName = builder.Database;
 
         if (string.IsNullOrEmpty(databaseName))
         {
@@ -31,22 +31,20 @@ public class DatabaseMigrator(IConfiguration configuration)
             return;
         }
 
-        string connectionStringWithoutDatabase = $"Server={server};Uid={userId};Pwd={password};TrustServerCertificate=True;"; 
+        string connectionStringWithoutDatabase = $"Server={server};Uid={userId};Pwd={password};";
 
-        using (SqlConnection connection = new(connectionStringWithoutDatabase))
+        using (MySqlConnection connection = new(connectionStringWithoutDatabase))
         {
             connection.Open();
-            SqlCommand cmd = connection.CreateCommand();
+            MySqlCommand cmd = connection.CreateCommand();
             cmd.CommandText = $@"
-                            IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = '{databaseName}')
-                            BEGIN
-                                CREATE DATABASE [{databaseName}];
-                            END";
+                CREATE DATABASE IF NOT EXISTS `{databaseName}`;
+                USE `{databaseName}`;";
 
             _ = cmd.ExecuteNonQuery();
         }
 
-        string fullConnectionString = $"Server={server};Database={databaseName};Uid={userId};Pwd={password};TrustServerCertificate=True;"; 
+        string fullConnectionString = $"Server={server};Database={databaseName};Uid={userId};Pwd={password};";
 
         string[] resourceNames = Assembly.GetExecutingAssembly().GetManifestResourceNames();
         Console.WriteLine("Embedded resources in assembly:");
@@ -56,7 +54,7 @@ public class DatabaseMigrator(IConfiguration configuration)
         }
 
         DbUp.Engine.UpgradeEngine upgrader = DeployChanges.To
-            .SqlDatabase(fullConnectionString)
+            .MySqlDatabase(fullConnectionString)
             .WithScriptsEmbeddedInAssembly(Assembly.GetExecutingAssembly(), s => s.Contains(".Scripts."))
             .LogToConsole()
             .Build();
@@ -72,5 +70,4 @@ public class DatabaseMigrator(IConfiguration configuration)
 
         Console.WriteLine("Database migration successful.");
     }
-
 }

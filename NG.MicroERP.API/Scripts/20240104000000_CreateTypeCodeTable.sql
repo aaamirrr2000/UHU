@@ -1,13 +1,13 @@
 ﻿CREATE TABLE TypeCode
 (
-    Id              INT IDENTITY(1,1) PRIMARY KEY,
-    Guid            UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
+    Id              INT AUTO_INCREMENT PRIMARY KEY,
+    Guid            CHAR(36) NOT NULL DEFAULT (UUID()),
     OrganizationId  INT NULL DEFAULT 1,
     ListName        VARCHAR(100) NULL DEFAULT NULL,
     ListValue       VARCHAR(100) NULL DEFAULT NULL,
     ParentId        INT NULL DEFAULT NULL,
     SeqNo           INT NULL DEFAULT NULL,
-    RowVersion      ROWVERSION
+    RowVersion      TIMESTAMP NULL
 );
 
 INSERT INTO TypeCode (ListName, ListValue, ParentId, SeqNo) VALUES 

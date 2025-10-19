@@ -28,34 +28,11 @@ public static class DependencyInjection
         services.AddSingleton<IOrganizationsService, OrganizationsService>();
         services.AddSingleton<IMyMenuService, MyMenuService>();
         services.AddSingleton<IGroupsService, GroupsService>();
-        services.AddSingleton<ILeavesService, LeavesService>();
         services.AddSingleton<ILocationsService, LocationsService>();
-        services.AddSingleton<ICategoriesService, CategoriesService>();
         services.AddSingleton<IEmployeesService, EmployeesService>();
         services.AddSingleton<IGroupsService, GroupsService>();
-        services.AddSingleton<IEmployeesDevicesService, EmployeesDevicesService>();
-        services.AddSingleton<IChartOfAccountsService, ChartOfAccountsService>();
-        services.AddSingleton<IStockReceivingService, StockReceivingService>();
-        services.AddSingleton<IBillService, BillService>();
-        services.AddSingleton<IBillDetailService, BillDetailService>();
-        services.AddSingleton<IRestaurantTablesService, RestaurantTablesService>();
-        services.AddSingleton<IDineinOrderStatusService, DineinOrderStatusService>();
-        services.AddSingleton<IServiceChargesService, ServiceChargesService>();
-        services.AddSingleton<ITaxService, TaxService>();
-        services.AddSingleton<IChargeRulesService, ChargeRulesService>();
-        services.AddSingleton<IFbrSubmissionService, FbrSubmissionService>();
-        services.AddSingleton<ITaxMasterService, TaxMasterService>();
-        services.AddSingleton<ITaxItemsService, TaxItemsService>();
         services.AddSingleton<IAreasService, AreasService>();
-
-        services.AddSingleton<IPartiesService, PartiesService>();
-        services.AddSingleton<IPartyBankDetailsService, PartyBankDetailsService>();
-        services.AddSingleton<IPartyContactsService, PartyContactsService>();
-        services.AddSingleton<IPartyDocumentsService, PartyDocumentsService>();
-        services.AddSingleton<IPartyFinancialsService, PartyFinancialsService>();
-        services.AddSingleton<IPartyVehiclesService, PartyVehiclesService>();
-
-        services.AddSingleton<IBankService, BankService>();
+        services.AddSingleton<ILeaveTypesService, LeaveTypesService>();
 
         services.AddScoped<Globals>();
         services.AddScoped<FileUploadService>();

@@ -48,13 +48,26 @@
                         @group.MenuCaption
                     </TitleContent>
                     <ChildContent>
-                    @foreach (var item in data.Where(x => x.ParentId == group.MenuId))
-                    {
-                        <MudNavLink OnClick="() => LoadOption(item)" NavLinkMatch="NavLinkMatch.Prefix" Class="d-flex align-items-center">
-                            <i class="@item.Icon" style="width: 24px; text-align: center;"></i>
-                            <span style="font-size: 14px; margin-left: 8px;">@item.MenuCaption</span>
-                        </MudNavLink>
-                    }
+                        @foreach (var item in data.Where(x => x.ParentId == group.MenuId))
+                        {
+                            <MudNavLink OnClick="() => LoadOption(item)" NavLinkMatch="NavLinkMatch.Prefix" Class="d-flex align-items-center">
+                                <!-- Main icon -->
+                                <i class="@item.Icon" style="width: 24px; text-align: center;"></i>
+
+                                <!-- Eye icon if View Only -->
+                                @*  @if (item.My_Privilege?.Trim().ToUpper() == "READ ONLY")
+                                {
+                                    <i class="fas fa-eye" style="width: 24px; text-align: center; margin-left: 4px;" title="View Only"></i>
+                                } *@
+
+                                <!-- Menu caption with conditional font color -->
+                                <span style="font-size: 14px; margin-left: 8px; color:@GetFontColor(item.My_Privilege)">
+                                    @item.MenuCaption
+                                </span>
+
+                            </MudNavLink>
+
+                        }
                     </ChildContent>
                 </MudNavGroup>
             }
@@ -138,6 +151,17 @@
         NavManager.NavigateTo($"/{item.PageName}/{item.AdditionalInfo}");
         LoadingPanel = false;
         StateHasChanged();
+    }
+
+    private string GetFontColor(string? privilege)
+    {
+        var normalized = privilege?.Trim().ToUpper();
+        return normalized switch
+        {
+            "FULL ACCESS" => "#546E7A", // Blue Gray 600 — balanced for both themes
+            "READ ONLY" => "#90A4AE",   // Blue Gray 300 — readable in both themes
+            _ => "#78909C"              // Blue Gray 400 — fallback neutral
+        };
     }
 
     void ToggleGroup(int groupId)

@@ -7,53 +7,29 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Scripts\20250304000000_CashBookReport.sql" />
-    <None Remove="Scripts\20250304100000_Bills.sql" />
-    <None Remove="Scripts\20250305000000_BillReport.sql" />
-  </ItemGroup>
-
-  <ItemGroup>
     <EmbeddedResource Include="Scripts\20240102000000_CreateOrganizationTable.sql" />
     <EmbeddedResource Include="Scripts\20240103000000_CreateMenuTable.sql" />
+    <EmbeddedResource Include="Scripts\20240104000000_CreateAcsEventsTable.sql" />
+    <EmbeddedResource Include="Scripts\20240112000000_CreateScannerDevicesTable.sql" />
     <EmbeddedResource Include="Scripts\20240104000000_CreateTypeCodeTable.sql" />
     <EmbeddedResource Include="Scripts\20240105000000_CreateEmployeesTable.sql" />
-    <EmbeddedResource Include="Scripts\20240106000000_CreateEmployeesDevicesTable.sql" />
     <EmbeddedResource Include="Scripts\20240107000000_CreateGroupsTable.sql" />
     <EmbeddedResource Include="Scripts\20240108000000_CreateUsersTable.sql" />
     <EmbeddedResource Include="Scripts\20240109000000_CreatePermissionsTable.sql" />
-    <EmbeddedResource Include="Scripts\20240110000000_CreateChartOfAccountsTable.sql" />
     <EmbeddedResource Include="Scripts\20240111000000_CreateLocationTable.sql" />
-    <EmbeddedResource Include="Scripts\20240113200000_CreateBankTable.sql" />
-    <EmbeddedResource Include="Scripts\20240114000000_CreatePartiesTable.sql" />
     <EmbeddedResource Include="Scripts\20240113000000_CreateAreasTable.sql" />
-    <EmbeddedResource Include="Scripts\20240113100000_CreateCategoriesTable.sql" />
-    <EmbeddedResource Include="Scripts\20240115200000_CreateSaleItemsView.sql" />
-    <EmbeddedResource Include="Scripts\20240115100000_CreateBundleTable.sql" />
-    <EmbeddedResource Include="Scripts\20240115000000_CreateItemsTable.sql" />
-    <EmbeddedResource Include="Scripts\20240115400000_CreateLeavesTable.sql" />
-    <EmbeddedResource Include="Scripts\20240116000000_CreateCashbookTable.sql" />
-    <EmbeddedResource Include="Scripts\20240116100000_CreateRestaurantTablesTable.sql" />
-    <EmbeddedResource Include="Scripts\20240117300000_CreateItemTaxesView.sql" />
-    <EmbeddedResource Include="Scripts\20240117200000_CreateItemTaxesTable.sql" />
-    <EmbeddedResource Include="Scripts\20240116200000_CreateTaxesMasterTable.sql" />
-    <EmbeddedResource Include="Scripts\20240117000000_CreateBillTable.sql" />
-    <EmbeddedResource Include="Scripts\20240118000000_CreateStockReceivingTable.sql" />
-    <EmbeddedResource Include="Scripts\20240117400000_CreateChargesRuleTable.sql" />
-    <EmbeddedResource Include="Scripts\20240120000000_CreateDevicesTable.sql" />
-    <EmbeddedResource Include="Scripts\20250220000000_CreateAttendance.sql" />
-    <EmbeddedResource Include="Scripts\20250250000000_DineInOrderStatusView.sql" />
+    <EmbeddedResource Include="Scripts\20250303200000_CreateLeavesTables.sql" />
+    <EmbeddedResource Include="Scripts\20250303100000_DailyAttendanceView.sql" />
     <EmbeddedResource Include="Scripts\20250303000000_GroupMenuView.sql" />
-    <EmbeddedResource Include="Scripts\20250304000000_CashBookReport.sql" />
-    <EmbeddedResource Include="Scripts\20250304100000_Bills.sql" />
-    <EmbeddedResource Include="Scripts\20240115300000_CategoriesHavingSomeItems.sql" />
-    <EmbeddedResource Include="Scripts\20250306000000_ItemTaxesView.sql" />
-    <EmbeddedResource Include="Scripts\20250305000000_BillReport.sql" />
   </ItemGroup>
 
   <ItemGroup>
+	  <PackageReference Include="dbup-mysql" Version="6.0.4" />
 	  <PackageReference Include="DinkToPdf" Version="1.0.8" />
 	  <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.3" />
 	  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.3" />
+	  <PackageReference Include="MySql.Data" Version="9.4.0" />
+	  <PackageReference Include="MySqlConnector" Version="2.4.0" />
 	  <PackageReference Include="Swashbuckle.AspNetCore" Version="8.0.0" />
 	  <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="8.0.0" />
 	  <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.3" />

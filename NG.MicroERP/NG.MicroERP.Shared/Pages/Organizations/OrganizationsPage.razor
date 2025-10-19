@@ -221,12 +221,12 @@
             record.IsActive = 1;
             isReadOnly = false;
         }
-        else if (Action != "VIEW")
+        else if (Action == "UPDATE")
         {
             await Get(CurrentRecord);
             isReadOnly = false;
         }
-        else if (Action != "VIEW")
+        else if (Action == "VIEW")
         {
             await Get(CurrentRecord);
             isReadOnly = true;
@@ -257,7 +257,6 @@
         record = new OrganizationsModel();
         record.IsActive = 1;
         isReadOnly = false;
-        await _drawer.OpenDrawerAsync();
     }
 
     protected async Task View(int id)
@@ -265,7 +264,6 @@
         await Get(id);
         Action = "VIEW";
         isReadOnly = true;
-        await _drawer.OpenDrawerAsync();
     }
 
     protected async Task Edit(int id)
@@ -273,7 +271,6 @@
         await Get(id);
         Action = "UPDATE";
         isReadOnly = false;
-        await _drawer.OpenDrawerAsync();
     }
 
     protected async Task Delete()

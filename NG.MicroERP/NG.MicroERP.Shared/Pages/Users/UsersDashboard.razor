@@ -104,11 +104,15 @@
         LoadingPanel = false;
     }
 
-    protected async Task Get(int id)
+    protected async Task Get(int id, bool ShowLoading=true)
     {
-        LoadingPanel = true;
-        record = await Functions.GetAsync<UsersModel>($"Users/Get?Id={id}", true) ?? new UsersModel();
-        LoadingPanel = false;
+        if (ShowLoading)
+            LoadingPanel = true;
+        
+            record = await Functions.GetAsync<UsersModel>($"Users/Get?Id={id}", true) ?? new UsersModel();
+
+        if (ShowLoading)
+            LoadingPanel = false;
     }
 
     protected async Task Clear()
@@ -152,14 +156,35 @@
         await Save();
     }
 
-    protected async Task ResetPassword(int id)
+    protected async void ResetPassword(int id)
     {
-        /*
-        await Get(id);
-        Action = "UPDATE";
-        isReadOnly = false;
-        await _drawer.OpenDrawerAsync();
-        */
+        try
+        {
+            await Get(id, false);
+
+            LoadingPanel = false;
+            var res = await Functions.ShowConfirmation(dialogService, $"Do you want to Reset Password? of '{record.Username}'");
+            if (res == false)
+                return;
+
+            LoadingPanel = true;
+            var result = await Functions.GetAsync<UsersModel>($"Login/ResetPassword/{id}", false);
+            LoadingPanel = false;
+
+            if (result != null)
+            {
+                SnackbarService.Add("New Password sent to your email.", Severity.Success);
+            }
+            else
+            {
+                SnackbarService.Add("Failed to send reset link. Please try again.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            LoadingPanel = false;
+            SnackbarService.Add("An error occurred while resetting password.", Severity.Error);
+        }
     }
 
     protected async Task Save()

@@ -98,7 +98,6 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddSingleton<DatabaseMigrator>();
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
-builder.Services.AddSingleton<PdfService>();
 
 var app = builder.Build();
 
