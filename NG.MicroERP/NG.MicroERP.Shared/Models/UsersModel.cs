@@ -35,4 +35,6 @@ public class UsersModel
     public int OrganizationId { get; set; } = 0;
     public string Dashboard { get; set; }=string.Empty;
 
+    public EmployeesModel? SelectedEmployee { get; set; }
+
 }

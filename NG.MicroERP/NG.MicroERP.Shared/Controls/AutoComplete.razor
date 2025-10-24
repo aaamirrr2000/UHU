@@ -1,0 +1,81 @@
+﻿@using MudBlazor
+@typeparam TItem
+
+<MudAutocomplete T="TItem"
+                 Value="@SelectedItem"
+                 ValueChanged="@OnValueChanged"
+                 SearchFunc="@SearchItems"
+                 ToStringFunc="@ItemToString"
+                 Clearable="true"
+                 DebounceInterval="300">
+    <ProgressIndicatorTemplate>
+        <MudProgressLinear Size="Size.Small" Indeterminate="true" Color="Color.Primary" />
+    </ProgressIndicatorTemplate>
+</MudAutocomplete>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Select";
+
+    // Original object binding
+    [Parameter] public TItem SelectedValue { get; set; } = default!;
+    [Parameter] public EventCallback<TItem> SelectedValueChanged { get; set; }
+
+    // New ID binding
+    [Parameter] public int SelectedId { get; set; }
+    [Parameter] public EventCallback<int> SelectedIdChanged { get; set; }
+    [Parameter] public Func<TItem, int> IdProperty { get; set; } = null!;
+
+    [Parameter] public List<TItem> DataList { get; set; } = new();
+    [Parameter] public Func<TItem, string> DisplayProperty { get; set; } = null!;
+    [Parameter] public Dictionary<string, object> AdditionalAttributes { get; set; } = new();
+
+    private TItem SelectedItem => GetSelectedItem();
+
+    private async Task<IEnumerable<TItem>> SearchItems(string value, CancellationToken token)
+    {
+        await Task.Delay(100, token);
+
+        if (string.IsNullOrEmpty(value))
+            return DataList.Take(20);
+
+        return DataList.Where(x =>
+            ItemToString(x)?.Contains(value, StringComparison.InvariantCultureIgnoreCase) == true
+        );
+    }
+
+    private string ItemToString(TItem item)
+    {
+        if (item == null) return string.Empty;
+        return DisplayProperty?.Invoke(item) ?? item?.ToString() ?? string.Empty;
+    }
+
+    private async Task OnValueChanged(TItem newValue)
+    {
+        if (IdProperty != null)
+        {
+            // ID binding mode
+            var newId = newValue != null ? IdProperty(newValue) : 0;
+            await SelectedIdChanged.InvokeAsync(newId);
+        }
+        else
+        {
+            // Original object binding mode
+            SelectedValue = newValue;
+            await SelectedValueChanged.InvokeAsync(newValue);
+        }
+    }
+
+    private TItem GetSelectedItem()
+    {
+        if (IdProperty != null && SelectedId > 0 && DataList != null)
+        {
+            // Find item by ID for ID binding mode
+            return DataList.FirstOrDefault(x => IdProperty(x) == SelectedId);
+        }
+        else
+        {
+            // Use direct object for original binding mode
+            return SelectedValue;
+        }
+    }
+}

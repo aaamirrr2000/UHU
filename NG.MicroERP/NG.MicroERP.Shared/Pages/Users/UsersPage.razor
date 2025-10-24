@@ -100,22 +100,14 @@
                         </MudSelect>                        
                         <ValidationMessage For="@(() => record.DarKLightTheme)" />
                     </div>
+                  
                     <div class="col-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Employee</label>
-
-                        <MudSelect @bind-Value="record.EmpId"
-                                   Placeholder="Emp"
-                                   Clearable="true">
-
-                            @if (Emp != null && Emp.Any())
-                            {
-                                foreach (var i in Emp)
-                                {
-                                    <MudSelectItem T="int" Value="@i.Id">@i.Fullname</MudSelectItem>
-                                }
-                            }
-                        </MudSelect>
-                        <ValidationMessage For="@(() => record.EmpId)" />
+                        <AutoComplete TItem="EmployeesModel"
+                                      DataList="@Emp"
+                                      DisplayProperty="@(p => p.Fullname)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="record.EmpId" />
                     </div>
 
                     <div class="col-6 flex-input">
@@ -188,6 +180,8 @@
     List<GroupsModel> Gro = new();
     List<LocationsModel> Loc = new();
 
+    private string? searchTerm;
+    private EmployeesModel? SelectedEmployee;
 
     [Parameter] public string Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
@@ -244,8 +238,8 @@
     protected void GetDefaultValues()
     {
 
-        if (Emp != null && Emp.Any() && record.EmpId == 0)
-            record.EmpId = Emp.First().Id;
+        // if (Emp != null && Emp.Any() && record.EmpId == 0)
+        //     record.EmpId = Emp.First().Id;
         if (Gro != null && Gro.Any() && record.GroupId == 0)
             record.GroupId = Gro.First().Id;
         if (Loc != null && Loc.Any() && record.LocationId == 0)
