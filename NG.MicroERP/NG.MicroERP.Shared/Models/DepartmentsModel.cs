@@ -1,0 +1,28 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace NG.MicroERP.Shared.Models;
+
+public class DepartmentsModel
+{
+    public int Id { get; set; }
+    public Guid Guid { get; set; }
+    public int OrganizationId { get; set; }
+    public string? DepartmentName { get; set; }
+    public int ParentId { get; set; }
+    public string? ParentDepartment { get; set; }
+    public string? Description { get; set; }
+    public int IsActive { get; set; }
+    public int CreatedBy { get; set; }
+    public DateTime CreatedOn { get; set; }
+    public string? CreatedFrom { get; set; }
+    public int UpdatedBy { get; set; }
+    public DateTime UpdatedOn { get; set; }
+    public string? UpdatedFrom { get; set; }
+    public bool IsSoftDeleted { get; set; }
+    public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
+
+}

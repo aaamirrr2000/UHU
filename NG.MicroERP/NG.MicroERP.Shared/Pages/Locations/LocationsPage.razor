@@ -64,18 +64,18 @@
                         <ValidationMessage For="@(() => record.Address)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Pocname</label>
-                        <MudTextField id="PocName" @bind-Value="record.PocName" placeholder="PocName" ReadOnly="@isReadOnly"></MudTextField>
+                        <label class="form-label" style="font-weight: bold;">POC Name</label>
+                        <MudTextField id="PocName" @bind-Value="record.PocName" placeholder="POC Name" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.PocName)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Pocemail</label>
-                        <MudTextField id="PocEmail" @bind-Value="record.PocEmail" placeholder="PocEmail" ReadOnly="@isReadOnly"></MudTextField>
+                        <label class="form-label" style="font-weight: bold;">POC Email</label>
+                        <MudTextField id="PocEmail" @bind-Value="record.PocEmail" placeholder="POC Email" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.PocEmail)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Pocphone</label>
-                        <MudTextField id="PocPhone" @bind-Value="record.PocPhone" placeholder="PocPhone" ReadOnly="@isReadOnly"></MudTextField>
+                        <label class="form-label" style="font-weight: bold;">POC Phone</label>
+                        <MudTextField id="PocPhone" @bind-Value="record.PocPhone" placeholder="POC Phone" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.PocPhone)" />
                     </div>
                     <div class="col-6 flex-input">
@@ -160,6 +160,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+
         await GetAll();
     }
 
@@ -180,12 +181,12 @@
             record.IsActive = 1;
             isReadOnly = false;
         }
-        else if (Action != "UPDATE")
+        else if (Action == "UPDATE")
         {
             await Get(CurrentRecord);
             isReadOnly = false;
         }
-        else if (Action != "VIEW")
+        else if (Action == "VIEW")
         {
             await Get(CurrentRecord);
             isReadOnly = true;

@@ -100,7 +100,7 @@ public class UsersService : IUsersService
 			VALUES 
 			(
 				'{obj.Username!.ToUpper()}', 
-				'{Config.GenerateRandomPassword()}', 
+				'{Config.Encrypt(Config.GenerateRandomPassword())}', 
 				'{obj.UserType!.ToUpper()}', 
 				{obj.DarKLightTheme},
 				{obj.EmpId},
@@ -198,7 +198,7 @@ public class UsersService : IUsersService
 
     public async Task<(bool, UsersModel)> Login(string UserName, string Password)
     {
-        string SQL = $@"Select * from Users where lower(username) = '{UserName.ToLower()}' and password = '{Password}';";
+        string SQL = $@"Select * from Users where lower(username) = '{UserName.ToLower()}' and password = '{Config.Encrypt( Password)}';";
         List<UsersModel>? res = await dapper.SearchByQuery<UsersModel>(SQL);
 
         if (res != null)
@@ -233,7 +233,7 @@ public class UsersService : IUsersService
                 EmployeesModel result = res[0];
 
                 string NewPassword = Config.GenerateRandomPassword();
-                string SQLUpdate = $@"UPDATE Users SET Password = '{NewPassword}' WHERE EmpId = {result.Id};";
+                string SQLUpdate = $@"UPDATE Users SET Password = '{Config.Encrypt( NewPassword)}' WHERE EmpId = {result.Id};";
 
                 var result1 = await dapper.Update(SQLUpdate);
                 if(result1.Item1 == true)
@@ -263,7 +263,7 @@ public class UsersService : IUsersService
                 _ = new UsersModel();
                 UsersModel u = usrs.Item2.FirstOrDefault()!;
                 string cpass = Config.GenerateRandomPassword();
-                string SQL = $@"Update Users set password = '" + cpass + "' where Id = " + u.Id + ";";
+                string SQL = $@"Update Users set password = '" + Config.Encrypt(cpass) + "' where Id = " + u.Id + ";";
                 (bool, string) r = await dapper.ExecuteQuery(SQL);
                 if (r.Item1 == false)
                 {
@@ -303,7 +303,7 @@ public class UsersService : IUsersService
             EmployeesModel Employee = Employees.FirstOrDefault();
 
             //Changing Password and Sending Email
-            SQL = $@"Update Users set password = '" + NewPassword + "' where Id = " + UserId + ";";
+            SQL = $@"Update Users set password = '" + Config.Encrypt(NewPassword) + "' where Id = " + UserId + ";";
             (bool, string) result = await dapper.ExecuteQuery(SQL);
             if (result.Item1 == false)
             {

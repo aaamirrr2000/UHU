@@ -1,7 +1,8 @@
 ﻿CREATE TABLE ScannerDevices
 (
     Id                  INT AUTO_INCREMENT PRIMARY KEY,
-    Guid                CHAR(36)        NOT NULL DEFAULT (UUID()),
+    Guid                CHAR(36)            NOT NULL DEFAULT (UUID()),
+    OrganizationId      INT                 NOT NULL DEFAULT 1,
     DeviceIpAddress     VARCHAR(100)    NOT NULL,
     UserName            VARCHAR(100)    NOT NULL,
     Password            VARCHAR(100)    NOT NULL,
@@ -9,6 +10,7 @@
     Make                VARCHAR(100)    NULL DEFAULT NULL,
     Model               VARCHAR(100)    NULL DEFAULT NULL,
     Serial              VARCHAR(100)    NULL DEFAULT NULL,
+    InOutAll            VARCHAR(5)      NULL DEFAULT 'ALL',
     IsActive            TINYINT         NOT NULL DEFAULT 1,
     CreatedBy           INT             NULL DEFAULT NULL,
     CreatedOn           DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -37,7 +39,7 @@ VALUES
 ),
 
 (
-    '172.16.1.203', 'admin', 'hik12345', 2,
+    '172.16.1.203', 'admin', 'hik12345', 1,
     'Hikvision', 'DS-K1T671TMFW', 'DS-K1T671TMFW20250107V030720ENAG2372586', 1,
     1, 'SetupScript', 1, 'SetupScript'
 );

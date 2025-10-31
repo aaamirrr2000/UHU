@@ -22,14 +22,10 @@
     UpdatedFrom         VARCHAR(255)    NULL DEFAULT NULL,
     IsSoftDeleted       TINYINT         NULL DEFAULT 0,
     RowVersion          TIMESTAMP       NULL,
-    FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
-    FOREIGN KEY (UpdatedBy) REFERENCES Users(Id),
     FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id)
 );
 
 INSERT INTO Locations 
     (OrganizationId, Code, Name, Address, PocName, PocEmail, PocPhone, LocationType, Latitude, Longitude, Radius, IsActive, CreatedBy, UpdatedBy)
 VALUES 
-    (NULL, 'LOC001', 'HEAD OFFICE', 'SADDAR', 'ZEESHAN RASHEED', 'NO EMAIL', 'NO PHONE', 'HEAD OFFICE', '33.56739413432688', '73.13653547252294', 10, 1, 1, 1),
-    (NULL, 'LOC002', 'PWD SHOP', 'PWD ROAD', 'ZEESHAN RASHEED', 'NO EMAIL', 'NO PHONE', 'SALES & SERVICE CENTER', '33.56739413432688', '73.13653547252294', 10, 1, 1, 1),
-    (NULL, 'LOC003', 'SADDAR SHOP', 'GHAKKAR PLAZA', 'ZEESHAN RASHEED', 'NO EMAIL', 'NO PHONE', 'SALES & SERVICE CENTER', '33.5980495840254', '73.04993519824058', 10, 1, 1, 1);
+    (NULL, '000001', 'MOITT', 'SEVENTH FLOOR', 'M SAEED', 'NO EMAIL', 'NO PHONE', 'HEAD OFFICE', '33.56739413432688', '73.13653547252294', 10, 1, 1, 1);

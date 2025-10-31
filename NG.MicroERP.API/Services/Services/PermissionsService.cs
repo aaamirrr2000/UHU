@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
+using MySql.Data.MySqlClient;
 using NG.MicroERP.API.Helper;
 using NG.MicroERP.API.Services;
 using NG.MicroERP.Shared.Helper;
@@ -65,7 +66,7 @@ public class PermissionsService : IPermissionsService
             string SQLExistYN = $"SELECT * FROM Permissions where MenuId={obj.MenuId} and GroupId={obj.GroupId} and OrganizationId={obj.OrganizationId}";
             string DBConnection = cfg.DefaultDB();
 
-            using IDbConnection cnn = new SqlConnection(DBConnection);
+            using IDbConnection cnn = new MySqlConnection(DBConnection);
 
             int count = await cnn.ExecuteScalarAsync<int>(SQLExistYN);
 

@@ -48,26 +48,22 @@
                         @group.MenuCaption
                     </TitleContent>
                     <ChildContent>
-                        @foreach (var item in data.Where(x => x.ParentId == group.MenuId))
+                        @foreach (var item in data.Where(x =>
+                                        x.ParentId == group.MenuId &&
+                                        (Globals.User.GroupId == 1 ||
+                                        (x.My_Privilege == "READ ONLY" || x.My_Privilege == "FULL ACCESS"))))
                         {
                             <MudNavLink OnClick="() => LoadOption(item)" NavLinkMatch="NavLinkMatch.Prefix" Class="d-flex align-items-center">
                                 <!-- Main icon -->
                                 <i class="@item.Icon" style="width: 24px; text-align: center;"></i>
 
-                                <!-- Eye icon if View Only -->
-                                @*  @if (item.My_Privilege?.Trim().ToUpper() == "READ ONLY")
-                                {
-                                    <i class="fas fa-eye" style="width: 24px; text-align: center; margin-left: 4px;" title="View Only"></i>
-                                } *@
-
-                                <!-- Menu caption with conditional font color -->
+                                <!-- Menu caption with privilege-based color -->
                                 <span style="font-size: 14px; margin-left: 8px; color:@GetFontColor(item.My_Privilege)">
                                     @item.MenuCaption
                                 </span>
-
                             </MudNavLink>
-
                         }
+
                     </ChildContent>
                 </MudNavGroup>
             }
@@ -115,32 +111,40 @@
         }
 
         LoadingPanel = true;
-        data = await Functions.GetAsync<List<GroupMenuModel>>($"Permissions/SearchGroupPermissions/{Globals.User.OrganizationId}", true) ?? new List<GroupMenuModel>();
+
+        data = await Functions.GetAsync<List<GroupMenuModel>>($"Permissions/SearchGroupPermissions/{Globals.User.OrganizationId}", true
+        ) ?? new List<GroupMenuModel>();
+
         LoadingPanel = false;
 
-        if (data != null && data.Count > 0)
+        if (data?.Count > 0)
         {
-            data = data.Where(x => x.AdditionalInfo != "Report").ToList();
-            data = data.Where(x => x.GroupId == Globals.User.GroupId).ToList();
+            data = data
+                .Where(x => x.AdditionalInfo != "Report" && x.GroupId == Globals.User.GroupId)
+                .ToList();
 
             if (Globals.User.GroupId != 1)
             {
-                MenuGroupData = MenuGroupData.Where(x => x.ParentId == 0 && (x.My_Privilege == "VIEW ONLY" || x.My_Privilege == "FULL ACCESS")).ToList();
+                MenuGroupData = data
+                    .Where(parent => parent.ParentId == 0 &&
+                        data.Any(child => child.ParentId == parent.MenuId &&
+                            (child.My_Privilege == "READ ONLY" || child.My_Privilege == "FULL ACCESS")))
+                    .ToList();
             }
             else
             {
                 MenuGroupData = data.Where(x => x.ParentId == 0).ToList();
             }
 
+            Globals.MyPermissions = data;
+
             foreach (var item in MenuGroupData)
-            {
                 item.IsToggled = false;
-            }
 
             if (MenuGroupData.Count > 0)
-            {
                 MenuGroupData[^1].IsToggled = true;
-            }
+
+            StateHasChanged();
         }
     }
 

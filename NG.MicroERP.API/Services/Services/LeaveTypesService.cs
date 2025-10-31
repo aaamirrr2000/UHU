@@ -26,7 +26,7 @@ public class LeaveTypesService : ILeaveTypesService
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;
 
-        SQL += " Order by Id Desc";
+        SQL += " Order by Id";
 
         List<LeaveTypesModel> result = (await dapper.SearchByQuery<LeaveTypesModel>(SQL)) ?? new List<LeaveTypesModel>();
 

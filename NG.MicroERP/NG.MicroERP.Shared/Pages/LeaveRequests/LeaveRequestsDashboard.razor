@@ -1,0 +1,240 @@
+﻿@page "/LeaveRequestsDashboard/{MyLeave?}"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="row" style="margin: 2px; height: 90vh; display: flex;">
+    <MyDrawer @ref="_drawer" Title="LeaveRequests" FaIcon="fas fa-address-book">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <LeaveRequestsPage Action="@Action" CurrentRecord="record.Id"/>
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    @if (data == null)
+    {
+        <SimpleLoading />
+    }
+    else
+    {
+        <div class="row">
+            <MudDataGrid T="LeaveRequestsModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="12" Dense="true">
+                <ToolBarContent>
+                    @if(Globals.MyLeave == true)
+                    {
+                        <MudText Typo="Typo.h6">My Leave Requests</MudText>
+                    }
+                    else{
+                        <MudText Typo="Typo.h6">Leave Requests Managment</MudText>
+                    }
+                    <MudSpacer />
+                    @if (AccessLevel == 1)
+                    {
+                        <MudButton StartIcon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Clear())">New</MudButton>
+                    }
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Info" OnClick="@(() => Refresh())">Refresh</MudButton>
+                </ToolBarContent>
+
+                <Columns>
+                    <TemplateColumn Title="Actions" CellStyle="width: 60px; min-width: 60px;">
+                        <CellTemplate Context="row">
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Dense="true">
+                                <MudMenuItem OnClick="@(() => View(row.Item.Id))">
+                                    <MudIcon Icon="@Icons.Material.Filled.Search" Class="me-2" /> View
+                                </MudMenuItem>
+                                @if (AccessLevel == 1)
+                                {
+                                    <MudMenuItem OnClick="@(() => Edit(row.Item.Id))">
+                                        <MudIcon Icon="@Icons.Material.Filled.Edit" Class="me-2" /> Edit
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => Delete(row.Item.Id))" Color="Color.Error">
+                                        <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
+                                    </MudMenuItem>
+                                }
+                            </MudMenu>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    @{
+                        if (!Globals.MyLeave)
+                        {
+                            <PropertyColumn Property="x => x.Fullname"
+                                            Title="Employee"
+                                            Sortable="true"
+                                            Filterable="true" />
+                        }
+                    }
+
+                <PropertyColumn Property="x => x.LeaveName" Title="Leave" Sortable="true" Filterable="true" />
+                <PropertyColumn Property="x => x.StartDate" Title="Start Date" Sortable="true" Filterable="true" Format="dd-MMM-yyy"/>
+				<PropertyColumn Property="x => x.EndDate" Title="End Date" Sortable="true" Filterable="true" Format="dd-MMM-yyy"/>
+				<PropertyColumn Property="x => x.Reason" Title="Reason" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.ContactAddress" Title="Address" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.ContactNumber" Title="Mobiel #" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.Status" Title="Status" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.AppliedDate" Title="Applied Date" Sortable="true" Filterable="true" Format="dd-MMM-yyy"/>
+                <PropertyColumn Property="x => x.ApprovedByName" Title="Approved By" Sortable="true" Filterable="true" />
+				<PropertyColumn Property="x => x.ApprovedDate" Title="Approved Date" Sortable="true" Filterable="true" Format="dd-MMM-yyy"/>
+				<PropertyColumn Property="x => x.Remarks" Title="Remarks" Sortable="true" Filterable="true" />
+
+                </Columns>
+
+                <PagerContent>
+                    <MudDataGridPager T="LeaveRequestsModel" />
+                </PagerContent>
+            </MudDataGrid>
+        </div>
+    }
+</div>
+
+@code
+{
+    List<LeaveRequestsModel> data = new();
+    LeaveRequestsModel record = new();
+    [Parameter] public string MyLeave { get; set; } = "T";
+    public string Action { get; set; } = "INSERT";
+
+    bool isReadOnly = true;
+    public int AccessLevel { get; set; } = 0;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        AccessLevel = Globals.PageAccess(NavManager, "LeaveRequestsDashboard");
+        //await GetAll();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (MyLeave == "T")
+        {
+            Globals.MyLeave = true;
+        }
+        else
+        {
+            Globals.MyLeave = false;
+        }
+
+        await GetAll();
+    }
+
+    protected async Task GetAll()
+    {
+        try
+        {
+            LoadingPanel = true;
+            data = null;
+
+            if (Globals.MyLeave == false)
+            {
+                data = await Functions.GetAsync<List<LeaveRequestsModel>>($"LeaveRequests/Search", true) ?? new List<LeaveRequestsModel>();
+            }
+            else
+            {
+                data = await Functions.GetAsync<List<LeaveRequestsModel>>($"LeaveRequests/Search/a.EmpId={Globals.User.EmpId}", true) ?? new List<LeaveRequestsModel>();
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading data: {ex.Message}", Severity.Error);
+            data = new List<LeaveRequestsModel>();
+        }
+        finally
+        {
+            LoadingPanel = false;
+            StateHasChanged();
+        }
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<LeaveRequestsModel>($"LeaveRequests/Get?Id={id}", true) ?? new LeaveRequestsModel();
+        LoadingPanel = false;
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new LeaveRequestsModel();
+        record.IsActive = 1;
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Refresh()
+    {
+        await GetAll();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        isReadOnly = true;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE"; 
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Get(id);
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+         
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedFrom = Functions.GetComputerDetails();
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = Functions.GetComputerDetails();
+
+        var result = await Functions.PostAsync<LeaveRequestsModel>($"LeaveRequests/{Action}", record, true);
+        if (result.Success == true)
+        {
+            SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
+        }
+        else
+        {
+            SnackbarService.Add($"Record Not Deleted", Severity.Error);
+            record = new();
+            isReadOnly = true;
+        }
+    
+        await GetAll();
+        LoadingPanel = false;
+        await _drawer.CloseDrawer();
+     
+    }
+
+}
+

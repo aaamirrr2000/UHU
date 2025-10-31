@@ -33,7 +33,10 @@
                 <ToolBarContent>
                     <MudText Typo="Typo.h6">Users Managment</MudText>
                     <MudSpacer />
-                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Clear())">New</MudButton>
+                    @if (AccessLevel == 1)
+                    {
+                        <MudButton StartIcon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Clear())">New</MudButton>
+                    }
                     <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Info" OnClick="@(() => Refresh())">Refresh</MudButton>
                 </ToolBarContent>
 
@@ -44,23 +47,39 @@
                                 <MudMenuItem OnClick="@(() => View(row.Item.Id))">
                                     <MudIcon Icon="@Icons.Material.Filled.Search" Class="me-2" /> View
                                 </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => Edit(row.Item.Id))">
-                                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="me-2" /> Edit
-                                </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => Delete(row.Item.Id))" Color="Color.Error">
-                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
-                                </MudMenuItem>
-                                <hr />
-                                <MudMenuItem OnClick="@(() => ResetPassword(row.Item.Id))" Color="Color.Error">
-                                    <MudIcon Icon="@Icons.Material.Filled.Key" Class="me-2" /> Reset Password
-                                </MudMenuItem>
+                                @if (AccessLevel == 1)
+                                {
+                                    <MudMenuItem OnClick="@(() => Edit(row.Item.Id))">
+                                        <MudIcon Icon="@Icons.Material.Filled.Edit" Class="me-2" /> Edit
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => Delete(row.Item.Id))" Color="Color.Error">
+                                        <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
+                                    </MudMenuItem>
+                                    <hr />
+                                    <MudMenuItem OnClick="@(() => ResetPassword(row.Item.Id))" Color="Color.Error">
+                                        <MudIcon Icon="@Icons.Material.Filled.Key" Class="me-2" /> Reset Password
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => ShowPassword(row.Item.Id))" Color="Color.Error">
+                                        <MudIcon Icon="@Icons.Material.Filled.Key" Class="me-2" /> Show Password
+                                    </MudMenuItem>
+                                }
                             </MudMenu>
                         </CellTemplate>
                     </TemplateColumn>
 
                     <PropertyColumn Property="x => x.Username" Title="User Name" Sortable="true" Filterable="true" />
+
+                    @if(AccessLevel == 1)
+                    {
+                        <PropertyColumn Property="x => x.Password" Title="Password" Sortable="true" Filterable="true" />
+                    }
+
                     <PropertyColumn Property="x => x.UserType" Title="User Type" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.DarKLightTheme" Title="Theme" Sortable="true" Filterable="true"/>
+                    <TemplateColumn Title="Theme" CellStyle="width: 50px; min-width: 50px;">
+                        <CellTemplate Context="row">
+                            @((row.Item.DarKLightTheme == 1) ? "Dark" : "Light")
+                        </CellTemplate>
+                    </TemplateColumn>
                     <PropertyColumn Property="x => x.FullName" Title="Employee" Sortable="true" Filterable="true"  />
                     <PropertyColumn Property="x => x.GroupName" Title="Group" Sortable="true" Filterable="true"  />
                     <PropertyColumn Property="x => x.LocationName" Title="Location" Sortable="true" Filterable="true"  />
@@ -89,11 +108,13 @@
     public string Action { get; set; } = "INSERT";
 
     bool isReadOnly = true;
+    public int AccessLevel { get; set; } = 0;
     private bool LoadingPanel { get; set; } = false;
     private MyDrawer _drawer = new();
 
     protected override async Task OnInitializedAsync()
     {
+        AccessLevel = Globals.PageAccess(NavManager, "UsersDashboard");
         await GetAll();
     }
 
@@ -184,6 +205,20 @@
         {
             LoadingPanel = false;
             SnackbarService.Add("An error occurred while resetting password.", Severity.Error);
+        }
+    }
+
+    protected async void ShowPassword(int id)
+    {
+        try
+        {
+            await Get(id, false);
+            await Functions.ShowMessage(dialogService, "warning", $"Password is {Globals.Decrypt(record.Password)}");
+        }
+        catch (Exception ex)
+        {
+            LoadingPanel = false;
+            SnackbarService.Add("An error occurred while showing password.", Severity.Error);
         }
     }
 

@@ -13,7 +13,7 @@
     <div class="text-end" style="margin-top:10px;">
         @if (Action != "VIEW")
         {
-            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
                 <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
                 @(Action == "INSERT" ? "Save" : "Update")
             </MudButton>
@@ -41,24 +41,27 @@
                     </i>
 
                     <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">@record.Fullname</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted">@record.Phone @record.Email</MudText>
+                        <MudText Typo="Typo.h6" Class="fw-bold">Employees</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Employees</MudText>
                     </div>
                 </div>
+                <hr />
             </TitleContent>
 
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
+
                     <div class="col-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Empid</label>
+                        <label class="form-label" style="font-weight: bold;">Employee Id</label>
                         <MudTextField id="EmpId" @bind-Value="record.EmpId" placeholder="EmpId" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.EmpId)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Fullname</label>
-                        <MudTextField id="Fullname" @bind-Value="record.Fullname" placeholder="Fullname" ReadOnly="@isReadOnly"></MudTextField>
+                        <label class="form-label" style="font-weight: bold;">Full Name</label>
+                        <MudTextField id="Fullname" @bind-Value="record.Fullname" placeholder="Full Name" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Fullname)" />
                     </div>
+
                     <div class="col-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Phone</label>
                         <MudTextField id="Phone" @bind-Value="record.Phone" placeholder="Phone" ReadOnly="@isReadOnly"></MudTextField>
@@ -70,21 +73,21 @@
                         <ValidationMessage For="@(() => record.Email)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">CNIC</label>
-                        <MudTextField id="Cnic" @bind-Value="record.Cnic" placeholder="CNIC" ReadOnly="@isReadOnly"></MudTextField>
+                        <label class="form-label" style="font-weight: bold;">Cnic</label>
+                        <MudTextField id="Cnic" @bind-Value="record.Cnic" placeholder="Cnic" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Cnic)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Empaddress</label>
-                        <MudTextField id="Address" @bind-Value="record.EmpAddress" placeholder="Address" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.EmpAddress)" />
+                        <label class="form-label" style="font-weight: bold;">Address</label>
+                        <MudTextField id="Address" @bind-Value="record.Address" placeholder="Address" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Address)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Employee Type</label>
+                        <label class="form-label" style="font-weight: bold;">Type</label>
 
                         <MudSelect T="string"
                                    @bind-Value="record.EmpType"
-                                   Placeholder="Employee Type"
+                                   Placeholder="Type"
                                    Clearable="true">
 
                             @if (Emp != null && Emp.Any())
@@ -104,9 +107,41 @@
                         <ValidationMessage For="@(() => record.EmpType)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Empdept</label>
-                        <MudTextField id="Department" @bind-Value="record.EmpDept" placeholder="Department" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.EmpDept)" />
+                        <label class="form-label" style="font-weight: bold;">Department</label>
+
+                        <AutoComplete TItem="DepartmentsModel"
+                                      DataList="@Dep"
+                                      DisplayProperty="@(p => p.DepartmentName)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="record.DepartmentId" />
+                        <ValidationMessage For="@(() => record.DepartmentId)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Designation</label>
+
+                        <AutoComplete TItem="DesignationsModel"
+                                      DataList="@Des"
+                                      DisplayProperty="@(p => p.DesignationName)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="record.DesignationId" />
+                        <ValidationMessage For="@(() => record.DesignationId)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Shift</label>
+
+                        <MudSelect @bind-Value="record.ShiftId"
+                                   Placeholder="Shift"
+                                   Clearable="true">
+
+                            @if (Shi != null && Shi.Any())
+                            {
+                                foreach (var i in Shi)
+                                {
+                                    <MudSelectItem T="int" Value="@i.Id">@i.ShiftName</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.ShiftId)" />
                     </div>
                     <div class="col-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Location</label>
@@ -125,6 +160,36 @@
                         </MudSelect>
                         <ValidationMessage For="@(() => record.LocationId)" />
                     </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Manager (Report To)</label>
+                        <AutoComplete TItem="EmployeesModel"
+                                      DataList="@Par"
+                                      DisplayProperty="@(p => p.Fullname)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="record.ParentId" />
+
+                        <ValidationMessage For="@(() => record.ParentId)" />
+                    </div>
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Tracking</label>
+
+                            <MudSelect T="int"
+                                       @bind-Value="record.ExcludeFromAttendance"
+                                       Placeholder="Exclude From Attendance Tracking"
+                                       Clearable="true">
+
+                                @if (record.ExcludeFromAttendance != 0 && record.ExcludeFromAttendance != 1)
+                                {
+                                    record.IsActive = 1;
+                                }
+
+                                <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                                <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                            </MudSelect>
+
+                            <ValidationMessage For="@(() => record.ExcludeFromAttendance)" />
+                        </div>
+
                     <div class="col-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Active</label>
 
@@ -169,6 +234,7 @@
                             <InputFile OnChange="OnFileInputChanged" />
                         </div>
                     </div>
+
                 </div>
             </ChildContent>
 
@@ -182,6 +248,9 @@
     EmployeesModel record = new();
     List<OrganizationsModel> Org = new();
     List<TypeCodeModel> Emp = null!;
+    List<DepartmentsModel> Dep = new();
+    List<DesignationsModel> Des = new();
+    List<ShiftsModel> Shi = new();
     List<LocationsModel> Loc = new();
     List<EmployeesModel> Par = new();
 
@@ -207,8 +276,11 @@
     {
         LoadingPanel = true;
         Emp = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/EMPLOYEE TYPE", true) ?? new List<TypeCodeModel>();
+        Dep = await Functions.GetAsync<List<DepartmentsModel>>($"Departments/Search", true) ?? new List<DepartmentsModel>();
+        Des = await Functions.GetAsync<List<DesignationsModel>>($"Designations/Search", true) ?? new List<DesignationsModel>();
+        Shi = await Functions.GetAsync<List<ShiftsModel>>($"Shifts/Search", true) ?? new List<ShiftsModel>();
         Loc = await Functions.GetAsync<List<LocationsModel>>($"Locations/Search", true) ?? new List<LocationsModel>();
-        Par = await Functions.GetAsync<List<EmployeesModel>>($"Parent/Search", true) ?? new List<EmployeesModel>();
+        Par = await Functions.GetAsync<List<EmployeesModel>>($"Employees/Search", true) ?? new List<EmployeesModel>();
 
         if (Action == "INSERT")
         {
@@ -242,6 +314,12 @@
 
         if (Org != null && Org.Any() && record.OrganizationId == 0)
             record.OrganizationId = Org.First().Id;
+        if (Dep != null && Dep.Any() && record.DepartmentId == 0)
+            record.DepartmentId = Dep.First().Id;
+        if (Des != null && Des.Any() && record.DesignationId == 0)
+            record.DesignationId = Des.First().Id;
+        if (Shi != null && Shi.Any() && record.ShiftId == 0)
+            record.ShiftId = Shi.First().Id;
         if (Loc != null && Loc.Any() && record.LocationId == 0)
             record.LocationId = Loc.First().Id;
         if (Par != null && Par.Any() && record.ParentId == 0)
@@ -336,4 +414,3 @@
         }
     }
 }
-

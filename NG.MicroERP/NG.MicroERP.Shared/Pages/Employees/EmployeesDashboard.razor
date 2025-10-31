@@ -1,6 +1,5 @@
 ﻿@page "/EmployeesDashboard"
 
-
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
 @inject NavigationManager NavManager
@@ -9,13 +8,13 @@
 <Loading IsLoading="@LoadingPanel" />
 
 <div class="row" style="margin: 2px; height: 90vh; display: flex;">
-    <MyDrawer @ref="_drawer" Title="Employees" FaIcon="fa fa-male">
+    <MyDrawer @ref="_drawer" Title="Employees" FaIcon="fas fa-address-book">
         <HeaderContent>
         </HeaderContent>
         <ChildContent>
             <EditForm Model="record" OnSubmit="Save">
                 <MudForm>
-                    <EmployeesPage Action="@Action" CurrentRecord="record.Id"/>
+                    <EmployeesPage Action="@Action" CurrentRecord="record.Id" />
                 </MudForm>
             </EditForm>
         </ChildContent>
@@ -34,43 +33,58 @@
                 <ToolBarContent>
                     <MudText Typo="Typo.h6">Employees Managment</MudText>
                     <MudSpacer />
-                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Clear())">New</MudButton>
+                    @if (AccessLevel == 1)
+                    {
+                        <MudButton StartIcon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Clear())">New</MudButton>
+                    }
                     <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Info" OnClick="@(() => Refresh())">Refresh</MudButton>
                 </ToolBarContent>
 
                 <Columns>
+                   
                     <TemplateColumn Title="Actions" CellStyle="width: 60px; min-width: 60px;">
                         <CellTemplate Context="row">
                             <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Dense="true">
                                 <MudMenuItem OnClick="@(() => View(row.Item.Id))">
                                     <MudIcon Icon="@Icons.Material.Filled.Search" Class="me-2" /> View
                                 </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => Edit(row.Item.Id))">
-                                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="me-2" /> Edit
-                                </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => Delete(row.Item.Id))" Color="Color.Error">
-                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
-                                </MudMenuItem>
+                                @if (AccessLevel == 1)
+                                {
+                                    <MudMenuItem OnClick="@(() => Edit(row.Item.Id))">
+                                        <MudIcon Icon="@Icons.Material.Filled.Edit" Class="me-2" /> Edit
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => Delete(row.Item.Id))" Color="Color.Error">
+                                        <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
+                                    </MudMenuItem>
+                                }
                             </MudMenu>
                         </CellTemplate>
                     </TemplateColumn>
 
-                <PropertyColumn Property="x => x.EmpId" Title="Code" Sortable="true" Filterable="true" />
-
+                    <PropertyColumn Property="x => x.EmpId" Title="EmpId" Sortable="true" Filterable="true" />
                     <TemplateColumn Title="Picture" CellStyle="width: 50px; min-width: 50px;">
                         <CellTemplate Context="row">
                             <img src="@(!string.IsNullOrWhiteSpace(row.Item.Pic) ? row.Item.Pic : "images/no-image.png")" alt="Picture" style="width:30px; height:30px; border-radius: 50%;" />
                         </CellTemplate>
+                    </TemplateColumn>                   
+                    
+                    <PropertyColumn Property="x => x.Fullname" Title="Fullname" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Phone" Title="Phone" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Email" Title="Email" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Cnic" Title="NIC" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Address" Title="Address" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.EmpType" Title="Type" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.DepartmentId" Title="DepartmentId" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
+                    <PropertyColumn Property="x => x.DesignationId" Title="DesignationId" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
+                    <PropertyColumn Property="x => x.ShiftId" Title="ShiftId" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
+                    <PropertyColumn Property="x => x.LocationId" Title="LocationId" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
+                    <PropertyColumn Property="x => x.ParentId" Title="ParentId" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
+                    <TemplateColumn Title="Active" CellStyle="width: 50px; min-width: 50px;">
+                        <CellTemplate Context="row">
+                            @((row.Item.IsActive == 1) ? "" : "Locked")
+                        </CellTemplate>
                     </TemplateColumn>
 
-				<PropertyColumn Property="x => x.Fullname" Title="Name" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.Phone" Title="Phone" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.Email" Title="Email" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.Cnic" Title="SSN/NIC" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.EmpAddress" Title="Address" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.EmpType" Title="Type" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.EmpDept" Title="Dept" Sortable="true" Filterable="true" />
-				
                 </Columns>
 
                 <PagerContent>
@@ -89,18 +103,20 @@
     public string Action { get; set; } = "INSERT";
 
     bool isReadOnly = true;
+    public int AccessLevel { get; set; } = 0;
     private bool LoadingPanel { get; set; } = false;
     private MyDrawer _drawer = new();
 
     protected override async Task OnInitializedAsync()
     {
+        AccessLevel = Globals.PageAccess(NavManager, "EmployeesDashboard");
         await GetAll();
     }
 
     protected async Task GetAll()
     {
         LoadingPanel = true;
-       data = await Functions.GetAsync<List<EmployeesModel>>($"Employees/Search", true) ?? new List<EmployeesModel>();
+        data = await Functions.GetAsync<List<EmployeesModel>>($"Employees/Search", true) ?? new List<EmployeesModel>();
         LoadingPanel = false;
     }
 
@@ -122,7 +138,7 @@
 
     protected async Task Refresh()
     {
-        data = await Functions.GetAsync<List<EmployeesModel>>($"Employees/Search", true) ?? new List<EmployeesModel>();
+        await GetAll();
     }
 
     protected async Task View(int id)
@@ -136,7 +152,7 @@
     protected async Task Edit(int id)
     {
         await Get(id);
-        Action = "UPDATE"; 
+        Action = "UPDATE";
         isReadOnly = false;
         await _drawer.OpenDrawerAsync();
     }
@@ -156,7 +172,6 @@
     {
         LoadingPanel = true;
 
-        record.ParentId = 0;
         record.OrganizationId = Globals.User.OrganizationId;
         record.CreatedBy = Globals.User.Id;
         record.CreatedOn = DateTime.Now;
@@ -168,19 +183,19 @@
         var result = await Functions.PostAsync<EmployeesModel>($"Employees/{Action}", record, true);
         if (result.Success == true)
         {
-            SnackbarService.Add($"Record Not Deleted", Severity.Error);
+            SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
         }
         else
         {
-            SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
+            SnackbarService.Add($"Record Not Deleted", Severity.Error);
             record = new();
             isReadOnly = true;
         }
 
-        data = await Functions.GetAsync<List<EmployeesModel>>($"Employees/Search", true) ?? new List<EmployeesModel>();
+        await GetAll();
         LoadingPanel = false;
         await _drawer.CloseDrawer();
 
     }
-}
 
+}

@@ -1,0 +1,268 @@
+﻿@page "/ScannerDevicesPage/{Action}/{CurrentRecord?}"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+
+    <div class="text-end" style="margin-top:10px;">
+        @if (Action != "VIEW")
+        {
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                @(Action == "INSERT" ? "Save" : "Update")
+            </MudButton>
+
+            @if (Action == "UPDATE")
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                    Delete
+                </MudButton>
+            }
+        }
+    </div>
+
+    <br />
+
+    <MudExpansionPanels MultiExpansion="true">
+        <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
+
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+
+                    <i class="fa fa-info-circle"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Scanner Devices</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Scanner Devices</MudText>
+                    </div>
+                </div>
+                <hr />
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Device IP Address</label>
+                        <MudTextField id="DeviceIpAddress" @bind-Value="record.DeviceIpAddress" placeholder="Device IP Address" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.DeviceIpAddress)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">User Name</label>
+                        <MudTextField id="UserName" @bind-Value="record.UserName" placeholder="User Name" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.UserName)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Password</label>
+                        <MudTextField id="Password" @bind-Value="record.Password" placeholder="Password" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Password)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Location</label>
+
+                        <MudSelect @bind-Value="record.LocationId"
+                                   Placeholder="Location"
+                                   Clearable="true">
+
+                            @if (Loc != null && Loc.Any())
+                            {
+                                foreach (var i in Loc)
+                                {
+                                    <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.LocationId)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Make</label>
+                        <MudTextField id="Make" @bind-Value="record.Make" placeholder="Make" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Make)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Model</label>
+                        <MudTextField id="Model" @bind-Value="record.Model" placeholder="Model" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Model)" />
+                    </div>
+                    <div class="col-12 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Serial</label>
+                        <MudTextField id="Serial" @bind-Value="record.Serial" placeholder="Serial" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Serial)" />
+                    </div>
+
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">In Out All</label>
+                        <MudSelect T="string"
+                                   @bind-Value="record.InOutAll"
+                                   Placeholder="In Out All">
+
+                            <MudSelectItem T="string" Value=@("IN")>In</MudSelectItem>
+                            <MudSelectItem T="string" Value=@("OUT")>Out</MudSelectItem>
+                            <MudSelectItem T="string" Value=@("ALL")>All</MudSelectItem>
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.InOutAll)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Active</label>
+                        <MudSelect T="int"
+                                   @bind-Value="record.IsActive"
+                                   Placeholder="Active"
+                                   Clearable="true">
+
+                            @if (record.IsActive != 0 && record.IsActive != 1)
+                            {
+                                record.IsActive = 1;
+                            }
+
+                            <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                            <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.IsActive)" />
+                    </div>
+                   
+
+                </div>
+            </ChildContent>
+
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+
+</div>
+
+@code
+{
+    ScannerDevicesModel record = new();
+    List<OrganizationsModel> Org = new();
+    List<LocationsModel> Loc = new();
+
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        Loc = await Functions.GetAsync<List<LocationsModel>>($"Locations/Search", true) ?? new List<LocationsModel>();
+
+        if (Action == "INSERT")
+        {
+            record = new ScannerDevicesModel();
+            record.IsActive = 1;
+            isReadOnly = false;
+        }
+        else if (Action == "UPDATE")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action == "VIEW")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<ScannerDevicesModel>($"ScannerDevices/Get?Id={id}", true) ?? new ScannerDevicesModel();
+        LoadingPanel = false;
+    }
+
+    protected void GetDefaultValues()
+    {
+
+        if (Org != null && Org.Any() && record.OrganizationId == 0)
+            record.OrganizationId = Org.First().Id;
+        if (Loc != null && Loc.Any() && record.LocationId == 0)
+            record.LocationId = Loc.First().Id;
+
+
+        StateHasChanged();
+    }
+
+    protected async void Clear()
+    {
+        Action = "INSERT";
+        record = new ScannerDevicesModel();
+        record.IsActive = 1;
+        isReadOnly = false;
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        isReadOnly = true;
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedFrom = Functions.GetComputerDetails();
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = Functions.GetComputerDetails();
+
+        string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+        var result = await Functions.PostAsync<ScannerDevicesModel>($"ScannerDevices/{url}", record, true);
+        if (result.Success == false)
+        {
+            await Functions.ShowMessage(dialogService, "error", $"Record Not Saved");
+        }
+        else
+        {
+            await Functions.ShowMessage(dialogService, "success", $"Record {Action} Successfully");
+            record = new();
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+        await _drawer.CloseDrawer();
+
+    }
+}
+

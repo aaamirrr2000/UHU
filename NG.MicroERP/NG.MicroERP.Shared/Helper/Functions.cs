@@ -28,7 +28,7 @@ public class Functions
     {
         try
         {
-            string uri = $"{Globals.BaseURI}api/{url}";
+            string uri = $"{Globals.BaseURI}{url}";
 
             using HttpClient httpClient = new();
             httpClient.DefaultRequestHeaders.Accept.Add(
@@ -83,7 +83,7 @@ public class Functions
     {
         try
         {
-            string uri = $"{Globals.BaseURI}api/{url}";
+            string uri = $"{Globals.BaseURI}{url}";
 
             using HttpClient httpClient = new();
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));

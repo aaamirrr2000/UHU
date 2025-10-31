@@ -82,33 +82,36 @@
                             <CellTemplate Context="row">
                                 <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Dense="true">
 
-                                    <!-- No Access Option -->
-                                    <MudMenuItem OnClick="@(() => NoAccess(row.Item.MenuId))">
-                                        <MudIcon Icon="@Icons.Material.Filled.Block"
-                                                 Color="Color.Error"
-                                                 Class="me-2" />
-                                        <MudText Typo="Typo.body2" Style="display: inline;">No Access</MudText>
-                                    </MudMenuItem>
-
-                                    <!-- Read Only Option -->
-                                    @if (row.Item.ParentId != 0)
+                                    @if (AccessLevel == 1)
                                     {
-                                        <MudMenuItem OnClick="@(() => ReadOnly(row.Item.MenuId))">
-                                            <MudIcon Icon="@Icons.Material.Filled.RemoveRedEye"
-                                            Color="Color.Warning"
+                                        <!-- No Access Option -->
+                                        <MudMenuItem OnClick="@(() => NoAccess(row.Item.MenuId))">
+                                            <MudIcon Icon="@Icons.Material.Filled.Block"
+                                            Color="Color.Error"
                                             Class="me-2" />
-                                            <MudText Typo="Typo.body2" Style="display: inline;">Read Only</MudText>
+                                            <MudText Typo="Typo.body2" Style="display: inline;">No Access</MudText>
+                                        </MudMenuItem>
+
+                                        <!-- Read Only Option -->
+                                        @if (row.Item.ParentId != 0)
+                                        {
+                                            <MudMenuItem OnClick="@(() => ReadOnly(row.Item.MenuId))">
+                                                <MudIcon Icon="@Icons.Material.Filled.RemoveRedEye"
+                                                Color="Color.Warning"
+                                                Class="me-2" />
+                                                <MudText Typo="Typo.body2" Style="display: inline;">Read Only</MudText>
+                                            </MudMenuItem>
+                                        }
+                                        <MudDivider />
+
+                                        <!-- Full Access Option -->
+                                        <MudMenuItem OnClick="@(() => FullAccess(row.Item.MenuId))">
+                                            <MudIcon Icon="@Icons.Material.Filled.Verified"
+                                            Color="Color.Success"
+                                            Class="me-2" />
+                                            <MudText Typo="Typo.body2" Style="display: inline;">Full Access</MudText>
                                         </MudMenuItem>
                                     }
-                                    <MudDivider />
-
-                                    <!-- Full Access Option -->
-                                    <MudMenuItem OnClick="@(() => FullAccess(row.Item.MenuId))">
-                                        <MudIcon Icon="@Icons.Material.Filled.Verified"
-                                                 Color="Color.Success"
-                                                 Class="me-2" />
-                                        <MudText Typo="Typo.body2" Style="display: inline;">Full Access</MudText>
-                                    </MudMenuItem>
                                 </MudMenu>
                             </CellTemplate>
                         </TemplateColumn>
@@ -209,19 +212,20 @@
     public string Action { get; set; } = "INSERT";
 
     bool isReadOnly = true;
+    public int AccessLevel { get; set; } = 0;
     private bool LoadingPanel { get; set; } = false;
     private MyDrawer _drawer = new();
 
     protected override async Task OnInitializedAsync()
     {
-       
+        AccessLevel = Globals.PageAccess(NavManager, "OrganizationsDashboard");
         await GetAll();
     }
 
     protected async Task GetAll()
     {
         LoadingPanel = true;
-        GroupsData = await Functions.GetAsync<List<GroupsModel>>($"Groups/Search", true) ?? new List<GroupsModel>();
+        GroupsData = await Functions.GetAsync<List<GroupsModel>>($"Groups/Search/Id!=1", true) ?? new List<GroupsModel>();
         await OnGroupChanged();
         LoadingPanel = false;
     }
@@ -289,15 +293,27 @@
 
     private async Task OnGroupChanged()
     {
-        LoadingPanel = true;
-        PreData = await Functions.GetAsync<List<GroupMenuModel>>($"Permissions/SearchGroupPermissions/{Globals.User.OrganizationId}/GroupId={selectedGroup}", true) ?? new List<GroupMenuModel>();
-        PreData = PreData
-            .OrderBy(x => x.ParentId == 0 ? x.MenuId : PreData.FirstOrDefault(p => p.MenuId == x.ParentId)?.MenuId ?? x.MenuId)
-            .ThenBy(x => x.ParentId)
-            .ThenBy(x => x.MenuId)
-            .ToList();
-        StateHasChanged();
-        LoadingPanel = false;
+        if (Globals.User == null)
+            return;
+
+        try
+        {
+            LoadingPanel = true;
+            PreData = await Functions.GetAsync<List<GroupMenuModel>>($"Permissions/SearchGroupPermissions/{Globals.User.OrganizationId}/GroupId={selectedGroup}", true) ?? new List<GroupMenuModel>();
+            PreData = PreData
+                    .OrderBy(x => x.ParentId == 0 ? x.MenuId : PreData.FirstOrDefault(p => p.MenuId == x.ParentId)?.MenuId ?? x.MenuId)
+                    .ThenBy(x => x.ParentId)
+                    .ThenBy(x => x.MenuId)
+                    .ToList();
+            StateHasChanged();
+            LoadingPanel = false;
+        }
+        catch (Exception)
+        {
+            
+            throw;
+        }
+      
     }
 
 }

@@ -33,6 +33,13 @@ public static class DependencyInjection
         services.AddSingleton<IGroupsService, GroupsService>();
         services.AddSingleton<IAreasService, AreasService>();
         services.AddSingleton<ILeaveTypesService, LeaveTypesService>();
+        services.AddSingleton<IHolidayCalendarService, HolidayCalendarService>();
+        services.AddSingleton<ILeaveRequestsService, LeaveRequestsService>();
+        services.AddSingleton<IScannerDevicesService, ScannerDevicesService>();
+        services.AddSingleton<IDesignationsService, DesignationsService>();
+        services.AddSingleton<IDepartmentsService, DepartmentsService>();
+        services.AddSingleton<IShiftsService, ShiftsService>();
+        services.AddSingleton<IDailyAttendanceService, DailyAttendanceService>();
 
         services.AddScoped<Globals>();
         services.AddScoped<FileUploadService>();

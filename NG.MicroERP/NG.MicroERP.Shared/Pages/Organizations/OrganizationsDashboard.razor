@@ -45,10 +45,13 @@
                                @*  <MudMenuItem OnClick="@(() => View(row.Item.Id))">
                                     <MudIcon Icon="@Icons.Material.TwoTone.Visibility" Size="Size.Small" Class="me-2" /> View
                                 </MudMenuItem> *@
-                                <MudMenuItem OnClick="@(() => Edit(row.Item.Id))">
-                                    <MudIcon Icon="@Icons.Material.TwoTone.Edit" Size="Size.Small" Class="me-2" /> Edit
-                                </MudMenuItem>
 
+                                @if (AccessLevel == 1)
+                                {
+                                    <MudMenuItem OnClick="@(() => Edit(row.Item.Id))">
+                                        <MudIcon Icon="@Icons.Material.TwoTone.Edit" Size="Size.Small" Class="me-2" /> Edit
+                                    </MudMenuItem>
+                                }
                                 @* <MudMenuItem OnClick="@(() => Delete(row.Item.Id))">
                                         <MudIcon Icon="@Icons.Material.TwoTone.Delete" Size="Size.Small" Class="me-2" /> Delete
                                     </MudMenuItem> *@
@@ -58,8 +61,6 @@
                             </MudMenu>
                         </CellTemplate>
                     </TemplateColumn>
-
-
 
                     <TemplateColumn Title="Logo" CellStyle="width: 50px; min-width: 50px;">
                         <CellTemplate Context="row">
@@ -101,11 +102,13 @@
     public string Action { get; set; } = "INSERT";
 
     bool isReadOnly = true;
+    public int AccessLevel { get; set; } = 0;
     private bool LoadingPanel { get; set; } = false;
     private MyDrawer _drawer = new();
 
     protected override async Task OnInitializedAsync()
     {
+        AccessLevel = Globals.PageAccess(NavManager, "OrganizationsDashboard");
         await GetAll();
     }
 

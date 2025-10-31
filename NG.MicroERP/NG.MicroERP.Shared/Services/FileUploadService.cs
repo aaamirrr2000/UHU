@@ -29,7 +29,7 @@ public class FileUploadService
             return (false, $"File is too large. Max size is {maxFileSize / 1024 / 1024}MB.");
         }
 
-        string uri = $"{Globals.BaseURI}api/FileUpload";
+        string uri = $"{Globals.BaseURI}FileUpload";
         var content = new MultipartFormDataContent();
 
         using var fileStream = file.OpenReadStream();

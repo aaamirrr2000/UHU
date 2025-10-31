@@ -1,0 +1,119 @@
+﻿<MudCard Class="stat-card p-3 shadow-sm rounded-lg"
+         style="@($"width:100%; height:160px; background-color:{BackgroundColor};")">
+
+    <div class="d-flex h-100">
+        <!-- Left section: Number, Heading, Percentage -->
+        <div class="d-flex flex-column justify-content-between flex-grow-1">
+            <div>
+                <MudText Typo="Typo.h4" Class="number-text fw-bold text-white">@Number</MudText>
+                <MudText Typo="Typo.body2" Class="subheading-text text-white mt-1">@Heading</MudText>
+                @if (Percentage != null)
+                {
+                    <MudPaper Class="d-inline-block mt-2 px-3 py-1 rounded"
+                              style="@($"width:50%; font-size:20px; text-align:center; background-color:white; color:{BackgroundColor}; ")">
+                        @(Percentage.HasValue ? $"{Percentage.Value:0.00}%" : "0.00%")
+                    </MudPaper>
+                }
+            </div>
+        </div>
+
+
+        <!-- Right section: Chart + Download button -->
+        <div class="d-flex flex-column justify-content-between align-items-end ms-3" style="width:100px;">
+            <MudIconButton Icon="@Icons.Material.Filled.Download"
+                           Color="Color.Secondary"
+                           OnClick="@(() => OnDownload.InvokeAsync())"
+                           Title="Download Data" />
+
+            <div class="chart-placeholder mt-2 flex-grow-1 d-flex justify-content-center align-items-end">
+                @if (ChartType == "bar")
+                {
+                    <svg width="100%" height="40" viewBox="0 0 80 25" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="0" y="10" width="6" height="15" rx="2" fill="@ChartColor" />
+                        <rect x="10" y="5" width="6" height="20" rx="2" fill="@ChartColor" />
+                        <rect x="20" y="8" width="6" height="17" rx="2" fill="@ChartColor" />
+                        <rect x="30" y="3" width="6" height="22" rx="2" fill="@ChartColor" />
+                        <rect x="40" y="9" width="6" height="16" rx="2" fill="@ChartColor" />
+                        <rect x="50" y="7" width="6" height="18" rx="2" fill="@ChartColor" />
+                        <rect x="60" y="6" width="6" height="19" rx="2" fill="@ChartColor" />
+                    </svg>
+                }
+                else if (ChartType == "line")
+                {
+                    <svg width="100%" height="40" viewBox="0 0 80 25" xmlns="http://www.w3.org/2000/svg">
+                        <polyline points="0,20 10,15 20,18 30,10 40,14 50,6 60,9 70,4"
+                                  fill="none" stroke="@ChartColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                }
+                else if (ChartType == "dot")
+                {
+                    <svg width="100%" height="40" viewBox="0 0 80 25" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="5" cy="15" r="3" fill="@ChartColor" />
+                        <circle cx="20" cy="10" r="3" fill="@ChartColor" />
+                        <circle cx="35" cy="18" r="3" fill="@ChartColor" />
+                        <circle cx="50" cy="7" r="3" fill="@ChartColor" />
+                        <circle cx="65" cy="12" r="3" fill="@ChartColor" />
+                    </svg>
+                }
+                else if (ChartType == "donut")
+                {
+                    <svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="18" cy="18" r="15.915" fill="none" stroke="#eee" stroke-width="4" />
+                        <circle cx="18" cy="18" r="15.915"
+                                fill="none"
+                                stroke="@ChartColor"
+                                stroke-width="4"
+                                stroke-dasharray="75 25"
+                                stroke-dashoffset="25"
+                                stroke-linecap="round"
+                                transform="rotate(-90 18 18)" />
+                        <text x="50%" y="54%" text-anchor="middle" fill="#fff" font-size="8px" font-weight="600">
+                            @(Percentage.HasValue ? $"{Percentage.Value:0.00}%" : "0.00%")
+                        </text>
+                    </svg>
+                }
+                else if (ChartType == "area")
+                {
+                    <svg width="100%" height="40" viewBox="0 0 80 25" xmlns="http://www.w3.org/2000/svg">
+                        <polygon points="0,20 10,15 20,18 30,10 40,14 50,6 60,9 70,4 70,25 0,25"
+                                 fill="@ChartColor" opacity="0.4" />
+                        <polyline points="0,20 10,15 20,18 30,10 40,14 50,6 60,9 70,4"
+                                  fill="none" stroke="@ChartColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                }
+                else if (ChartType == "sparkline")
+                {
+                    <svg width="100%" height="40" viewBox="0 0 80 25" xmlns="http://www.w3.org/2000/svg">
+                        <polyline points="0,15 10,12 20,18 30,14 40,10 50,8 60,12 70,5"
+                                  fill="none" stroke="@ChartColor" stroke-width="2" stroke-linecap="round" />
+                        @* Optional: small dots for each point *@
+                        <circle cx="0" cy="15" r="1.5" fill="@ChartColor" />
+                        <circle cx="10" cy="12" r="1.5" fill="@ChartColor" />
+                        <circle cx="20" cy="18" r="1.5" fill="@ChartColor" />
+                        <circle cx="30" cy="14" r="1.5" fill="@ChartColor" />
+                        <circle cx="40" cy="10" r="1.5" fill="@ChartColor" />
+                        <circle cx="50" cy="8" r="1.5" fill="@ChartColor" />
+                        <circle cx="60" cy="12" r="1.5" fill="@ChartColor" />
+                        <circle cx="70" cy="5" r="1.5" fill="@ChartColor" />
+                    </svg>
+                }
+            </div>
+        </div>
+
+    </div>
+</MudCard>
+
+
+@code {
+    [Parameter] public string? Heading { get; set; }
+    [Parameter] public string? Subheading { get; set; }
+    [Parameter] public string? Number { get; set; }
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public string? ChartType { get; set; } = "bar"; // "bar", "line", "dot", "donut"
+    [Parameter] public double? Percentage { get; set; }
+    [Parameter] public EventCallback OnDownload { get; set; }
+
+    // Dashboard styling parameters
+    [Parameter] public string BackgroundColor { get; set; } = "#1976d2"; // default blue
+    [Parameter] public string ChartColor { get; set; } = "#f26c2f";      // default accent color
+}

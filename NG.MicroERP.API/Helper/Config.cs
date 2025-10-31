@@ -33,6 +33,7 @@ namespace NG.MicroERP.API.Helper;
 public class Config
 {
     public static string BaseURI { get; set; } = "";
+    public static string key = "aT4hmLHkxfeXaT4h";
 
     public string DefaultConnectionString { get; private set; } = "";
     public string GlobalConnectionString { get; private set; } = "";
@@ -50,7 +51,6 @@ public class Config
         DefaultConnectionString = configuration.GetValue<string>("ConnectionStrings:Default") ?? string.Empty;
         GlobalConnectionString = configuration.GetValue<string>("ConnectionStrings:Global") ?? string.Empty;
     }
-
 
     public string DefaultDB() => DefaultConnectionString;
     public string GlobalDB() => GlobalConnectionString;
@@ -145,45 +145,76 @@ public class Config
         return Encoding.UTF8.GetString(bytes);
     }
 
-    public static async Task<int> Page_Authorized(string Uri)
+    public static string Encrypt(string text)
     {
+        byte[] keyBytes = Encoding.UTF8.GetBytes(key);
+        using Aes aes = Aes.Create();
+        aes.Key = keyBytes;
+        aes.IV = new byte[16]; // Zero IV (not recommended for production, use a random IV instead)
 
-        if (Uri.EndsWith("/"))
-        {
-            Uri = Uri[..^1];
-        }
-
-        string PageName = Uri.Split('/').LastOrDefault()!;
-        PermissionsService groupsService = new();
-
-        if (Globals.User.GroupId != 1)
-        {
-            List<GroupMenuModel> res = await groupsService.SearchGroupMenu(Globals.User.OrganizationId, $@"pagename = '{PageName}' and groupid={Globals.User.GroupId}")!;
-            if (res != null)
-            {
-                if (res.Count > 0)
-                {
-                    GroupMenuModel result = res.FirstOrDefault()!;
-                    return result.My_Privilege == "VIEW ONLY" ? 1 : result.My_Privilege == "FULL ACCESS" ? 2 : 0;
-                }
-            }
-            return 0;
-        }
-        else
-        {
-            return 2;
-        }
+        using MemoryStream memoryStream = new();
+        using CryptoStream cryptoStream = new(memoryStream, aes.CreateEncryptor(), CryptoStreamMode.Write);
+        byte[] textBytes = Encoding.UTF8.GetBytes(text);
+        cryptoStream.Write(textBytes, 0, textBytes.Length);
+        cryptoStream.FlushFinalBlock();
+        return Convert.ToBase64String(memoryStream.ToArray());
     }
 
-    public static async Task<(bool isAuthorized, int result)> AllowThisPage(string uri)
+    public static string Decrypt(string cipherText)
     {
-        if (Globals.User == null)
-            return (false, 0);
+        byte[] keyBytes = Encoding.UTF8.GetBytes(key);
+        byte[] cipherBytes = Convert.FromBase64String(cipherText);
 
-        Log.Information($"User {Globals.User.FullName} tried to access {uri}");
-        int res = await Page_Authorized(uri);
-        bool isAuthorized = res != 0 && (Globals.isVisible = res >= 1);
-        return (isAuthorized, res);
+        using Aes aes = Aes.Create();
+        aes.Key = keyBytes;
+        aes.IV = new byte[16];
+
+        using MemoryStream memoryStream = new(cipherBytes);
+        using CryptoStream cryptoStream = new(memoryStream, aes.CreateDecryptor(), CryptoStreamMode.Read);
+        byte[] textBytes = new byte[cipherBytes.Length];
+        int bytesRead = cryptoStream.Read(textBytes, 0, textBytes.Length);
+        return Encoding.UTF8.GetString(textBytes, 0, bytesRead);
     }
+
+    //public static async Task<int> Page_Authorized(string Uri)
+    //{
+
+    //    if (Uri.EndsWith("/"))
+    //    {
+    //        Uri = Uri[..^1];
+    //    }
+
+    //    string PageName = Uri.Split('/').LastOrDefault()!;
+    //    PermissionsService groupsService = new();
+
+    //    if (Globals.User.GroupId != 1)
+    //    {
+    //        List<GroupMenuModel> res = await groupsService.SearchGroupMenu(Globals.User.OrganizationId, $@"pagename = '{PageName}' and groupid={Globals.User.GroupId}")!;
+    //        if (res != null)
+    //        {
+    //            if (res.Count > 0)
+    //            {
+    //                GroupMenuModel result = res.FirstOrDefault()!;
+    //                return result.My_Privilege == "VIEW ONLY" ? 1 : result.My_Privilege == "FULL ACCESS" ? 2 : 0;
+    //            }
+    //        }
+    //        return 0;
+    //    }
+    //    else
+    //    {
+    //        return 2;
+    //    }
+    //}
+
+    //public static async Task<(bool isAuthorized, int result)> AllowThisPage(string uri)
+    //{
+    //    if (Globals.User == null)
+    //        return (false, 0);
+
+    //    Log.Information($"User {Globals.User.FullName} tried to access {uri}");
+    //    int res = await Page_Authorized(uri);
+    //    bool isAuthorized = res != 0 && (Globals.isVisible = res >= 1);
+    //    return (isAuthorized, res);
+    //}
 
 }

@@ -55,11 +55,6 @@
                         <ValidationMessage For="@(() => record.Username)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Password</label>
-                        <MudTextField id="Password" @bind-Value="record.Password" placeholder="Password" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.Password)" />
-                    </div>
-                    <div class="col-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">User Type</label>
 
                         <MudSelect T="string"
@@ -83,7 +78,7 @@
 
                         <ValidationMessage For="@(() => record.UserType)" />
                     </div>
-                    <div class="col-6 flex-input">
+                  @*   <div class="col-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Theme</label>
                         <MudSelect T="int"
                                    @bind-Value="record.DarKLightTheme"
@@ -99,7 +94,7 @@
                             <MudSelectItem T="int" Value="0">Dark</MudSelectItem>
                         </MudSelect>                        
                         <ValidationMessage For="@(() => record.DarKLightTheme)" />
-                    </div>
+                    </div> *@
                   
                     <div class="col-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Employee</label>
@@ -203,7 +198,7 @@
     protected async Task GetAll()
     {
         LoadingPanel = true;
-        Use = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/USE TYPE", true) ?? new List<TypeCodeModel>();
+        Use = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/USER TYPE", true) ?? new List<TypeCodeModel>();
         Emp = await Functions.GetAsync<List<EmployeesModel>>($"Employees/Search", true) ?? new List<EmployeesModel>();
         Gro = await Functions.GetAsync<List<GroupsModel>>($"Groups/Search", true) ?? new List<GroupsModel>();
         Loc = await Functions.GetAsync<List<LocationsModel>>($"Locations/Search", true) ?? new List<LocationsModel>();

@@ -10,16 +10,21 @@
     <EmbeddedResource Include="Scripts\20240102000000_CreateOrganizationTable.sql" />
     <EmbeddedResource Include="Scripts\20240103000000_CreateMenuTable.sql" />
     <EmbeddedResource Include="Scripts\20240104000000_CreateAcsEventsTable.sql" />
+    <EmbeddedResource Include="Scripts\20240104200000_CreateDesignationTable.sql" />
+    <EmbeddedResource Include="Scripts\20240104100000_CreateDepartmentTable.sql" />
+    <EmbeddedResource Include="Scripts\20240104300000_CreateShiftManagementTable.sql" />
     <EmbeddedResource Include="Scripts\20240112000000_CreateScannerDevicesTable.sql" />
     <EmbeddedResource Include="Scripts\20240104000000_CreateTypeCodeTable.sql" />
     <EmbeddedResource Include="Scripts\20240105000000_CreateEmployeesTable.sql" />
-    <EmbeddedResource Include="Scripts\20240107000000_CreateGroupsTable.sql" />
+    <EmbeddedResource Include="Scripts\20240104500000_CreateGroupsTable.sql" />
     <EmbeddedResource Include="Scripts\20240108000000_CreateUsersTable.sql" />
     <EmbeddedResource Include="Scripts\20240109000000_CreatePermissionsTable.sql" />
-    <EmbeddedResource Include="Scripts\20240111000000_CreateLocationTable.sql" />
+    <EmbeddedResource Include="Scripts\20240104400000_CreateLocationTable.sql" />
     <EmbeddedResource Include="Scripts\20240113000000_CreateAreasTable.sql" />
-    <EmbeddedResource Include="Scripts\20250303200000_CreateLeavesTables.sql" />
-    <EmbeddedResource Include="Scripts\20250303100000_DailyAttendanceView.sql" />
+    <EmbeddedResource Include="Scripts\20250303300000_CreateHolidayCalenderTables.sql" />
+    <EmbeddedResource Include="Scripts\20250303400000_CreateLeavesRequestsTables.sql" />
+    <EmbeddedResource Include="Scripts\20250303200000_CreateLeavesTypesTables.sql" />
+    <EmbeddedResource Include="Scripts\20250303500000_DailyAttendanceView.sql" />
     <EmbeddedResource Include="Scripts\20250303000000_GroupMenuView.sql" />
   </ItemGroup>
 
@@ -33,6 +38,7 @@
 	  <PackageReference Include="Swashbuckle.AspNetCore" Version="8.0.0" />
 	  <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="8.0.0" />
 	  <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.3" />
+	  <PackageReference Include="System.Net.Primitives" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -33,7 +33,10 @@
                 <ToolBarContent>
                     <MudText Typo="Typo.h6">Groups Managment</MudText>
                     <MudSpacer />
-                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Clear())">New</MudButton>
+                    @if (AccessLevel == 1)
+                    {
+                        <MudButton StartIcon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Clear())">New</MudButton>
+                    }
                     <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Info" OnClick="@(() => Refresh())">Refresh</MudButton>
                 </ToolBarContent>
 
@@ -44,12 +47,15 @@
                                 <MudMenuItem OnClick="@(() => View(row.Item.Id))">
                                     <MudIcon Icon="@Icons.Material.Filled.Search" Class="me-2" /> View
                                 </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => Edit(row.Item.Id))">
-                                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="me-2" /> Edit
-                                </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => Delete(row.Item.Id))" Color="Color.Error">
-                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
-                                </MudMenuItem>
+                                @if (AccessLevel == 1)
+                                {
+                                    <MudMenuItem OnClick="@(() => Edit(row.Item.Id))">
+                                        <MudIcon Icon="@Icons.Material.Filled.Edit" Class="me-2" /> Edit
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => Delete(row.Item.Id))" Color="Color.Error">
+                                        <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
+                                    </MudMenuItem>
+                                }
                             </MudMenu>
                         </CellTemplate>
                     </TemplateColumn>
@@ -80,11 +86,13 @@
     public string Action { get; set; } = "INSERT";
 
     bool isReadOnly = true;
+    public int AccessLevel { get; set; } = 0;
     private bool LoadingPanel { get; set; } = false;
     private MyDrawer _drawer = new();
 
     protected override async Task OnInitializedAsync()
     {
+        AccessLevel = Globals.PageAccess(NavManager, "GroupsDashboard");
         await GetAll();
     }
 

@@ -15,60 +15,52 @@
                        OnClick="@(() => DrawerToggle())" />
 
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            @* <img src="@Globals.Organization.Logo" class="company-logo" /> *@
+            @* <img src="@(Globals.Organization?.Logo ?? "")" class="company-logo" /> *@
             <span style="margin-left:5px; font-size: 24px; color: white; letter-spacing:2px;">
-                @* @Globals.Organization.Name *@
+                @* @(Globals.Organization?.Name ?? "Organization") *@
                 @DateTime.Now.ToString("dddd, dd MMMM yyyy")
-
             </span>
         </MudHidden>
 
         <MudSpacer />
 
         <MudHidden Breakpoint="Breakpoint.MdAndUp">
-            <a href="/@(Globals.User.Dashboard)" class="nav-link"><i class="fas fa-home"></i></a>
+            <a href="/@(Globals.User?.Dashboard ?? "dashboard")" class="nav-link"><i class="fas fa-home"></i></a>
             <a href="/ChangePasswordPage" class="nav-link"><i class="fas fa-key"></i></a>
             <a href="/" class="nav-link"><i class="fas fa-power-off"></i> </a>
         </MudHidden>
 
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <a href="/@(Globals.User.Dashboard)" class="nav-link"><i class="fas fa-home"></i> Home</a>
+            <a href="/@(Globals.User?.Dashboard ?? "dashboard")" class="nav-link"><i class="fas fa-home"></i> Home</a>
             <a href="/ChangePasswordPage" class="nav-link"><i class="fas fa-key"></i> Change Password</a>
-           
-            @* <a href="/" class="nav-link"><i class="fa-solid fa-code-merge"></i> @Globals.Version</a> *@
+
+            @* <a href="/" class="nav-link"><i class="fa-solid fa-code-merge"></i> @(Globals.Version ?? "")</a> *@
             <a href="/" class="nav-link"><i class="fas fa-power-off"></i> Log Out</a>
         </MudHidden>
 
         <MudThemeProvider @bind-IsDarkMode="@Globals._isDarkMode" Theme="_theme" />
-        <MudSwitch Value="@Globals._isDarkMode"
-                   ValueChanged="Save"
-                   Color="Color.Primary"
-                   Class="ma-4"
-                   T="bool"
-                   Label="Theme" />
+        @if (false)
+        {
+            <MudSwitch Value="@Globals._isDarkMode"
+                       ValueChanged="Save"
+                       Color="Color.Primary"
+                       Class="ma-4"
+                       T="bool"
+                       Label="Theme" />
+        }
     </MudAppBar>
 
     <MudDrawer @bind-Open="@_drawerOpen">
-        <MyNavMenu/>
+        <MyNavMenu />
     </MudDrawer>
     <MudMainContent>
         @Body
     </MudMainContent>
 </MudLayout>
 
-<style>
-    .company-logo
-    {
-        width: 40px;
-        height:40px;
-        border-radius: 5px;
-    }
-</style>
-
 @code {
     bool _drawerOpen = false;
     private MudTheme _theme = new();
-    // private bool _isDarkMode;
 
     void DrawerToggle()
     {
@@ -77,44 +69,58 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        if (Globals.User == null)
-            return;
+        try
+        {
+            if (Globals.User == null)
+            {
+                return;
+            }
 
-        if (Globals.User.DarKLightTheme == 1)
-        {
-            Globals._isDarkMode = false;
+            if (Globals.User.DarKLightTheme == 1)
+            {
+                Globals._isDarkMode = true;
+            }
+            else
+            {
+                Globals._isDarkMode = false;
+            }
         }
-        else
+        catch (Exception ex)
         {
-            Globals._isDarkMode = true;
+            Console.WriteLine($"Error in MainLayout OnParametersSetAsync: {ex.Message}");
         }
     }
 
-    protected async Task Save()
+    protected async Task Save(bool newValue)
     {
-        int theme = 0;
-        var theme_name = "LIGHT";
-        if (Globals._isDarkMode)
+        try
         {
-            theme = 1;
-            Globals._isDarkMode = false;
-            theme_name = "LIGHT";
-        }
-        else
-        {
-            theme = 0;
-            Globals._isDarkMode = true;
-            theme_name = "DARK";
-        }
+            if (Globals.User == null)
+            {
+                SnackbarService.Add("User not found. Please log in again.", Severity.Error);
+                return;
+            }
 
-        var result = await Functions.PostAsync<UsersModel>($"Users/SetTheme/{Globals.User.Id}/{theme}", null, true);
-        if (!result.Success)
-        {
-            SnackbarService.Add($"Theme not Updated.", Severity.Error);
+            Globals._isDarkMode = newValue;
+
+            int theme = newValue ? 1 : 0;
+            var theme_name = newValue ? "DARK" : "LIGHT";
+
+            var result = await Functions.PostAsync<UsersModel>($"Users/SetTheme/{Globals.User.Id}/{theme}", null, true);
+            if (!result.Success)
+            {
+                SnackbarService.Add("Theme not updated.", Severity.Error);
+                Globals._isDarkMode = !newValue;
+            }
+            else
+            {
+                Globals.User.DarKLightTheme = theme;
+                SnackbarService.Add($"Theme changed to {theme_name} mode", Severity.Success);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            Globals.User.DarKLightTheme = theme;
+            SnackbarService.Add($"Error saving theme: {ex.Message}", Severity.Error);
         }
     }
 }
@@ -129,5 +135,4 @@
     .company-logo {
         height: 40px;
     }
-
 </style>

@@ -1,0 +1,390 @@
+﻿@page "/AttendanceDetailReport"
+@using System.Text
+@inject IJSRuntime js
+
+<MudPaper Class="p-0">
+    <!-- Fixed Header -->
+    <div class="report-header sticky-top shadow-sm p-3 bg-white d-flex justify-content-between align-items-center">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Success"
+                   StartIcon="@Icons.Material.Filled.Download"
+                   OnClick="DownloadExcel"
+                   Size="Size.Small">
+            Export to CSV
+        </MudButton>
+    </div>
+
+    <!-- Scrollable Table Content -->
+    <div class="table-container">
+        @if (GroupedData != null && GroupedData.Any())
+        {
+            @foreach (var dateGroup in GroupedData)
+            {
+                <div class="mt-3">
+                    <MudText Typo="Typo.h6" Class="fw-semibold text-secondary">
+                        📅 @dateGroup.Key.ToString("dddd, dd MMM yyyy")
+                    </MudText>
+
+                    @foreach (var shiftGroup in dateGroup.Value)
+                    {
+                        <MudText Typo="Typo.subtitle1" Class="fw-semibold text-dark mb-2">
+                            🕒 Shift: @shiftGroup.Key
+                        </MudText>
+
+                        <div class="attendance-table-wrapper">
+                            <MudTable Items="@shiftGroup.Value"
+                                      Hover="true"
+                                      Dense="true"
+                                      Bordered="true"
+                                      Class="elevation-1 mb-4 attendance-table"
+                                      FixedHeader="true">
+
+                                <HeaderContent>
+                                    <MudTh>Emp ID</MudTh>
+                                    <MudTh>Name</MudTh>
+                                    <MudTh>Department</MudTh>
+                                    <MudTh>Designation</MudTh>
+
+                                    <!-- Arrival Section -->
+                                    <MudTh>Arrival Scheduled</MudTh>
+                                    <MudTh>Arrival Actual</MudTh>
+                                    <MudTh>Arrival Diff</MudTh>
+                                    <MudTh>Arrival Status</MudTh>
+
+                                    <!-- Leaving Section -->
+                                    <MudTh>Leaving Scheduled</MudTh>
+                                    <MudTh>Leaving Actual</MudTh>
+                                    <MudTh>Leaving Diff</MudTh>
+                                    <MudTh>Leaving Status</MudTh>
+
+                                    <MudTh>Day Type</MudTh>
+                                </HeaderContent>
+
+                                <RowTemplate>
+                                    <MudTd>@context.EmpId</MudTd>
+                                    <MudTd>@context.Fullname</MudTd>
+                                    <MudTd>@($"{context.Department}")</MudTd>
+                                    <MudTd>@($"{context.Designation}")</MudTd>
+
+                                    <MudTd>@context.ScheduledIn</MudTd>
+                                    <MudTd>
+                                        <MudText Color="@GetArrivalColor(context.ArrivalStatus)" Style="font-size:13px;">
+                                            @context.InTime
+                                        </MudText>
+                                    </MudTd>
+                                    <MudTd>
+                                        @if (context.InDiff != "00:00")
+                                        {
+                                            @context.InDiff
+                                        }
+                                    </MudTd>
+                                    <MudTd>
+                                        <span style="display:inline-block;
+                                             padding:0.25rem 0.5rem;
+                                             border-radius:16px;
+                                             background-color:@GetArrivalChipColor(context.ArrivalStatus);
+                                             color:white;
+                                             font-size:0.875rem;">
+                                            @context.ArrivalStatus
+                                        </span>
+
+
+                                    </MudTd>
+
+                                    <MudTd>@context.ScheduledOut</MudTd>
+                                    <MudTd>
+                                        <MudText Color="@GetLeavingColor(context.LeavingStatus)" Style="font-size:13px;">
+                                            @context.OutTime
+                                        </MudText>
+                                    </MudTd>
+                                    <MudTd>
+                                        @if (context.OutDiff != "00:00")
+                                        {
+                                            @context.OutDiff
+                                        }
+                                    </MudTd>
+                                    <MudTd>
+                                        <span style="display:inline-block;
+                                             padding:0.25rem 0.5rem;
+                                             border-radius:16px;
+                                             background-color:@GetLeavingChipColor(context.LeavingStatus);
+                                             color:white;
+                                             font-size:0.875rem;">
+                                            @context.LeavingStatus
+                                        </span>
+                                    </MudTd>
+
+                                    <MudTd>
+                                        @if (context.DayCategory == "WEEKEND")
+                                        {
+                                            <MudChip T="string" Style="background-color:#007bff; color:white;">Weekend</MudChip>
+                                        }
+                                        else if (context.DayCategory == "HOLIDAY")
+                                        {
+                                            <MudChip T="string" Style="background-color:#007bff; color:white;">Holiday</MudChip>
+                                        }
+                                        else if (context.DayCategory == "LEAVE")
+                                        {
+                                            <MudChip T="string" Style="background-color:#007bff; color:white;">On Leave</MudChip>
+                                        }
+                                        else
+                                        {
+                                            <MudChip T="string" Color="Color.Success">Working Day</MudChip>
+                                        }
+                                    </MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        </div>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
+                No attendance records found for the selected period.
+            </MudAlert>
+        }
+    </div>
+</MudPaper>
+
+
+
+@code {
+    [Parameter] public List<DailyAttendanceModel>? Data { get; set; }
+
+    private Dictionary<DateTime, Dictionary<string, List<DailyAttendanceModel>>>? GroupedData;
+
+    private Color GetArrivalColor(string? status) => status switch
+    {
+        "LATE" => Color.Error,
+        "ON TIME" => Color.Success,
+        "ON LEAVE" => Color.Warning,
+        "WEEKEND" => Color.Secondary,
+        _ => Color.Default
+    };
+
+    private Color GetLeavingColor(string? status) => status switch
+    {
+        "BEFORE TIME" => Color.Warning,
+        "ON TIME" => Color.Success,
+        "ON LEAVE" => Color.Warning,
+        "WEEKEND" => Color.Secondary,
+        _ => Color.Default
+    };
+
+    private string GetArrivalChipColor(string? status) => status?.ToUpper() switch
+    {
+        "ON TIME" => "#28a745",         // Green
+        "LATE" => "#ffc107",            // Yellow
+        "ABSENT" => "#dc3545",          // Red
+        "ON LEAVE" => "#17a2b8",        // Teal
+        "WEEKEND" => "#007bff",         // Blue
+        _ => "#6c757d"                  // Gray default
+    };
+
+    private string GetLeavingChipColor(string? status) => status?.ToUpper() switch
+    {
+        "ON TIME" => "#28a745",
+        "BEFORE TIME" => "#fd7e14",     // Orange
+        "ABSENT" => "#dc3545",
+        "ON LEAVE" => "#17a2b8",
+        "WEEKEND" => "#007bff",
+        _ => "#6c757d"
+    };
+
+    protected override void OnParametersSet()
+    {
+        if (Data != null && Data.Any())
+        {
+            GroupedData = Data
+                .Where(x => x.InDate != null)
+                .GroupBy(x => x.InDate!.Value.Date)
+                .OrderByDescending(g => g.Key)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.GroupBy(x => x.ShiftName ?? "Unassigned Shift")
+                          .ToDictionary(s => s.Key, s => s.ToList())
+                );
+        }
+    }
+
+    private string GetReportPeriod()
+    {
+        if (Data == null || !Data.Any())
+            return "No data available";
+
+        var dates = Data.Where(x => x.InDate.HasValue).Select(x => x.InDate.Value.Date).Distinct();
+        if (!dates.Any())
+            return "No date data available";
+
+        var minDate = dates.Min();
+        var maxDate = dates.Max();
+
+        return minDate == maxDate ?
+            minDate.ToString("dd MMM yyyy") :
+            $"{minDate:dd MMM yyyy} - {maxDate:dd MMM yyyy}";
+    }
+
+    private async Task DownloadExcel()
+    {
+        if (Data == null || !Data.Any())
+        {
+            // You can show a snackbar or alert here
+            Console.WriteLine("No data to export");
+            return;
+        }
+
+        try
+        {
+            var csvContent = GenerateCsvContent();
+            var fileName = $"Attendance_Report_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+
+            await DownloadFile(csvContent, fileName);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error generating Excel file: {ex.Message}");
+        }
+    }
+
+    private string GenerateCsvContent()
+    {
+        var csv = new StringBuilder();
+
+        // Add header row with proper column names
+        csv.AppendLine("Emp ID,Name,Department,Designation,Date,Scheduled Arrival,Actual Arrival,Time, Arrival Status, Scheduled Leaving,Actual Leaving,Leaving Variance,Leaving Status,Shift Name");
+
+        // Add data rows
+        if (Data != null)
+        {
+            foreach (var item in Data)
+            {
+                var row = new List<string>
+                {
+                    EscapeCsvField(item.EmpId.ToString() ?? ""),
+                    EscapeCsvField(item.Fullname ?? ""),
+                    EscapeCsvField(item.Department ?? ""),
+                    EscapeCsvField(item.Designation ?? ""),
+                    EscapeCsvField(item.InDate?.ToString("yyyy-MM-dd") ?? ""),
+                    EscapeCsvField(item.ScheduledIn ?? ""),
+                    EscapeCsvField(item.InTime ?? ""),
+                    EscapeCsvField(item.InDiff ?? ""),
+                    EscapeCsvField(item.ArrivalStatus ?? ""),
+                    EscapeCsvField(item.ScheduledOut ?? ""),
+                    EscapeCsvField(item.OutTime ?? ""),
+                    EscapeCsvField(item.OutDiff ?? ""),
+                    EscapeCsvField(item.LeavingStatus ?? ""),
+                    EscapeCsvField(item.ShiftName ?? "")
+                };
+
+                csv.AppendLine(string.Join(",", row));
+            }
+        }
+
+        return csv.ToString();
+    }
+
+    private string EscapeCsvField(string field)
+    {
+        if (string.IsNullOrEmpty(field))
+            return "";
+
+        // If field contains comma, quote, or newline, wrap in quotes and escape existing quotes
+        if (field.Contains(",") || field.Contains("\"") || field.Contains("\r") || field.Contains("\n"))
+        {
+            return "\"" + field.Replace("\"", "\"\"") + "\"";
+        }
+
+        return field;
+    }
+
+    private async Task DownloadFile(string content, string fileName)
+    {
+        try
+        {
+            // Convert string to bytes
+            var bytes = Encoding.UTF8.GetBytes(content);
+
+            // Convert to base64
+            var base64 = Convert.ToBase64String(bytes);
+
+            // Call JavaScript function to download the file
+            await js.InvokeVoidAsync("downloadFile", fileName, base64);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in download: {ex.Message}");
+        }
+    }
+}
+
+<style>
+    .report-header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .table-container {
+        max-height: 75vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 10px;
+        margin: 0;
+        background-color: #fff;
+    }
+
+    .attendance-table {
+        font-size: 14px;
+    }
+
+    .sticky-header {
+        position: sticky;
+        top: 0;
+        background-color: white;
+        z-index: 10;
+        font-weight: 600;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .grid-scroll-wrapper {
+        overflow-x: auto;
+    }
+
+    /* The column header uses the same grid-template-columns as rows.
+       Adjust each column width (px) to taste so headers align exactly with cells. */
+    .column-header-grid,
+    .rows-grid,
+    .data-row {
+        display: grid;
+        grid-template-columns: 80px /* Emp ID */
+        260px /* Name */
+        260px /* Department */
+        200px /* Designation */
+        140px /* Arrival Scheduled */
+        120px /* Arrival Actual */
+        100px /* Arrival Difference */
+        120px /* Arrival Status */
+        140px /* Leaving Scheduled */
+        120px /* Leaving Actual */
+        120px /* Leaving Difference */
+        120px; /* Leaving Status */
+        ;
+        gap: 8px;
+        align-items: center;
+    }
+
+    /* make header sticky immediately below the report header */
+    .sticky-column-header {
+        position: sticky;
+        top: 72px; /* adjust if your report header height differs */
+        z-index: 190;
+        background: #f8f9fa;
+        padding: 10px 12px;
+        border-bottom: 1px solid #e3e3e3;
+        font-weight: 600;
+    }
+
+</style>

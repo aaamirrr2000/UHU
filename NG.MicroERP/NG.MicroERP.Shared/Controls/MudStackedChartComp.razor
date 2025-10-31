@@ -1,0 +1,152 @@
+﻿@using NG.MicroERP.Shared.Reports
+
+<MudPaper Class="p-4">
+
+    <MudDivider Class="mb-3" />
+
+    @if (HasError)
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-3">
+            An error occurred while loading the chart: @ErrorMessage
+        </MudAlert>
+    }
+    else if (ChartGroupData != null)
+    {
+        <div class="mb-5">
+            <MudText Typo="Typo.subtitle1" Class="text-secondary fw-semibold mb-1">
+                @StatusTypeDisplay Status Overview
+            </MudText>
+
+            <div style="width: 100%; height: 260px;">
+                <MudChart ChartType="ChartType.StackedBar"
+                          ChartSeries="@ChartGroupData.Series"
+                          XAxisLabels="@ChartGroupData.Labels"
+                          Width="100%"
+                          Height="100%"
+                          Class="rotated-xlabels" />
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-muted fst-italic">
+            No attendance data found for department ID @ParentDepartment.
+        </div>
+    }
+</MudPaper>
+
+<style>
+    .mud-chart.rotated-xlabels .mud-chart-x-axis text {
+        transform: rotate(-45deg);
+        text-anchor: end;
+        dominant-baseline: middle;
+        font-size: 12px;
+    }
+</style>
+
+@code {
+    [Parameter] public List<DailyAttendanceModel> Data { get; set; } = new();
+    [Parameter] public int? ParentDepartment { get; set; }
+    [Parameter] public string StatusType { get; set; } = "arrival"; // "arrival" or "leaving"
+
+    private string StatusTypeDisplay =>
+        StatusType.Equals("leaving", StringComparison.OrdinalIgnoreCase)
+        ? "Leaving"
+        : "Arrival";
+
+    private ChartGroup? ChartGroupData;
+    private bool HasError = false;
+    private string ErrorMessage = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        BuildChart();
+    }
+
+    private void BuildChart()
+    {
+        HasError = false;
+        ErrorMessage = string.Empty;
+        ChartGroupData = null;
+
+        try
+        {
+            if (Data == null || Data.Count == 0 || ParentDepartment == null)
+                return;
+
+            // Get all sub-departments under this parent
+            var allSubDepartments = Data
+                .Where(x => x.ParentDepartmentId == ParentDepartment)
+                .Select(x => new { x.DepartmentId, x.Department })
+                .Distinct()
+                .ToList();
+
+            if (!allSubDepartments.Any())
+                return;
+
+            // Group data by sub-department
+            var grouped = allSubDepartments
+                         .Select(sd =>
+                         {
+                             var deptData = Data
+                                 .Where(x => x.DepartmentId == sd.DepartmentId)
+                                 .ToList();
+
+                             // Ensure StatusCounts is never null
+                             var statusCounts = deptData.Any()
+                                 ? (StatusType.Equals("leaving", StringComparison.OrdinalIgnoreCase)
+                                     ? deptData.GroupBy(x => x.LeavingStatus)
+                                               .ToDictionary(s => s.Key ?? "Unknown", s => s.Count())
+                                     : deptData.GroupBy(x => x.ArrivalStatus)
+                                               .ToDictionary(s => s.Key ?? "Unknown", s => s.Count()))
+                                 : new Dictionary<string, int>();
+
+                             return new
+                             {
+                                 ChildDept = sd.Department ?? "Unknown",
+                                 StatusCounts = statusCounts
+                             };
+                         })
+                         .ToList();
+
+
+            var allStatuses = grouped
+                .SelectMany(g => g.StatusCounts.Keys)
+                .Distinct()
+                .OrderBy(s => s)
+                .ToList();
+
+            var labels = grouped.Select(g => g.ChildDept).ToArray();
+
+            var series = allStatuses.Select(status =>
+                new ChartSeries
+                {
+                    Name = status,
+                    Data = grouped.Select(g =>
+                        g.StatusCounts.TryGetValue(status, out var c) ? (double)c : 0
+                    ).ToArray()
+                }).ToList();
+
+            ChartGroupData = new ChartGroup
+            {
+                Status = $"{StatusTypeDisplay} Status Overview",
+                Labels = labels,
+                Series = series
+            };
+        }
+        catch (Exception ex)
+        {
+            HasError = true;
+            ErrorMessage = ex.Message;
+            Console.Error.WriteLine($"[AttendanceChart Error] {ex}");
+        }
+    }
+
+
+    private class ChartGroup
+    {
+        public string Status { get; set; } = string.Empty;
+        public string[] Labels { get; set; } = Array.Empty<string>();
+        public List<ChartSeries> Series { get; set; } = new();
+    }
+}

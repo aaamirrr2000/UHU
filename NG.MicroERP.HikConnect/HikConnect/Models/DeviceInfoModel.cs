@@ -8,7 +8,7 @@ using System.Xml.Serialization;
 namespace HikConnect.Models;
 
 
-    [XmlRoot(ElementName = "DeviceInfo", Namespace = "http://www.isapi.org/ver20/XMLSchema")]
+[XmlRoot(ElementName = "DeviceInfo", Namespace = "http://www.isapi.org/ver20/XMLSchema")]
     public class DeviceInfoModel
     {
         [XmlAttribute("version")]

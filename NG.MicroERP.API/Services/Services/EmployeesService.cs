@@ -27,12 +27,12 @@ public class EmployeesService : IEmployeesService
 
     public async Task<(bool, List<EmployeesModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM Employees Where IsSoftDeleted=0 and IsActive=1";
+        string SQL = $@"SELECT * FROM employees Where IsSoftDeleted=0";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;
 
-        SQL += " Order by Id Desc";
+        SQL += " Order by Fullname";
 
         List<EmployeesModel> result = (await dapper.SearchByQuery<EmployeesModel>(SQL)) ?? new List<EmployeesModel>();
 
@@ -44,7 +44,7 @@ public class EmployeesService : IEmployeesService
 
     public async Task<(bool, EmployeesModel?)>? Get(int id)
     {
-        EmployeesModel result = (await dapper.SearchByID<EmployeesModel>("Employees", id)) ?? new EmployeesModel();
+        EmployeesModel result = (await dapper.SearchByID<EmployeesModel>("employees", id)) ?? new EmployeesModel();
         if (result == null || result.Id == 0)
             return (false, null);
         else
@@ -57,9 +57,8 @@ public class EmployeesService : IEmployeesService
 
         try
         {
-            string Code = dapper.GetCode("", "Employees", "EmpId")!;
-            string SQLDuplicate = $@"SELECT * FROM Employees WHERE UPPER(EmpId) = '{obj.EmpId!.ToUpper()}';";
-            string SQLInsert = $@"INSERT INTO Employees 
+            string SQLDuplicate = $@"SELECT * FROM employees WHERE UPPER(EmpId) = '{obj.EmpId!.ToUpper()}';";
+            string SQLInsert = $@"INSERT INTO employees 
 			(
 				OrganizationId, 
 				EmpId, 
@@ -68,11 +67,14 @@ public class EmployeesService : IEmployeesService
 				Phone, 
 				Email, 
 				Cnic, 
-				EmpAddress, 
+				Address, 
 				EmpType, 
-				EmpDept, 
+				DepartmentId, 
+				DesignationId, 
+				ShiftId, 
 				LocationId, 
 				ParentId, 
+				ExcludeFromAttendance, 
 				IsActive, 
 				CreatedBy, 
 				CreatedOn, 
@@ -82,17 +84,20 @@ public class EmployeesService : IEmployeesService
 			VALUES 
 			(
 				{obj.OrganizationId},
-				'{Code}', 
+				'{obj.EmpId!.ToUpper()}', 
 				'{obj.Fullname!.ToUpper()}', 
 				'{obj.Pic!.ToUpper()}', 
 				'{obj.Phone!.ToUpper()}', 
-				'{obj.Email!}', 
+				'{obj.Email!.ToUpper()}', 
 				'{obj.Cnic!.ToUpper()}', 
-				'{obj.EmpAddress!.ToUpper()}', 
+				'{obj.Address!.ToUpper()}', 
 				'{obj.EmpType!.ToUpper()}', 
-				'{obj.EmpDept!.ToUpper()}', 
+				{obj.DepartmentId},
+				{obj.DesignationId},
+				{obj.ShiftId},
 				{obj.LocationId},
 				{obj.ParentId},
+				{obj.ExcludeFromAttendance},
 				{obj.IsActive},
 				{obj.CreatedBy},
 				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
@@ -123,20 +128,23 @@ public class EmployeesService : IEmployeesService
     {
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM Employees WHERE UPPER(code) = '{obj.EmpId!.ToUpper()}' and Id != {obj.Id};";
-            string SQLUpdate = $@"UPDATE Employees SET 
+            string SQLDuplicate = $@"SELECT * FROM employees WHERE UPPER(EmpId) = '{obj.EmpId!.ToUpper()}' and Id != {obj.Id};";
+            string SQLUpdate = $@"UPDATE employees SET 
 					OrganizationId = {obj.OrganizationId}, 
 					EmpId = '{obj.EmpId!.ToUpper()}', 
 					Fullname = '{obj.Fullname!.ToUpper()}', 
 					Pic = '{obj.Pic!.ToUpper()}', 
 					Phone = '{obj.Phone!.ToUpper()}', 
-					Email = '{obj.Email!}', 
+					Email = '{obj.Email!.ToUpper()}', 
 					Cnic = '{obj.Cnic!.ToUpper()}', 
-					EmpAddress = '{obj.EmpAddress!.ToUpper()}', 
+					Address = '{obj.Address!.ToUpper()}', 
 					EmpType = '{obj.EmpType!.ToUpper()}', 
-					EmpDept = '{obj.EmpDept!.ToUpper()}', 
+					DepartmentId = {obj.DepartmentId}, 
+					DesignationId = {obj.DesignationId}, 
+					ShiftId = {obj.ShiftId}, 
 					LocationId = {obj.LocationId}, 
 					ParentId = {obj.ParentId}, 
+					ExcludeFromAttendance = {obj.ExcludeFromAttendance}, 
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
@@ -154,12 +162,12 @@ public class EmployeesService : IEmployeesService
 
     public async Task<(bool, string)> Delete(int id)
     {
-        return await dapper.Delete("Employees", id);
+        return await dapper.Delete("employees", id);
     }
 
     public async Task<(bool, string)> SoftDelete(EmployeesModel obj)
     {
-        string SQLUpdate = $@"UPDATE Employees SET 
+        string SQLUpdate = $@"UPDATE employees SET 
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedBy = '{obj.UpdatedBy!}',
 					IsSoftDeleted = 1 

@@ -1,0 +1,28 @@
+﻿@using MudBlazor
+
+<MudPaper Class="d-flex flex-column align-items-center justify-content-center p-4 rounded-lg shadow-sm"
+          Style="width:400px; height:400px;">
+
+    <MudChart ChartType="ChartType.Donut"
+              Width="300px"
+              Height="300px"
+              InputData="@Data"
+              InputLabels="@Labels" Class="w-100">
+
+        <CustomGraphics>
+            <text class="donut-inner-text"
+                  x="50%" y="35%"
+                  dominant-baseline="middle"
+                  text-anchor="middle"
+                  font-size="24">
+                @Title
+            </text>
+        </CustomGraphics>
+    </MudChart>
+</MudPaper>
+
+@code {
+    [Parameter] public double[]? Data { get; set; }
+    [Parameter] public string[]? Labels { get; set; }
+    [Parameter] public string Title { get; set; } = "Total";
+}

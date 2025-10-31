@@ -27,4 +27,4 @@ INSERT INTO Users (
     IsActive, CreatedBy, CreatedFrom, UpdatedBy, UpdatedFrom, IsSoftDeleted
 )
 VALUES
-    ('admin', '12345', 'DESKTOP ADMIN', 1, 1, 1, 1, 1, NULL, NULL, NULL, NULL, 0);
+    ('admin', 'ImK6TOORzwRQKFPto/ruwQ==', 'DESKTOP ADMIN', 1, 1, 1, 1, 1, NULL, NULL, NULL, NULL, 0);

@@ -8,36 +8,50 @@ namespace NG.MicroERP.Shared.Models;
 
 public class DailyAttendanceModel
 {
-    // Employee Information
     public int EmpId { get; set; }
-    public string Fullname { get; set; } = string.Empty;
-    public string Department { get; set; } = string.Empty;
-    public string Division { get; set; } = string.Empty;
+    public string? Fullname { get; set; }
 
-    // Arrival Section
+    public int DepartmentId { get; set; }
+    public string? Department { get; set; }
+
+    public int? ParentDepartmentId { get; set; }      
+    public string? ParentDepartmentName { get; set; }   
+
+    public int DesignationId { get; set; }
+    public string? Designation { get; set; }
+
+    public string? ShiftName { get; set; }
+    public int? FlexiTime { get; set; }
+
+    public DateTime QueryDate { get; set; }
+
     public DateTime? InDate { get; set; }
-    public string ScheduledIn { get; set; } = string.Empty; 
-    public string InTime { get; set; } = string.Empty;    
-    public string InDiff { get; set; } = string.Empty;     
-    public string ArrivalStatus { get; set; } = string.Empty;
+    public string? ScheduledIn { get; set; }
+    public string? InTime { get; set; }
+    public string? InDiff { get; set; }
+    public string? ArrivalStatus { get; set; }
 
-    // Leaving Section
     public DateTime? OutDate { get; set; }
-    public string ScheduledOut { get; set; } = string.Empty; 
-    public string OutTime { get; set; } = string.Empty;    
-    public string OutDiff { get; set; } = string.Empty;    
-    public string LeavingStatus { get; set; } = string.Empty;
+    public string? ScheduledOut { get; set; }
+    public string? OutTime { get; set; }
+    public string? OutDiff { get; set; }
+    public string? LeavingStatus { get; set; }
 
-    // Additional Fields from Updated Query
     public int EventCount { get; set; }
-    public string DayType { get; set; } = string.Empty;
+    public string? Status { get; set; }
 
-
-    // Optional: You might want these computed properties for easier access
-    public bool HasArrival => EventCount >= 1;
-    public bool HasLeaving => EventCount >= 2;
-    public bool IsCompleteDay => EventCount >= 2;
-    public bool IsAbsent => EventCount == 0;
-    public bool IsIncompleteDay => EventCount == 1;
+    public DateTime? LeaveStartDate { get; set; }
+    public DateTime? LeaveEndDate { get; set; }
+    public string? LeaveName { get; set; }
+    public string? HolidayDescription { get; set; }
+    public string? DayCategory { get; set; }
 }
-
+public class AttendanceSummaryModel
+{
+    public int TotalRecords { get; set; }
+    public int PresentCount { get; set; }
+    public int AbsentCount { get; set; }
+    public int OnLeaveCount { get; set; }
+    public int InCount { get; set; }
+    public int OutCount { get; set; }
+}
