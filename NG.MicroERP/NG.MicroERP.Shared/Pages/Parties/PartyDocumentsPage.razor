@@ -1,0 +1,349 @@
+﻿@page "/PartyDocumentsPage/{Action}/{CurrentRecord?}"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+
+    <div class="text-end" style="margin-top:10px;">
+        @if (Action != "VIEW")
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Clear" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
+                <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-1" />
+                New
+            </MudButton>
+
+            @if (Action != "NO ACTION")
+            {
+                <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                    @(Action == "INSERT" ? "Save" : "Update")
+                </MudButton>
+            }
+
+        }
+    </div>
+
+    <br />
+
+    <MudExpansionPanels MultiExpansion="true">
+        <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
+
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+
+                    <i class="fa fa-info-circle"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Party's' Documents</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Party's Documents</MudText>
+                    </div>
+                </div>
+                <hr />
+            </TitleContent>
+
+            <ChildContent>
+                @if(IsVisible)
+                {
+                    <div class="row" style="width:100%; display: flex;">
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Document Type</label>
+
+                            <MudSelect T="string"
+                                       @bind-Value="record.DocumentType"
+                                       Placeholder="DocumentType"
+                                       Clearable="true">
+
+                                @if (Doc != null && Doc.Any())
+                                {
+                                    if (string.IsNullOrWhiteSpace(record.DocumentType))
+                                    {
+                                        record.DocumentType = Doc.First().ListValue;
+                                    }
+
+                                    foreach (var i in Doc)
+                                    {
+                                        <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                    }
+                                }
+                            </MudSelect>
+
+                            <ValidationMessage For="@(() => record.DocumentType)" />
+                        </div>
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Document Number</label>
+                            <MudTextField id="DocumentNumber" @bind-Value="record.DocumentNumber" placeholder="Document Number" ReadOnly="@isReadOnly"></MudTextField>
+                            <ValidationMessage For="@(() => record.DocumentNumber)" />
+                        </div>
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Point of Contact</label>
+                            <MudTextField id="PointOfContact" @bind-Value="record.PointOfContact" placeholder="Point Of Contact" ReadOnly="@isReadOnly"></MudTextField>
+                            <ValidationMessage For="@(() => record.PointOfContact)" />
+                        </div>
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Active</label>
+
+                            <MudSelect T="int"
+                                       @bind-Value="record.IsActive"
+                                       Placeholder="Active"
+                                       Clearable="true">
+
+                                @if (record.IsActive != 0 && record.IsActive != 1)
+                                {
+                                    record.IsActive = 1;
+                                }
+
+                                <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                                <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                            </MudSelect>
+
+                            <ValidationMessage For="@(() => record.IsActive)" />
+                        </div>
+
+                    </div>
+
+                }
+                
+
+                @if (data == null)
+                {
+                    <SimpleLoading />
+                }
+                else
+                {
+                    <div class="row">
+                        
+                        <MudTable T="PartyDocumentsModel"
+                                  Items="@data"
+                                  Hover="true"
+                                  Dense="true"
+                                  Striped="true"
+                                  Virtualize="true"
+                                  Style="border-radius: 0px; box-shadow: none; border: none; overflow: hidden; margin: 0; min-height:500px;">
+
+                            <ToolBarContent>
+
+                            </ToolBarContent>
+
+                            <HeaderContent>
+                                <MudTh>Actions</MudTh>
+                                <MudTh>Document Type</MudTh>
+                                <MudTh>Document Name</MudTh>
+                                <MudTh>Point of Contact</MudTh>
+                                <MudTh>Active</MudTh>
+
+                            </HeaderContent>
+
+                            <RowTemplate>
+                                <MudTd DataLabel="Actions" Style="width: 60px; min-width: 60px;">
+                                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Dense="true">
+                                        <MudMenuItem OnClick="@(() => View(context.Id))">
+                                            <MudIcon Icon="@Icons.Material.Filled.Search" Class="me-2" /> View
+                                        </MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => Edit(context.Id))">
+                                            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="me-2" /> Edit
+                                        </MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => Delete(context.Id))" Color="Color.Error">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
+                                        </MudMenuItem>
+                                    </MudMenu>
+                                </MudTd>
+
+                                <MudTd DataLabel="Document Type" Style="text-align: right; white-space: nowrap; width: auto;">
+                                    @context.DocumentType
+                                </MudTd>
+                                <MudTd DataLabel="Document Number" Style="text-align: right; white-space: nowrap; width: auto;">
+                                    @context.DocumentNumber
+                                </MudTd>
+                                <MudTd DataLabel="Point Of Contact" Style="text-align: right; white-space: nowrap; width: auto;">
+                                    @context.PointOfContact
+                                </MudTd>
+                                <MudTd DataLabel="IsActive" Style="white-space: nowrap; width: auto;">
+                                    @(context.IsActive == 1 ? "" : "Locked")
+                                </MudTd>
+
+
+                            </RowTemplate>
+                        </MudTable>
+                    </div>
+                }
+            </ChildContent>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+
+</div>
+
+@code
+{
+    PartiesModel MasterRecord = new();
+    PartyDocumentsModel record = new();
+    List<PartiesModel> Par = new();
+    List<TypeCodeModel> Doc = null!;
+
+    List<PartyDocumentsModel> data = new();
+
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+
+    bool isReadOnly = true;
+    private bool IsVisible { get; set; } = false;
+    private bool LoadingPanel { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
+    protected async Task GetAll()
+    {
+        try
+        {
+            LoadingPanel = true;
+
+            Par = await Functions.GetAsync<List<PartiesModel>>($"Party/Search", true) ?? new List<PartiesModel>();
+            Doc = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/DOCUMENT TYPE", true) ?? new List<TypeCodeModel>();
+
+
+            switch (Action)
+            {
+                case "INSERT":
+                    await Clear();
+                    isReadOnly = false;
+                    break;
+                case "UPDATE":
+                case "VIEW":
+                    await Get(CurrentRecord);
+                    isReadOnly = (Action == "VIEW");
+                    break;
+                default:
+                    isReadOnly = true;
+                    break;
+            }
+
+            data = await Functions.GetAsync<List<PartyDocumentsModel>>($"PartyDocuments/Search/partyid={CurrentRecord}", true) ?? new List<PartyDocumentsModel>();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading data: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+            StateHasChanged();
+        }
+    }
+
+    protected async Task Get(int id)
+    {
+        try
+        {
+            LoadingPanel = true;
+            MasterRecord = await Functions.GetAsync<PartiesModel>($"Parties/Get/{id}", true) ?? new PartiesModel();
+            record = await Functions.GetAsync<PartyDocumentsModel>($"PartyDocuments/Get/{id}", true) ?? new PartyDocumentsModel();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading record: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    protected void GetDefaultValues()
+    {
+        if (CurrentRecord > 0 && record.PartyId == 0)
+            record.PartyId = CurrentRecord;
+
+        StateHasChanged();
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new PartyDocumentsModel();
+        record.PartyId = CurrentRecord;
+        record.IsActive = 1;
+        record.IsSoftDeleted = 0;
+        isReadOnly = false;
+        IsVisible = true;
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        isReadOnly = true;
+        IsVisible = true;
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+        IsVisible = true;
+    }
+
+    protected async Task Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        await Get(id);
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        try
+        {
+            LoadingPanel = true;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Functions.GetComputerDetails();
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Functions.GetComputerDetails();
+
+            string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<PartyDocumentsModel>($"PartyDocuments/{url}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"Record Not Saved", Severity.Error);
+            }
+            else
+            {
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                await GetAll();
+                await Clear();
+                IsVisible = false;
+            }
+
+        }
+        catch (Exception ex)
+        {
+            await Functions.ShowMessage(dialogService, "error", $"Record Not Saved, {ex.Message}");
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+
+    }
+}
+

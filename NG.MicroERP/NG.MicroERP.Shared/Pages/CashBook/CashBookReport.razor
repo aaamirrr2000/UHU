@@ -1,0 +1,165 @@
+﻿@page "/CashBookReport/{id:int}"
+@layout BlankLayout
+@inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime
+
+@if (cashbook != null)
+{
+    <div class="invoice-actions no-print text-end mb-3">
+        <button class="btn btn-primary" @onclick="PrintReport">
+            <i class="fas fa-print me-1"></i> Print
+        </button>
+    </div>
+
+    <div class="receipt shadow p-4 bg-white rounded">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <div class="row align-items-center">
+                <div class="col-md-2">
+                    <img src="@Globals.Organization.Logo" alt="Logo" class="img-fluid rounded" style="height: 60px;" />
+                </div>
+                <div class="col-md-8">
+                    <h2 class="fw-bold m-0">@Globals.Organization.Name</h2>
+                    <h5 class="text-muted mt-1">@cashbook.TranType</h5>
+                </div>
+            </div>
+            <p class="text-muted mt-2">Date: @cashbook.TranDate.ToString("dd-MMM-yyyy")</p>
+        </div>
+
+        <!-- Info Table -->
+        <table class="table table-bordered table-sm">
+            <tbody>
+                <tr>
+                    <th style="width: 35%;">Document #</th>
+                    <td>@cashbook.SeqNo</td>
+                </tr>
+                <tr>
+                    <th>Transaction Location</th>
+                    <td>@cashbook.LocationName</td>
+                </tr>
+                <tr>
+                    <th>@(cashbook.TranType == "RECEIPT" ? "Customer" : "Supplier")</th>
+                    <td>@cashbook.PartyName</td>
+                </tr>
+                <tr>
+                    <th>Description</th>
+                    <td>@cashbook.Description</td>
+                </tr>
+                <tr>
+                    <th>Amount</th>
+                    <td><strong class="text-success">@cashbook.Amount.ToString("N2")</strong></td>
+                </tr>
+                <tr>
+                    <th>Account</th>
+                    <td>@cashbook.AccountName</td>
+                </tr>
+                <tr>
+                    <th>Transaction Type</th>
+                    <td>@cashbook.TranType</td>
+                </tr>
+                <tr>
+                    <th>Payment Method</th>
+                    <td>@cashbook.PaymentMethod</td>
+                </tr>
+                <tr>
+                    <th>Payment Reference #</th>
+                    <td>@cashbook.RefNo</td>
+                </tr>
+                <tr>
+                    <th>Transaction Reference #</th>
+                    <td>@cashbook.TranRef</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Amount in Words -->
+        <div class="mt-3 mb-4">
+            <strong>Amount in Words:</strong>
+            <em>@Functions.ConvertMoneyToWords((decimal)@cashbook.Amount)</em>
+        </div>
+
+        <!-- Footer -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <p><strong>Created By:</strong> @cashbook.CreatedByName @cashbook.CreatedByUser</p>
+                <p><strong>Created Date:</strong> @cashbook.CreatedOn.ToString("dd-MMM-yyyy HH:mm:ss tt")</p>
+            </div>
+            <div class="col-md-6">
+                @if (cashbook.UpdatedOn != DateTime.MinValue)
+                {
+                    <p><strong>Modified By:</strong> @cashbook.UpdatedByName @cashbook.UpdatedByUser</p>
+                    <p><strong>Modified Date:</strong> @cashbook.UpdatedOn.Value.ToString("dd-MMM-yyyy HH:mm:ss tt")</p>
+                }
+            </div>
+        </div>
+    </div>
+
+}
+
+@code {
+    [Parameter] public int id { get; set; }
+    private CashBookReportModel cashbook;
+     private bool LoadingPanel { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        cashbook = await Functions.GetAsync<CashBookReportModel>($"CashBook/GetCashBookReport?Id={id}", true) ?? new CashBookReportModel();
+        LoadingPanel = false;
+    }
+
+    private async Task PrintReport()
+    {
+        await JSRuntime.InvokeVoidAsync("printReceipt");
+    }
+}
+
+<style>
+    .receipt {
+        max-width: 800px;
+        width:100%;
+        margin: auto;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+    }
+
+        .receipt .header {
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+
+        .receipt .footer {
+            border-top: 1px solid #ddd;
+            margin-top: 20px;
+            padding-top: 10px;
+        }
+
+        .receipt .table th, .receipt .table td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        .receipt .table th {
+            background-color: #f2f2f2;
+            width: 40%;
+        }
+
+    .text-center {
+        text-align: center;
+    }
+
+</style>
+
+<script>
+
+    function printReceipt() {
+        var invoiceContent = document.querySelector('.receipt').innerHTML;
+        var originalContent = document.body.innerHTML;
+
+        document.body.innerHTML = '<div>' + invoiceContent + '</div>';
+        window.print();
+        document.body.innerHTML = originalContent;
+    }
+</script>

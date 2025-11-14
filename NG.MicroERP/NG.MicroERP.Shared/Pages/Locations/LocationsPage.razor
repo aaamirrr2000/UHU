@@ -198,38 +198,13 @@
     protected async Task Get(int id)
     {
         LoadingPanel = true;
-        record = await Functions.GetAsync<LocationsModel>($"Locations/Get?Id={id}", true) ?? new LocationsModel();
+        record = await Functions.GetAsync<LocationsModel>($"Locations/Get/{id}", true) ?? new LocationsModel();
         LoadingPanel = false;
     }
 
     protected void GetDefaultValues()
     {
         StateHasChanged();
-    }
-
-    protected async void Clear()
-    {
-        Action = "INSERT";
-        record = new LocationsModel();
-        record.IsActive = 1;
-        isReadOnly = false;
-        //await _drawer.OpenDrawerAsync();
-    }
-
-    protected async Task View(int id)
-    {
-        await Get(id);
-        Action = "VIEW";
-        isReadOnly = true;
-        //await _drawer.OpenDrawerAsync();
-    }
-
-    protected async Task Edit(int id)
-    {
-        await Get(id);
-        Action = "UPDATE";
-        isReadOnly = false;
-        //await _drawer.OpenDrawerAsync();
     }
 
     protected async Task Delete()
@@ -258,17 +233,18 @@
         var result = await Functions.PostAsync<LocationsModel>($"Locations/{url}", record, true);
         if (result.Success == false)
         {
-            await Functions.ShowMessage(dialogService, "error", $"Record Not Saved");
+            SnackbarService.Add($"Record Not Saved", Severity.Error);
         }
         else
         {
-            await Functions.ShowMessage(dialogService, "success", $"Record {Action} Successfully");
-            record = new();
+            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+            await Get(result.Result!.Id);
+            //record = new();
             isReadOnly = true;
         }
 
         LoadingPanel = false;
-        await _drawer.CloseDrawer();
+        await _drawer.CloseDrawerAsync();
 
     }
 }

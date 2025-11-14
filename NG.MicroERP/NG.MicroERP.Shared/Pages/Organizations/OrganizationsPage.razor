@@ -151,8 +151,10 @@
                         <ValidationMessage For="@(() => record.IsActive)" />
                     </div>
 
-                    <div class="w-100 d-flex justify-content-center">
-                        <div class="p-3 border rounded" style="width: 300px;">
+                    <div class="d-flex justify-content-center align-items-start flex-wrap gap-4 w-100 mt-3">
+
+                        <!-- Logo Card -->
+                        <div class="p-3 border rounded shadow-sm bg-white" style="width: 300px;">
                             <label class="small fw-bold text-uppercase d-block mb-2 text-center">Logo</label>
 
                             <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
@@ -172,8 +174,37 @@
                                 }
                             </div>
 
-                            <InputFile OnChange="OnFileInputChanged" />
+                            <div class="text-center">
+                                <InputFile OnChange="OnFileInputChanged" class="form-control form-control-sm" />
+                            </div>
                         </div>
+
+                        <!-- Wallpaper Card -->
+                        <div class="p-3 border rounded shadow-sm bg-white" style="width: 300px;">
+                            <label class="small fw-bold text-uppercase d-block mb-2 text-center">Wallpaper</label>
+
+                            <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
+                                @if (!string.IsNullOrEmpty(record.Wallpaper))
+                                {
+                                    <img src="@record.Wallpaper"
+                                         class="img-fluid rounded"
+                                         alt="Wallpaper"
+                                         style="max-height: 100%; max-width: 100%; object-fit: cover;" />
+                                }
+                                else
+                                {
+                                    <div class="d-flex align-items-center justify-content-center bg-secondary rounded-circle"
+                                         style="width: 120px; height: 120px;">
+                                        <i class="fas fa-image text-white fs-3"></i>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="text-center">
+                                <InputFile OnChange="OnWallpaperInputChanged" class="form-control form-control-sm" />
+                            </div>
+                        </div>
+
                     </div>
 
                 </div>
@@ -238,7 +269,7 @@
     protected async Task Get(int id)
     {
         LoadingPanel = true;
-        record = await Functions.GetAsync<OrganizationsModel>($"Organizations/Get?Id={id}", true) ?? new OrganizationsModel();
+        record = await Functions.GetAsync<OrganizationsModel>($"Organizations/Get/{id}", true) ?? new OrganizationsModel();
         LoadingPanel = false;
     }
 
@@ -249,28 +280,6 @@
             record.ParentId = Par.First().Id;
 
         StateHasChanged();
-    }
-
-    protected async void Clear()
-    {
-        Action = "INSERT";
-        record = new OrganizationsModel();
-        record.IsActive = 1;
-        isReadOnly = false;
-    }
-
-    protected async Task View(int id)
-    {
-        await Get(id);
-        Action = "VIEW";
-        isReadOnly = true;
-    }
-
-    protected async Task Edit(int id)
-    {
-        await Get(id);
-        Action = "UPDATE";
-        isReadOnly = false;
     }
 
     protected async Task Delete()
@@ -298,17 +307,17 @@
         var result = await Functions.PostAsync<OrganizationsModel>($"Organizations/{url}", record, true);
         if (result.Success == false)
         {
-            await Functions.ShowMessage(dialogService, "error", $"Record Not Saved");
+            SnackbarService.Add($"Record Not Saved", Severity.Error);
         }
         else
         {
-            await Functions.ShowMessage(dialogService, "success", $"Record {Action} Successfully");
+            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
             record = new();
             isReadOnly = true;
         }
 
         LoadingPanel = false;
-        await _drawer.CloseDrawer();
+        await _drawer.CloseDrawerAsync();
 
     }
 
@@ -332,6 +341,29 @@
         {
             SnackbarService.Add($"Exception: {ex.Message}", Severity.Error);
             record.Logo = null;
+        }
+    }
+
+    private async Task OnWallpaperInputChanged(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var result = await Functions.FileUpload(e, FileUploadService);
+
+            if (result.Item1 == true)
+            {
+                record.Wallpaper = result.Item2;
+                SnackbarService.Add("File uploaded successfully!", Severity.Success);
+            }
+            else
+            {
+                SnackbarService.Add($"Error: {result.Item2}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Exception: {ex.Message}", Severity.Error);
+            record.Wallpaper = null;
         }
     }
 

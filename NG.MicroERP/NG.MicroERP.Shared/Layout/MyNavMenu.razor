@@ -11,7 +11,7 @@
     <div class="employee-info">
         @if (Globals.User == null)
         {
-            <SimpleLoading />
+           @*  <SimpleLoading /> *@
         }
         else
         {
@@ -37,7 +37,7 @@
         }
     </div>
 
-    <MudNavMenu>
+    <MudNavMenu Dense=true>
         @if (MenuGroupData != null && MenuGroupData.Count > 0)
         {
             @foreach (var group in MenuGroupData)
@@ -70,12 +70,12 @@
         }
         else
         {
-            <SimpleLoading />
+            @* <SimpleLoading /> *@
         }
     </MudNavMenu>
 
     <!-- ORGANIZATION INFO AT BOTTOM -->
-    <div style="text-align: center; padding-top: 15px; border-top: 1px solid #ddd; margin-top: auto;">
+    @* <div style="text-align: center; padding-top: 15px; border-top: 1px solid #ddd; margin-top: auto;">
         @if (Globals.Organization != null)
         {
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
@@ -90,7 +90,7 @@
                 </MudText>
             </div>
         }
-    </div>
+    </div> *@
 
 </div>
 

@@ -8,7 +8,7 @@
 <Loading IsLoading="@LoadingPanel" />
 
 <div class="row" style="margin: 2px; height: 90vh; display: flex;">
-    <MyDrawer @ref="_drawer" Title="Users" FaIcon="fas fa-address-book">
+    <MyDrawer @ref="_drawer" Title="Users" FaIcon="fas fa-user-cog" >
         <HeaderContent>
         </HeaderContent>
         <ChildContent>
@@ -60,7 +60,7 @@
                                         <MudIcon Icon="@Icons.Material.Filled.Key" Class="me-2" /> Reset Password
                                     </MudMenuItem>
                                     <MudMenuItem OnClick="@(() => ShowPassword(row.Item.Id))" Color="Color.Error">
-                                        <MudIcon Icon="@Icons.Material.Filled.Key" Class="me-2" /> Show Password
+                                        <MudIcon Icon="@Icons.Material.Filled.Password" Class="me-2" /> Show Password
                                     </MudMenuItem>
                                 }
                             </MudMenu>
@@ -69,10 +69,10 @@
 
                     <PropertyColumn Property="x => x.Username" Title="User Name" Sortable="true" Filterable="true" />
 
-                    @if(AccessLevel == 1)
+@*                     @if(AccessLevel == 1)
                     {
                         <PropertyColumn Property="x => x.Password" Title="Password" Sortable="true" Filterable="true" />
-                    }
+                    } *@
 
                     <PropertyColumn Property="x => x.UserType" Title="User Type" Sortable="true" Filterable="true" />
                     <TemplateColumn Title="Theme" CellStyle="width: 50px; min-width: 50px;">
@@ -130,7 +130,7 @@
         if (ShowLoading)
             LoadingPanel = true;
         
-            record = await Functions.GetAsync<UsersModel>($"Users/Get?Id={id}", true) ?? new UsersModel();
+            record = await Functions.GetAsync<UsersModel>($"Users/Get/{id}", true) ?? new UsersModel();
 
         if (ShowLoading)
             LoadingPanel = false;
@@ -248,7 +248,7 @@
 
         await GetAll();
         LoadingPanel = false;
-        await _drawer.CloseDrawer();
+        await _drawer.CloseDrawerAsync();
 
     }
 

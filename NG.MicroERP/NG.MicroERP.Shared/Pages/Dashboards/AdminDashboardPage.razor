@@ -1,404 +1,159 @@
 ﻿@page "/AdminDashboardPage"
-@using System.Linq
-@using NG.MicroERP.Shared.Reports
-@inject NavigationManager Nav
+@page "/dashboard"
+@using MudBlazor
 
-<Loading IsLoading="@isLoading"/>
+<MudPaper Class="p-4" Style="height:100vh; overflow:hidden; background-color:#F9FAFB;">
 
-
-<div class="p-3" style="margin:5px;">
-
-    <div class="d-flex justify-content-between align-items-center mb-4 w-100">
-        <!-- Dashboard Title -->
-        <div class="flex-grow-1 me-3">
-            <MudText Typo="Typo.h3" Class="text-primary fw-bold mb-0">
-                Ministry of IT & Telecom
-            </MudText>
-            <MudText Typo="Typo.subtitle1" Class="text-secondary fw-medium">
-                Detailed Attendance Dashboard
-            </MudText>
-        </div>
-
-        <!-- Date Picker -->
-        <div class="me-3">
-            <MudDatePicker @bind-Value="StartDate"
-                           Label="Select Date"
-                           DateFormat="yyyy-MM-dd"
-                           Variant="Variant.Outlined"
-                           Adornment="Adornment.Start"
-                           AdornmentIcon="@Icons.Material.Filled.CalendarToday"
-                           DateChanged="OnStartDateChanged"
-                           Style="width: 350px;" />
-        </div>
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <MudText Typo="Typo.h5" Class="fw-bold text-primary">Inventory & Funds Dashboard</MudText>
+        <MudText Typo="Typo.subtitle2" Color="Color.Secondary">As of @DateTime.Now.ToString("MMMM dd, yyyy")</MudText>
     </div>
 
-    <div class="d-flex flex-wrap justify-content-between align-items-stretch gap-3 mb-4 w-100">
-        <div class="flex-fill" style="flex: 1 1 18%; min-width: 220px;">
-            <MudCardComp Heading="Total Employees"
-                            Subheading="Total workforce recorded within the selected period"
-                            Number="@TotalEmployees.ToString()"
-                            ChartType="bar"
-                            OnDownload="@EmplopyeeData"
-                         BackgroundColor="#FEA178" 
-                         ChartColor="White"/>
-        </div>
-        <div class="flex-fill" style="flex: 1 1 18%; min-width: 220px;">
-            <MudCardComp Heading="Arrived On-Time"
-                            Subheading="Employees who reported on or before scheduled time"
-                            Number="@OnTimeArrivalCount.ToString()"
-                            Percentage="@((TotalEmployees > 0 ? (OnTimeArrivalCount * 100.0 / TotalEmployees) : 0))"
-                            ChartType="line"
-                            OnDownload="@OnTimeArrivalData"
-                         BackgroundColor="#28a745"
-                         ChartColor="White" />
-        </div>
-            <div class="flex-fill" style="flex: 1 1 18%; min-width: 220px;">
-                <MudCardComp Heading="Arrived Late"
-                                Subheading="Employees who reported late during the selected period"
-                                Number="@LateArrivalCount.ToString()"
-                         Percentage="@((TotalEmployees > 0 ? (LateArrivalCount * 100.0 / TotalEmployees) : 0))"
-                                ChartType="dot"
-                                OnDownload="@LateArrivalData"
-                         BackgroundColor="#ffc107"
-                         ChartColor="White" />
-        </div>
-        <div class="flex-fill" style="flex: 1 1 18%; min-width: 250px;">
-            <MudCardComp Heading="Absent"
-                            Subheading="Employees marked as absent or officially on leave"
-                            Number="@AbsentCount.ToString()"
-                         Percentage="@((TotalEmployees > 0 ? (AbsentCount * 100.0 / TotalEmployees) : 0))"
-                            ChartType="donut"
-                            OnDownload="@AbsentArrivalData"
-                         BackgroundColor="#dc3545"
-                         ChartColor="White" />
-        </div>
-        <div class="flex-fill" style="flex: 1 1 18%; min-width: 250px;">
-            <MudCardComp Heading="On Leave"
-                            Subheading="Employees currently on leave within the selected period"
-                            Number="@OnLeaveCount.ToString()"
-                         Percentage="@((TotalEmployees > 0 ? (OnLeaveCount * 100.0 / TotalEmployees) : 0))"
-                         ChartType="area"
-                            OnDownload="@OnLeaveArrivalData"
-                         BackgroundColor="#17a2b8"
-                         ChartColor="White" />
-        </div>
+    <!-- Top Cards -->
+    <div class="d-flex justify-content-between mb-4" style="gap:1rem;">
+        <MudCard Class="flex-fill text-center shadow-sm" Style="border-left:5px solid #1976d2;">
+            <MudCardContent>
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Total Inventory Value</MudText>
+                <MudText Typo="Typo.h6" Class="fw-bold text-primary">Rs. 8,540,000</MudText>
+            </MudCardContent>
+        </MudCard>
 
-        <div class="flex-fill" style="flex: 1 1 18%; min-width: 250px;">
-            <MudCardComp Heading="Left Before Time"
-                         Subheading="Employees left office before time"
-                         Number="@BeforeTimeLeavingCount.ToString()"
-                         Percentage="@((TotalEmployees > 0 ? (BeforeTimeLeavingCount * 100.0 / TotalEmployees) : 0))"
-                         ChartType="sparkline"
-                         OnDownload="@BeforeTimeLeavingData"
-                         BackgroundColor="#fd7e14"
-                         ChartColor="White" />
-        </div>
+        <MudCard Class="flex-fill text-center shadow-sm" Style="border-left:5px solid #2e7d32;">
+            <MudCardContent>
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Funds Available</MudText>
+                <MudText Typo="Typo.h6" Class="fw-bold text-success">Rs. 3,250,000</MudText>
+            </MudCardContent>
+        </MudCard>
 
+        <MudCard Class="flex-fill text-center shadow-sm" Style="border-left:5px solid #ed6c02;">
+            <MudCardContent>
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Outstanding Payments</MudText>
+                <MudText Typo="Typo.h6" Class="fw-bold text-warning">Rs. 1,150,000</MudText>
+            </MudCardContent>
+        </MudCard>
+
+        <MudCard Class="flex-fill text-center shadow-sm" Style="border-left:5px solid #d32f2f;">
+            <MudCardContent>
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Stock Alerts</MudText>
+                <MudText Typo="Typo.h6" Class="fw-bold text-error">12 Items</MudText>
+            </MudCardContent>
+        </MudCard>
     </div>
 
+    <!-- Middle Section -->
+    <div class="d-flex justify-content-between" style="gap:1rem; height:40vh;">
+        <!-- Inventory Chart -->
+        <MudPaper Class="flex-fill p-3 shadow-sm">
+            <MudText Typo="Typo.subtitle1" Class="fw-bold mb-2 text-primary">Inventory Distribution</MudText>
+            <MudChart ChartType="ChartType.Pie"
+                      Labels="_inventoryLabels"
+                      InputData="_inventoryData"
+                      Style="height:32vh;">
+            </MudChart>
+        </MudPaper>
 
-    <div class="row mb-4 w-100">
-        <!-- First 6 columns: both donut charts -->
-        <div class="col-12 col-md-6 d-flex justify-content-center align-items-center">
-            <div class="d-flex justify-content-between w-100">
-                <!-- Arrival Donut -->
-                @if (ArrivalData?.Any() == true && ArrivalLabels?.Any() == true)
-                {
-                    <MudDonutComp Data="@ArrivalData"
-                                  Labels="@ArrivalLabels"
-                                  Title="Arrival" />
-                }
+        <!-- Funds Chart -->
+        <MudPaper Class="flex-fill p-3 shadow-sm">
+            <MudText Typo="Typo.subtitle1" Class="fw-bold mb-2 text-primary">Monthly Funds Flow</MudText>
+            <!-- Funds Chart -->
+            <MudPaper Class="p-3 flex-grow-1" Style="width:48%; height:300px;">
+                <MudText Typo="Typo.h6" Class="mb-2 fw-bold">Funds Trend</MudText>
+                <MudChart ChartType="ChartType.Line"
+                          Labels="_fundsLabels"
+                          Style="height:240px;" />
+            </MudPaper>
 
-                <!-- Leaving Donut -->
-                @if (LeavingData?.Any() == true && LeavingLabels?.Any() == true)
-                {
-                    <MudDonutComp Data="@LeavingData"
-                                  Labels="@LeavingLabels"
-                                  Title="Leaving" />
-                }
-            </div>
-        </div>
-
-        <!-- Second 6 columns: empty but keeps the first col-6 limited -->
-        <div class="col-12 col-md-6">
-            <!-- Department Selection -->
-            <div class="row mb-4 w-100">
-                <div class="col-12 col-md-4" style="margin: 10px;">
-                    <MudSelect @bind-Value="ParentDeptId"
-                               Placeholder="Select Parent Department"
-                               Variant="Variant.Outlined"
-                               Clearable="true"
-                               Class="w-100">
-                        @if (parentDepartments?.Any() == true)
-                        {
-                            foreach (var dept in parentDepartments)
-                            {
-                                <MudSelectItem T="int" Value="@dept.Id">@dept.DepartmentName</MudSelectItem>
-                            }
-                        }
-                    </MudSelect>
-                </div>
-            </div>
-
-            <!-- Arrival & Leaving Charts -->
-            <div class="row mb-4 w-100">
-                <div class="col-12 col-md-6 mb-3">
-                        <MudStackedChartComp Data="@data"
-                                             ParentDepartment="@ParentDeptId"
-                                             StatusType="arrival" />
-                </div>
-                <div class="col-12 col-md-6 mb-3">
-                        <MudStackedChartComp Data="@data"
-                                             ParentDepartment="@ParentDeptId"
-                                             StatusType="leaving" />
-                </div>
-            </div>
-        </div>
+            <!-- Inventory Chart -->
+            <MudPaper Class="p-3 flex-grow-1" Style="width:48%; height:300px;">
+                <MudText Typo="Typo.h6" Class="mb-2 fw-bold">Inventory Overview</MudText>
+                <MudChart ChartType="ChartType.Bar"
+                          Labels="_inventoryLabels"
+                          Style="height:240px;" />
+            </MudPaper>
+        </MudPaper>
     </div>
 
-    <!-- Attendance Table -->
-    <div class="row mb-5 w-100">
-        <div class="col-12">
-            @if (dataDownload != null && dataDownload.Count != 0)
-            {
-                <MudPaper Class="p-3 shadow-sm w-100" Style="max-height:600px; overflow-y:auto;">
-                    <AttendanceDetailReport Data="@dataDownload" />
-                </MudPaper>
-            }
-            else
-            {
-                <MudText Typo="Typo.h6" Color="Color.Secondary" Class="text-center mt-3">
-                    No Data Found
-                </MudText>
-            }
+    <!-- Bottom Tables -->
+    <div class="d-flex justify-content-between mt-4" style="gap:1rem; height:25vh;">
+        <MudPaper Class="flex-fill p-2 shadow-sm">
+            <MudText Typo="Typo.subtitle1" Class="fw-bold mb-2 text-primary">Low Stock Items</MudText>
+            <MudTable Items="_lowStock" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh>Item</MudTh>
+                    <MudTh>Qty</MudTh>
+                    <MudTh>Reorder Level</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Item">@context.ItemName</MudTd>
+                    <MudTd DataLabel="Qty">@context.Quantity</MudTd>
+                    <MudTd DataLabel="Reorder Level">@context.ReorderLevel</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
 
-        </div>
+        <MudPaper Class="flex-fill p-2 shadow-sm">
+            <MudText Typo="Typo.subtitle1" Class="fw-bold mb-2 text-primary">Recent Transactions</MudText>
+            <MudTable Items="_transactions" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh>Date</MudTh>
+                    <MudTh>Description</MudTh>
+                    <MudTh class="text-end">Amount</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Date">@context.Date.ToString("dd MMM")</MudTd>
+                    <MudTd DataLabel="Description">@context.Description</MudTd>
+                    <MudTd DataLabel="Amount" Class="text-end">@context.Amount.ToString("C0")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
     </div>
-</div>
-
-<style>
-    .mud-chart.rotated-xlabels .mud-chart-x-axis text {
-        transform: rotate(-45deg);
-        text-anchor: end;
-        dominant-baseline: middle;
-        font-size: 12px;
-    }
-
-    .mud-card {
-        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    }
-
-        .mud-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-        }
-
-    .donut-wrapper {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-    }
-</style>
-
+</MudPaper>
 
 @code {
-    private DateTime? _startDate = DateTime.Now;
+    private string[] _inventoryLabels = { "Electronics", "Stationery", "Furniture", "Accessories" };
+    private double[] _inventoryData = { 4500000, 1200000, 1800000, 1040000 };
 
-    private DateTime StartDate
+    private string[] _fundsLabels = { "Jan", "Feb", "Mar", "Apr", "May", "Jun" };
+
+
+    // Data arrays must be double[][]
+    private double[][] _fundsDataList = new double[][]
     {
-        get => _startDate ?? DateTime.Today;
-        set
-        {
-            _startDate = value;
-            _ = OnDateChanged();
-        }
+        new double[] { 1000, 1500, 1200, 1800, 2000, 2300 }  // One series
+    };
+
+    private double[][] _inventoryDataList = new double[][]
+    {
+        new double[] { 500, 700, 300, 900 } // One series
+    };
+    private List<LowStockModel> _lowStock = new()
+    {
+        new() { ItemName = "Printer Ink", Quantity = 4, ReorderLevel = 10 },
+        new() { ItemName = "A4 Paper Ream", Quantity = 12, ReorderLevel = 20 },
+        new() { ItemName = "Mouse", Quantity = 5, ReorderLevel = 10 },
+        new() { ItemName = "Keyboard", Quantity = 3, ReorderLevel = 5 }
+    };
+
+    private List<TransactionModel> _transactions = new()
+    {
+        new() { Date = DateTime.Now.AddDays(-1), Description = "Office Supplies Purchase", Amount = -25000 },
+        new() { Date = DateTime.Now.AddDays(-2), Description = "Customer Payment", Amount = 100000 },
+        new() { Date = DateTime.Now.AddDays(-3), Description = "Equipment Maintenance", Amount = -18000 },
+        new() { Date = DateTime.Now.AddDays(-4), Description = "Vendor Refund", Amount = 15000 }
+    };
+
+    public class LowStockModel
+    {
+        public string ItemName { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+        public int ReorderLevel { get; set; }
     }
 
-    private List<DailyAttendanceModel>? data;
-    private List<DailyAttendanceModel>? dataDownload;
-    private bool isLoading = true;
-
-    // Summary counts with better null handling
-    private int TotalEmployees => data?.Select(x => x.EmpId).Distinct().Count() ?? 0;
-
-    private int LateArrivalCount => data?.Count(x => x.ArrivalStatus == "LATE") ?? 0;
-    private int OnTimeArrivalCount => data?.Count(x => x.ArrivalStatus == "ON TIME") ?? 0;
-    private int AbsentCount => data?.Count(x => x.ArrivalStatus == "ABSENT" ) ?? 0;
-    private int OnLeaveCount => data?.Count(x => x.ArrivalStatus == "ON LEAVE") ?? 0;
-
-    private int BeforeTimeLeavingCount => data?.Count(x => x.LeavingStatus == "BEFORE TIME") ?? 0;
-    private int OnTimeLeavingCount => data?.Count(x => x.LeavingStatus == "ON TIME") ?? 0;
-    private int IncompleteCount => data?.Count(x => x.LeavingStatus == "INCOMPLETE") ?? 0;
-
-    //Donut Charts
-    private double[]? attendanceData;
-    private string[]? attendanceLabels;
-
-    private double[]? ArrivalData;
-    private string[]? ArrivalLabels;
-
-    private double[]? LeavingData;
-    private string[]? LeavingLabels;
-
-    List<DepartmentsModel> Par = new();
-    public int ParentDeptId { get; set; } = 0;
-    List<DepartmentsModel> parentDepartments = new();
-
-    protected override async Task OnInitializedAsync()
+    public class TransactionModel
     {
-        isLoading = true;
-
-        // int PagePrivilege = Globals.PageAccess(Nav, "AdminDashboardPage");
-        // if (PagePrivilege == -1)
-        // {
-        //     return;
-        // }
-
-        // Fetch parent departments
-        Par = await Functions.GetAsync<List<DepartmentsModel>>($"Departments/Search", true) ?? new List<DepartmentsModel>();
-        parentDepartments = Par
-            .Where(d => d.ParentId == null || d.ParentId == 0)
-            .ToList();
-
-        // Select the first department if available
-        if (parentDepartments.Any())
-            ParentDeptId = parentDepartments.First().Id;
-
-        // Set default date
-        _startDate = DateTime.Now;
-
-        // Load all data
-        await GetAll();
-
-        isLoading = false;
-    }
-
-
-    protected override async Task OnParametersSetAsync()
-    {
-        Par = await Functions.GetAsync<List<DepartmentsModel>>($"Departments/Search", true) ?? new List<DepartmentsModel>();
-        parentDepartments = Par
-            .Where(d => d.ParentId == null || d.ParentId == 0)
-            .ToList();
-
-    }
-    
-    private async Task OnStartDateChanged(DateTime? date)
-    {
-        if (date.HasValue)
-        {
-            _startDate = date.Value;
-            await OnDateChanged();
-        }
-    }
-
-    private async Task OnDateChanged()
-    {
-        await GetAll();
-        await EmplopyeeData();
-    }
-
-    private async Task GetAll()
-    {
-        isLoading = true;
-        StateHasChanged();
-
-        try
-        {
-            await Task.Delay(300);
-          
-
-            string apiUrl = $"DailyAttendance/GetAttendanceReport/{StartDate:yyyy-MM-dd}/{StartDate:yyyy-MM-dd}";
-            data = await Functions.GetAsync<List<DailyAttendanceModel>>(apiUrl, true) ?? new List<DailyAttendanceModel>();
-
-
-            if (data?.Any() == true)
-            {
-                // Group for Arrival
-                var arrivalGrouped = data
-                    .Where(x => !string.IsNullOrEmpty(x.ArrivalStatus))
-                    .GroupBy(x => x.ArrivalStatus)
-                    .Select(g => new
-                    {
-                        Label = g.Key ?? "Unknown",
-                        Count = g.Count()
-                    })
-                    .ToList();
-
-                ArrivalLabels = arrivalGrouped.Select(g => g.Label).ToArray();
-                ArrivalData = arrivalGrouped.Select(g => (double)g.Count).ToArray();
-
-                // Group for Leaving
-                var leavingGrouped = data
-                    .Where(x => !string.IsNullOrEmpty(x.LeavingStatus))
-                    .GroupBy(x => x.LeavingStatus)
-                    .Select(g => new
-                    {
-                        Label = g.Key ?? "Unknown",
-                        Count = g.Count()
-                    })
-                    .ToList();
-
-                LeavingLabels = leavingGrouped.Select(g => g.Label).ToArray();
-                LeavingData = leavingGrouped.Select(g => (double)g.Count).ToArray();
-            }
-            else
-            {
-                ArrivalLabels = LeavingLabels = Array.Empty<string>();
-                ArrivalData = LeavingData = Array.Empty<double>();
-            }
-
-
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error fetching attendance data: {ex.Message}");
-            data = new List<DailyAttendanceModel>();
-
-            ArrivalLabels = LeavingLabels = Array.Empty<string>();
-            ArrivalData = LeavingData = Array.Empty<double>();
-        }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
-        }
-    }
-
-    private async Task EmplopyeeData()
-    {
-        dataDownload = data;
-        StateHasChanged();
-    }
-
-        private async Task OnTimeArrivalData()
-    {
-        dataDownload = data.Where(x => x.ArrivalStatus == "ON TIME").ToList();
-        StateHasChanged();
-    }
-
-    private async Task LateArrivalData()
-    {
-        dataDownload = data.Where(x => x.ArrivalStatus == "LATE").ToList();
-        StateHasChanged();
-    }
-
-    private async Task AbsentArrivalData()
-    {
-        dataDownload = data.Where(x => x.ArrivalStatus == "ABSENT").ToList();
-        StateHasChanged();
-    }
-
-    private async Task OnLeaveArrivalData()
-    {
-        dataDownload = data.Where(x => x.ArrivalStatus == "ON LEAVE").ToList();
-        StateHasChanged();
-    }
-
-    private async Task BeforeTimeLeavingData()
-    {
-        dataDownload = data.Where(x => x.LeavingStatus == "BEFORE TIME").ToList();
-        StateHasChanged();
+        public DateTime Date { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public double Amount { get; set; }
     }
 }

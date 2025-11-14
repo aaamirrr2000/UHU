@@ -27,12 +27,16 @@ public class EmployeesService : IEmployeesService
 
     public async Task<(bool, List<EmployeesModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM employees Where IsSoftDeleted=0";
+        string SQL = $@"SELECT a.*, b.DepartmentName, c.DesignationName
+                        FROM employees as a
+                        LEFT JOIN departments as b on b.Id=a.DepartmentId
+                        LEFT JOIN designations as c on c.Id=a.DesignationId
+                        Where a.IsSoftDeleted=0";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;
 
-        SQL += " Order by Fullname";
+        SQL += " Order by a.Fullname";
 
         List<EmployeesModel> result = (await dapper.SearchByQuery<EmployeesModel>(SQL)) ?? new List<EmployeesModel>();
 
@@ -88,7 +92,7 @@ public class EmployeesService : IEmployeesService
 				'{obj.Fullname!.ToUpper()}', 
 				'{obj.Pic!.ToUpper()}', 
 				'{obj.Phone!.ToUpper()}', 
-				'{obj.Email!.ToUpper()}', 
+				'{obj.Email!}', 
 				'{obj.Cnic!.ToUpper()}', 
 				'{obj.Address!.ToUpper()}', 
 				'{obj.EmpType!.ToUpper()}', 
@@ -135,7 +139,7 @@ public class EmployeesService : IEmployeesService
 					Fullname = '{obj.Fullname!.ToUpper()}', 
 					Pic = '{obj.Pic!.ToUpper()}', 
 					Phone = '{obj.Phone!.ToUpper()}', 
-					Email = '{obj.Email!.ToUpper()}', 
+					Email = '{obj.Email!}', 
 					Cnic = '{obj.Cnic!.ToUpper()}', 
 					Address = '{obj.Address!.ToUpper()}', 
 					EmpType = '{obj.EmpType!.ToUpper()}', 
@@ -148,8 +152,7 @@ public class EmployeesService : IEmployeesService
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
-					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
-					IsSoftDeleted = {obj.IsSoftDeleted} 
+					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}' 
 				WHERE Id = {obj.Id};";
 
             return await dapper.Update(SQLUpdate, SQLDuplicate);

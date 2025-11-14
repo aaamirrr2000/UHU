@@ -55,8 +55,20 @@
                         <ValidationMessage For="@(() => record.Name)" />
                     </div>
                     <div class="col-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Dashboard</label>
-                        <MudTextField id="Dashboard" @bind-Value="record.Dashboard" placeholder="Dashboard" ReadOnly="@isReadOnly"></MudTextField>
+                        <label class="form-label" style="font-weight: bold;">Home Page</label>
+
+                        <MudSelect @bind-Value="record.Dashboard"
+                                   Placeholder="Dashboards"
+                                   Clearable="true">
+
+                            @if (Dashboards != null && Dashboards.Any())
+                            {
+                                foreach (var i in Dashboards)
+                                {
+                                    <MudSelectItem T="string" Value="@(i)">@i</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
                         <ValidationMessage For="@(() => record.Dashboard)" />
                     </div>
                     <div class="col-6 flex-input">
@@ -91,7 +103,7 @@
 {
     GroupsModel record = new();
     List<OrganizationsModel> Org = new();
-
+    private List<string>? Dashboards;
 
     [Parameter] public string Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
@@ -113,6 +125,7 @@
     protected async Task GetAll()
     {
         LoadingPanel = true;
+        Dashboards = Functions.GetFilesFromFolder();
 
         if (Action == "INSERT")
         {
@@ -137,7 +150,7 @@
     protected async Task Get(int id)
     {
         LoadingPanel = true;
-        record = await Functions.GetAsync<GroupsModel>($"Groups/Get?Id={id}", true) ?? new GroupsModel();
+        record = await Functions.GetAsync<GroupsModel>($"Groups/Get/{id}", true) ?? new GroupsModel();
         LoadingPanel = false;
     }
 
@@ -149,28 +162,6 @@
 
 
         StateHasChanged();
-    }
-
-    protected async void Clear()
-    {
-        Action = "INSERT";
-        record = new GroupsModel();
-        record.IsActive = 1;
-        isReadOnly = false;
-    }
-
-    protected async Task View(int id)
-    {
-        await Get(id);
-        Action = "VIEW";
-        isReadOnly = true;
-    }
-
-    protected async Task Edit(int id)
-    {
-        await Get(id);
-        Action = "UPDATE";
-        isReadOnly = false;
     }
 
     protected async Task Delete()
@@ -199,17 +190,17 @@
         var result = await Functions.PostAsync<GroupsModel>($"Groups/{url}", record, true);
         if (result.Success == false)
         {
-            await Functions.ShowMessage(dialogService, "error", $"Record Not Saved");
+            SnackbarService.Add($"Record Not Saved", Severity.Error);
         }
         else
         {
-            await Functions.ShowMessage(dialogService, "success", $"Record {Action} Successfully");
+            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
             record = new();
             isReadOnly = true;
         }
 
         LoadingPanel = false;
-        await _drawer.CloseDrawer();
+        await _drawer.CloseDrawerAsync();
 
     }
 }

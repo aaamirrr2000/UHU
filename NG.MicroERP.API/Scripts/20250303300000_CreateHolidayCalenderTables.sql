@@ -1,24 +1,24 @@
 ﻿CREATE TABLE HolidayCalendar
 (
-    Id                      INT AUTO_INCREMENT PRIMARY KEY,
-    Guid                    CHAR(36)        NOT NULL DEFAULT (UUID()),
-    OrganizationId          INT             NULL DEFAULT NULL,
-    HolidayDate             DATE            NOT NULL,
-    Description             VARCHAR(100),
-    IsRecurring             BOOLEAN         DEFAULT FALSE,
-    IsActive                TINYINT         NOT NULL DEFAULT 1,
-    CreatedBy               INT             NULL DEFAULT NULL,
-    CreatedOn               DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CreatedFrom             VARCHAR(255)    NULL DEFAULT NULL,
-    UpdatedBy               INT             NULL DEFAULT NULL,
-    UpdatedOn               DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UpdatedFrom             VARCHAR(255)    NULL DEFAULT NULL,
-    IsSoftDeleted           TINYINT         NULL DEFAULT 0,
-    RowVersion              TIMESTAMP       NULL,
+    Id                  INT IDENTITY(1,1) PRIMARY KEY,
+    Guid                UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
+    OrganizationId      INT NULL DEFAULT 1,
+    HolidayDate         DATE            NOT NULL,
+    Description         VARCHAR(100),
+    IsRecurring         BIT             DEFAULT 0,
+    IsActive            BIT             NOT NULL DEFAULT 1,
+    CreatedBy           INT             NULL,
+    CreatedOn           DATETIME        NOT NULL DEFAULT GETDATE(),
+    CreatedFrom         VARCHAR(255)    NULL,
+    UpdatedBy           INT             NULL,
+    UpdatedOn           DATETIME        NOT NULL DEFAULT GETDATE(),
+    UpdatedFrom         VARCHAR(255)    NULL,
+    IsSoftDeleted       BIT             NULL DEFAULT 0,
+    RowVersion          ROWVERSION,
 
-    FOREIGN KEY (CreatedBy)       REFERENCES Users(Id),
-    FOREIGN KEY (UpdatedBy)       REFERENCES Users(Id),
-    FOREIGN KEY (OrganizationId)  REFERENCES Organizations(Id)
+    CONSTRAINT FK_HolidayCalendar_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_HolidayCalendar_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_HolidayCalendar_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id)
 );
 
 INSERT INTO HolidayCalendar (OrganizationId, HolidayDate, Description, IsRecurring, IsActive)

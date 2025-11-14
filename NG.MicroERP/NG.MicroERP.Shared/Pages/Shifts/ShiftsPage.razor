@@ -150,7 +150,7 @@
     {
         LoadingPanel = true;
 
-        record = await Functions.GetAsync<ShiftsModel>($"Shifts/Get?Id={id}", true) ?? new ShiftsModel();
+        record = await Functions.GetAsync<ShiftsModel>($"Shifts/Get/{id}", true) ?? new ShiftsModel();
         StartTime = TimeSpan.Parse(record.StartTime);
         EndTime = TimeSpan.Parse(record.EndTime);
 
@@ -216,17 +216,17 @@
         var result = await Functions.PostAsync<ShiftsModel>($"Shifts/{url}", record, true);
         if (result.Success == false)
         {
-            await Functions.ShowMessage(dialogService, "error", $"Record Not Saved");
+            SnackbarService.Add($"Record Not Saved", Severity.Error);
         }
         else
         {
-            await Functions.ShowMessage(dialogService, "success", $"Record {Action} Successfully");
+            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
             record = new();
             isReadOnly = true;
         }
 
         LoadingPanel = false;
-        await _drawer.CloseDrawer();
+        await _drawer.CloseDrawerAsync();
 
     }
 }

@@ -1,0 +1,369 @@
+﻿@page "/PartyFinancialsPage/{Action}/{CurrentRecord?}"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+
+    <div class="text-end" style="margin-top:10px;">
+        @if (Action != "VIEW")
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Clear" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
+                <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-1" />
+                New
+            </MudButton>
+
+            @if (Action != "NO ACTION")
+            {
+                <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                    @(Action == "INSERT" ? "Save" : "Update")
+                </MudButton>
+            }
+
+        }
+    </div>
+
+    <br />
+
+    <MudExpansionPanels MultiExpansion="true">
+        <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
+
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+
+                    <i class="fa fa-info-circle"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Party's Financials</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Party's Financials</MudText>
+                    </div>
+                </div>
+                <hr />
+            </TitleContent>
+
+            <ChildContent>
+                @if (IsVisible)
+                {
+                    <div class="row" style="width:100%; display: flex;">
+                    
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Expense</label>
+
+                            <MudSelect T="string"
+                                        @bind-Value="record.ValueType"
+                                        Placeholder="Expense"
+                                        Clearable="true">
+
+                                @if (Val != null && Val.Any())
+                                {
+                                    if (string.IsNullOrWhiteSpace(record.ValueType))
+                                    {
+                                        record.ValueType = Val.First().ListValue;
+                                    }
+
+                                    foreach (var i in Val)
+                                    {
+                                        <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                    }
+                                }
+                            </MudSelect>
+
+                            <ValidationMessage For="@(() => record.ValueType)" />
+                        </div>
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Value</label>
+                            <MudNumericField @bind-Value="record.Value" placeholder="Value" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
+                            <ValidationMessage For="@(() => record.Value)" />
+                        </div>
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Percentage / Amount</label>
+
+                            <MudSelect T="string"
+                                        @bind-Value="record.PercentageAmount"
+                                        Placeholder="Percentage or Amount"
+                                        Clearable="true">
+
+                                @if (record.PercentageAmount != null && record.PercentageAmount.Any())
+                                {
+                                    record.IsActive = 1;
+                                }
+
+                                <MudSelectItem T="string" Value=@("PERCENTAGE")>Percentage</MudSelectItem>
+                                <MudSelectItem T="string" Value=@("AMOUNT")>Amount</MudSelectItem>
+                            </MudSelect>
+
+                            <ValidationMessage For="@(() => record.PercentageAmount)" />
+                        </div>
+                        <div class="col-6 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Active</label>
+
+                            <MudSelect T="int"
+                                        @bind-Value="record.IsActive"
+                                        Placeholder="Active"
+                                        Clearable="true">
+
+                                @if (record.IsActive != 0 && record.IsActive != 1)
+                                {
+                                    record.IsActive = 1;
+                                }
+
+                                <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                                <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                            </MudSelect>
+
+                            <ValidationMessage For="@(() => record.IsActive)" />
+                        </div>
+                        <div class="col-12 flex-input">
+                            <label class="form-label" style="font-weight: bold;">Description</label>
+                            <MudTextField id="Description" @bind-Value="record.Description" placeholder="Description" ReadOnly="@isReadOnly"></MudTextField>
+                            <ValidationMessage For="@(() => record.Description)" />
+                        </div>
+                    </div>
+                }
+
+                @if (data == null)
+                {
+                    <SimpleLoading />
+                }
+                else
+                {
+                    
+                    <div class="row">
+
+                        <MudTable T="PartyFinancialsModel"
+                                    Items="@data"
+                                    Hover="true"
+                                    Dense="true"
+                                    Striped="true"
+                                    Virtualize="true"
+                                    Style="border-radius: 0px; box-shadow: none; border: none; overflow: hidden; margin: 0; min-height:500px;">
+
+                            <ToolBarContent>
+
+                            </ToolBarContent>
+
+                            <HeaderContent>
+                                <MudTh>Actions</MudTh>
+                                <MudTh>Description</MudTh>
+                                <MudTh>Expense</MudTh>
+                                <MudTh>Value</MudTh>
+                                <MudTh>Type</MudTh>
+                                <MudTh>Active</MudTh>
+                            </HeaderContent>
+
+                            <RowTemplate>
+                                <MudTd DataLabel="Actions" Style="width: 60px; min-width: 60px;">
+                                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Dense="true">
+                                        <MudMenuItem OnClick="@(() => View(context.Id))">
+                                            <MudIcon Icon="@Icons.Material.Filled.Search" Class="me-2" /> View
+                                        </MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => Edit(context.Id))">
+                                            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="me-2" /> Edit
+                                        </MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => Delete(context.Id))" Color="Color.Error">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
+                                        </MudMenuItem>
+                                    </MudMenu>
+                                </MudTd>
+
+                                <MudTd DataLabel="Description" Style="white-space: nowrap; width: auto;">
+                                    @context.Description
+                                </MudTd>
+                                <MudTd DataLabel="Expense" Style="white-space: nowrap; width: auto;">
+                                    @context.ValueType
+                                </MudTd>
+                                <MudTd DataLabel="Value" Style="text-align: right; white-space: nowrap; width: auto;">
+                                    @context.Value
+                                </MudTd>
+                                <MudTd DataLabel="Type" Style="text-align: right; white-space: nowrap; width: auto;">
+                                    @context.PercentageAmount
+                                </MudTd>
+                                <MudTd DataLabel="Active" Style="white-space: nowrap; width: auto;">
+                                    @(context.IsActive == 1 ? "" : "Locked")
+                                </MudTd>
+
+
+                            </RowTemplate>
+                        </MudTable>
+                    </div>
+                    
+                }
+            </ChildContent>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+
+</div>
+
+@code
+{
+    PartiesModel MasterRecord = new();
+    PartyFinancialsModel record = new();
+    List<PartiesModel> Par = new();
+    List<TypeCodeModel> Val = null!;
+    List<PartyFinancialsModel> data = new();
+
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private bool IsVisible { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
+    protected async Task GetAll()
+    {
+        try
+        {
+            LoadingPanel = true;
+
+            Par = await Functions.GetAsync<List<PartiesModel>>($"Party/Search", true) ?? new List<PartiesModel>();
+            Val = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/FINANCIAL COMPONENT TYPE", true) ?? new List<TypeCodeModel>();
+
+
+            switch (Action)
+            {
+                case "INSERT":
+                    await Clear();
+                    isReadOnly = false;
+                    break;
+                case "UPDATE":
+                case "VIEW":
+                    await Get(CurrentRecord);
+                    isReadOnly = (Action == "VIEW");
+                    break;
+                default:
+                    isReadOnly = true;
+                    break;
+            }
+
+            data = await Functions.GetAsync<List<PartyFinancialsModel>>($"PartyFinancials/Search/partyid={CurrentRecord}", true) ?? new List<PartyFinancialsModel>();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading data: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+            StateHasChanged();
+        }
+    }
+
+    protected async Task Get(int id)
+    {
+        try
+        {
+            LoadingPanel = true;
+            MasterRecord = await Functions.GetAsync<PartiesModel>($"Parties/Get/{id}", true) ?? new PartiesModel();
+            record = await Functions.GetAsync<PartyFinancialsModel>($"PartyFinancials/Get/{id}", true) ?? new PartyFinancialsModel();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading record: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    protected void GetDefaultValues()
+    {
+        if (CurrentRecord > 0 && record.PartyId == 0)
+            record.PartyId = CurrentRecord;
+
+        StateHasChanged();
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new PartyFinancialsModel();
+        record.PartyId = CurrentRecord;
+        record.IsActive = 1;
+        record.Value = 5;
+        record.IsSoftDeleted = 0;
+        isReadOnly = false;
+        IsVisible = true;
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        isReadOnly = true;
+        IsVisible = true;
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+        IsVisible = true;
+    }
+
+    protected async Task Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        await Get(id);
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        try
+        {
+            LoadingPanel = true;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Functions.GetComputerDetails();
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Functions.GetComputerDetails();
+
+            string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<PartyFinancialsModel>($"PartyFinancials/{url}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"Record Not Saved", Severity.Error);
+            }
+            else
+            {
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                await GetAll();
+                await Clear();
+            }
+        }
+        catch (Exception ex)
+        {
+            await Functions.ShowMessage(dialogService, "error", $"Record Not Saved, {ex.Message}");
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+
+    }
+}
+

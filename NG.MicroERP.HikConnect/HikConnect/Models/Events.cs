@@ -31,6 +31,8 @@ public class Info
     [JsonPropertyName("name")] public string? Name { get; set; }
     [JsonPropertyName("cardReaderNo")] public int? CardReaderNo { get; set; }
     [JsonPropertyName("employeeNoString")] public string? EmployeeNoString { get; set; }
+    public int DepartmentId { get; set; }
+    public int DesignationId { get; set; }
     [JsonPropertyName("userType")] public string? UserType { get; set; }
     [JsonPropertyName("currentVerifyMode")] public string? CurrentVerifyMode { get; set; }
     [JsonPropertyName("mask")] public string? Mask { get; set; }

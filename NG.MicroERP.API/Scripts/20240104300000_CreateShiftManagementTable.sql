@@ -1,21 +1,21 @@
 ﻿CREATE TABLE Shifts
 (
-    Id              INT AUTO_INCREMENT PRIMARY KEY,
-    Guid            CHAR(36)        NOT NULL DEFAULT (UUID()),
-    OrganizationId  INT NULL,
+    Id              INT IDENTITY(1,1) PRIMARY KEY,
+    Guid                UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
+    OrganizationId  INT NULL DEFAULT 1,
     ShiftName       VARCHAR(100) NOT NULL,
     StartTime       TIME NOT NULL,
     EndTime         TIME NOT NULL,
     FlexiTime       INT DEFAULT 0,
-    IsActive        INT DEFAULT 1,
+    IsActive        BIT DEFAULT 1,
     CreatedBy       INT,
-    CreatedOn       DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CreatedOn       DATETIME DEFAULT GETDATE(),
     CreatedFrom     VARCHAR(250),
     UpdatedBy       INT,
     UpdatedOn       DATETIME NULL,
     UpdatedFrom     VARCHAR(250),
-    IsSoftDeleted   BOOLEAN DEFAULT FALSE,
-    RowVersion      TIMESTAMP NULL
+    IsSoftDeleted   BIT DEFAULT 0,
+    RowVersion      ROWVERSION
 );
 
 INSERT INTO Shifts 
@@ -40,25 +40,10 @@ VALUES
     60,
     1,
     1,
-    NOW(),
+    GETDATE(),
     'IP: 192.168.234.1, MAC: 005056C00001, DEVICE: AAMIR-DEV-PC',
     0
-);
-
-INSERT INTO Shifts 
-(
-    OrganizationId,
-    ShiftName,
-    StartTime,
-    EndTime,
-    FlexiTime,
-    IsActive,
-    CreatedBy,
-    CreatedOn,
-    CreatedFrom,
-    IsSoftDeleted
-) 
-VALUES 
+),
 (
     1,
     'Evening Shift',
@@ -67,7 +52,7 @@ VALUES
     60,
     1,
     1,
-    NOW(),
+    GETDATE(),
     'IP: 192.168.234.1, MAC: 005056C00001, DEVICE: AAMIR-DEV-PC',
     0
 );

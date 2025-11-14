@@ -1,27 +1,27 @@
-﻿CREATE VIEW GroupMenu AS 
-WITH GroupMenuCTE AS (
+﻿CREATE VIEW GroupMenu AS
+WITH GroupMenuCTE AS
+(
     SELECT
-        a.Id AS GroupId,
-        a.Name AS GroupName,
-        a.IsActive,
-        b.Id AS MenuId,
-        b.MenuCaption AS MenuCaption,
-        b.Tooltip AS Tooltip,
-        b.AdditionalInfo AS AdditionalInfo,
-        b.ParentId AS ParentId,
-        b.PageName AS PageName,
-        b.Icon AS Icon,
-        b.SeqNo AS SeqNo,
-        b.Live AS Live,
-        a.OrganizationId
-    FROM Groups AS a
-    CROSS JOIN Menu AS b
+        g.Id AS GroupId,
+        g.Name AS GroupName,
+        g.IsActive,
+        m.Id AS MenuId,
+        m.MenuCaption AS MenuCaption,
+        m.Tooltip AS Tooltip,
+        m.AdditionalInfo AS AdditionalInfo,
+        m.ParentId AS ParentId,
+        m.PageName AS PageName,
+        m.Icon AS Icon,
+        m.SeqNo AS SeqNo,
+        m.Live AS Live,
+        g.OrganizationId
+    FROM Groups AS g
+    CROSS JOIN Menu AS m
 )
 SELECT
-    a.*,
-    CASE
-        WHEN b.Privilege IS NULL THEN ''
-        ELSE b.Privilege
-    END AS My_Privilege
-FROM GroupMenuCTE AS a
-LEFT JOIN Permissions AS b ON b.GroupId = a.GroupId AND b.MenuId = a.MenuId;
+    cte.*,
+    ISNULL(p.Privilege, '') AS My_Privilege
+FROM GroupMenuCTE AS cte
+LEFT JOIN Permissions AS p
+    ON p.GroupId = cte.GroupId
+    AND p.MenuId = cte.MenuId;

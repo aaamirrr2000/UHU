@@ -1,31 +1,34 @@
-﻿CREATE TABLE Areas
+﻿-- CREATE TABLE Areas for SQL Server
+CREATE TABLE Areas
 (
-    Id                  INT                 AUTO_INCREMENT PRIMARY KEY,
-    Guid                CHAR(36)            NOT NULL DEFAULT (UUID()),
-    OrganizationId      INT                 NOT NULL DEFAULT 1,
-    AreaName            VARCHAR(100)        NOT NULL,       -- City, Province, Region, Country name
-    AreaType            VARCHAR(50)         NULL,           -- City, Province, Region, Country
-    ParentId            INT                 NULL,           -- 0 for top-level (e.g., Country)
-    IsActive            TINYINT(1)          NOT NULL DEFAULT 1,
-    CreatedBy           INT                 NULL,
-    CreatedOn           DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CreatedFrom         VARCHAR(255)        NULL,
-    UpdatedBy           INT                 NULL,
-    UpdatedOn           DATETIME            NULL DEFAULT NULL,
-    UpdatedFrom         VARCHAR(255)        NULL,
-    IsSoftDeleted       TINYINT(1)          NOT NULL DEFAULT 0,
-    RowVersion          TIMESTAMP           NULL,
-    FOREIGN KEY (CreatedBy)      REFERENCES Users(Id),
-    FOREIGN KEY (UpdatedBy)      REFERENCES Users(Id),
-    FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
-    FOREIGN KEY (ParentId)       REFERENCES Areas(Id)
+    Id              INT IDENTITY(1,1) PRIMARY KEY,
+    Guid                UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
+    OrganizationId  INT NULL DEFAULT 1,
+    AreaName        VARCHAR(100) NOT NULL,        -- City, Province, Region, Country
+    AreaType        VARCHAR(50)  NULL,            -- City, Province, Region, Country
+    ParentId        INT NULL,                      -- 0 or NULL for top-level (e.g., Country)
+    IsActive        BIT NOT NULL DEFAULT 1,
+    CreatedBy       INT NULL,
+    CreatedOn       DATETIME NOT NULL DEFAULT GETDATE(),
+    CreatedFrom     VARCHAR(255) NULL,
+    UpdatedBy       INT NULL,
+    UpdatedOn       DATETIME NULL,
+    UpdatedFrom     VARCHAR(255) NULL,
+    IsSoftDeleted   BIT NOT NULL DEFAULT 0,
+    RowVersion      ROWVERSION,
+    CONSTRAINT FK_Areas_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Areas_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Areas_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
+    CONSTRAINT FK_Areas_Parent FOREIGN KEY (ParentId) REFERENCES Areas(Id)
 );
 
+-- Insert top-level country
 INSERT INTO Areas (AreaName, AreaType, ParentId, IsActive, IsSoftDeleted)
 VALUES ('PAKISTAN', 'COUNTRY', NULL, 1, 0);
 
+-- Insert provinces/regions
 INSERT INTO Areas (AreaName, AreaType, ParentId, IsActive, IsSoftDeleted)
-VALUES
+VALUES 
 ('PUNJAB', 'PROVINCE', 1, 1, 0),
 ('SINDH', 'PROVINCE', 1, 1, 0),
 ('KHYBER PAKHTUNKHWA', 'PROVINCE', 1, 1, 0),
@@ -34,6 +37,7 @@ VALUES
 ('ISLAMABAD CAPITAL TERRITORY', 'REGION', 1, 1, 0),
 ('AZAD JAMMU AND KASHMIR', 'REGION', 1, 1, 0);
 
+-- Insert cities
 INSERT INTO Areas (AreaName, AreaType, ParentId, IsActive, IsSoftDeleted)
 VALUES
 ('LAHORE', 'CITY', 2, 1, 0),
@@ -45,5 +49,5 @@ VALUES
 ('MARDAN', 'CITY', 4, 1, 0),
 ('QUETTA', 'CITY', 5, 1, 0),
 ('GWADAR', 'CITY', 5, 1, 0),
-('MUZAFFARABAD', 'CITY', 8, 1, 0),  -- Note: Changed to 8 (AZAD JAMMU AND KASHMIR)
-('ISLAMABAD', 'CITY', 7, 1, 0);     -- Note: Changed to 7 (ISLAMABAD CAPITAL TERRITORY)
+('MUZAFFARABAD', 'CITY', 8, 1, 0),  -- AZAD JAMMU AND KASHMIR
+('ISLAMABAD', 'CITY', 7, 1, 0);     -- ISLAMABAD CAPITAL TERRITORY

@@ -8,7 +8,8 @@
 <Loading IsLoading="@LoadingPanel" />
 
 <div class="row" style="margin: 2px; height: 90vh; display: flex;">
-    <MyDrawer @ref="_drawer" Title="HolidayCalendar" FaIcon="fas fa-address-book">
+    <MyDrawer @ref="_drawer" Title="Holiday Calendar" FaIcon="fas fa-calendar-alt" >
+
         <HeaderContent>
         </HeaderContent>
         <ChildContent>
@@ -113,7 +114,7 @@
     protected async Task Get(int id)
     {
         LoadingPanel = true;
-        record = await Functions.GetAsync<HolidayCalendarModel>($"HolidayCalendar/Get?Id={id}", true) ?? new HolidayCalendarModel();
+        record = await Functions.GetAsync<HolidayCalendarModel>($"HolidayCalendar/Get/{id}", true) ?? new HolidayCalendarModel();
         LoadingPanel = false;
     }
 
@@ -184,7 +185,7 @@
     
         await GetAll();
         LoadingPanel = false;
-        await _drawer.CloseDrawer();
+        await _drawer.CloseDrawerAsync();
      
     }
 

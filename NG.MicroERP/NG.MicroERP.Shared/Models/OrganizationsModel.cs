@@ -14,6 +14,7 @@ public class OrganizationsModel
     public string? Code { get; set; } = string.Empty;
     public string? EntraId { get; set; } = string.Empty;
     public string? Logo { get; set; } = string.Empty;
+    public string? Wallpaper { get; set; }
     public string ThemeColor { get; set; } = null!;
     public string MenuColor { get; set; } = null!;
     public string? Name { get; set; } = string.Empty;

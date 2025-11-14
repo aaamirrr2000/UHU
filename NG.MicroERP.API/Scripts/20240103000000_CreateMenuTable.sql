@@ -1,53 +1,182 @@
-﻿CREATE TABLE Menu
+﻿CREATE TABLE dbo.Menu
 (
-    Id                  INT             PRIMARY KEY AUTO_INCREMENT,
-    Guid                CHAR(36)        NOT NULL DEFAULT (UUID()),
-    MenuCaption         VARCHAR(100)    NULL DEFAULT NULL,
-    AdditionalInfo      VARCHAR(100)    NULL DEFAULT NULL,
-    Tooltip             VARCHAR(255)    NULL DEFAULT NULL,
-    PageName            VARCHAR(100)    NULL DEFAULT NULL,
-    ParentId            INT             NULL DEFAULT NULL,
-    Icon                VARCHAR(50)     NULL DEFAULT NULL,
-    SeqNo               INT             NULL DEFAULT NULL,
-    Live                TINYINT         NULL DEFAULT NULL,
-    CreatedBy           INT             NULL,
-    CreatedOn           DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CreatedFrom         VARCHAR(255)    NULL DEFAULT NULL,
-    UpdatedBy           INT             NULL,
-    UpdatedOn           DATETIME        NULL DEFAULT NULL,
-    UpdatedFrom         VARCHAR(255)    NULL DEFAULT NULL,
-    IsSoftDeleted       TINYINT         NOT NULL DEFAULT 0,
-    RowVersion          TIMESTAMP       NULL
+    Id              INT IDENTITY(1,1) PRIMARY KEY,
+    Guid            UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
+    MenuCaption     VARCHAR(100) NULL,
+    AdditionalInfo  VARCHAR(100) NULL,
+    Tooltip         VARCHAR(255) NULL,
+    PageName        VARCHAR(100) NULL,
+    ParentId        INT NULL,
+    Icon            VARCHAR(50) NULL,
+    SeqNo           INT NULL,
+    Live            SMALLINT NULL,
+    CreatedBy       INT NULL,
+    CreatedOn       DATETIME NOT NULL DEFAULT GETDATE(),
+    CreatedFrom     VARCHAR(255) NULL,
+    UpdatedBy       INT NULL,
+    UpdatedOn       DATETIME NULL,
+    UpdatedFrom     VARCHAR(255) NULL,
+    IsSoftDeleted   SMALLINT NOT NULL DEFAULT 0,
+    RowVersion      ROWVERSION
 );
+GO
 
+
+SET IDENTITY_INSERT dbo.Menu ON;
+GO
+
+/*──────────────────────────── SALES ─────────────────────────────*/
 INSERT INTO Menu
     (Id, MenuCaption, AdditionalInfo, Tooltip, PageName, ParentId,
      Icon, SeqNo, Live,
-     CreatedBy, CreatedFrom,
-     UpdatedBy, UpdatedFrom,
-     IsSoftDeleted)
+     CreatedBy, CreatedOn, CreatedFrom,
+     UpdatedBy, UpdatedOn, UpdatedFrom, IsSoftDeleted)
 VALUES
--- 📊 Attendance & Leave
-(1, 'Attendance', NULL, 'Monitor and manage staff attendance', NULL, 0, 'fas fa-user-check', 5000, 1, 1, NULL, 1, NULL, 0),
-(2, 'My Leave Request', NULL, 'Submit your leave requests', 'LeaveRequestsDashboard', 1, 'fas fa-paper-plane', 5010, 0, 1, NULL, 1, NULL, 0),
-(3, 'Leave Requests', NULL, 'Manage leave requests of other employees', 'LeaveRequestsDashboard', 1, 'fas fa-envelope-open-text', 5020, 1, 1, NULL, 1, NULL, 0),
+(20, 'Operations', NULL, 'Sales and purchase related operations',
+     NULL, 0,
+     'fas fa-shopping-cart', 1000, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
 
--- 🛡️ Security Setup
-(100, 'Security Setup', NULL, 'Configure user security and permissions', NULL, 0, 'fas fa-shield-alt', 8000, 1, 1, NULL, 1, NULL, 0),
-(101, 'Users', NULL, 'Add, edit, and deactivate system users', 'UsersDashboard', 100, 'fas fa-user', 8010, 1, 1, NULL, 1, NULL, 0),
-(102, 'Groups', NULL, 'Create and manage user groups and roles', 'GroupsDashboard', 100, 'fas fa-users-cog', 8020, 1, 1, NULL, 1, NULL, 0),
-(103, 'Permissions', NULL, 'Assign menu permissions to users or groups', 'PermissionsDashboard', 100, 'fas fa-lock', 8030, 1, 1, NULL, 1, NULL, 0),
-(104, 'Scanner Devices', NULL, 'Configure Scanner Devices', 'ScannerDevicesDashboard', 100, 'fas fa-fingerprint', 8040, 1, 1, NULL, 1, NULL, 0),
+(21, 'Purchase Order', 'Customers Purchase Order',
+    'Create customer purchase orders', 'PurchaseOrderDashboard', 20,
+     'fas fa-file-invoice-dollar', 1010, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
 
--- ⚙️ General Setup
-(200, 'General Setup', NULL, 'Configure core system settings and master data', NULL, 0, 'fas fa-cogs', 9000, 1, 1, NULL, 1, NULL, 0),
-(205, 'Organization', NULL, 'Maintain organisation profile and settings', 'OrganizationsDashboard', 200, 'fas fa-building', 9010, 1, 1, NULL, 1, NULL, 0),
-(210, 'Locations', NULL, 'Maintain branch or warehouse locations', 'LocationsDashboard', 200, 'fas fa-map-marker-alt', 9020, 1, 1, NULL, 1, NULL, 0),
-(215, 'Employee', NULL, 'Maintain employee records and HR details', 'EmployeesDashboard', 200, 'fas fa-id-card', 9030, 1, 1, NULL, 1, NULL, 0),
-(216, 'Departments', NULL, 'Manage departments and sub-departments', 'DepartmentsDashboard', 200, 'fas fa-sitemap', 9040, 1, 1, NULL, 1, NULL, 0),
-(217, 'Designations', NULL, 'Manage employee designations and reporting lines', 'DesignationsDashboard', 200, 'fas fa-user-tag', 9050, 1, 1, NULL, 1, NULL, 0),
-(218, 'Shifts Mgt', NULL, 'Maintain employee shift schedules', 'ShiftsDashboard', 200, 'fas fa-clock', 9060, 1, 1, NULL, 1, NULL, 0),
-(220, 'Areas', NULL, 'Maintain cities, regions, provinces, and countries', 'AreasDashboard', 200, 'fas fa-globe-asia', 9070, 1, 1, NULL, 1, NULL, 0),
-(225, 'Leave Types', NULL, 'Define leave types and rules', 'LeaveTypesDashboard', 200, 'fas fa-umbrella-beach', 9080, 1, 1, NULL, 1, NULL, 0),
-(230, 'Holiday Calendar', NULL, 'Define public holidays and off days', 'HolidayCalendarDashboard', 200, 'fas fa-calendar-alt', 9090, 1, 1, NULL, 1, NULL, 0);
+(22, 'Sale Invoice', 'SALE', 'Generate and view customer invoices',
+     'BillDashboard', 20,
+     'fas fa-file-invoice', 1020, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+(23, 'Cash Book', NULL, 'Record and monitor cash receipts & payments',
+     'CashBookDashboard', 20,
+     'fas fa-wallet', 1030, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+
+/*──────────────────────────── STOCK ─────────────────────────────*/
+(40, 'Stock', NULL, 'Manage inventory and stock movements',
+     NULL, 0,
+     'fas fa-boxes', 2000, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+(41, 'Stock Received', NULL, 'Record incoming stock receipts',
+     'StockPage', 40,
+     'fas fa-truck-loading', 2010, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+(42, 'Stock Issue', NULL, 'Record outgoing stock issues',
+     'StockIssuePage', 40,
+     'fas fa-dolly', 2020, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+
+/*──────────────────────────── REPORTS ─────────────────────────────*/
+(60, 'Reports', NULL, 'Generate operational and financial reports',
+     NULL, 0,
+     'fas fa-chart-line', 3000, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+(61, 'Collection Report', 'REPORT', 'View collections and payments status',
+     'CollectionReport', 60,
+     'fas fa-hand-holding-usd', 3010, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+(62, 'Cash Position Report', 'REPORT', 'Daily cash balance and transactions',
+     'CashPositionReport', 60,
+     'fas fa-money-bill-wave', 3020, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+
+/*──────────────────────────── SECURITY ─────────────────────────────*/
+(80, 'Security Setup', NULL, 'User accounts and access permissions',
+     NULL, 0,
+     'fas fa-shield-alt', 4000, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+(81, 'Users', NULL, 'Add, edit, and manage system users',
+     'UsersDashboard', 80,
+     'fas fa-user', 4010, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+(82, 'Groups', NULL, 'Manage user roles and group permissions',
+     'GroupsDashboard', 80,
+     'fas fa-users-cog', 4020, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+(83, 'Permissions', NULL, 'Assign and manage user or group permissions',
+     'PermissionsDashboard', 80,
+     'fas fa-lock', 4030, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+
+/*──────────────────────────── SETUP / MASTER DATA ─────────────────────────────*/
+(100, 'General Setup', NULL, 'System configuration and master data',
+     NULL, 0,
+     'fas fa-cogs', 5000, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+(101, 'Organization', NULL, 'Manage organisation profile and details',
+     'OrganizationsDashboard', 100,
+     'fas fa-building', 5010, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+(102, 'Locations', NULL, 'Branch or warehouse location setup',
+     'LocationsDashboard', 100,
+     'fas fa-map-marker-alt', 5020, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+(103, 'Employee', NULL, 'Employee profiles and HR setup',
+     'EmployeesDashboard', 100,
+     'fas fa-id-badge', 5030, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+(104, 'Parties', NULL, 'Customer and vendor master data',
+     'PartiesDashboard', 100,
+     'fas fa-address-book', 5040, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+(105, 'Categories', NULL, 'Product categories and grouping',
+     'CategoriesDashboard', 100,
+     'fas fa-tags', 5050, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+(106, 'Items', NULL, 'Product and SKU management',
+     'ItemsDashboard', 100,
+     'fas fa-barcode', 5060, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+(107, 'Currency', NULL, 'Define Currencies and Rates',
+     'ChargeRulesDashboard', 100,
+     'fas fa-receipt', 5070, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+(108, 'Areas', NULL, 'Cities, regions, provinces, and countries setup',
+     'AreasDashboard', 100,
+     'fas fa-map', 5080, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+(109, 'Shifts', NULL, 'Shifts Management',
+     'ShiftsDashboard', 100,
+     'fas fa-stopwatch', 5030, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+/*──────────────────────────── FINANCIAL ─────────────────────────────*/
+(120, 'Financial Setup', NULL, 'Financial accounting and ledger setup',
+     NULL, 0,
+     'fas fa-balance-scale', 6000, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+(121, 'Chart of Accounts', NULL, 'Define and manage chart of accounts',
+     'ChartOfAccountsDashboard', 120,
+     'fas fa-sitemap', 6010, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+
+(122, 'Banks', NULL, 'Maintain banks and branches',
+     'BankDashboard', 120,
+     'fas fa-university', 6020, 1,
+     1, GETDATE(), NULL, 1, GETDATE(), NULL, 0);
+
+GO
+SET IDENTITY_INSERT dbo.Menu OFF;
+GO
 

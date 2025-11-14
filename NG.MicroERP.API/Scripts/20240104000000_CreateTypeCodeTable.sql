@@ -1,13 +1,13 @@
 ﻿CREATE TABLE TypeCode
 (
-    Id              INT AUTO_INCREMENT PRIMARY KEY,
-    Guid            CHAR(36) NOT NULL DEFAULT (UUID()),
+    Id              INT IDENTITY(1,1) PRIMARY KEY,
+    Guid                UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
     OrganizationId  INT NULL DEFAULT 1,
     ListName        VARCHAR(100) NULL DEFAULT NULL,
     ListValue       VARCHAR(100) NULL DEFAULT NULL,
     ParentId        INT NULL DEFAULT NULL,
     SeqNo           INT NULL DEFAULT NULL,
-    RowVersion      TIMESTAMP NULL
+    RowVersion      ROWVERSION
 );
 
 INSERT INTO TypeCode (ListName, ListValue, ParentId, SeqNo) VALUES 
@@ -91,7 +91,7 @@ INSERT INTO TypeCode (ListName, ListValue, ParentId, SeqNo) VALUES
 ('PROVINCE', 'KPK', 0, 1),
 ('PROVINCE', 'AJK', 0, 1),
 ('REGISTRATION STATUS', 'REGISTERED', 0, 1),
-('REGISTRATION STATUS', 'UNREGISTERED',0, 1),
+('REGISTRATION STATUS', 'UNREGISTERED', 0, 1),
 ('INTERFACE TYPE', 'NONE', 0, 1),
 ('INTERFACE TYPE', 'ACCOUNTS RECEIVABLES', 0, 1),
 ('INTERFACE TYPE', 'ACCOUNTS PAYABLES', 0, 1),

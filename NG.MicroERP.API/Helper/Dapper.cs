@@ -1,5 +1,5 @@
-﻿using MySql.Data.MySqlClient;
-using Dapper;
+﻿using Dapper;
+using Microsoft.Data.SqlClient;
 using Serilog;
 using System.Data;
 
@@ -7,182 +7,181 @@ namespace NG.MicroERP.API.Helper
 {
     public class DapperFunctions
     {
-        public static string DBConnection = string.Empty;
-        public Config cfg = new Config();
+        private static string DBConnection = string.Empty;
+        private readonly Config cfg = new();
 
-        public async Task<T?> SearchByID<T>(string TableName, int id = 0, string Connection = "Default")
+        private static readonly object _lock = new();
+
+        private static string GetConnectionString(string type, Config cfg)
         {
-            DBConnection = Connection == "Default" ? cfg.DefaultDB()! : cfg.GlobalDB()!;
+            if (string.IsNullOrEmpty(DBConnection))
+            {
+                lock (_lock)
+                {
+                    if (string.IsNullOrEmpty(DBConnection))
+                    {
+                        DBConnection = type == "Default" ? cfg.DefaultDB()! : cfg.GlobalDB()!;
+
+                        // Ensure pooling and reasonable defaults
+                        if (!DBConnection.Contains("Pooling"))
+                            DBConnection += ";Pooling=true;Min Pool Size=5;Max Pool Size=50;";
+                    }
+                }
+            }
+            return DBConnection;
+        }
+
+        private static async Task<SqlConnection> GetConnectionAsync(string connectionType, Config cfg)
+        {
+            var cnn = new SqlConnection(GetConnectionString(connectionType, cfg));
+            await cnn.OpenAsync();
+            return cnn;
+        }
+
+        public async Task<T?> SearchByID<T>(string tableName, int id = 0, string connection = "Default")
+        {
             try
             {
-                string SQL = "SELECT * FROM " + TableName;
-                if (id != 0)
-                    SQL += " WHERE ID = @Id";
-
-                using IDbConnection connection = new MySqlConnection(DBConnection);
-                IEnumerable<T> result = await connection.QueryAsync<T>(SQL, new { Id = id });
+                string sql = $"SELECT * FROM {tableName}" + (id != 0 ? " WHERE Id = @Id" : "");
+                await using var cnn = await GetConnectionAsync(connection, cfg);
+                var result = await cnn.QueryAsync<T>(sql, new { Id = id });
                 return result.FirstOrDefault();
             }
             catch (Exception ex)
             {
-                _ = ex.Message;
+                Log.Error(ex, "SearchByID Error for table {Table}", tableName);
                 return default;
             }
         }
 
-        public async Task<List<T>?> SearchByQuery<T>(string SQL, string Connection = "Default")
+        public async Task<List<T>?> SearchByQuery<T>(string sql, string connection = "Default")
         {
-            DBConnection = Connection == "Default" ? cfg.DefaultDB()! : cfg.GlobalDB()!;
             try
             {
-                using IDbConnection cnn = new MySqlConnection(DBConnection);
-                IEnumerable<T> result = await cnn.QueryAsync<T>(SQL, new DynamicParameters());
+                await using var cnn = await GetConnectionAsync(connection, cfg);
+                var result = await cnn.QueryAsync<T>(sql);
                 return result.ToList();
             }
             catch (Exception ex)
             {
-                _ = ex.Message;
+                Log.Error(ex, "SearchByQuery Error for query: {SQL}", sql);
                 return null;
             }
         }
 
-        public async Task<(bool, string)> ExecuteQuery(string SQL, string Connection = "Default")
+        public async Task<(bool, string)> ExecuteQuery(string sql, string connection = "Default")
         {
-            DBConnection = Connection == "Default" ? cfg.DefaultDB()! : cfg.GlobalDB()!;
             try
             {
-                using IDbConnection cnn = new MySqlConnection(DBConnection);
-                _ = await cnn.ExecuteAsync(SQL);
+                await using var cnn = await GetConnectionAsync(connection, cfg);
+                await cnn.ExecuteAsync(sql);
                 return (true, "OK");
             }
             catch (Exception ex)
             {
+                Log.Error(ex, "ExecuteQuery Error for query: {SQL}", sql);
                 return (false, ex.Message);
             }
         }
 
-        public async Task<(bool, int, string?)> Insert(string SQLInsert, string SQLDuplicate = "", string Connection = "Default")
+        public async Task<(bool, int, string?)> Insert(string sqlInsert, string sqlDuplicate = "", string connection = "Default")
         {
-            DBConnection = Connection == "Default" ? cfg.DefaultDB()! : cfg.GlobalDB()!;
-
             try
             {
-                if (!string.IsNullOrEmpty(SQLDuplicate))
+                if (!string.IsNullOrEmpty(sqlDuplicate))
                 {
-                    if (await Duplicate(SQLDuplicate))
+                    if (await Duplicate(sqlDuplicate, connection))
                         return (false, -1, "Duplicate Record Found.");
                 }
 
-                using var cnn = new MySqlConnection(DBConnection);
-                await cnn.OpenAsync();
+                await using var cnn = await GetConnectionAsync(connection, cfg);
+                await using var tran = await cnn.BeginTransactionAsync();
 
-                using var tran = cnn.BeginTransaction();
+                await cnn.ExecuteAsync(sqlInsert.TrimEnd(';'), transaction: tran);
+                int insertedId = Convert.ToInt32(await cnn.ExecuteScalarAsync("SELECT SCOPE_IDENTITY();", transaction: tran));
 
-                // 1️⃣ Execute the insert
-                await cnn.ExecuteAsync(SQLInsert.TrimEnd(';'), transaction: tran);
-
-                // 2️⃣ Then get the new ID from same connection/transaction
-                int insertedId = await cnn.ExecuteScalarAsync<int>("SELECT LAST_INSERT_ID();", transaction: tran);
-
-                tran.Commit();
-
+                await tran.CommitAsync();
                 return (true, insertedId, null);
             }
             catch (Exception ex)
             {
+                Log.Error(ex, "Insert Error for query: {SQLInsert}", sqlInsert);
                 return (false, 0, ex.Message);
             }
         }
 
-
-        public async Task<(bool, string?)> Update(string SQLUpdate, string SQLDuplicate = "", string Connection = "Default")
+        public async Task<(bool, string?)> Update(string sqlUpdate, string sqlDuplicate = "", string connection = "Default")
         {
-            DBConnection = Connection == "Default" ? cfg.DefaultDB()! : cfg.GlobalDB()!;
             try
             {
-                if (!string.IsNullOrEmpty(SQLDuplicate))
+                if (!string.IsNullOrEmpty(sqlDuplicate))
                 {
-                    if (await Duplicate(SQLDuplicate) == true)
+                    if (await Duplicate(sqlDuplicate, connection))
                         return (false, "Duplicate Record Found.");
                 }
 
-                using IDbConnection cnn = new MySqlConnection(DBConnection);
-                int affectedRows = await cnn.ExecuteAsync(SQLUpdate);
-                return affectedRows > 0 ? (true, null) : (false, "Record Not Saved.");
+                await using var cnn = await GetConnectionAsync(connection, cfg);
+                int affected = await cnn.ExecuteAsync(sqlUpdate);
+                return affected > 0 ? (true, null) : (false, "Record Not Saved.");
             }
             catch (Exception ex)
             {
+                Log.Error(ex, "Update Error for query: {SQLUpdate}", sqlUpdate);
                 return (false, ex.Message);
             }
         }
 
-        public async Task<(bool, string)> Delete(string Table, int id, string Connection = "Default")
+        public async Task<(bool, string)> Delete(string table, int id, string connection = "Default")
         {
-            DBConnection = Connection == "Default" ? cfg.DefaultDB()! : cfg.GlobalDB()!;
             try
             {
-                using IDbConnection cnn = new MySqlConnection(DBConnection);
-                string SQLDelete = $"DELETE FROM {Table} WHERE Id = @Id";
-                int affectedRows = await cnn.ExecuteAsync(SQLDelete, new { Id = id });
-                return affectedRows == 0 ? (false, "Record already in Use.") : (true, "OK");
+                await using var cnn = await GetConnectionAsync(connection, cfg);
+                string sql = $"DELETE FROM {table} WHERE Id = @Id";
+                int affected = await cnn.ExecuteAsync(sql, new { Id = id });
+                return affected > 0 ? (true, "OK") : (false, "Record already in use.");
             }
             catch (Exception ex)
             {
+                Log.Error(ex, "Delete Error for table {Table}", table);
                 return (false, ex.Message);
             }
         }
 
-        public async Task<bool> Duplicate(string SQL, string Connection = "Default")
+        public async Task<bool> Duplicate(string sql, string connection = "Default")
         {
-            DBConnection = Connection == "Default" ? cfg.DefaultDB()! : cfg.GlobalDB()!;
             try
             {
-                using IDbConnection cnn = new MySqlConnection(DBConnection);
-                IEnumerable<dynamic> result = await cnn.QueryAsync(SQL);
+                await using var cnn = await GetConnectionAsync(connection, cfg);
+                var result = await cnn.QueryAsync(sql);
                 return result.Any();
             }
-            catch
+            catch (Exception ex)
             {
+                Log.Error(ex, "Duplicate Check Error for query: {SQL}", sql);
                 return false;
             }
         }
 
-        public string? GetCode(string Prefix, string TableName, string? Field = "Code", int CodeLength = 6, string? Connection = "Default")
+        public string? GetCode(string prefix, string tableName, string field = "Code", int codeLength = 6, string connection = "Default")
         {
-            DBConnection = Connection == "Default" ? cfg.DefaultDB()! : cfg.GlobalDB()!;
-            string SQL;
-            string format = new('0', CodeLength);
-
-            if (!string.IsNullOrEmpty(Prefix))
-            {
-                // MySQL SUBSTRING syntax: SUBSTRING(str, pos, len)
-                SQL = $@"SELECT MAX(CAST(SUBSTRING({Field}, {Prefix.Length + 1}, CHAR_LENGTH({Field}) - {Prefix.Length}) AS UNSIGNED)) AS SEQNO
-                         FROM {TableName} 
-                         WHERE LEFT({Field}, {Prefix.Length}) = '{Prefix}'";
-            }
-            else
-            {
-                SQL = $@"SELECT MAX(CAST({Field} AS UNSIGNED)) AS SEQNO 
-                         FROM {TableName} 
-                         WHERE {Field} REGEXP '^[0-9]+$'";
-            }
+            string format = new('0', codeLength);
+            string sql = string.IsNullOrEmpty(prefix)
+                ? $@"SELECT MAX(CAST({field} AS INT)) AS SEQNO FROM {tableName} WHERE ISNUMERIC({field}) = 1"
+                : $@"SELECT MAX(CAST(SUBSTRING({field}, {prefix.Length + 1}, LEN({field}) - {prefix.Length}) AS INT)) AS SEQNO
+                     FROM {tableName} WHERE LEFT({field}, {prefix.Length}) = '{prefix}'";
 
             try
             {
-                using IDbConnection cnn = new MySqlConnection(DBConnection);
-                var result = cnn.QueryFirstOrDefault<long?>(SQL);
-                if (!string.IsNullOrEmpty(Prefix))
-                {
-                    return result == null ? Prefix + 1.ToString(format) : Prefix + (result.Value + 1).ToString(format);
-                }
-                else
-                {
-                    return result == null ? 1.ToString(format) : (result.Value + 1).ToString(format);
-                }
+                using var cnn = new SqlConnection(GetConnectionString(connection, cfg));
+                cnn.Open();
+                var result = cnn.QueryFirstOrDefault<int?>(sql);
+
+                int next = (result ?? 0) + 1;
+                return string.IsNullOrEmpty(prefix) ? next.ToString(format) : prefix + next.ToString(format);
             }
             catch (Exception ex)
             {
-                _ = ex.Message;
+                Log.Error(ex, "GetCode Error for table {TableName}", tableName);
                 return null;
             }
         }

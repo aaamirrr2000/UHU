@@ -78,31 +78,15 @@
 
                         <ValidationMessage For="@(() => record.UserType)" />
                     </div>
-                  @*   <div class="col-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Theme</label>
-                        <MudSelect T="int"
-                                   @bind-Value="record.DarKLightTheme"
-                                   Placeholder="Theme"
-                                   Clearable="true">
-
-                            @if (record.DarKLightTheme != 0 && record.DarKLightTheme != 1)
-                            {
-                                record.DarKLightTheme = 1;
-                            }
-
-                            <MudSelectItem T="int" Value="1">Light</MudSelectItem>
-                            <MudSelectItem T="int" Value="0">Dark</MudSelectItem>
-                        </MudSelect>                        
-                        <ValidationMessage For="@(() => record.DarKLightTheme)" />
-                    </div> *@
                   
                     <div class="col-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Employee</label>
                         <AutoComplete TItem="EmployeesModel"
-                                      DataList="@Emp"
-                                      DisplayProperty="@(p => p.Fullname)"
-                                      IdProperty="@(p => p.Id)"
-                                      @bind-SelectedId="record.EmpId" />
+                            DataList="@Emp"
+                            IdProperty="@(e => e.Id)"
+                            DisplayProperty="@(e => e.Fullname)"
+                            SelectedId="@record.EmpId"
+                            SelectedIdChanged="@(id => record.EmpId = id)" />
                     </div>
 
                     <div class="col-6 flex-input">
@@ -122,6 +106,8 @@
                         </MudSelect>
                         <ValidationMessage For="@(() => record.GroupId)" />
                     </div>
+
+
                     <div class="col-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Location</label>
 
@@ -177,6 +163,7 @@
 
     private string? searchTerm;
     private EmployeesModel? SelectedEmployee;
+    
 
     [Parameter] public string Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
@@ -220,13 +207,15 @@
             isReadOnly = true;
         }
 
+        
+
         LoadingPanel = false;
     }
 
     protected async Task Get(int id)
     {
         LoadingPanel = true;
-        record = await Functions.GetAsync<UsersModel>($"Users/Get?Id={id}", true) ?? new UsersModel();
+        record = await Functions.GetAsync<UsersModel>($"Users/Get/{id}", true) ?? new UsersModel();
         LoadingPanel = false;
     }
 
@@ -292,17 +281,17 @@
         var result = await Functions.PostAsync<UsersModel>($"Users/{url}", record, true);
         if (result.Success == false)
         {
-            await Functions.ShowMessage(dialogService, "error", $"Record Not Saved");
+            SnackbarService.Add($"Record Not Saved", Severity.Error);
         }
         else
         {
-            await Functions.ShowMessage(dialogService, "success", $"Record {Action} Successfully");
+            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
             record = new();
             isReadOnly = true;
         }
 
         LoadingPanel = false;
-        await _drawer.CloseDrawer();
+        await _drawer.CloseDrawerAsync();
 
     }
 }

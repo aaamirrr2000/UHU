@@ -2,6 +2,7 @@
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.Extensions.Configuration;
 using Microsoft.VisualBasic;
 
 using MudBlazor;
@@ -657,4 +658,61 @@ public class Functions
         string url = $"securepage/{encryptedPage}";
         navManager.NavigateTo(url, forceLoad: true);
     }
+
+    /*
+    public static List<string> GetDashboardPages()
+    {
+        try
+        {
+            // Load the shared project assembly where the dashboards live
+            var assembly = Assembly.Load("NG.MicroERP.Shared");
+
+            // Find all Razor component classes in namespace "Pages.Dashboards"
+            var pageTypes = assembly.GetTypes()
+                .Where(t =>
+                    t.IsSubclassOf(typeof(ComponentBase)) &&
+                    t.Namespace != null &&
+                    (t.Namespace.Contains("Pages.Dashboards", StringComparison.OrdinalIgnoreCase) ||
+                     t.Namespace.EndsWith(".Dashboards", StringComparison.OrdinalIgnoreCase)))
+                .Select(t => t.Name.Replace("Page", "").Replace("Component", ""))
+                .OrderBy(name => name)
+                .ToList();
+
+            return pageTypes;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting dashboard pages: {ex.Message}");
+            return new List<string>();
+        }
+    }
+    */
+
+    public static List<string> GetFilesFromFolder()
+    {
+        IConfigurationBuilder builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json", optional: false);
+        _ = builder.Build();
+
+        IConfiguration configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false)
+                .Build();
+
+        var folderPath = configuration.GetValue<string>("DashboardPages:DashboardPagesPath") ?? string.Empty;
+
+        var pageList = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(folderPath) && Directory.Exists(folderPath))
+        {
+            var files = Directory.GetFiles(folderPath, "*.razor", SearchOption.AllDirectories);
+
+            pageList = files
+                .Select(file => Path.GetFileNameWithoutExtension(file))
+                .OrderBy(name => name)
+                .ToList();
+        }
+
+        return pageList;
+    }
+
 }

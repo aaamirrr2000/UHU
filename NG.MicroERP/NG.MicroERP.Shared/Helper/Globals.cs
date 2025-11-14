@@ -7,8 +7,10 @@ using NG.MicroERP.Shared.Services;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Xml;
 
 namespace NG.MicroERP.Shared.Helper;
 
@@ -30,6 +32,8 @@ public class Globals
     public static OrganizationsModel Organization { get; set; } = null!;
     //public static EmployeesModel Emp { get; set; } = null!;
     public static UsersModel User { get; set; } = null!;
+    public static EmployeesModel Employee { get; set; } = null!;
+    public static DepartmentsModel Department { get; set; } = null!;
     public static List<MyMenuModel>? menu { get; set; } = null;
     public static bool isVisible { get; set; } = true;
     public static string seletctedMenuItem { get; set; } = string.Empty;
@@ -142,6 +146,64 @@ public class Globals
             Console.WriteLine($"⚠️ PageAccess error: {ex.Message}");
             return -1;
         }
+    }
+
+    public static List<int> GetAllSubDepartmentIds(List<DepartmentsModel> allDepartments, int parentId)
+    {
+        var result = new List<int> { parentId };
+
+        var childDepartments = allDepartments
+            .Where(x => x.ParentId == parentId)
+            .ToList();
+
+        foreach (var child in childDepartments)
+        {
+            result.AddRange(GetAllSubDepartmentIds(allDepartments, child.Id));
+        }
+
+        return result;
+    }
+
+    public static BillsModel BillGridTotals(BillsModel Bill)
+    {
+        //Bill Detail Total
+        double TotalBillAmount = 0;
+        foreach (var i in Bill.BillDetails)
+        {
+            TotalBillAmount += (i.Qty * i.UnitPrice) + i.TaxAmount - i.DiscountAmount;
+        }
+
+        //Payments Total
+        decimal TotalPaymentsAmount = 0;
+        foreach (var i in Bill.BillPayments)
+        {
+            TotalPaymentsAmount += i.AmountPaid;
+        }
+
+        //Service Charges
+        decimal TotalServiceChargesAmount = 0;
+
+        foreach (var i in Bill.BillCharges.Where(x => x.ChargeCategory != "TAX"))
+        {
+            TotalServiceChargesAmount += i.CalculatedAmount;
+        }
+
+        //Tax
+        decimal TotalTaxAmount = 0;
+
+        foreach (var i in Bill.BillCharges.Where(x => x.ChargeCategory == "TAX"))
+        {
+            TotalTaxAmount += i.CalculatedAmount;
+        }
+
+        Bill.Bill.SubTotalAmount = Convert.ToDecimal(TotalBillAmount);
+        Bill.Bill.TotalServiceChargeAmount = Convert.ToDecimal(TotalServiceChargesAmount);
+        Bill.Bill.TotalTaxAmount = Convert.ToDecimal(TotalTaxAmount);
+        Bill.Bill.TotalPaidAmount = Convert.ToDecimal(TotalPaymentsAmount);
+        Bill.Bill.BilledAmount = Bill.Bill.SubTotalAmount + Bill.Bill.TotalServiceChargeAmount + Bill.Bill.TotalTaxAmount - Bill.Bill.DiscountAmount;
+        Bill.Bill.BalanceAmount = Bill.Bill.BilledAmount - Bill.Bill.TotalPaidAmount;
+
+        return Bill;
     }
 
 }

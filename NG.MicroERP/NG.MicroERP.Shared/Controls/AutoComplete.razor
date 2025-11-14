@@ -2,12 +2,14 @@
 @typeparam TItem
 
 <MudAutocomplete T="TItem"
-                 Value="@SelectedItem"
+                 Value="@_selectedItem"
                  ValueChanged="@OnValueChanged"
                  SearchFunc="@SearchItems"
                  ToStringFunc="@ItemToString"
                  Clearable="true"
-                 DebounceInterval="300">
+                 DebounceInterval="300"
+                 @attributes="AdditionalAttributes">
+
     <ProgressIndicatorTemplate>
         <MudProgressLinear Size="Size.Small" Indeterminate="true" Color="Color.Primary" />
     </ProgressIndicatorTemplate>
@@ -20,16 +22,23 @@
     [Parameter] public TItem SelectedValue { get; set; } = default!;
     [Parameter] public EventCallback<TItem> SelectedValueChanged { get; set; }
 
-    // New ID binding
+    // ID binding
     [Parameter] public int SelectedId { get; set; }
     [Parameter] public EventCallback<int> SelectedIdChanged { get; set; }
-    [Parameter] public Func<TItem, int> IdProperty { get; set; } = null!;
+    [Parameter] public Func<TItem, int>? IdProperty { get; set; }
 
+    // Data and display
     [Parameter] public List<TItem> DataList { get; set; } = new();
-    [Parameter] public Func<TItem, string> DisplayProperty { get; set; } = null!;
-    [Parameter] public Dictionary<string, object> AdditionalAttributes { get; set; } = new();
+    [Parameter] public Func<TItem, string>? DisplayProperty { get; set; }
+    [Parameter] public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
-    private TItem SelectedItem => GetSelectedItem();
+    private TItem? _selectedItem;
+
+    protected override void OnParametersSet()
+    {
+        // Initialize or update selected item when parameters change
+        _selectedItem = GetSelectedItem();
+    }
 
     private async Task<IEnumerable<TItem>> SearchItems(string value, CancellationToken token)
     {
@@ -51,31 +60,28 @@
 
     private async Task OnValueChanged(TItem newValue)
     {
+        _selectedItem = newValue;
+
         if (IdProperty != null)
         {
-            // ID binding mode
             var newId = newValue != null ? IdProperty(newValue) : 0;
             await SelectedIdChanged.InvokeAsync(newId);
         }
         else
         {
-            // Original object binding mode
             SelectedValue = newValue;
             await SelectedValueChanged.InvokeAsync(newValue);
         }
     }
 
-    private TItem GetSelectedItem()
+    private TItem? GetSelectedItem()
     {
-        if (IdProperty != null && SelectedId > 0 && DataList != null)
+        if (IdProperty != null && SelectedId > 0 && DataList?.Any() == true)
         {
-            // Find item by ID for ID binding mode
+            // Find item by ID
             return DataList.FirstOrDefault(x => IdProperty(x) == SelectedId);
         }
-        else
-        {
-            // Use direct object for original binding mode
-            return SelectedValue;
-        }
+
+        return SelectedValue;
     }
 }

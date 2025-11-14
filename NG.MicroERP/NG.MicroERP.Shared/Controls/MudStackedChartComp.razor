@@ -1,46 +1,51 @@
 ﻿@using NG.MicroERP.Shared.Reports
 
-<MudPaper Class="p-4">
+@* <MudPaper Class="p-4"> *@
 
-    <MudDivider Class="mb-3" />
-
-    @if (HasError)
-    {
-        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-3">
-            An error occurred while loading the chart: @ErrorMessage
-        </MudAlert>
-    }
-    else if (ChartGroupData != null)
-    {
-        <div class="mb-5">
-            <MudText Typo="Typo.subtitle1" Class="text-secondary fw-semibold mb-1">
+@if (HasError)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-3">
+        An error occurred while loading the chart: @ErrorMessage
+    </MudAlert>
+}
+else if (ChartGroupData != null)
+{
+    <div style="display:flex; flex-direction:column; align-items:center; width:100%;">
+        <div style="text-align:center; margin-bottom:8px;">
+            <span style="font-weight:600; color:#6c757d; font-size:16px;">
                 @StatusTypeDisplay Status Overview
-            </MudText>
+            </span>
+        </div>
 
-            <div style="width: 100%; height: 260px;">
-                <MudChart ChartType="ChartType.StackedBar"
-                          ChartSeries="@ChartGroupData.Series"
-                          XAxisLabels="@ChartGroupData.Labels"
-                          Width="100%"
-                          Height="100%"
-                          Class="rotated-xlabels" />
-            </div>
+        <div style="width:100%; height:300px;">
+            <MudChart ChartType="ChartType.StackedBar"
+                      ChartSeries="@ChartGroupData.Series"
+                      XAxisLabels="@ChartGroupData.Labels"
+                      Width="100%"
+                      Height="100%"
+                      LegendPosition="@_legendPosition"
+                      Options="options"
+                      AxisChartOptions="_axisChartOptions"
+                      Class="rotated-xlabels" />
         </div>
-    }
-    else
-    {
-        <div class="text-muted fst-italic">
-            No attendance data found for department ID @ParentDepartment.
-        </div>
-    }
-</MudPaper>
+    </div>
+}
+else
+{
+    <div class="text-muted fst-italic">
+        No attendance data found for department ID @ParentDepartment.
+    </div>
+}
+
+@* </MudPaper> *@
 
 <style>
-    .mud-chart.rotated-xlabels .mud-chart-x-axis text {
-        transform: rotate(-45deg);
-        text-anchor: end;
-        dominant-baseline: middle;
-        font-size: 12px;
+    .multiline-labels .mud-chart-x-axis text {
+        font-size: 10px;
+        text-anchor: middle;
+        white-space: normal;
+        word-wrap: break-word;
+        max-width: 80px;
     }
 </style>
 
@@ -48,6 +53,29 @@
     [Parameter] public List<DailyAttendanceModel> Data { get; set; } = new();
     [Parameter] public int? ParentDepartment { get; set; }
     [Parameter] public string StatusType { get; set; } = "arrival"; // "arrival" or "leaving"
+    
+    private AxisChartOptions _axisChartOptions = new()
+    {
+        StackedBarWidthRatio = 0.6,
+        XAxisLabelRotation = 45,
+    };
+
+    private object options = new
+    {
+        indexAxis = "y", // horizontal bars
+        plugins = new
+        {
+            legend = new { display = true, position = "top" }
+        },
+        responsive = true,
+        scales = new
+        {
+            x = new { stacked = true },
+            y = new { stacked = true }
+        }
+    };
+
+    private Position _legendPosition = Position.Right;
 
     private string StatusTypeDisplay =>
         StatusType.Equals("leaving", StringComparison.OrdinalIgnoreCase)
@@ -82,7 +110,15 @@
                 .ToList();
 
             if (!allSubDepartments.Any())
-                return;
+            {
+                var selfDept = Data
+                    .Where(x => x.DepartmentId == ParentDepartment)
+                    .Select(x => new { DepartmentId = x.DepartmentId, Department = x.Department })
+                    .Distinct()
+                    .ToList();
+
+                allSubDepartments = selfDept;
+            }
 
             // Group data by sub-department
             var grouped = allSubDepartments

@@ -9,7 +9,8 @@
 <Loading IsLoading="@LoadingPanel" />
 
 <div class="row" style="margin: 2px; height: 90vh; display: flex;">
-    <MyDrawer @ref="_drawer" Title="Locations" FaIcon="fas fa-address-book">
+    <MyDrawer @ref="_drawer" Title="Locations" FaIcon="fas fa-map-marker-alt" >
+
         <HeaderContent>
         </HeaderContent>
         <ChildContent>
@@ -111,7 +112,7 @@
     protected async Task Get(int id)
     {
         LoadingPanel = true;
-        record = await Functions.GetAsync<LocationsModel>($"Locations/Get?Id={id}", true) ?? new LocationsModel();
+        record = await Functions.GetAsync<LocationsModel>($"Locations/Get/{id}", true) ?? new LocationsModel();
         LoadingPanel = false;
     }
 
@@ -182,7 +183,7 @@
     
         data = await Functions.GetAsync<List<LocationsModel>>($"Locations/Search", true) ?? new List<LocationsModel>();
         LoadingPanel = false;
-        await _drawer.CloseDrawer();
+        await _drawer.CloseDrawerAsync();
      
     }
 

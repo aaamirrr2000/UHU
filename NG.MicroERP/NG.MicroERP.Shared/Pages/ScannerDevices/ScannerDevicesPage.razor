@@ -1,4 +1,5 @@
 ﻿@page "/ScannerDevicesPage/{Action}/{CurrentRecord?}"
+@using System.Text
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
@@ -25,6 +26,10 @@
                 </MudButton>
             }
         }
+        <MudButton Variant="Variant.Filled" OnClick="GetDeviceInfo" Color="Color.Error" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+            <MudIcon Icon="@Icons.Material.Filled.NetworkPing" Class="mr-1" />
+            Ping
+        </MudButton>
     </div>
 
     <br />
@@ -127,6 +132,9 @@
                         <ValidationMessage For="@(() => record.IsActive)" />
                     </div>
                    
+                    <div class="p-3 bg-light rounded shadow-sm" style="white-space: normal;">
+                        @DeviceInfo
+                    </div>
 
                 </div>
             </ChildContent>
@@ -141,6 +149,7 @@
     ScannerDevicesModel record = new();
     List<OrganizationsModel> Org = new();
     List<LocationsModel> Loc = new();
+    public MarkupString DeviceInfo { get; set; }
 
     [Parameter] public string Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
@@ -187,7 +196,7 @@
     protected async Task Get(int id)
     {
         LoadingPanel = true;
-        record = await Functions.GetAsync<ScannerDevicesModel>($"ScannerDevices/Get?Id={id}", true) ?? new ScannerDevicesModel();
+        record = await Functions.GetAsync<ScannerDevicesModel>($"ScannerDevices/Get/{id}", true) ?? new ScannerDevicesModel();
         LoadingPanel = false;
     }
 
@@ -251,17 +260,70 @@
         var result = await Functions.PostAsync<ScannerDevicesModel>($"ScannerDevices/{url}", record, true);
         if (result.Success == false)
         {
-            await Functions.ShowMessage(dialogService, "error", $"Record Not Saved");
+            SnackbarService.Add($"Record Not Saved", Severity.Error);
         }
         else
         {
-            await Functions.ShowMessage(dialogService, "success", $"Record {Action} Successfully");
+            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
             record = new();
             isReadOnly = true;
         }
 
         LoadingPanel = false;
-        await _drawer.CloseDrawer();
+        await _drawer.CloseDrawerAsync();
+
+    }
+
+    private async Task GetDeviceInfo()
+    {
+        try
+        {
+            DeviceInfo = (MarkupString)"Please Wait";
+            LoadingPanel = true;
+            var result = await Functions.GetAsync<DeviceInfoModel>($"ScannerDevices/ScannerDeviceDetails/{record.Id}", true);
+            if (result == null)
+            {
+                DeviceInfo = (MarkupString)"⚠️ No device info found or connection failed.";
+            }
+            else
+            {
+                var d = result;
+                var sb = new StringBuilder();
+
+                sb.AppendLine("🔍📟  <b>Device Information</b><br>");
+                sb.AppendLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━<br>");
+                sb.AppendLine($"🏷️  <b>Name:</b> {d.DeviceName}<br>");
+                sb.AppendLine($"🧩  <b>Model:</b> {d.Model}<br>");
+                sb.AppendLine($"⚙️  <b>Type:</b> {d.DeviceType}<br>");
+                sb.AppendLine($"🔹 <b>Sub Type:</b> {d.SubDeviceType}<br>");
+                sb.AppendLine($"🔖 <b>Serial Number:</b> {d.SerialNumber}<br>");
+                sb.AppendLine($"🔗 <b>MAC Address:</b> {d.MacAddress}<br>");
+                sb.AppendLine($"💾 <b>Firmware Version:</b> {d.FirmwareVersion}<br>");
+                sb.AppendLine($"📅 <b>Firmware Release:</b> {d.FirmwareReleasedDate}<br>");
+                sb.AppendLine($"🎞️ <b>Encoder Version:</b> {d.EncoderVersion}<br>");
+                sb.AppendLine($"📆 <b>Encoder Release:</b> {d.EncoderReleasedDate}<br>");
+                sb.AppendLine($"🏭 <b>Manufacturer:</b> {d.Manufacturer}<br>");
+                sb.AppendLine($"🆔 <b>Device ID:</b> {d.DeviceID}<br>");
+                sb.AppendLine($"🔢 <b>Telecontrol ID:</b> {d.TelecontrolID}<br>");
+                sb.AppendLine($"🔔 <b>Relay Count:</b> {d.RelayNum}<br>");
+                sb.AppendLine($"🚨 <b>Alarm Outputs:</b> {d.AlarmOutNum}<br>");
+                sb.AppendLine($"📍 <b>Local Zones:</b> {d.LocalZoneNum}<br>");
+                sb.AppendLine($"🌐 <b>Market Type:</b> {d.MarketType}<br>");
+                sb.AppendLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━<br>");
+                sb.AppendLine($"📦 <b>Version:</b> {d.Version}<br>");
+
+                DeviceInfo = (MarkupString)sb.ToString();
+            }
+        }
+        catch (Exception ex)
+        {
+            DeviceInfo = (MarkupString)$"⚠️ {ex.Message}";
+        }
+        finally
+        {
+            LoadingPanel = false;
+
+        }
 
     }
 }

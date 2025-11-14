@@ -19,12 +19,14 @@
             txtMessages = new RichTextBox();
             cmdStart = new Button();
             btnPause = new Button();
-            lblStatus = new Label();
             lblTimer = new Label();
             lblTitle = new Label();
             EventsTimer = new System.Windows.Forms.Timer(components);
             panel1 = new Panel();
+            flowLayoutPanel1 = new FlowLayoutPanel();
+            btnClose = new Button();
             panel1.SuspendLayout();
+            flowLayoutPanel1.SuspendLayout();
             SuspendLayout();
             // 
             // txtMessages
@@ -34,67 +36,55 @@
             txtMessages.BorderStyle = BorderStyle.None;
             txtMessages.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
             txtMessages.ForeColor = Color.Yellow;
-            txtMessages.Location = new Point(9, 7);
+            txtMessages.Location = new Point(7, 7);
             txtMessages.Name = "txtMessages";
             txtMessages.ReadOnly = true;
-            txtMessages.Size = new Size(561, 630);
+            txtMessages.Size = new Size(567, 623);
             txtMessages.TabIndex = 1;
             txtMessages.Text = "";
             txtMessages.WordWrap = false;
             // 
             // cmdStart
             // 
-            cmdStart.BackColor = Color.Black;
+            cmdStart.BackColor = Color.FromArgb(64, 64, 64);
             cmdStart.FlatAppearance.BorderSize = 0;
             cmdStart.FlatStyle = FlatStyle.Flat;
             cmdStart.Font = new Font("Segoe UI", 9.75F);
             cmdStart.ForeColor = Color.White;
-            cmdStart.Location = new Point(12, 640);
+            cmdStart.Location = new Point(3, 3);
             cmdStart.Name = "cmdStart";
-            cmdStart.Size = new Size(112, 42);
+            cmdStart.Size = new Size(99, 28);
             cmdStart.TabIndex = 2;
-            cmdStart.Text = "▶ Start Sync";
+            cmdStart.Text = "▶ Start";
             cmdStart.UseVisualStyleBackColor = false;
-            cmdStart.Click += btnGetEvents_Click;
+            cmdStart.Click += cmdStart_Click;
             // 
             // btnPause
             // 
-            btnPause.BackColor = Color.Black;
+            btnPause.BackColor = Color.FromArgb(64, 64, 64);
             btnPause.FlatAppearance.BorderSize = 0;
             btnPause.FlatStyle = FlatStyle.Flat;
             btnPause.Font = new Font("Segoe UI", 9.75F);
             btnPause.ForeColor = Color.White;
-            btnPause.Location = new Point(130, 640);
+            btnPause.Location = new Point(108, 3);
             btnPause.Name = "btnPause";
-            btnPause.Size = new Size(145, 42);
+            btnPause.Size = new Size(99, 28);
             btnPause.TabIndex = 3;
             btnPause.Text = "⏸ Pause";
             btnPause.UseVisualStyleBackColor = false;
             btnPause.Click += btnPause_Click;
             // 
-            // lblStatus
-            // 
-            lblStatus.BackColor = Color.Black;
-            lblStatus.Font = new Font("Segoe UI", 12F);
-            lblStatus.ForeColor = Color.White;
-            lblStatus.Location = new Point(265, 661);
-            lblStatus.Name = "lblStatus";
-            lblStatus.Size = new Size(298, 21);
-            lblStatus.TabIndex = 6;
-            lblStatus.Text = "Status: Idle";
-            lblStatus.TextAlign = ContentAlignment.MiddleRight;
-            // 
             // lblTimer
             // 
             lblTimer.BackColor = Color.Black;
-            lblTimer.Font = new Font("Segoe UI", 12F);
-            lblTimer.ForeColor = Color.White;
-            lblTimer.Location = new Point(263, 640);
+            lblTimer.Font = new Font("Segoe UI", 9.75F);
+            lblTimer.ForeColor = Color.FromArgb(255, 255, 128);
+            lblTimer.Location = new Point(14, 669);
             lblTimer.Name = "lblTimer";
             lblTimer.Size = new Size(298, 21);
             lblTimer.TabIndex = 5;
             lblTimer.Text = "Next Sync: --:--";
-            lblTimer.TextAlign = ContentAlignment.MiddleRight;
+            lblTimer.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // lblTitle
             // 
@@ -113,21 +103,45 @@
             // 
             // EventsTimer
             // 
+            EventsTimer.Enabled = true;
             EventsTimer.Interval = 60000;
             EventsTimer.Tick += EventsTimer_Tick;
             // 
             // panel1
             // 
             panel1.BackColor = Color.Black;
-            panel1.Controls.Add(lblStatus);
-            panel1.Controls.Add(cmdStart);
             panel1.Controls.Add(lblTimer);
-            panel1.Controls.Add(btnPause);
+            panel1.Controls.Add(flowLayoutPanel1);
             panel1.Controls.Add(txtMessages);
             panel1.Location = new Point(0, 78);
             panel1.Name = "panel1";
             panel1.Size = new Size(579, 695);
             panel1.TabIndex = 7;
+            // 
+            // flowLayoutPanel1
+            // 
+            flowLayoutPanel1.Controls.Add(cmdStart);
+            flowLayoutPanel1.Controls.Add(btnPause);
+            flowLayoutPanel1.Controls.Add(btnClose);
+            flowLayoutPanel1.Location = new Point(12, 633);
+            flowLayoutPanel1.Name = "flowLayoutPanel1";
+            flowLayoutPanel1.Size = new Size(324, 40);
+            flowLayoutPanel1.TabIndex = 8;
+            // 
+            // btnClose
+            // 
+            btnClose.BackColor = Color.FromArgb(64, 64, 64);
+            btnClose.FlatAppearance.BorderSize = 0;
+            btnClose.FlatStyle = FlatStyle.Flat;
+            btnClose.Font = new Font("Segoe UI", 9.75F);
+            btnClose.ForeColor = Color.White;
+            btnClose.Location = new Point(213, 3);
+            btnClose.Name = "btnClose";
+            btnClose.Size = new Size(99, 28);
+            btnClose.TabIndex = 7;
+            btnClose.Text = "🚪 Close";
+            btnClose.UseVisualStyleBackColor = false;
+            btnClose.Click += btnClose_Click;
             // 
             // frmHikSync
             // 
@@ -144,6 +158,7 @@
             MouseMove += Form_MouseMove;
             MouseUp += Form_MouseUp;
             panel1.ResumeLayout(false);
+            flowLayoutPanel1.ResumeLayout(false);
             ResumeLayout(false);
         }
 
@@ -185,9 +200,10 @@
         private Button cmdStart;
         private Button btnPause;
         private Label lblTitle;
-        private Label lblStatus;
         private Label lblTimer;
         private System.Windows.Forms.Timer EventsTimer;
         private Panel panel1;
+        private Button btnClose;
+        private FlowLayoutPanel flowLayoutPanel1;
     }
 }

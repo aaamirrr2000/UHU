@@ -102,7 +102,7 @@ public class UsersService : IUsersService
 				'{obj.Username!.ToUpper()}', 
 				'{Config.Encrypt(Config.GenerateRandomPassword())}', 
 				'{obj.UserType!.ToUpper()}', 
-				{obj.DarKLightTheme},
+				0,
 				{obj.EmpId},
 				{obj.GroupId},
 				{obj.LocationId},
@@ -143,7 +143,7 @@ public class UsersService : IUsersService
             string SQLUpdate = $@"UPDATE Users SET 
 					Username = '{obj.Username!.ToUpper()}', 
 					UserType = '{obj.UserType!.ToUpper()}', 
-					DarKLightTheme = {obj.DarKLightTheme}, 
+					DarKLightTheme = 0, 
 					EmpId = {obj.EmpId}, 
 					GroupId = {obj.GroupId}, 
 					LocationId = {obj.LocationId}, 
@@ -207,7 +207,6 @@ public class UsersService : IUsersService
             {
                 UsersModel result = res[0];
 
-                //Get User Details
                 var result1 = await Search($"Users.Id = {result.Id}")!;
                 UsersModel result2 = result1.Item2.FirstOrDefault()!;
                 return (true, result2);

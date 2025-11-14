@@ -158,7 +158,7 @@
     protected async Task Get(int id)
     {
         LoadingPanel = true;
-        record = await Functions.GetAsync<AreasModel>($"Areas/Get?Id={id}", true) ?? new AreasModel();
+        record = await Functions.GetAsync<AreasModel>($"Areas/Get/{id}", true) ?? new AreasModel();
         LoadingPanel = false;
     }
 
@@ -171,31 +171,6 @@
 
 
         StateHasChanged();
-    }
-
-    protected async void Clear()
-    {
-        Action = "INSERT";
-        record = new AreasModel();
-        record.IsActive = 1;
-        isReadOnly = false;
-        await _drawer.OpenDrawerAsync();
-    }
-
-    protected async Task View(int id)
-    {
-        await Get(id);
-        Action = "VIEW";
-        isReadOnly = true;
-        await _drawer.OpenDrawerAsync();
-    }
-
-    protected async Task Edit(int id)
-    {
-        await Get(id);
-        Action = "UPDATE";
-        isReadOnly = false;
-        await _drawer.OpenDrawerAsync();
     }
 
     protected async Task Delete()
@@ -224,17 +199,17 @@
         var result = await Functions.PostAsync<AreasModel>($"Areas/{url}", record, true);
         if (result.Success == false)
         {
-            await Functions.ShowMessage(dialogService, "error", $"Record Not Saved");
+            SnackbarService.Add($"Record Not Saved", Severity.Error);
         }
         else
         {
-            await Functions.ShowMessage(dialogService, "success", $"Record {Action} Successfully");
+            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
             record = new();
             isReadOnly = true;
         }
 
         LoadingPanel = false;
-        await _drawer.CloseDrawer();
+        await _drawer.CloseDrawerAsync();
 
     }
 }

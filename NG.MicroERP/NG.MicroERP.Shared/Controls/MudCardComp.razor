@@ -1,4 +1,4 @@
-﻿<MudCard Class="stat-card p-3 shadow-sm rounded-lg"
+﻿<MudCard Class="stat-card p-3 rounded-lg"
          style="@($"width:100%; height:160px; background-color:{BackgroundColor};")">
 
     <div class="d-flex h-100">
@@ -9,8 +9,7 @@
                 <MudText Typo="Typo.body2" Class="subheading-text text-white mt-1">@Heading</MudText>
                 @if (Percentage != null)
                 {
-                    <MudPaper Class="d-inline-block mt-2 px-3 py-1 rounded"
-                              style="@($"width:50%; font-size:20px; text-align:center; background-color:white; color:{BackgroundColor}; ")">
+                    <MudPaper Class="d-inline-block mt-2 px-3 py-1 rounded" style="@($"width:100%; font-size:16px; text-align:center; background-color:white; color:{BackgroundColor}; ")">
                         @(Percentage.HasValue ? $"{Percentage.Value:0.00}%" : "0.00%")
                     </MudPaper>
                 }
@@ -25,6 +24,8 @@
                            OnClick="@(() => OnDownload.InvokeAsync())"
                            Title="Download Data" />
 
+            @if (true)
+            {
             <div class="chart-placeholder mt-2 flex-grow-1 d-flex justify-content-center align-items-end">
                 @if (ChartType == "bar")
                 {
@@ -97,7 +98,48 @@
                         <circle cx="70" cy="5" r="1.5" fill="@ChartColor" />
                     </svg>
                 }
+                else if (ChartType == "triangle")
+                {
+                    <svg width="100%" height="40" viewBox="0 0 80 25" xmlns="http://www.w3.org/2000/svg">
+                        <polygon points="0,20 10,10 20,20 30,5 40,15 50,0 60,10 70,5"
+                                 fill="none"
+                                 stroke="@ChartColor"
+                                 stroke-width="2"
+                                 stroke-linejoin="round" />
+                        @* Optional: highlight points *@
+                        <circle cx="0" cy="20" r="1.5" fill="@ChartColor" />
+                        <circle cx="10" cy="10" r="1.5" fill="@ChartColor" />
+                        <circle cx="20" cy="20" r="1.5" fill="@ChartColor" />
+                        <circle cx="30" cy="5" r="1.5" fill="@ChartColor" />
+                        <circle cx="40" cy="15" r="1.5" fill="@ChartColor" />
+                        <circle cx="50" cy="0" r="1.5" fill="@ChartColor" />
+                        <circle cx="60" cy="10" r="1.5" fill="@ChartColor" />
+                        <circle cx="70" cy="5" r="1.5" fill="@ChartColor" />
+                    </svg>
+                }
+                else if (ChartType == "wave")
+                {
+                    <svg width="100%" height="40" viewBox="0 0 80 25" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M0,15 C10,10 20,20 30,10 40,15 50,5 60,12 70,8 80,15"
+                              fill="none"
+                              stroke="@ChartColor"
+                              stroke-width="2"
+                              stroke-linecap="round" />
+                        @* Optional: points along the wave *@
+                        <circle cx="0" cy="15" r="1.5" fill="@ChartColor" />
+                        <circle cx="10" cy="10" r="1.5" fill="@ChartColor" />
+                        <circle cx="20" cy="20" r="1.5" fill="@ChartColor" />
+                        <circle cx="30" cy="10" r="1.5" fill="@ChartColor" />
+                        <circle cx="40" cy="15" r="1.5" fill="@ChartColor" />
+                        <circle cx="50" cy="5" r="1.5" fill="@ChartColor" />
+                        <circle cx="60" cy="12" r="1.5" fill="@ChartColor" />
+                        <circle cx="70" cy="8" r="1.5" fill="@ChartColor" />
+                        <circle cx="80" cy="15" r="1.5" fill="@ChartColor" />
+                    </svg>
+                }
             </div>
+            }
+        
         </div>
 
     </div>

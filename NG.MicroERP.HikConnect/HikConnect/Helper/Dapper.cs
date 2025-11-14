@@ -1,173 +1,185 @@
-﻿using MySql.Data.MySqlClient;
-using Dapper;
+﻿using Dapper;
+using MySql.Data.MySqlClient;
 using System.Data;
+using System.Diagnostics;
 
 namespace NG.MicroERP.API.Helper
 {
     public class DapperFunctions
     {
-        public static string DBConnection = "Server=172.16.1.8;Database=dbHik;User ID=moitt;Password=HP0z*shmAYc7qmmm;Port=3306;SslMode=Preferred;Connection Timeout=30;";
+        private static readonly string DBConnection;
 
-
-        public async Task<T?> SearchByID<T>(string TableName, int id = 0, string Connection = "Default")
+        // --- Static constructor initializes once, thread-safe ---
+        static DapperFunctions()
         {
+            DBConnection = Debugger.IsAttached
+                ? "Server=localhost;Database=dbHikMiott;User ID=DevOps;Password=P.LOEA)A@3D1uNwl;Port=3306;SslMode=Preferred;Pooling=true;Min Pool Size=3;Max Pool Size=50;Connection Lifetime=60;Connection Timeout=15;"
+                : "Server=172.16.1.8;Database=dbHikMiott;User ID=moitt;Password=HP0z*shmAYc7qmmm;Port=3306;SslMode=Preferred;Pooling=true;Min Pool Size=3;Max Pool Size=50;Connection Lifetime=60;Connection Timeout=15;";
+        }
+
+        // --- Helper method: Create connection (Dapper opens automatically) ---
+        private static MySqlConnection GetConnection() => new(DBConnection);
+
+        // =====================================================
+        // ================  SELECT Operations =================
+        // =====================================================
+
+        public async Task<T?> SearchByID<T>(string tableName, int id = 0)
+        {
+            string sql = $"SELECT * FROM {tableName}" + (id != 0 ? " WHERE ID = @Id" : "");
             try
             {
-                string SQL = "SELECT * FROM " + TableName;
-                if (id != 0)
-                    SQL += " WHERE ID = @Id";
-
-                using IDbConnection connection = new MySqlConnection(DBConnection);
-                IEnumerable<T> result = await connection.QueryAsync<T>(SQL, new { Id = id });
+                await using var cnn = GetConnection();
+                var result = await cnn.QueryAsync<T>(sql, new { Id = id });
                 return result.FirstOrDefault();
             }
             catch (Exception ex)
             {
-                _ = ex.Message;
+                Debug.WriteLine($"SearchByID Error: {ex.Message}");
                 return default;
             }
         }
 
-        public async Task<List<T>?> SearchByQuery<T>(string SQL, string Connection = "Default")
+        public async Task<List<T>?> SearchByQuery<T>(string sql, object? parameters = null)
         {
             try
             {
-                using IDbConnection cnn = new MySqlConnection(DBConnection);
-                IEnumerable<T> result = await cnn.QueryAsync<T>(SQL, new DynamicParameters());
+                await using var cnn = GetConnection();
+                var result = await cnn.QueryAsync<T>(sql, parameters);
                 return result.ToList();
             }
             catch (Exception ex)
             {
-                _ = ex.Message;
+                Debug.WriteLine($"SearchByQuery Error: {ex.Message}");
                 return null;
             }
         }
 
-        public async Task<(bool, string)> ExecuteQuery(string SQL, string Connection = "Default")
-        {
-            
-            try
-            {
-                using IDbConnection cnn = new MySqlConnection(DBConnection);
-                _ = await cnn.ExecuteAsync(SQL);
-                return (true, "OK");
-            }
-            catch (Exception ex)
-            {
-                return (false, ex.Message);
-            }
-        }
+        // =====================================================
+        // ================  INSERT / UPDATE / DELETE ===========
+        // =====================================================
 
-        public async Task<(bool, int, string?)> Insert(string SQLInsert, string SQLDuplicate = "", string Connection = "Default")
+        public async Task<(bool Success, int InsertedId, string? Message)> Insert(string sqlInsert, string sqlDuplicate = "")
         {
-            
             try
             {
-                if (!string.IsNullOrEmpty(SQLDuplicate))
+                if (!string.IsNullOrEmpty(sqlDuplicate))
                 {
-                    if (await Duplicate(SQLDuplicate) == true)
+                    if (await Duplicate(sqlDuplicate))
                         return (false, -1, "Duplicate Record Found.");
                 }
 
-                using IDbConnection cnn = new MySqlConnection(DBConnection);
-                string sql = SQLInsert + "; SELECT LAST_INSERT_ID();";
+                await using var cnn = GetConnection();
+                string sql = sqlInsert + "; SELECT LAST_INSERT_ID();";
                 int insertedId = await cnn.ExecuteScalarAsync<int>(sql);
                 return (true, insertedId, null);
             }
             catch (Exception ex)
             {
+                Debug.WriteLine($"Insert Error: {ex.Message}");
                 return (false, 0, ex.Message);
             }
         }
 
-        public async Task<(bool, string?)> Update(string SQLUpdate, string SQLDuplicate = "", string Connection = "Default")
+        public async Task<(bool Success, string? Message)> Update(string sqlUpdate, string sqlDuplicate = "")
         {
-            
             try
             {
-                if (!string.IsNullOrEmpty(SQLDuplicate))
+                if (!string.IsNullOrEmpty(sqlDuplicate))
                 {
-                    if (await Duplicate(SQLDuplicate) == true)
+                    if (await Duplicate(sqlDuplicate))
                         return (false, "Duplicate Record Found.");
                 }
 
-                using IDbConnection cnn = new MySqlConnection(DBConnection);
-                int affectedRows = await cnn.ExecuteAsync(SQLUpdate);
-                return affectedRows > 0 ? (true, null) : (false, "Record Not Saved.");
+                await using var cnn = GetConnection();
+                int affected = await cnn.ExecuteAsync(sqlUpdate);
+                return affected > 0 ? (true, null) : (false, "Record Not Saved.");
             }
             catch (Exception ex)
             {
+                Debug.WriteLine($"Update Error: {ex.Message}");
                 return (false, ex.Message);
             }
         }
 
-        public async Task<(bool, string)> Delete(string Table, int id, string Connection = "Default")
+        public async Task<(bool Success, string Message)> Delete(string table, int id)
         {
-            
             try
             {
-                using IDbConnection cnn = new MySqlConnection(DBConnection);
-                string SQLDelete = $"DELETE FROM {Table} WHERE Id = @Id";
-                int affectedRows = await cnn.ExecuteAsync(SQLDelete, new { Id = id });
-                return affectedRows == 0 ? (false, "Record already in Use.") : (true, "OK");
+                await using var cnn = GetConnection();
+                string sql = $"DELETE FROM {table} WHERE Id = @Id";
+                int affected = await cnn.ExecuteAsync(sql, new { Id = id });
+                return affected > 0 ? (true, "OK") : (false, "Record already in use.");
             }
             catch (Exception ex)
             {
+                Debug.WriteLine($"Delete Error: {ex.Message}");
                 return (false, ex.Message);
             }
         }
 
-        public async Task<bool> Duplicate(string SQL, string Connection = "Default")
+        // =====================================================
+        // ================  UTILITY FUNCTIONS =================
+        // =====================================================
+
+        public async Task<bool> Duplicate(string sql)
         {
-            
             try
             {
-                using IDbConnection cnn = new MySqlConnection(DBConnection);
-                IEnumerable<dynamic> result = await cnn.QueryAsync(SQL);
+                await using var cnn = GetConnection();
+                var result = await cnn.QueryAsync(sql);
                 return result.Any();
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine($"Duplicate Error: {ex.Message}");
                 return false;
             }
         }
 
-        public string? GetCode(string Prefix, string TableName, string? Field = "Code", int CodeLength = 6, string? Connection = "Default")
+        public async Task<(bool Success, string Message)> ExecuteQuery(string sql, object? parameters = null)
         {
-            
-            string SQL;
-            string format = new('0', CodeLength);
-
-            if (!string.IsNullOrEmpty(Prefix))
-            {
-                // MySQL SUBSTRING syntax: SUBSTRING(str, pos, len)
-                SQL = $@"SELECT MAX(CAST(SUBSTRING({Field}, {Prefix.Length + 1}, CHAR_LENGTH({Field}) - {Prefix.Length}) AS UNSIGNED)) AS SEQNO
-                         FROM {TableName} 
-                         WHERE LEFT({Field}, {Prefix.Length}) = '{Prefix}'";
-            }
-            else
-            {
-                SQL = $@"SELECT MAX(CAST({Field} AS UNSIGNED)) AS SEQNO 
-                         FROM {TableName} 
-                         WHERE {Field} REGEXP '^[0-9]+$'";
-            }
-
             try
             {
-                using IDbConnection cnn = new MySqlConnection(DBConnection);
-                var result = cnn.QueryFirstOrDefault<long?>(SQL);
-                if (!string.IsNullOrEmpty(Prefix))
-                {
-                    return result == null ? Prefix + 1.ToString(format) : Prefix + (result.Value + 1).ToString(format);
-                }
-                else
-                {
-                    return result == null ? 1.ToString(format) : (result.Value + 1).ToString(format);
-                }
+                await using var cnn = GetConnection();
+                await cnn.ExecuteAsync(sql, parameters);
+                return (true, "OK");
             }
             catch (Exception ex)
             {
-                _ = ex.Message;
+                Debug.WriteLine($"ExecuteQuery Error: {ex.Message}");
+                return (false, ex.Message);
+            }
+        }
+
+        // =====================================================
+        // ================  CODE GENERATION ===================
+        // =====================================================
+
+        public async Task<string?> GetCodeAsync(string prefix, string tableName, string field = "Code", int codeLength = 6)
+        {
+            string format = new('0', codeLength);
+
+            string sql = string.IsNullOrEmpty(prefix)
+                ? $@"SELECT MAX(CAST({field} AS UNSIGNED)) AS SEQNO 
+                     FROM {tableName} WHERE {field} REGEXP '^[0-9]+$'"
+                : $@"SELECT MAX(CAST(SUBSTRING({field}, {prefix.Length + 1}, 
+                         CHAR_LENGTH({field}) - {prefix.Length}) AS UNSIGNED)) AS SEQNO
+                     FROM {tableName} WHERE LEFT({field}, {prefix.Length}) = '{prefix}'";
+
+            try
+            {
+                await using var cnn = GetConnection();
+                var result = await cnn.QueryFirstOrDefaultAsync<long?>(sql);
+                long next = (result ?? 0) + 1;
+
+                return string.IsNullOrEmpty(prefix)
+                    ? next.ToString(format)
+                    : prefix + next.ToString(format);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"GetCodeAsync Error: {ex.Message}");
                 return null;
             }
         }

@@ -1,20 +1,20 @@
 ﻿CREATE TABLE Groups
 (
-    Id                  INT             PRIMARY KEY AUTO_INCREMENT,
-    Guid                CHAR(36)        NOT NULL DEFAULT (UUID()),
-    OrganizationId      INT             NULL DEFAULT NULL,
-    Name                VARCHAR(50)     NOT NULL,
-    Dashboard           VARCHAR(255)    NOT NULL,
-    IsActive            TINYINT         NOT NULL DEFAULT 1,
-    CreatedBy           INT             NULL DEFAULT NULL,
-    CreatedOn           DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CreatedFrom         VARCHAR(255)    NULL DEFAULT NULL,
-    UpdatedBy           INT             NULL DEFAULT NULL,
-    UpdatedOn           DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UpdatedFrom         VARCHAR(255)    NULL DEFAULT NULL,
-    IsSoftDeleted       TINYINT         NULL DEFAULT 0,
-    RowVersion          TIMESTAMP       NULL,
-    FOREIGN KEY (OrganizationId)   REFERENCES Organizations(Id)
+    Id              INT IDENTITY(1,1) PRIMARY KEY,
+    Guid                UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
+    OrganizationId  INT NULL DEFAULT 1,
+    Name            VARCHAR(50) NOT NULL,
+    Dashboard       VARCHAR(255) NOT NULL,
+    IsActive        BIT NOT NULL DEFAULT 1,
+    CreatedBy       INT NULL,
+    CreatedOn       DATETIME NOT NULL DEFAULT GETDATE(),
+    CreatedFrom     VARCHAR(255) NULL,
+    UpdatedBy       INT NULL,
+    UpdatedOn       DATETIME NOT NULL DEFAULT GETDATE(),
+    UpdatedFrom     VARCHAR(255) NULL,
+    IsSoftDeleted   BIT NULL DEFAULT 0,
+    RowVersion      ROWVERSION,
+    CONSTRAINT FK_Groups_Organizations FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id)
 );
 
 INSERT INTO Groups 
@@ -44,23 +44,7 @@ VALUES
     '2024-06-09 12:21:42', 
     NULL, 
     0
-);
-
-INSERT INTO Groups 
-(
-    OrganizationId, 
-    Name, 
-    Dashboard, 
-    IsActive, 
-    CreatedBy, 
-    CreatedOn, 
-    CreatedFrom, 
-    UpdatedBy, 
-    UpdatedOn, 
-    UpdatedFrom, 
-    IsSoftDeleted
-) 
-VALUES 
+),
 (
     1, 
     'STANDARD', 

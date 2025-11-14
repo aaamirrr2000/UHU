@@ -72,7 +72,7 @@ public class GroupsService : IGroupsService
 			(
 				{obj.OrganizationId},
 				'{obj.Name!.ToUpper()}', 
-				'{obj.Dashboard!.ToUpper()}', 
+				'{obj.Dashboard!}', 
 				{obj.IsActive},
 				{obj.CreatedBy},
 				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
@@ -106,7 +106,7 @@ public class GroupsService : IGroupsService
             string SQLUpdate = $@"UPDATE Groups SET 
 					OrganizationId = {obj.OrganizationId}, 
 					Name = '{obj.Name!.ToUpper()}', 
-					Dashboard = '{obj.Dashboard!.ToUpper()}', 
+					Dashboard = '{obj.Dashboard!}', 
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 

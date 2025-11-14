@@ -20,7 +20,9 @@ public class EmployeesModel
     public string? Address { get; set; } = string.Empty;
     public string? EmpType { get; set; } = string.Empty;
     public int DepartmentId { get; set; } = 0;
+    public string? DepartmentName { get; set; }
     public int DesignationId { get; set; } = 0;
+    public string? DesignationName { get; set; }
     public int ShiftId { get; set; } = 0;
     public int LocationId { get; set; } = 0;
     public int ParentId { get; set; } = 0;

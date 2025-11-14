@@ -1,5 +1,7 @@
 ﻿using NG.MicroERP.API.Helper;
 using NG.MicroERP.Shared.Models;
+using System.Net;
+using System.Xml;
 
 namespace NG.MicroERP.API.Services.Services;
 
@@ -7,6 +9,7 @@ public interface IScannerDevicesService
 {
     Task<(bool, List<ScannerDevicesModel>)>? Search(string Criteria = "");
     Task<(bool, ScannerDevicesModel?)>? Get(int id);
+    Task<(bool, DeviceInfoModel?)> ScannerDeviceDetails(int id);
     Task<(bool, ScannerDevicesModel, string)> Post(ScannerDevicesModel obj);
     Task<(bool, string)> Put(ScannerDevicesModel obj);
     Task<(bool, string)> Delete(int id);
@@ -47,6 +50,85 @@ public class ScannerDevicesService : IScannerDevicesService
             return (false, null);
         else
             return (true, result);
+    }
+
+    public async Task<(bool, DeviceInfoModel?)> ScannerDeviceDetails(int id)
+    {
+        // Get device record
+        var deviceResult = await Get(id);
+        if (!deviceResult.Item1 || deviceResult.Item2 == null)
+            return (false, null);
+
+        var device = deviceResult.Item2;
+        string url = $"http://{device.DeviceIpAddress}/ISAPI/System/deviceInfo";
+        const int maxRetries = 3;
+
+        for (int attempt = 1; attempt <= maxRetries; attempt++)
+        {
+            try
+            {
+                using var handler = new HttpClientHandler
+                {
+                    Credentials = new NetworkCredential(device.UserName?.Trim() ?? "", device.Password?.Trim() ?? ""),
+                    PreAuthenticate = true
+                };
+
+                using var httpClient = new HttpClient(handler)
+                {
+                    Timeout = TimeSpan.FromSeconds(8)
+                };
+
+                var response = await httpClient.GetAsync(url);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string xmlData = await response.Content.ReadAsStringAsync();
+
+                    if (!string.IsNullOrWhiteSpace(xmlData))
+                    {
+                        // Convert XML to JSON and deserialize
+                        var xmlDoc = new XmlDocument();
+                        xmlDoc.LoadXml(xmlData);
+
+                        string jsonData = Newtonsoft.Json.JsonConvert.SerializeXmlNode(xmlDoc);
+                        var deviceInfo = Newtonsoft.Json.JsonConvert.DeserializeObject<DeviceInfoModel>(jsonData);
+
+                        if (deviceInfo != null)
+                            return (true, deviceInfo);
+                    }
+
+                    // If response is empty or not parsable
+                    return (false, null);
+                }
+                else
+                {
+                    // Retry on HTTP errors
+                    if (attempt < maxRetries)
+                        await Task.Delay(1000);
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                // Timeout
+                if (attempt < maxRetries)
+                    await Task.Delay(1000);
+            }
+            catch (HttpRequestException)
+            {
+                // Network or DNS errors
+                if (attempt < maxRetries)
+                    await Task.Delay(1000);
+            }
+            catch (Exception)
+            {
+                // Other unexpected errors
+                if (attempt < maxRetries)
+                    await Task.Delay(1000);
+            }
+        }
+
+        // All attempts failed
+        return (false, null);
     }
 
 

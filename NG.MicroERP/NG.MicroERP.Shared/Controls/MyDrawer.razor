@@ -19,7 +19,7 @@
             <MudText Typo="Typo.h5" Class="drawer-title flex-grow-1 mb-0">@Title</MudText>
         </div>
         <MudIconButton Icon="@Icons.Material.Filled.Close"
-                       OnClick="CloseDrawer"
+                       OnClick="CloseDrawerAsync"
                        Size="Size.Small" />
     </div>
 
@@ -72,7 +72,7 @@
         //await InvokeAsync(StateHasChanged); // Ensures UI updates correctly
     }
 
-    public async Task CloseDrawer()
+    public async Task CloseDrawerAsync()
     {
         try
         {
@@ -92,7 +92,7 @@
         }
     }
 
-    
+
     protected override void OnAfterRender(bool firstRender)
     {
         if (firstRender)
@@ -104,7 +104,7 @@
 
     public async Task OpenDrawerAsync()
     {
-        await CloseDrawer();
+        await CloseDrawerAsync();
         await Task.Delay(50);
         await OpenDrawer();
     }
@@ -116,6 +116,7 @@
         height: 100vh;
         display: flex;
         flex-direction: column;
+        background-color: gray;
     }
 
         .professional-drawer .drawer-header {

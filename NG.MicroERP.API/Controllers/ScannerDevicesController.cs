@@ -28,10 +28,21 @@ public class ScannerDevicesController : ControllerBase
         return Ok(result.Item2);
     }
 
-    [HttpGet("Get")]
+    [HttpGet("Get/{id}")]
     public async Task<IActionResult> Get(int id)
     {
         var result = await Srv.Get(id)!;
+        if (result.Item1 == false)
+            return NotFound("Record Not Found");
+
+        return Ok(result.Item2);
+
+    }
+
+    [HttpGet("ScannerDeviceDetails/{id}")]
+    public async Task<IActionResult> ScannerDeviceDetails(int id)
+    {
+        var result = await Srv.ScannerDeviceDetails(id)!;
         if (result.Item1 == false)
             return NotFound("Record Not Found");
 

@@ -37,7 +37,7 @@ public class PermissionsController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("Get")]
+    [HttpGet("Get/{id}")]
     public async Task<IActionResult> Get(int id)
     {
         var result = await Srv.Get(id)!;

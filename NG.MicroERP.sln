@@ -17,8 +17,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NG.MicroERP.Web", "NG.Micro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NG.MicroERP.API", "NG.MicroERP.API\NG.MicroERP.API.csproj", "{DF5010ED-2D67-618B-00B5-3666C67B8B78}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HikConnect", "NG.MicroERP.HikConnect\HikConnect\HikConnect.csproj", "{6939F734-58AC-4ADB-FCEA-A55E5BE388F7}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,6 +40,7 @@ Global
 		{F9EAB988-994B-4392-A016-BE0E75DE42FF}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
 		{F9EAB988-994B-4392-A016-BE0E75DE42FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F9EAB988-994B-4392-A016-BE0E75DE42FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F9EAB988-994B-4392-A016-BE0E75DE42FF}.Release|Any CPU.Deploy.0 = Release|Any CPU
 		{76CF6082-6D2A-4645-8B0E-48B758EF2525}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{76CF6082-6D2A-4645-8B0E-48B758EF2525}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{76CF6082-6D2A-4645-8B0E-48B758EF2525}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -54,10 +53,6 @@ Global
 		{DF5010ED-2D67-618B-00B5-3666C67B8B78}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF5010ED-2D67-618B-00B5-3666C67B8B78}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DF5010ED-2D67-618B-00B5-3666C67B8B78}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6939F734-58AC-4ADB-FCEA-A55E5BE388F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6939F734-58AC-4ADB-FCEA-A55E5BE388F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6939F734-58AC-4ADB-FCEA-A55E5BE388F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6939F734-58AC-4ADB-FCEA-A55E5BE388F7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

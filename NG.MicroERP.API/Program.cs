@@ -1,35 +1,34 @@
 using DinkToPdf;
 using DinkToPdf.Contracts;
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-
 using NG.MicroERP.API.Helper;
 using NG.MicroERP.API.Services;
 using NG.MicroERP.API.Services.Services;
-
 using Serilog;
 using Serilog.Events;
-
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//builder.AddServiceDefaults();
+// Logging
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+    .Enrich.FromLogContext()
+    .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
 
-// Add services to the container.
-
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// Services
 builder.Services.AddControllers();
-//builder.Services.AddControllers().AddJsonOptions(options =>
-//{
-//    options.JsonSeriizerOptions.PropertyNamingPolicy = null;
-//});
+// Optional JSON naming fix
+// builder.Services.AddControllers().AddJsonOptions(options => 
+// {
+//     options.JsonSerializerOptions.PropertyNamingPolicy = null;
+// });
 
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -56,7 +55,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Configure JWT authentication
+// JWT Authentication
 string? key = builder.Configuration["Jwt:Key"];
 string? issuer = builder.Configuration["Jwt:Issuer"];
 string? audience = builder.Configuration["Jwt:Audience"];
@@ -79,13 +78,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 builder.Services.AddSingleton<JWT>();
 
-Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-            .Enrich.FromLogContext()
-            .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
-            .CreateLogger();
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -101,27 +93,28 @@ builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new 
 
 var app = builder.Build();
 
+// Middleware
+app.UseRouting();
 app.UseCors("AllowAll");
-//app.MapDefaultEndpoints();
-
-// Configure the HTTP request pipeline.
-//if (app.Environment.IsDevelopment())
-//{
-    app.MapOpenApi();
-    app.UseSwagger();
-    app.UseSwaggerUI();
-//}
-
-//app.UseHttpsRedirection();
-app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseStaticFiles();
+app.UseHttpsRedirection();
+
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "NG.MicroERP API v1");
+    c.RoutePrefix = "swagger"; // access via /swagger
+});
 
 app.MapControllers();
 
-using (IServiceScope scope = app.Services.CreateScope())
+// Database Migration
+using (var scope = app.Services.CreateScope())
 {
-    DatabaseMigrator migrator = scope.ServiceProvider.GetRequiredService<DatabaseMigrator>();
+    var migrator = scope.ServiceProvider.GetRequiredService<DatabaseMigrator>();
     migrator.Migrate();
 }
+
 app.Run();

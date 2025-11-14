@@ -8,7 +8,8 @@
 <Loading IsLoading="@LoadingPanel" />
 
 <div class="row" style="margin: 2px; height: 90vh; display: flex;">
-    <MyDrawer @ref="_drawer" Title="Employees" FaIcon="fas fa-address-book">
+    <MyDrawer @ref="_drawer" Title="Employees" FaIcon="fas fa-id-badge" >
+
         <HeaderContent>
         </HeaderContent>
         <ChildContent>
@@ -69,6 +70,8 @@
                     </TemplateColumn>                   
                     
                     <PropertyColumn Property="x => x.Fullname" Title="Fullname" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.DesignationName" Title="Designation" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.DepartmentName" Title="Department" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.Phone" Title="Phone" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.Email" Title="Email" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.Cnic" Title="NIC" Sortable="true" Filterable="true" />
@@ -123,7 +126,7 @@
     protected async Task Get(int id)
     {
         LoadingPanel = true;
-        record = await Functions.GetAsync<EmployeesModel>($"Employees/Get?Id={id}", true) ?? new EmployeesModel();
+        record = await Functions.GetAsync<EmployeesModel>($"Employees/Get/{id}", true) ?? new EmployeesModel();
         LoadingPanel = false;
     }
 
@@ -194,7 +197,7 @@
 
         await GetAll();
         LoadingPanel = false;
-        await _drawer.CloseDrawer();
+        await _drawer.CloseDrawerAsync();
 
     }
 

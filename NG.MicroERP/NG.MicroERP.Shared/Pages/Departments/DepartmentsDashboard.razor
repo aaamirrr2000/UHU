@@ -8,7 +8,7 @@
 <Loading IsLoading="@LoadingPanel" />
 
 <div class="row" style="margin: 2px; height: 90vh; display: flex;">
-    <MyDrawer @ref="_drawer" Title="Departments" FaIcon="fas fa-address-book">
+    <MyDrawer @ref="_drawer" Title="Departments" FaIcon="fas fa-building" >
         <HeaderContent>
         </HeaderContent>
         <ChildContent>
@@ -110,7 +110,7 @@
     protected async Task Get(int id)
     {
         LoadingPanel = true;
-        record = await Functions.GetAsync<DepartmentsModel>($"Departments/Get?Id={id}", true) ?? new DepartmentsModel();
+        record = await Functions.GetAsync<DepartmentsModel>($"Departments/Get/{id}", true) ?? new DepartmentsModel();
         LoadingPanel = false;
     }
 
@@ -181,7 +181,7 @@
     
         await GetAll();
         LoadingPanel = false;
-        await _drawer.CloseDrawer();
+        await _drawer.CloseDrawerAsync();
      
     }
 

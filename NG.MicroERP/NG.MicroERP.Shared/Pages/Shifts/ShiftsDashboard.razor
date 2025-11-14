@@ -8,7 +8,7 @@
 <Loading IsLoading="@LoadingPanel" />
 
 <div class="row" style="margin: 2px; height: 90vh; display: flex;">
-    <MyDrawer @ref="_drawer" Title="Shifts" FaIcon="fas fa-address-book">
+    <MyDrawer @ref="_drawer" Title="Shifts" FaIcon="fas fa-business-time">
         <HeaderContent>
         </HeaderContent>
         <ChildContent>
@@ -109,7 +109,7 @@
     protected async Task Get(int id)
     {
         LoadingPanel = true;
-        record = await Functions.GetAsync<ShiftsModel>($"Shifts/Get?Id={id}", true) ?? new ShiftsModel();
+        record = await Functions.GetAsync<ShiftsModel>($"Shifts/Get/{id}", true) ?? new ShiftsModel();
         LoadingPanel = false;
     }
 
@@ -180,7 +180,7 @@
     
         await GetAll();
         LoadingPanel = false;
-        await _drawer.CloseDrawer();
+        await _drawer.CloseDrawerAsync();
      
     }
 

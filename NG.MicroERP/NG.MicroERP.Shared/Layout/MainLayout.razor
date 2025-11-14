@@ -1,6 +1,7 @@
 ﻿@inherits LayoutComponentBase
 @inject ISnackbar SnackbarService
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
 <MudThemeProvider />
 <MudPopoverProvider />
@@ -8,17 +9,17 @@
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="1">
+    <MudAppBar Elevation="1" Dense=true>
         <MudIconButton Icon="@Icons.Material.Filled.Menu"
                        Color="Color.Inherit"
                        Edge="Edge.Start"
                        OnClick="@(() => DrawerToggle())" />
 
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            @* <img src="@(Globals.Organization?.Logo ?? "")" class="company-logo" /> *@
+            <img src="@(Globals.Organization?.Logo ?? "")" class="company-logo" />
             <span style="margin-left:5px; font-size: 24px; color: white; letter-spacing:2px;">
-                @* @(Globals.Organization?.Name ?? "Organization") *@
-                @DateTime.Now.ToString("dddd, dd MMMM yyyy")
+                @(Globals.Organization?.Name ?? "Organization")
+                @* @DateTime.Now.ToString("dddd, dd MMMM yyyy") *@
             </span>
         </MudHidden>
 
@@ -26,12 +27,14 @@
 
         <MudHidden Breakpoint="Breakpoint.MdAndUp">
             <a href="/@(Globals.User?.Dashboard ?? "dashboard")" class="nav-link"><i class="fas fa-home"></i></a>
+            <a href="#" class="nav-link"><i class="fa-solid fa-clock"></i> Idle: @_idleDisplay</a>
             <a href="/ChangePasswordPage" class="nav-link"><i class="fas fa-key"></i></a>
             <a href="/" class="nav-link"><i class="fas fa-power-off"></i> </a>
         </MudHidden>
 
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
             <a href="/@(Globals.User?.Dashboard ?? "dashboard")" class="nav-link"><i class="fas fa-home"></i> Home</a>
+            <a href="#" class="nav-link"><i class="fa-solid fa-clock"></i> Idle: @_idleDisplay</a>
             <a href="/ChangePasswordPage" class="nav-link"><i class="fas fa-key"></i> Change Password</a>
 
             @* <a href="/" class="nav-link"><i class="fa-solid fa-code-merge"></i> @(Globals.Version ?? "")</a> *@
@@ -39,7 +42,7 @@
         </MudHidden>
 
         <MudThemeProvider @bind-IsDarkMode="@Globals._isDarkMode" Theme="_theme" />
-        @if (false)
+        @if (true)
         {
             <MudSwitch Value="@Globals._isDarkMode"
                        ValueChanged="Save"
@@ -61,6 +64,9 @@
 @code {
     bool _drawerOpen = false;
     private MudTheme _theme = new();
+    private DotNetObjectReference<MainLayout>? _dotNetRef;
+    private string _idleDisplay = "0:00";
+    private System.Threading.Timer? _refreshTimer;
 
     void DrawerToggle()
     {
@@ -123,6 +129,42 @@
             SnackbarService.Add($"Error saving theme: {ex.Message}", Severity.Error);
         }
     }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("idleHandler.startIdleTimer", _dotNetRef);
+        }
+    }
+
+    [JSInvokable]
+    public void UpdateIdleTime(int seconds)
+    {
+        var minutes = seconds / 60;
+        var secs = seconds % 60;
+        _idleDisplay = $"{minutes}:{secs:D2}";
+
+        // Force UI refresh on the Blazor render thread
+        InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public async Task RefreshPage()
+    {
+        //await JS.InvokeVoidAsync("location.reload");
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public void LogoutUser()
+    {
+        Nav.NavigateTo("/", true);
+        //JS.InvokeVoidAsync("location.replace", "/");
+    }
+
+    public void Dispose() => _dotNetRef?.Dispose();
 }
 
 <style>

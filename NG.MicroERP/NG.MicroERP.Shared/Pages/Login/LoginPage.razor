@@ -5,9 +5,9 @@
 @inject ISnackbar SnackbarService
 
 <Loading IsLoading="@LoadingPanel" />
-
-<div class="login-page" style="background: url('_content/NG.MicroERP.Shared/images/background.png') no-repeat center center fixed; background-size: cover;">
-    <div class="top-bar">
+<div class="login-page" style="@BackgroundStyle">
+@* <div class="login-page" style="background: url('_content/NG.MicroERP.Shared/images/background.jpg') no-repeat center center fixed; background-size: cover;">
+ *@    <div class="top-bar">
         <div class="clock-container">
             <div id="clock" class="clock"></div>
             <div id="date" class="date"></div>
@@ -15,7 +15,10 @@
     </div>
     <div class="login-container">
         <div class="login-header">
-            <h2 style="font-size:16px;letter-spacing:2px;">Minitry of IT and Telecom</h2>
+            @if(Globals.Organization != null)
+            {
+                <h2 style="font-size:16px;letter-spacing:2px;">@Globals.Organization.Description</h2>
+            }
             <p>Welcome back! Please login to your account.</p>
             @* <p id="expiry" style="font-size:12px;" class="expiry">AI Enabled</p> *@
         </div>
@@ -40,6 +43,29 @@
     public string Password { get; set; } = string.Empty;
     private bool LoadingPanel { get; set; } = false;
 
+    private string BackgroundImagePath = "_content/NG.MicroERP.Shared/images/default.jpg";
+    private string BackgroundStyle => $"background: url('{BackgroundImagePath}') no-repeat center center fixed; background-size: cover;";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var org = await Functions.GetAsync<List<OrganizationsModel>>("Organizations/Search", true) ?? new List<OrganizationsModel>();
+            Globals.Organization = org.FirstOrDefault()!;
+
+            if (!string.IsNullOrEmpty(Globals.Organization.Wallpaper))
+            {
+                BackgroundImagePath = $"{Globals.Organization.Wallpaper}".Replace("\\", "/");
+            }
+            else
+                BackgroundImagePath = "_content/NG.MicroERP.Shared/images/background.jpg";
+        }
+        catch
+        {
+            BackgroundImagePath = "_content/NG.MicroERP.Shared/images/background.jpg";
+        }
+    }
+
     private async Task Login()
     {
         try
@@ -60,8 +86,11 @@
             Globals.User = res;
             Globals.Token = res.Token;
 
-            var org = await Functions.GetAsync<List<OrganizationsModel>>("Organizations/Search", true) ?? new List<OrganizationsModel>();
-            Globals.Organization = org.FirstOrDefault()!;
+            var emp = await Functions.GetAsync<EmployeesModel>($"Employees/Get/{res.EmpId}", true) ?? new EmployeesModel();
+            Globals.Employee = emp;
+
+            var dept = await Functions.GetAsync<DepartmentsModel>($"Departments/Get/{emp.DepartmentId}", true) ?? new DepartmentsModel();
+            Globals.Department = dept;
 
             if (Globals.Organization.Expiry <= DateTime.Now)
             {
@@ -89,7 +118,7 @@
 
 <style>
     .top-bar {
-        position: absolute; /* Position it on top */
+        position: absolute; 
         top: 0;
         width: 100%;
         text-align: center;

@@ -22,23 +22,23 @@ public class ShiftsService : IShiftsService
     public async Task<(bool, List<ShiftsModel>)>? Search(string Criteria = "")
     {
         string SQL = $@"
-                        SELECT 
-                            Id,
-                            OrganizationId,
-                            ShiftName,
-                            DATE_FORMAT(StartTime, '%H:%i:%s') AS StartTime,
-                            DATE_FORMAT(EndTime, '%H:%i:%s')   AS EndTime,
-                            FlexiTime,
-                            IsActive,
-                            CreatedBy,
-                            CreatedOn,
-                            CreatedFrom,
-                            UpdatedBy,
-                            UpdatedOn,
-                            UpdatedFrom,
-                            IsSoftDeleted
-                        FROM shifts
-                        WHERE IsSoftDeleted = 0";
+                    SELECT 
+                      Id,
+                      OrganizationId,
+                      ShiftName,
+                      CONVERT(VARCHAR(8), StartTime, 108) AS StartTime,
+                      CONVERT(VARCHAR(8), EndTime, 108)   AS EndTime,
+                      FlexiTime,
+                      IsActive,
+                      CreatedBy,
+                      CreatedOn,
+                      CreatedFrom,
+                      UpdatedBy,
+                      UpdatedOn,
+                      UpdatedFrom,
+                      IsSoftDeleted
+                    FROM shifts
+                    WHERE IsSoftDeleted = 0";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;
@@ -118,8 +118,7 @@ public class ShiftsService : IShiftsService
 				{obj.IsActive},
 				{obj.CreatedBy},
 				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
-				'{obj.CreatedFrom!.ToUpper()}', 
-				{obj.IsSoftDeleted}
+				'{obj.CreatedFrom!.ToUpper()}', 0
 			);";
 
             var res = await dapper.Insert(SQLInsert, SQLDuplicate);

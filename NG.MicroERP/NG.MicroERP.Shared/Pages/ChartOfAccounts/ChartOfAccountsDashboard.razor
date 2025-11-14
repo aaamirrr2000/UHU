@@ -1,0 +1,311 @@
+﻿@page "/ChartOfAccountsDashboard"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div style="margin:10px;">
+    
+    <div style="display:flex;">
+        <MudText Typo="Typo.h6">Chart of Accounts</MudText>
+        <MudSpacer />
+        <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Info" OnClick="@(() => Refresh())">Refresh</MudButton>
+        <MudButton StartIcon="@Icons.Material.TwoTone.Expand" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => ExpandAllNodes())">Expand All</MudButton>
+        <MudButton StartIcon="@Icons.Material.TwoTone.ExpandLess" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Error" OnClick="@(() => CollapseAllNodes())">Collapse All</MudButton>
+    </div>
+
+    <div class="row" style="margin: 2px; height: 90vh; display: flex;">
+        <MyDrawer @ref="_drawer" Title="Chart Of Accounts" FaIcon="fas fa-address-book">
+            <HeaderContent>
+            </HeaderContent>
+            <ChildContent>
+                <EditForm Model="record" OnSubmit="Save">
+                    <MudForm>
+                        <ChartOfAccountsPage Action="@Action" CurrentRecord="record.Id" />
+                    </MudForm>
+                </EditForm>
+            </ChildContent>
+            <FooterContent>
+            </FooterContent>
+        </MyDrawer>
+
+        <div style="width: 700px; height: 80vh; overflow: auto; border-radius: 5px; border: 1px solid gray;">
+            <MudTreeView Items="@TreeItems"
+                         T="ChartOfAccountsModel"
+                         Hover="true"
+                         Dense="true"
+                         SelectedValueChanged="OnSelectedValueChanged"
+                         @ref="treeViewRef"
+                         Class="treeview-reset">
+
+                <ItemTemplate Context="item">
+                    <MudTreeViewItem Items="@item.Children" Value="@item.Value">
+                        <BodyContent>
+                            <div class="tree-row">
+                                <!-- Left Section -->
+                                <div class="d-flex align-items-center gap-3 flex-grow-1 min-w-0">
+
+                                    <!-- Action Menu -->
+                                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Dense="true">
+                                        <MudMenuItem OnClick="@(() => Clear(item.Value))">
+                                            <MudIcon Icon="@Icons.Material.Filled.Add" Class="me-2" /> Add
+                                        </MudMenuItem>
+                                        <hr style="width: 200px;"/>
+                                        <MudMenuItem OnClick="@(() => View(item.Value))">
+                                            <MudIcon Icon="@Icons.Material.Filled.Search" Class="me-2" /> View
+                                        </MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => Edit(item.Value))">
+                                            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="me-2" /> Edit
+                                        </MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => Delete(item.Value))">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
+                                        </MudMenuItem>
+                                    </MudMenu>
+
+                                    <!-- Determine Color -->
+                                    @{
+                                        var color = item.Value.Type switch
+                                        {
+                                            "ASSET" => Color.Info,
+                                            "LIABILITY" => Color.Warning,
+                                            "EXPENSE" => Color.Secondary,
+                                            "REVENUE" => Color.Success,
+                                            "EQUITY" => Color.Primary,
+                                            _ => Color.Dark
+                                        };
+                                    }
+
+                                    <!-- Fixed Column Fields -->
+                                    <div class="tree-grid">
+                                        <MudChip Size="Size.Small" Color="@color" Variant="Variant.Outlined" Class="tree-code">
+                                            @item.Value.Code
+                                        </MudChip>
+
+                                        <MudChip Size="Size.Small" Color="@color" Variant="Variant.Text" Class="tree-type">
+                                            @item.Value.Type
+                                        </MudChip>
+
+                                        <MudText Typo="Typo.body1" Color="@color" Class="tree-name text-truncate">
+                                            @item.Value.Name
+                                        </MudText>
+
+                                        @if (item.Value.OpeningBalance != 0)
+                                        {
+                                            <MudChip Size="Size.Small" Color="@color" Variant="Variant.Outlined" Class="tree-balance">
+                                                @item.Value.OpeningBalance.ToString("N")
+                                            </MudChip>
+                                        }
+                                        else
+                                        {
+                                            <div class="tree-balance"></div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </BodyContent>
+                    </MudTreeViewItem>
+                </ItemTemplate>
+            </MudTreeView>
+        </div>
+
+        <style>
+            /* Remove indentation from MudTreeView items */
+            .treeview-reset .mud-treeview-item-content {
+                margin-left: 0 !important;
+                padding-left: 0 !important;
+            }
+
+            /* Uniform grid layout for columns */
+            .tree-grid {
+                display: grid;
+                grid-template-columns: 100px 100px 1fr 120px;
+                gap: 10px;
+                align-items: center;
+                width: 100%;
+            }
+
+            /* Align rows cleanly */
+            .tree-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+                padding: 4px 8px;
+                border-bottom: 1px solid #f0f0f0;
+                transition: background 0.2s;
+            }
+
+                /* Hover styling */
+                .tree-row:hover {
+                    background-color: #f9fafc;
+                    cursor: pointer;
+                }
+
+            /* Column field styles */
+            .tree-code, .tree-type, .tree-balance {
+                border-radius: 6px;
+                font-weight: 500;
+                justify-content: center;
+            }
+
+            .tree-name {
+                font-weight: 500;
+            }
+
+            /* Hide expand/collapse indent markers */
+            .mud-treeview-item-toggle {
+                visibility: hidden;
+                width: 0 !important;
+            }
+        </style>
+
+    </div>
+</div>
+@code
+{
+    private List<TreeItemData<ChartOfAccountsModel>> TreeItems { get; set; } = new();
+    List<ChartOfAccountsModel> data = new();
+    ChartOfAccountsModel record = new();
+    private ChartOfAccountsModel? SelectedItem;
+    private MudTreeView<ChartOfAccountsModel>? treeViewRef;
+
+    public string Action { get; set; } = "INSERT";
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        var data = await Functions.GetAsync<List<ChartOfAccountsModel>>("ChartOfAccounts/Search", true)
+                  ?? new List<ChartOfAccountsModel>();
+
+        TreeItems = BuildTree(data);
+
+        LoadingPanel = false;
+    }
+
+    private List<TreeItemData<ChartOfAccountsModel>> BuildTree(List<ChartOfAccountsModel> flatList, int parentId = 0)
+    {
+        return flatList
+            .Where(x => x.ParentId == parentId)
+            .Select(x => new TreeItemData<ChartOfAccountsModel>
+            {
+                Value = x,
+                Children = BuildTree(flatList, x.Id)
+            }).ToList();
+    }
+
+    private async Task ExpandAllNodes()
+    {
+        if (treeViewRef != null)
+        {
+            await treeViewRef.ExpandAllAsync();
+        }
+    }
+
+    private async Task CollapseAllNodes()
+    {
+        if (treeViewRef != null)
+        {
+            await treeViewRef.CollapseAllAsync();
+        }
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<ChartOfAccountsModel>($"ChartOfAccounts/Get/{id}", true) ?? new ChartOfAccountsModel();
+        LoadingPanel = false;
+    }
+
+    private async Task OnSelectedValueChanged(ChartOfAccountsModel? selectedItem)
+    {
+        SelectedItem = selectedItem;
+        if (SelectedItem != null)
+        {
+            //SnackbarService.Add($"Clicked node ID: {SelectedItem.Id}, Name: {SelectedItem.Name}", Severity.Success);
+            //Console.WriteLine($"Clicked node ID: {SelectedItem.Id}, Name: {SelectedItem.Name}");
+        }
+        //await Get(selectedItem.Id);
+    }
+
+
+    protected async Task Clear(ChartOfAccountsModel item)
+    {
+        await Get(item.Id);
+        Action = "INSERT";
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+        StateHasChanged();
+    }
+
+    protected async Task Refresh()
+    {
+        await GetAll();
+    }
+
+    protected async Task View(ChartOfAccountsModel item)
+    {
+        await Get(item.Id);
+        Action = "VIEW";
+        isReadOnly = true;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(ChartOfAccountsModel item)
+    {
+        await Get(item.Id);
+        Action = "UPDATE";
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Delete(ChartOfAccountsModel item)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Get(item.Id);
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedFrom = Functions.GetComputerDetails();
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = Functions.GetComputerDetails();
+
+        var result = await Functions.PostAsync<ChartOfAccountsModel>($"ChartOfAccounts/{Action}", record, true);
+        if (result.Success == true)
+        {
+            SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
+        }
+        else
+        {
+            SnackbarService.Add($"Record Not Deleted", Severity.Error);
+            record = new();
+            isReadOnly = true;
+            LoadingPanel = false;
+            await _drawer.CloseDrawerAsync();
+        }
+    }
+}
+

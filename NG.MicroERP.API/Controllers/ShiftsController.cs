@@ -28,7 +28,7 @@ public class ShiftsController : ControllerBase
         return Ok(result.Item2);
     }
 
-    [HttpGet("Get")]
+    [HttpGet("Get/{id}")]
     public async Task<IActionResult> Get(int id)
     {
         var result = await Srv.Get(id)!;
