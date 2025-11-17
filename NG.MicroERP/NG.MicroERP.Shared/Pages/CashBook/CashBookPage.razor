@@ -298,6 +298,13 @@
         await _drawer.OpenDrawerAsync();
     }
 
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+    }
+
     protected async Task Delete()
     {
         var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
@@ -329,8 +336,12 @@
         else
         {
             SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
-            record = new();
-            isReadOnly = true;
+            if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                await Edit(result.Result!.Id);
+            else
+            {
+                Clear();
+            }
         }
 
         LoadingPanel = false;

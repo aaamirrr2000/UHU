@@ -16,7 +16,7 @@ public interface IOrganizationsService
     Task<(bool, List<OrganizationsModel>)>? Search(string Criteria = "");
     Task<(bool, OrganizationsModel?)>? Get(int id);
     Task<(bool, OrganizationsModel, string)> Post(OrganizationsModel obj);
-    Task<(bool, string)> Put(OrganizationsModel obj);
+	Task<(bool, OrganizationsModel, string)> Put(OrganizationsModel obj);
     Task<(bool, string)> SetParent(OrganizationsModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(OrganizationsModel obj);
@@ -175,7 +175,7 @@ public class OrganizationsService : IOrganizationsService
         }
     }
 
-    public async Task<(bool, string)> Put(OrganizationsModel obj)
+    public async Task<(bool, OrganizationsModel, string)> Put(OrganizationsModel obj)
     {
         try
         {
@@ -220,12 +220,24 @@ public class OrganizationsService : IOrganizationsService
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
 
-            return await dapper.Update(SQLUpdate, SQLDuplicate);
+            var res = await dapper.Update(SQLUpdate, SQLDuplicate);
+            if (res.Item1 == true)
+            {
+                List<OrganizationsModel> Output = new List<OrganizationsModel>();
+                var result = await Search($"id={obj.Id}")!;
+                Output = result.Item2;
+                return (true, Output.FirstOrDefault()!, "");
+            }
+            else
+            {
+                return (false, null!, "Duplicate Record Found.");
+            }
         }
         catch (Exception ex)
         {
-            return (false, ex.Message);
+            return (true, null!, ex.Message);
         }
+
     }
 
     public async Task<(bool, string)> SetParent(OrganizationsModel obj)

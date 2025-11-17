@@ -16,7 +16,7 @@ public interface ICashBookService
     Task<(bool, CashBookModel?)>? Get(int id);
     Task<(bool, CashBookReportModel?)>? GetCashBookReport(int id);
     Task<(bool, CashBookModel, string)> Post(CashBookModel obj);
-    Task<(bool, string)> Put(CashBookModel obj);
+    Task<(bool, CashBookModel, string)> Put(CashBookModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(CashBookModel obj);
 }
@@ -128,7 +128,8 @@ public class CashBookService : ICashBookService
         }
     }
 
-    public async Task<(bool, string)> Put(CashBookModel obj)
+    public async Task<(bool, CashBookModel, string)> Put(CashBookModel obj)
+
     {
         try
         {
@@ -153,12 +154,24 @@ public class CashBookService : ICashBookService
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
 
-            return await dapper.Update(SQLUpdate, SQLDuplicate);
+            var res = await dapper.Update(SQLUpdate, SQLDuplicate);
+            if (res.Item1 == true)
+            {
+                List<CashBookModel> Output = new List<CashBookModel>();
+                var result = await Search($"id={obj.Id}")!;
+                Output = result.Item2;
+                return (true, Output.FirstOrDefault()!, "");
+            }
+            else
+            {
+                return (false, null!, "Duplicate Record Found.");
+            }
         }
         catch (Exception ex)
         {
-            return (true, ex.Message);
+            return (true, null!, ex.Message);
         }
+
     }
 
     public async Task<(bool, string)> Delete(int id)

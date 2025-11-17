@@ -15,7 +15,7 @@ public interface IEmployeesService
     Task<(bool, List<EmployeesModel>)>? Search(string Criteria = "");
     Task<(bool, EmployeesModel?)>? Get(int id);
     Task<(bool, EmployeesModel, string)> Post(EmployeesModel obj);
-    Task<(bool, string)> Put(EmployeesModel obj);
+    Task<(bool, EmployeesModel, string)> Put(EmployeesModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(EmployeesModel obj);
 }
@@ -128,7 +128,7 @@ public class EmployeesService : IEmployeesService
         }
     }
 
-    public async Task<(bool, string)> Put(EmployeesModel obj)
+    public async Task<(bool, EmployeesModel, string)> Put(EmployeesModel obj)
     {
         try
         {
@@ -155,12 +155,24 @@ public class EmployeesService : IEmployeesService
 					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}' 
 				WHERE Id = {obj.Id};";
 
-            return await dapper.Update(SQLUpdate, SQLDuplicate);
+            var res = await dapper.Update(SQLUpdate, SQLDuplicate);
+            if (res.Item1 == true)
+            {
+                List<EmployeesModel> Output = new List<EmployeesModel>();
+                var result = await Search($"id={obj.Id}")!;
+                Output = result.Item2;
+                return (true, Output.FirstOrDefault()!, "");
+            }
+            else
+            {
+                return (false, null!, "Duplicate Record Found.");
+            }
         }
         catch (Exception ex)
         {
-            return (true, ex.Message);
+            return (true, null!, ex.Message);
         }
+
     }
 
     public async Task<(bool, string)> Delete(int id)

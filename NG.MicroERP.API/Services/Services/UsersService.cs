@@ -17,7 +17,7 @@ public interface IUsersService
     Task<(bool, List<UsersModel>)>? Search(string Criteria = "");
     Task<(bool, UsersModel?)>? Get(int id);
     Task<(bool, UsersModel, string)> Post(UsersModel obj);
-    Task<(bool, string)> Put(UsersModel obj);
+    Task<(bool, UsersModel, string)> Put(UsersModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(UsersModel obj);
     Task<(bool, string)> ResetPassword(int User_id);
@@ -135,7 +135,7 @@ public class UsersService : IUsersService
         }
     }
 
-    public async Task<(bool, string)> Put(UsersModel obj)
+    public async Task<(bool, UsersModel, string)> Put(UsersModel obj)
     {
         try
         {
@@ -157,11 +157,22 @@ public class UsersService : IUsersService
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
 
-            return await dapper.Update(SQLUpdate, SQLDuplicate);
+            var res = await dapper.Update(SQLUpdate, SQLDuplicate);
+            if (res.Item1 == true)
+            {
+                List<UsersModel> Output = new List<UsersModel>();
+                var result = await Search($"id={obj.Id}")!;
+                Output = result.Item2;
+                return (true, Output.FirstOrDefault()!, "");
+            }
+            else
+            {
+                return (false, null!, "Duplicate Record Found.");
+            }
         }
         catch (Exception ex)
         {
-            return (true, ex.Message);
+            return (true, null!, ex.Message);
         }
     }
 

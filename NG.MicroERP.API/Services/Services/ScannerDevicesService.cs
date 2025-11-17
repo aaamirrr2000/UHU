@@ -11,7 +11,7 @@ public interface IScannerDevicesService
     Task<(bool, ScannerDevicesModel?)>? Get(int id);
     Task<(bool, DeviceInfoModel?)> ScannerDeviceDetails(int id);
     Task<(bool, ScannerDevicesModel, string)> Post(ScannerDevicesModel obj);
-    Task<(bool, string)> Put(ScannerDevicesModel obj);
+    Task<(bool, ScannerDevicesModel, string)> Put(ScannerDevicesModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(ScannerDevicesModel obj);
 }
@@ -193,7 +193,7 @@ public class ScannerDevicesService : IScannerDevicesService
         }
     }
 
-    public async Task<(bool, string)> Put(ScannerDevicesModel obj)
+    public async Task<(bool, ScannerDevicesModel, string)> Put(ScannerDevicesModel obj)
     {
         try
         {
@@ -215,11 +215,22 @@ public class ScannerDevicesService : IScannerDevicesService
 					IsSoftDeleted = {obj.IsSoftDeleted}
 				WHERE Id = {obj.Id};";
 
-            return await dapper.Update(SQLUpdate, SQLDuplicate);
+            var res = await dapper.Update(SQLUpdate, SQLDuplicate);
+            if (res.Item1 == true)
+            {
+                List<ScannerDevicesModel> Output = new List<ScannerDevicesModel>();
+                var result = await Search($"id={obj.Id}")!;
+                Output = result.Item2;
+                return (true, Output.FirstOrDefault()!, "");
+            }
+            else
+            {
+                return (false, null!, "Duplicate Record Found.");
+            }
         }
         catch (Exception ex)
         {
-            return (true, ex.Message);
+            return (true, null!, ex.Message);
         }
     }
 

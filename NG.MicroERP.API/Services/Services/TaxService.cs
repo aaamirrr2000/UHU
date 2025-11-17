@@ -9,7 +9,7 @@ public interface ITaxService
     Task<(bool, List<TaxModel>)>? Search(string Criteria = "");
     Task<(bool, TaxModel?)>? Get(int id);
     Task<(bool, TaxModel, string)> Post(TaxModel obj);
-    Task<(bool, string)> Put(TaxModel obj);
+    Task<(bool, TaxModel, string)> Put(TaxModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(TaxModel obj);
 }
@@ -103,7 +103,7 @@ public class TaxService : ITaxService
         }
     }
 
-    public async Task<(bool, string)> Put(TaxModel obj)
+    public async Task<(bool, TaxModel, string)> Put(TaxModel obj)
     {
         try
         {
@@ -124,12 +124,24 @@ public class TaxService : ITaxService
 					RowVersion = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}' 
 				WHERE Id = {obj.Id};";
 
-            return await dapper.Update(SQLUpdate, SQLDuplicate);
+            var res = await dapper.Update(SQLUpdate, SQLDuplicate);
+            if (res.Item1 == true)
+            {
+                List<TaxModel> Output = new List<TaxModel>();
+                var result = await Search($"id={obj.Id}")!;
+                Output = result.Item2;
+                return (true, Output.FirstOrDefault()!, "");
+            }
+            else
+            {
+                return (false, null!, "Duplicate Record Found.");
+            }
         }
         catch (Exception ex)
         {
-            return (true, ex.Message);
+            return (true, null!, ex.Message);
         }
+
     }
 
     public async Task<(bool, string)> Delete(int id)

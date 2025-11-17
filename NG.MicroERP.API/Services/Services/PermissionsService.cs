@@ -21,7 +21,7 @@ public interface IPermissionsService
     Task<(bool, List<PermissionsModel>)>? Search(string Criteria = "");
     Task<(bool, PermissionsModel?)>? Get(int id);
     Task<(bool, PermissionsModel, string)> Post(PermissionsModel obj);
-    Task<(bool, string)> Put(PermissionsModel obj);
+    Task<(bool, PermissionsModel, string)> Put(PermissionsModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(PermissionsModel obj);
     Task<List<GroupMenuModel>>? SearchGroupMenu(int OrganizationId, string Additional_Info = "");
@@ -155,7 +155,7 @@ public class PermissionsService : IPermissionsService
         }
     }
 
-    public async Task<(bool, string)> Put(PermissionsModel obj)
+    public async Task<(bool, PermissionsModel, string)> Put(PermissionsModel obj)
     {
         try
         {
@@ -171,12 +171,24 @@ public class PermissionsService : IPermissionsService
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE MenuId={obj.MenuId} and GroupId={obj.GroupId} and OrganizationId={obj.OrganizationId};";
 
-            return await dapper.Update(SQLUpdate);
+            var res = await dapper.Update(SQLUpdate);
+            if (res.Item1 == true)
+            {
+                List<PermissionsModel> Output = new List<PermissionsModel>();
+                var result = await Search($"id={obj.Id}")!;
+                Output = result.Item2;
+                return (true, Output.FirstOrDefault()!, "");
+            }
+            else
+            {
+                return (false, null!, "Duplicate Record Found.");
+            }
         }
         catch (Exception ex)
         {
-            return (true, ex.Message);
+            return (true, null!, ex.Message);
         }
+
     }
 
     public async Task<(bool, string)> Delete(int id)

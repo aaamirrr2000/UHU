@@ -9,7 +9,7 @@ public interface IBankService
     Task<(bool, List<BankModel>)>? Search(string Criteria = "");
     Task<(bool, BankModel?)>? Get(int id);
     Task<(bool, BankModel, string)> Post(BankModel obj);
-    Task<(bool, string)> Put(BankModel obj);
+    Task<(bool, BankModel, string)> Put(BankModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(BankModel obj);
 }
@@ -123,7 +123,8 @@ public class BankService : IBankService
         }
     }
 
-    public async Task<(bool, string)> Put(BankModel obj)
+    public async Task<(bool, BankModel, string)> Put(BankModel obj)
+
     {
         try
         {
@@ -149,12 +150,24 @@ public class BankService : IBankService
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
 
-            return await dapper.Update(SQLUpdate, SQLDuplicate);
+            var res = await dapper.Update(SQLUpdate, SQLDuplicate);
+            if (res.Item1 == true)
+            {
+                List<BankModel> Output = new List<BankModel>();
+                var result = await Search($"id={obj.Id}")!;
+                Output = result.Item2;
+                return (true, Output.FirstOrDefault()!, "");
+            }
+            else
+            {
+                return (false, null!, "Duplicate Record Found.");
+            }
         }
         catch (Exception ex)
         {
-            return (true, ex.Message);
+            return (true, null!, ex.Message);
         }
+
     }
 
     public async Task<(bool, string)> Delete(int id)

@@ -297,15 +297,16 @@
         if (result.Success == true)
         {
             SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
+            if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) await Edit(result.Result!);
         }
         else
         {
             SnackbarService.Add($"Record Not Deleted", Severity.Error);
-            record = new();
-            isReadOnly = true;
-            LoadingPanel = false;
-            await _drawer.CloseDrawerAsync();
         }
+
+        LoadingPanel = false;
+        await _drawer.CloseDrawerAsync();
+
     }
 }
 

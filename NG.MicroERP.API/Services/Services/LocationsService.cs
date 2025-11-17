@@ -16,7 +16,7 @@ public interface ILocationsService
     Task<(bool, List<LocationsModel>)>? Search(string Criteria = "");
     Task<(bool, LocationsModel?)>? Get(int id);
     Task<(bool, LocationsModel, string)> Post(LocationsModel obj);
-    Task<(bool, string)> Put(LocationsModel obj);
+    Task<(bool, LocationsModel, string)> Put(LocationsModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(LocationsModel obj);
 }
@@ -118,7 +118,7 @@ public class LocationsService : ILocationsService
         }
     }
 
-    public async Task<(bool, string)> Put(LocationsModel obj)
+    public async Task<(bool, LocationsModel, string)> Put(LocationsModel obj)
     {
         try
         {
@@ -142,11 +142,22 @@ public class LocationsService : ILocationsService
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
 
-            return await dapper.Update(SQLUpdate, SQLDuplicate);
+            var res = await dapper.Update(SQLUpdate, SQLDuplicate);
+            if (res.Item1 == true)
+            {
+                List<LocationsModel> Output = new List<LocationsModel>();
+                var result = await Search($"id={obj.Id}")!;
+                Output = result.Item2;
+                return (true, Output.FirstOrDefault()!, "");
+            }
+            else
+            {
+                return (false, null!, "Duplicate Record Found.");
+            }
         }
         catch (Exception ex)
         {
-            return (true, ex.Message);
+            return (true, null!, ex.Message);
         }
     }
 
@@ -158,7 +169,7 @@ public class LocationsService : ILocationsService
     public async Task<(bool, string)> SoftDelete(LocationsModel obj)
     {
         string SQLUpdate = $@"UPDATE Locations SET 
-					UpdatedOn = '{DateTime.UtcNow}', 
+					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedBy = '{obj.UpdatedBy!}',
 					IsSoftDeleted = 1 
 				WHERE Id = {obj.Id};";

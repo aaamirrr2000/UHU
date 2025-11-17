@@ -19,7 +19,7 @@ public interface IChartOfAccountsService
     Task<(bool, List<ChartOfAccountsModel>)>? Search(string Criteria = "");
     Task<(bool, ChartOfAccountsModel?)>? Get(int id);
     Task<(bool, ChartOfAccountsModel, string)> Post(ChartOfAccountsModel obj);
-    Task<(bool, string)> Put(ChartOfAccountsModel obj);
+    Task<(bool, ChartOfAccountsModel, string)> Put(ChartOfAccountsModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(ChartOfAccountsModel obj);
 }
@@ -116,7 +116,7 @@ public class ChartOfAccountsService : IChartOfAccountsService
         }
     }
 
-    public async Task<(bool, string)> Put(ChartOfAccountsModel obj)
+    public async Task<(bool, ChartOfAccountsModel, string)> Put(ChartOfAccountsModel obj)
     {
         try
         {
@@ -138,12 +138,24 @@ public class ChartOfAccountsService : IChartOfAccountsService
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
 
-            return await dapper.Update(SQLUpdate, SQLDuplicate);
+            var res = await dapper.Update(SQLUpdate, SQLDuplicate);
+            if (res.Item1 == true)
+            {
+                List<ChartOfAccountsModel> Output = new List<ChartOfAccountsModel>();
+                var result = await Search($"id={obj.Id}")!;
+                Output = result.Item2;
+                return (true, Output.FirstOrDefault()!, "");
+            }
+            else
+            {
+                return (false, null!, "Duplicate Record Found.");
+            }
         }
         catch (Exception ex)
         {
-            return (true, ex.Message);
+            return (true, null!, ex.Message);
         }
+
     }
 
     public async Task<(bool, string)> Delete(int id)

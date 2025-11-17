@@ -183,7 +183,6 @@
         record = new TaxMasterModel();
         record.IsActive = 1;
         isReadOnly = false;
-        await _drawer.OpenDrawerAsync();
     }
 
     protected async Task View(int id)
@@ -191,7 +190,6 @@
         await Get(id);
         Action = "VIEW";
         isReadOnly = true;
-        await _drawer.OpenDrawerAsync();
     }
 
     protected async Task Edit(int id)
@@ -199,7 +197,6 @@
         await Get(id);
         Action = "UPDATE";
         isReadOnly = false;
-        await _drawer.OpenDrawerAsync();
     }
 
     protected async Task Delete()
@@ -233,8 +230,12 @@
         else
         {
             SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
-            record = new();
-            isReadOnly = true;
+            if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                await Edit(result.Result!.Id);
+            else
+            {
+                Clear();
+            }
         }
 
         LoadingPanel = false;

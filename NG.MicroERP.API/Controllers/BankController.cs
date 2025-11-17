@@ -44,7 +44,7 @@ public class BankController : ControllerBase
     {
         var result = await Srv.Post(obj)!;
         if (result.Item1 == true)
-            return Ok(result.Item3);
+            return Ok(result.Item2);
         else
             return BadRequest(result.Item3);
     }
@@ -56,7 +56,7 @@ public class BankController : ControllerBase
         if (result.Item1 == true)
             return Ok(result.Item2);
         else
-            return BadRequest(result.Item2);
+            return BadRequest(result.Item3);
     }
 
     [HttpPost("Delete")]

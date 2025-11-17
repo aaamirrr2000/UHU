@@ -9,7 +9,7 @@ public interface IDepartmentsService
     Task<(bool, List<DepartmentsModel>)>? Search(string Criteria = "");
     Task<(bool, DepartmentsModel?)>? Get(int id);
     Task<(bool, DepartmentsModel, string)> Post(DepartmentsModel obj);
-    Task<(bool, string)> Put(DepartmentsModel obj);
+    Task<(bool, DepartmentsModel, string)> Put(DepartmentsModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(DepartmentsModel obj);
 }
@@ -101,7 +101,7 @@ public class DepartmentsService : IDepartmentsService
         }
     }
 
-    public async Task<(bool, string)> Put(DepartmentsModel obj)
+    public async Task<(bool, DepartmentsModel, string)> Put(DepartmentsModel obj)
     {
         try
         {
@@ -118,11 +118,22 @@ public class DepartmentsService : IDepartmentsService
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE  Id = {obj.Id};";
 
-            return await dapper.Update(SQLUpdate, SQLDuplicate);
+            var res = await dapper.Update(SQLUpdate, SQLDuplicate);
+            if (res.Item1 == true)
+            {
+                List<DepartmentsModel> Output = new List<DepartmentsModel>();
+                var result = await Search($"id={obj.Id}")!;
+                Output = result.Item2;
+                return (true, Output.FirstOrDefault()!, "");
+            }
+            else
+            {
+                return (false, null!, "Duplicate Record Found.");
+            }
         }
         catch (Exception ex)
         {
-            return (true, ex.Message);
+            return (true, null!, ex.Message);
         }
     }
 

@@ -162,6 +162,21 @@
         LoadingPanel = false;
     }
 
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new AreasModel();
+        record.IsActive = 1;
+        isReadOnly = false;
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+    }
+
     protected void GetDefaultValues()
     {
 
@@ -204,8 +219,13 @@
         else
         {
             SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
-            record = new();
-            isReadOnly = true;
+            if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                await Edit(result.Result!.Id);
+            else
+            {
+                await Clear();
+            }
+
         }
 
         LoadingPanel = false;

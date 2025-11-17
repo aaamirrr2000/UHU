@@ -219,7 +219,6 @@
         record.IsActive = 1;
         record.InvoiceType = "SALE";
         isReadOnly = false;
-        await _drawer.OpenDrawerAsync();
     }
 
     protected async Task View(int id)
@@ -227,7 +226,6 @@
         await Get(id);
         Action = "VIEW";
         isReadOnly = true;
-        await _drawer.OpenDrawerAsync();
     }
 
     protected async Task Edit(int id)
@@ -235,7 +233,6 @@
         await Get(id);
         Action = "UPDATE";
         isReadOnly = false;
-        await _drawer.OpenDrawerAsync();
     }
 
     protected async Task Delete(int id)
@@ -271,8 +268,12 @@
         {
             SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
             TaxConfig = await Functions.GetAsync<List<TaxItemConfigModel>>($"TaxItems/SearchTaxItemConfig/ItemId={record.Id}", true) ?? new List<TaxItemConfigModel>();
-            //Clear();
-            isReadOnly = true;
+            if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                await Edit(result.Result!.Id);
+            else
+            {
+                Clear();
+            }
         }
 
         LoadingPanel = false;

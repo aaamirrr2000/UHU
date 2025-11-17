@@ -15,7 +15,7 @@ public interface IMyMenuService
     Task<(bool, List<MyMenuModel>)>? Search(string Criteria = "");
     Task<(bool, MyMenuModel?)>? Get(int id);
     Task<(bool, MyMenuModel, string)> Post(MyMenuModel obj);
-    Task<(bool, string)> Put(MyMenuModel obj);
+    Task<(bool, MyMenuModel, string)> Put(MyMenuModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(MyMenuModel obj);
 }
@@ -107,7 +107,7 @@ public class MyMenuService : IMyMenuService
         }
     }
 
-    public async Task<(bool, string)> Put(MyMenuModel obj)
+    public async Task<(bool, MyMenuModel, string)> Put(MyMenuModel obj)
     {
         try
         {
@@ -126,12 +126,24 @@ public class MyMenuService : IMyMenuService
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
 
-            return await dapper.Update(SQLUpdate);
+            var res = await dapper.Update(SQLUpdate);
+            if (res.Item1 == true)
+            {
+                List<MyMenuModel> Output = new List<MyMenuModel>();
+                var result = await Search($"id={obj.Id}")!;
+                Output = result.Item2;
+                return (true, Output.FirstOrDefault()!, "");
+            }
+            else
+            {
+                return (false, null!, "Duplicate Record Found.");
+            }
         }
         catch (Exception ex)
         {
-            return (true, ex.Message);
+            return (true, null!, ex.Message);
         }
+
     }
 
     public async Task<(bool, string)> Delete(int id)

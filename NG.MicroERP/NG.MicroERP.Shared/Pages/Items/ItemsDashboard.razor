@@ -240,15 +240,14 @@
         record.UpdatedFrom = Functions.GetComputerDetails();
 
         var result = await Functions.PostAsync<ItemsModel>($"Items/{Action}", record, true);
-        if (result.Success == true)
+        if (result.Success == false)
         {
             SnackbarService.Add($"Record Not Updated", Severity.Error);
         }
         else
         {
             SnackbarService.Add($"Record Updated Successfully", Severity.Success);
-            record = new();
-            isReadOnly = true;
+            if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) await Edit(result.Result!.Id);
         }
     
         data = await Functions.GetAsync<List<ItemsModel>>($"Items/Search", true) ?? new List<ItemsModel>();

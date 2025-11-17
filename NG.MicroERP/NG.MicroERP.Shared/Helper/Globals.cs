@@ -164,46 +164,4 @@ public class Globals
         return result;
     }
 
-    public static BillsModel BillGridTotals(BillsModel Bill)
-    {
-        //Bill Detail Total
-        double TotalBillAmount = 0;
-        foreach (var i in Bill.BillDetails)
-        {
-            TotalBillAmount += (i.Qty * i.UnitPrice) + i.TaxAmount - i.DiscountAmount;
-        }
-
-        //Payments Total
-        decimal TotalPaymentsAmount = 0;
-        foreach (var i in Bill.BillPayments)
-        {
-            TotalPaymentsAmount += i.AmountPaid;
-        }
-
-        //Service Charges
-        decimal TotalServiceChargesAmount = 0;
-
-        foreach (var i in Bill.BillCharges.Where(x => x.ChargeCategory != "TAX"))
-        {
-            TotalServiceChargesAmount += i.CalculatedAmount;
-        }
-
-        //Tax
-        decimal TotalTaxAmount = 0;
-
-        foreach (var i in Bill.BillCharges.Where(x => x.ChargeCategory == "TAX"))
-        {
-            TotalTaxAmount += i.CalculatedAmount;
-        }
-
-        Bill.Bill.SubTotalAmount = Convert.ToDecimal(TotalBillAmount);
-        Bill.Bill.TotalServiceChargeAmount = Convert.ToDecimal(TotalServiceChargesAmount);
-        Bill.Bill.TotalTaxAmount = Convert.ToDecimal(TotalTaxAmount);
-        Bill.Bill.TotalPaidAmount = Convert.ToDecimal(TotalPaymentsAmount);
-        Bill.Bill.BilledAmount = Bill.Bill.SubTotalAmount + Bill.Bill.TotalServiceChargeAmount + Bill.Bill.TotalTaxAmount - Bill.Bill.DiscountAmount;
-        Bill.Bill.BalanceAmount = Bill.Bill.BilledAmount - Bill.Bill.TotalPaidAmount;
-
-        return Bill;
-    }
-
 }

@@ -161,15 +161,14 @@
         record.UpdatedFrom = Functions.GetComputerDetails();
 
         var result = await Functions.PostAsync<AreasModel>($"Areas/{Action}", record, true);
-        if (result.Success == true)
+        if (result.Success == false)
         {
             SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
         }
         else
         {
             SnackbarService.Add($"Record Not Deleted", Severity.Error);
-            record = new();
-            isReadOnly = true;
+            if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) await Edit(result.Result!.Id);
         }
     
         await GetAll();

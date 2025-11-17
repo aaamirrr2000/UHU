@@ -26,18 +26,12 @@ public static class DependencyInjection
 
         services.AddSingleton<IAreasService, AreasService>();
         services.AddSingleton<IBankService, BankService>();
-        services.AddSingleton<IBillDetailService, BillDetailService>();
-        services.AddSingleton<IBillService, BillService>();
         services.AddSingleton<ICategoriesService, CategoriesService>();
-        services.AddSingleton<IChargeRulesService, ChargeRulesService>();
         services.AddSingleton<IChartOfAccountsService, ChartOfAccountsService>();
         services.AddSingleton<IDailyAttendanceService, DailyAttendanceService>();
         services.AddSingleton<IDepartmentsService, DepartmentsService>();
         services.AddSingleton<IDesignationsService, DesignationsService>();
-        services.AddSingleton<IDineinOrderStatusService, DineinOrderStatusService>();
-        services.AddSingleton<IEmployeesDevicesService, EmployeesDevicesService>();
         services.AddSingleton<IEmployeesService, EmployeesService>();
-        services.AddSingleton<IFbrSubmissionService, FbrSubmissionService>();
         services.AddSingleton<IGroupsService, GroupsService>();
         services.AddSingleton<IHolidayCalendarService, HolidayCalendarService>();
         services.AddSingleton<ILeaveRequestsService, LeaveRequestsService>();
@@ -51,12 +45,9 @@ public static class DependencyInjection
         services.AddSingleton<IPartyDocumentsService, PartyDocumentsService>();
         services.AddSingleton<IPartyFinancialsService, PartyFinancialsService>();
         services.AddSingleton<IPartyVehiclesService, PartyVehiclesService>();
-        services.AddSingleton<IRestaurantTablesService, RestaurantTablesService>();
         services.AddSingleton<IScannerDevicesService, ScannerDevicesService>();
         services.AddSingleton<IServiceChargesService, ServiceChargesService>();
         services.AddSingleton<IShiftsService, ShiftsService>();
-        services.AddSingleton<IStockReceivingService, StockReceivingService>();
-        services.AddSingleton<ITaxItemsService, TaxItemsService>();
         services.AddSingleton<ITaxMasterService, TaxMasterService>();
         services.AddSingleton<ITaxService, TaxService>();
         services.AddSingleton<IUsersService, UsersService>();

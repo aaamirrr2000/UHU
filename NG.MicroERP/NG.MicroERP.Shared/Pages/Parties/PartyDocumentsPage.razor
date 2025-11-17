@@ -329,8 +329,12 @@
             else
             {
                 SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
-                await GetAll();
-                await Clear();
+                if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                    await Edit(result.Result!.Id);
+                else
+                {
+                    await Clear();
+                }
                 IsVisible = false;
             }
 

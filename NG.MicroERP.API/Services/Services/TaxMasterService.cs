@@ -7,7 +7,7 @@ public interface ITaxMasterService
     Task<(bool, List<TaxMasterModel>)>? Search(string Criteria = "");
     Task<(bool, TaxMasterModel?)>? Get(int id);
     Task<(bool, TaxMasterModel, string)> Post(TaxMasterModel obj);
-    Task<(bool, string)> Put(TaxMasterModel obj);
+    Task<(bool, TaxMasterModel, string)> Put(TaxMasterModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(TaxMasterModel obj);
 }
@@ -93,7 +93,7 @@ public class TaxMasterService : ITaxMasterService
         }
     }
 
-    public async Task<(bool, string)> Put(TaxMasterModel obj)
+    public async Task<(bool, TaxMasterModel, string)> Put(TaxMasterModel obj)
     {
         try
         {
@@ -109,12 +109,24 @@ public class TaxMasterService : ITaxMasterService
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
 
-            return await dapper.Update(SQLUpdate);
+            var res = await dapper.Update(SQLUpdate);
+            if (res.Item1 == true)
+            {
+                List<TaxMasterModel> Output = new List<TaxMasterModel>();
+                var result = await Search($"id={obj.Id}")!;
+                Output = result.Item2;
+                return (true, Output.FirstOrDefault()!, "");
+            }
+            else
+            {
+                return (false, null!, "Duplicate Record Found.");
+            }
         }
         catch (Exception ex)
         {
-            return (true, ex.Message);
+            return (true, null!, ex.Message);
         }
+
     }
 
     public async Task<(bool, string)> Delete(int id)

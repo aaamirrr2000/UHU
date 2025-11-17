@@ -9,7 +9,7 @@ public interface IHolidayCalendarService
     Task<(bool, List<HolidayCalendarModel>)>? Search(string Criteria = "");
     Task<(bool, HolidayCalendarModel?)>? Get(int id);
     Task<(bool, HolidayCalendarModel, string)> Post(HolidayCalendarModel obj);
-    Task<(bool, string)> Put(HolidayCalendarModel obj);
+    Task<(bool, HolidayCalendarModel, string)> Put(HolidayCalendarModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(HolidayCalendarModel obj);
 }
@@ -95,7 +95,7 @@ public class HolidayCalendarService : IHolidayCalendarService
         }
     }
 
-    public async Task<(bool, string)> Put(HolidayCalendarModel obj)
+    public async Task<(bool, HolidayCalendarModel, string)> Put(HolidayCalendarModel obj)
     {
         try
         {
@@ -111,11 +111,22 @@ public class HolidayCalendarService : IHolidayCalendarService
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
 
-            return await dapper.Update(SQLUpdate);
+            var res = await dapper.Update(SQLUpdate);
+            if (res.Item1 == true)
+            {
+                List<HolidayCalendarModel> Output = new List<HolidayCalendarModel>();
+                var result = await Search($"id={obj.Id}")!;
+                Output = result.Item2;
+                return (true, Output.FirstOrDefault()!, "");
+            }
+            else
+            {
+                return (false, null!, "Duplicate Record Found.");
+            }
         }
         catch (Exception ex)
         {
-            return (true, ex.Message);
+            return (true, null!, ex.Message);
         }
     }
 

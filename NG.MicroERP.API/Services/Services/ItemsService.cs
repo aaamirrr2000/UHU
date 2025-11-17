@@ -17,10 +17,10 @@ public interface IItemsService
     Task<(bool, List<ItemsModel>)>? SearchRecent(string TopN = "");
     Task<(bool, ItemsModel?)>? Get(int id);
     Task<(bool, ItemsModel, string)> Post(ItemsModel obj);
-    Task<(bool, string)> Put(ItemsModel obj);
+    Task<(bool, ItemsModel, string)> Put(ItemsModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(ItemsModel obj);
-    Task<(bool, string)> ServingSize(ItemsModel obj);
+    Task<(bool, ItemsModel, string)> ServingSize(ItemsModel obj);
 }
 
 public class ItemsService : IItemsService
@@ -254,7 +254,7 @@ public class ItemsService : IItemsService
         }
     }
 
-    public async Task<(bool, string)> Put(ItemsModel obj)
+    public async Task<(bool, ItemsModel, string)> Put(ItemsModel obj)
     {
         try
         {
@@ -286,15 +286,26 @@ public class ItemsService : IItemsService
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
 
-            return await dapper.Update(SQLUpdate, SQLDuplicate);
+            var res = await dapper.Update(SQLUpdate, SQLDuplicate);
+            if (res.Item1 == true)
+            {
+                List<ItemsModel> Output = new List<ItemsModel>();
+                var result = await Search($"id={obj.Id}")!;
+                Output = result.Item2;
+                return (true, Output.FirstOrDefault()!, "");
+            }
+            else
+            {
+                return (false, null!, "Duplicate Record Found.");
+            }
         }
         catch (Exception ex)
         {
-            return (true, ex.Message);
+            return (true, null!, ex.Message);
         }
     }
 
-    public async Task<(bool, string)> ServingSize(ItemsModel obj)
+    public async Task<(bool, ItemsModel, string)> ServingSize(ItemsModel obj)
     {
         try
         {
@@ -306,12 +317,24 @@ public class ItemsService : IItemsService
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
 
-            return await dapper.Update(SQLUpdate);
+            var res = await dapper.Update(SQLUpdate);
+            if (res.Item1 == true)
+            {
+                List<ItemsModel> Output = new List<ItemsModel>();
+                var result = await Search($"id={obj.Id}")!;
+                Output = result.Item2;
+                return (true, Output.FirstOrDefault()!, "");
+            }
+            else
+            {
+                return (false, null!, "Duplicate Record Found.");
+            }
         }
         catch (Exception ex)
         {
-            return (true, ex.Message);
+            return (true, null!, ex.Message);
         }
+
     }
 
     public async Task<(bool, string)> Delete(int id)

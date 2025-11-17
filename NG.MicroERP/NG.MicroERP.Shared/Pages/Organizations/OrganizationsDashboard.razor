@@ -174,8 +174,7 @@
         else
         {
             SnackbarService.Add($"Record {Action.Replace("Soft", "")} Successfully", Severity.Success);
-            record = new();
-            isReadOnly = true;
+            if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) await Edit(result.Result!.Id);
         }
         
         data = await Functions.GetAsync<List<OrganizationsModel>>($"Organizations/Search", true) ?? new List<OrganizationsModel>();

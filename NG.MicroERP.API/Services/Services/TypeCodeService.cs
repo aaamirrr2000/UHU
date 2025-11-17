@@ -15,7 +15,7 @@ public interface ITypeCodeService
     Task<(bool, List<TypeCodeModel>)>? Search(string Criteria = "");
     Task<(bool, TypeCodeModel?)>? Get(int id);
     Task<(bool, TypeCodeModel, string)> Post(TypeCodeModel obj);
-    Task<(bool, string)> Put(TypeCodeModel obj);
+    Task<(bool, TypeCodeModel, string)> Put(TypeCodeModel obj);
     Task<(bool, string)> Delete(int id);
 }
 
@@ -90,7 +90,7 @@ public class TypeCodeService : ITypeCodeService
         }
     }
 
-    public async Task<(bool, string)> Put(TypeCodeModel obj)
+    public async Task<(bool, TypeCodeModel, string)> Put(TypeCodeModel obj)
     {
         try
         {
@@ -102,12 +102,24 @@ public class TypeCodeService : ITypeCodeService
 					SeqNo = {obj.SeqNo} 
 				WHERE Id = {obj.Id};";
 
-            return await dapper.Update(SQLUpdate);
+            var res = await dapper.Update(SQLUpdate);
+            if (res.Item1 == true)
+            {
+                List<TypeCodeModel> Output = new List<TypeCodeModel>();
+                var result = await Search($"id={obj.Id}")!;
+                Output = result.Item2;
+                return (true, Output.FirstOrDefault()!, "");
+            }
+            else
+            {
+                return (false, null!, "Duplicate Record Found.");
+            }
         }
         catch (Exception ex)
         {
-            return (true, ex.Message);
+            return (true, null!, ex.Message);
         }
+
     }
 
     public async Task<(bool, string)> Delete(int id)

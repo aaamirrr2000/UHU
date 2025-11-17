@@ -167,7 +167,7 @@
         StateHasChanged();
     }
 
-    protected async void Clear()
+    protected async Task Clear()
     {
         Action = "INSERT";
         record = new ShiftsModel();
@@ -221,8 +221,12 @@
         else
         {
             SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
-            record = new();
-            isReadOnly = true;
+            if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                await Edit(result.Result!.Id);
+            else
+            {
+                await Clear();
+            }
         }
 
         LoadingPanel = false;

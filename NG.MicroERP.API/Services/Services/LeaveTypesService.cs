@@ -9,7 +9,7 @@ public interface ILeaveTypesService
     Task<(bool, List<LeaveTypesModel>)>? Search(string Criteria = "");
     Task<(bool, LeaveTypesModel?)>? Get(int id);
     Task<(bool, LeaveTypesModel, string)> Post(LeaveTypesModel obj);
-    Task<(bool, string)> Put(LeaveTypesModel obj);
+    Task<(bool, LeaveTypesModel, string)> Put(LeaveTypesModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(LeaveTypesModel obj);
 }
@@ -99,7 +99,7 @@ public class LeaveTypesService : ILeaveTypesService
         }
     }
 
-    public async Task<(bool, string)> Put(LeaveTypesModel obj)
+    public async Task<(bool, LeaveTypesModel, string)> Put(LeaveTypesModel obj)
     {
         try
         {
@@ -117,12 +117,24 @@ public class LeaveTypesService : ILeaveTypesService
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
 
-            return await dapper.Update(SQLUpdate);
+            var res = await dapper.Update(SQLUpdate);
+            if (res.Item1 == true)
+            {
+                List<LeaveTypesModel> Output = new List<LeaveTypesModel>();
+                var result = await Search($"id={obj.Id}")!;
+                Output = result.Item2;
+                return (true, Output.FirstOrDefault()!, "");
+            }
+            else
+            {
+                return (false, null!, "Duplicate Record Found.");
+            }
         }
         catch (Exception ex)
         {
-            return (true, ex.Message);
+            return (true, null!, ex.Message);
         }
+
     }
 
     public async Task<(bool, string)> Delete(int id)

@@ -80,7 +80,7 @@ public class Functions
     }
 
 
-    public static async Task<(bool Success, T? Result)> PostAsync<T>(string url, object? data = null, bool useTokenAuthorize = false)
+    public static async Task<(bool Success, T? Result, string Message)> PostAsync<T>(string url, object? data = null, bool useTokenAuthorize = false)
     {
         try
         {
@@ -104,50 +104,35 @@ public class Functions
             {
                 if (string.IsNullOrWhiteSpace(responseContent) || responseContent == "null")
                 {
-                    if (typeof(T).IsClass && Activator.CreateInstance(typeof(T)) is T emptyObj)
-                        return (true, emptyObj);
-
-                    return (true, default);
+                    return (true, default, "Success");
                 }
 
                 if (typeof(T) == typeof(string))
                 {
                     object plainText = responseContent;
-                    return (true, (T)plainText);
+                    return (true, (T)plainText, "Success");
                 }
                 else
                 {
                     try
                     {
                         T? result = JsonConvert.DeserializeObject<T>(responseContent);
-                        return (true, result);
+                        return (true, result, "Success");
                     }
-                    catch (JsonException)
+                    catch (JsonException ex)
                     {
-                        return (true, default);
+                        return (true, default, $"Deserialization error: {ex.Message}");
                     }
                 }
             }
             else
             {
-                if (string.IsNullOrWhiteSpace(responseContent) || responseContent == "null")
-                    return (false, default);
-
-                try
-                {
-                    T? errorResponse = JsonConvert.DeserializeObject<T>(responseContent);
-                    return (false, errorResponse);
-                }
-                catch (JsonException)
-                {
-                    return (false, default);
-                }
+                return (false, default, $"HTTP Error: {response.StatusCode} - {responseContent}");
             }
         }
         catch (Exception ex)
         {
-            _ = ex.Message;
-            return (false, default);
+            return (false, default, $"Exception: {ex.Message}");
         }
     }
 

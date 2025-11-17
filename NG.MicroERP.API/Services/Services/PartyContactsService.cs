@@ -9,7 +9,7 @@ public interface IPartyContactsService
     Task<(bool, List<PartyContactsModel>)>? Search(string Criteria = "");
     Task<(bool, PartyContactsModel?)>? Get(int id);
     Task<(bool, PartyContactsModel, string)> Post(PartyContactsModel obj);
-    Task<(bool, string)> Put(PartyContactsModel obj);
+    Task<(bool, PartyContactsModel, string)> Put(PartyContactsModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(PartyContactsModel obj);
 }
@@ -97,7 +97,7 @@ public class PartyContactsService : IPartyContactsService
         }
     }
 
-    public async Task<(bool, string)> Put(PartyContactsModel obj)
+    public async Task<(bool, PartyContactsModel, string)> Put(PartyContactsModel obj)
     {
         try
         {
@@ -114,12 +114,24 @@ public class PartyContactsService : IPartyContactsService
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
 
-            return await dapper.Update(SQLUpdate);
+            var res = await dapper.Update(SQLUpdate);
+            if (res.Item1 == true)
+            {
+                List<PartyContactsModel> Output = new List<PartyContactsModel>();
+                var result = await Search($"id={obj.Id}")!;
+                Output = result.Item2;
+                return (true, Output.FirstOrDefault()!, "");
+            }
+            else
+            {
+                return (false, null!, "Duplicate Record Found.");
+            }
         }
         catch (Exception ex)
         {
-            return (true, ex.Message);
+            return (true, null!, ex.Message);
         }
+
     }
 
     public async Task<(bool, string)> Delete(int id)

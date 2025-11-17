@@ -168,12 +168,11 @@
         if (result.Success == true)
         {
             SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
+            if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) await Edit(result.Result!.Id);
         }
         else
         {
             SnackbarService.Add($"Record Not Deleted", Severity.Error);
-            record = new();
-            isReadOnly = true;
         }
 
         await GetAll();

@@ -15,7 +15,7 @@ public interface IGroupsService
     Task<(bool, List<GroupsModel>)>? Search(string Criteria = "");
     Task<(bool, GroupsModel?)>? Get(int id);
     Task<(bool, GroupsModel, string)> Post(GroupsModel obj);
-    Task<(bool, string)> Put(GroupsModel obj);
+    Task<(bool, GroupsModel, string)> Put(GroupsModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(GroupsModel obj);
 }
@@ -99,7 +99,7 @@ public class GroupsService : IGroupsService
         }
     }
 
-    public async Task<(bool, string)> Put(GroupsModel obj)
+    public async Task<(bool, GroupsModel, string)> Put(GroupsModel obj)
     {
         try
         {
@@ -114,12 +114,24 @@ public class GroupsService : IGroupsService
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
 
-            return await dapper.Update(SQLUpdate);
+            var res = await dapper.Update(SQLUpdate);
+            if (res.Item1 == true)
+            {
+                List<GroupsModel> Output = new List<GroupsModel>();
+                var result = await Search($"id={obj.Id}")!;
+                Output = result.Item2;
+                return (true, Output.FirstOrDefault()!, "");
+            }
+            else
+            {
+                return (false, null!, "Duplicate Record Found.");
+            }
         }
         catch (Exception ex)
         {
-            return (true, ex.Message);
+            return (true, null!, ex.Message);
         }
+
     }
 
     public async Task<(bool, string)> Delete(int id)

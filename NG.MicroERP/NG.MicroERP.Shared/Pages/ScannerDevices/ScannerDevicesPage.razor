@@ -265,8 +265,12 @@
         else
         {
             SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
-            record = new();
-            isReadOnly = true;
+            if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                await Edit(result.Result!.Id);
+            else
+            {
+                 Clear();
+            }
         }
 
         LoadingPanel = false;

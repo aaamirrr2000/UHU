@@ -152,15 +152,14 @@
         record.UpdatedFrom = Functions.GetComputerDetails();
 
         var result = await Functions.PostAsync<TaxMasterModel>($"TaxMaster/{Action}", record, true);
-        if (result.Success == true)
+        if (result.Success == false)
         {
             SnackbarService.Add($"Record Not Deleted", Severity.Error);
         }
         else
         {
             SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
-            record = new();
-            isReadOnly = true;
+            if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) await Edit(result.Result!.Id);
         }
 
         data = await Functions.GetAsync<List<TaxMasterModel>>($"TaxMaster/Search", true) ?? new List<TaxMasterModel>();
