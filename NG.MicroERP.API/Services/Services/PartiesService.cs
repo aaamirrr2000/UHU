@@ -112,7 +112,7 @@ public class PartiesService : IPartiesService
             if (res.Item1 == true)
             {
                 List<PartiesModel> Output = new List<PartiesModel>();
-                var result = await Search($"id={res.Item2}")!;
+                var result = await Search($"a.id={res.Item2}")!;
                 Output = result.Item2;
                 return (true, Output.FirstOrDefault()!, "");
             }
@@ -157,7 +157,7 @@ public class PartiesService : IPartiesService
             if (res.Item1 == true)
             {
                 List<PartiesModel> Output = new List<PartiesModel>();
-                var result = await Search($"id={obj.Id}")!;
+                var result = await Search($"a.id={obj.Id}")!;
                 Output = result.Item2;
                 return (true, Output.FirstOrDefault()!, "");
             }

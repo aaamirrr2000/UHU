@@ -14,7 +14,7 @@
         <ChildContent>
             <EditForm Model="record" OnSubmit="Save">
                 <MudForm>
-                    <DepartmentsPage Action="@Action" CurrentRecord="record.Id"/>
+                    <DepartmentsPage Action="@Action" CurrentRecord="record.Id" OnSaved="ChildSaved"/>
                 </MudForm>
             </EditForm>
         </ChildContent>
@@ -86,9 +86,8 @@
     List<DepartmentsModel> data = new();
     DepartmentsModel record = new();
 
-    public string Action { get; set; } = "INSERT";
+    public string? Action { get; set; } = "INSERT";
 
-    bool isReadOnly = true;
     public int AccessLevel { get; set; } = 0;
     private bool LoadingPanel { get; set; } = false;
     private MyDrawer _drawer = new();
@@ -119,7 +118,6 @@
         Action = "INSERT";
         record = new DepartmentsModel();
         record.IsActive = 1;
-        isReadOnly = false;
         await _drawer.OpenDrawerAsync();
     }
 
@@ -132,7 +130,6 @@
     {
         await Get(id);
         Action = "VIEW";
-        isReadOnly = true;
         await _drawer.OpenDrawerAsync();
     }
 
@@ -140,7 +137,6 @@
     {
         await Get(id);
         Action = "UPDATE"; 
-        isReadOnly = false;
         await _drawer.OpenDrawerAsync();
     }
 
@@ -184,5 +180,11 @@
      
     }
 
+    private async Task ChildSaved()
+    {
+        await GetAll();
+        await _drawer.CloseDrawerAsync();
+        StateHasChanged();
+    }
 }
 

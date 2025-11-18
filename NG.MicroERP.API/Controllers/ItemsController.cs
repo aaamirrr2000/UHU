@@ -77,7 +77,6 @@ public class ItemsController : ControllerBase
         else
             return BadRequest(result.Item3);
 
-        return BadRequest();
     }
 
     [HttpPost("Delete")]

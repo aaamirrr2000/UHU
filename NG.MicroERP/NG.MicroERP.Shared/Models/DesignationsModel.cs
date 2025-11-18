@@ -9,7 +9,6 @@ namespace NG.MicroERP.Shared.Models;
 public class DesignationsModel
 {
     public int Id { get; set; } = 0;
-    public Guid Guid { get; set; }
     public int OrganizationId { get; set; } = 0;
     public string? DesignationName { get; set; } = string.Empty;
     public int ParentId { get; set; } = 0;
@@ -25,6 +24,5 @@ public class DesignationsModel
     public DateTime UpdatedOn { get; set; } = DateTime.Today;
     public string? UpdatedFrom { get; set; } = string.Empty;
     public bool IsSoftDeleted { get; set; }
-    public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
 
 }

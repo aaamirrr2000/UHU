@@ -1,6 +1,5 @@
 ﻿CREATE TABLE TaxMaster (
     Id              INT                 IDENTITY(1,1) PRIMARY KEY,
-    GUID            UNIQUEIDENTIFIER    NOT NULL DEFAULT NEWID(),
     OrganizationId  INT                 DEFAULT 1,
     TaxType         VARCHAR(100)        NOT NULL,  -- e.g., "VAT", "GST"
     TaxName         VARCHAR(255)        NOT NULL,  -- e.g., "Standard VAT", "Reduced Rate VAT"
@@ -15,8 +14,7 @@
     UpdatedOn       DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedFrom     VARCHAR(255)        NULL,
 
-    IsSoftDeleted   BIT                 NOT NULL DEFAULT 0,
-    RowVersion      ROWVERSION
+    IsSoftDeleted   BIT                 NOT NULL DEFAULT 0
 );
 
 

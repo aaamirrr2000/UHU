@@ -1,21 +1,19 @@
 ﻿CREATE TABLE Currencies
 (
     Id              INT IDENTITY(1,1) PRIMARY KEY,
-    Guid               UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
     Code            VARCHAR(10) NOT NULL UNIQUE,      -- e.g. PKR, USD, EUR
     Name            VARCHAR(100) NOT NULL,            -- e.g. Pakistani Rupee, US Dollar
     Symbol          VARCHAR(10) NULL,                 -- e.g. ₨, $, €
     Country         VARCHAR(100) NULL,                -- e.g. Pakistan, United States
-    DecimalPlaces   TINYINT NOT NULL DEFAULT 2,       -- usually 2
     IsBaseCurrency  BIT NOT NULL DEFAULT 0,           -- marks your system's default currency
     IsActive        BIT NOT NULL DEFAULT 1,
-
-    CreatedBy       INT NULL,
-    CreatedOn       DATETIME NOT NULL DEFAULT GETDATE(),
-    UpdatedBy       INT NULL,
-    UpdatedOn       DATETIME NULL,
-    IsSoftDeleted   BIT NOT NULL DEFAULT 0,
-    RowVersion         ROWVERSION
+	CreatedBy	    INT					NULL DEFAULT NULL,
+	CreatedOn       DATETIME			NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	CreatedFrom     VARCHAR(255)		NULL DEFAULT NULL,
+	UpdatedBy       INT					NULL DEFAULT NULL,
+	UpdatedOn       DATETIME			NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	UpdatedFrom     VARCHAR(255)		NULL DEFAULT NULL,
+	IsSoftDeleted   SMALLINT			NOT NULL DEFAULT 0
 );
 GO
 
@@ -31,7 +29,6 @@ GO
 CREATE TABLE ExchangeRates
 (
     Id                 INT IDENTITY(1,1) PRIMARY KEY,
-    Guid               UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
 
     BaseCurrencyId     INT NOT NULL,      -- e.g. PKR (system default)
     TargetCurrencyId   INT NOT NULL,      -- e.g. USD, EUR, GBP
@@ -51,8 +48,6 @@ CREATE TABLE ExchangeRates
     UpdatedOn          DATETIME NULL,
     UpdatedFrom        VARCHAR(100) NULL,
     IsSoftDeleted      BIT NOT NULL DEFAULT 0,
-
-    RowVersion         ROWVERSION,
     FOREIGN KEY (BaseCurrencyId) REFERENCES Currencies(Id),
     FOREIGN KEY (TargetCurrencyId) REFERENCES Currencies(Id)
 );

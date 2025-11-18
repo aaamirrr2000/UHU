@@ -9,7 +9,6 @@ namespace NG.MicroERP.Shared.Models;
 public class DepartmentsModel
 {
     public int Id { get; set; }
-    public Guid Guid { get; set; }
     public int OrganizationId { get; set; }
     public string? DepartmentName { get; set; }
     public int ParentId { get; set; }
@@ -23,6 +22,5 @@ public class DepartmentsModel
     public DateTime UpdatedOn { get; set; }
     public string? UpdatedFrom { get; set; }
     public bool IsSoftDeleted { get; set; }
-    public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
 
 }

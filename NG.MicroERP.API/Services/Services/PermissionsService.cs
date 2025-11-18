@@ -99,7 +99,7 @@ public class PermissionsService : IPermissionsService
             */
 
         }
-        catch (Exception ex)
+        catch
         {
             return false;
         }

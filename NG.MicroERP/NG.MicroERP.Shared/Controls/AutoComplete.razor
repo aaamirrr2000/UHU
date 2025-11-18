@@ -16,7 +16,7 @@
 </MudAutocomplete>
 
 @code {
-    [Parameter] public string Label { get; set; } = "Select";
+    [Parameter] public string? Label { get; set; } = "Select";
 
     // Original object binding
     [Parameter] public TItem SelectedValue { get; set; } = default!;

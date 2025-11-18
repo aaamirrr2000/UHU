@@ -8,7 +8,6 @@ namespace NG.MicroERP.Shared.Models;
 public class UsersModel
 {
     public int Id { get; set; } = 0;
-    public Guid Guid { get; set; }
     public string? Username { get; set; } = string.Empty;
     public string? Password { get; set; } = string.Empty;
     public string? UserType { get; set; } = string.Empty;
@@ -24,16 +23,15 @@ public class UsersModel
     public DateTime UpdatedOn { get; set; } = DateTime.Today;
     public string? UpdatedFrom { get; set; } = string.Empty;
     public int IsSoftDeleted { get; set; } = 0;
-    public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
 
-    public string Token { get; set; } = string.Empty;
+    public string? Token { get; set; } = string.Empty;
     public string? FullName { get; set; } = string.Empty;
     public string? GroupName { get; set; } = string.Empty;
     public string? Pic { get; set; } = string.Empty;
-    public string LocationName { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
+    public string? LocationName { get; set; } = string.Empty;
+    public string? Email { get; set; } = string.Empty;
     public int OrganizationId { get; set; } = 0;
-    public string Dashboard { get; set; }=string.Empty;
+    public string? Dashboard { get; set; }=string.Empty;
 
     public EmployeesModel? SelectedEmployee { get; set; }
 

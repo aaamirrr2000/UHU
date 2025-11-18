@@ -36,9 +36,9 @@
 
 @code {
     [Parameter] public string? FileUrl { get; set; }
-    [Parameter] public string Label { get; set; } = "Upload File";
+    [Parameter] public string? Label { get; set; } = "Upload File";
     [Parameter] public EventCallback<string> FileChanged { get; set; }
-    [Parameter] public string UploadUrl { get; set; } = "https://your-api.com/api/FileUpload";
+    [Parameter] public string? UploadUrl { get; set; } = "https://your-api.com/api/FileUpload";
 
     private async Task OnFileInputChanged(InputFileChangeEventArgs e)
     {

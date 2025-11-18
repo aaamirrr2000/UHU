@@ -1,0 +1,239 @@
+﻿@page "/CurrenciesPage/{Action}/{CurrentRecord?}"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+
+    <div class="text-end" style="margin-top:10px;">
+        @if (Action != "VIEW")
+        {
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                @(Action == "INSERT" ? "Save" : "Update")
+            </MudButton>
+
+            @if (Action == "UPDATE")
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                    Delete
+                </MudButton>
+            }
+        }
+    </div>
+
+    <br />
+
+    <MudExpansionPanels MultiExpansion="true">
+        <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
+
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+
+                    <i class="fa fa-info-circle"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Currencies</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Currencies</MudText>
+                    </div>
+                </div>
+                <hr />
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Code</label>
+                        <MudTextField id="Code" @bind-Value="record.Code" placeholder="Code" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Code)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Name</label>
+                        <MudTextField id="Name" @bind-Value="record.Name" placeholder="Name" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Name)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Symbol</label>
+                        <MudTextField id="Symbol" @bind-Value="record.Symbol" placeholder="Symbol" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Symbol)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Country</label>
+                        <MudTextField id="Country" @bind-Value="record.Country" placeholder="Country" ReadOnly="@isReadOnly"></MudTextField>
+                        <ValidationMessage For="@(() => record.Country)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Is Base Currency?</label>
+
+                        <MudSelect T="int"
+                                   @bind-Value="record.IsBaseCurrency"
+                                   Placeholder="Base Currency"
+                                   Clearable="true">
+
+                            @if (record.IsBaseCurrency != 0 && record.IsBaseCurrency != 1)
+                            {
+                                record.IsBaseCurrency = 1;
+                            }
+
+                            <MudSelectItem T="int" Value="1">Yes</MudSelectItem>
+                            <MudSelectItem T="int" Value="0">No</MudSelectItem>
+                        </MudSelect>
+
+                        <ValidationMessage For="@(() => record.IsBaseCurrency)" />
+                    </div>
+                    <div class="col-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Active</label>
+
+                        <MudSelect T="int"
+                                   @bind-Value="record.IsActive"
+                                   Placeholder="Active"
+                                   Clearable="true">
+
+                            @if (record.IsActive != 0 && record.IsActive != 1)
+                            {
+                                record.IsActive = 1;
+                            }
+
+                            <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                            <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                        </MudSelect>
+
+                        <ValidationMessage For="@(() => record.IsActive)" />
+                    </div>
+                   
+                </div>
+            </ChildContent>
+
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+
+</div>
+
+@code
+{
+    CurrenciesModel record = new();
+
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+
+
+
+        if (Action == "INSERT")
+        {
+            record = new CurrenciesModel();
+            record.IsActive = 1;
+            isReadOnly = false;
+        }
+        else if (Action == "UPDATE")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action == "VIEW")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<CurrenciesModel>($"Currencies/Get/{id}", true) ?? new CurrenciesModel();
+        LoadingPanel = false;
+    }
+
+    protected void GetDefaultValues()
+    {
+
+
+
+        StateHasChanged();
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new CurrenciesModel();
+        record.IsActive = 1;
+        isReadOnly = false;
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedFrom = Functions.GetComputerDetails();
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = Functions.GetComputerDetails();
+
+        string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+        var result = await Functions.PostAsync<CurrenciesModel>($"Currencies/{url}", record, true);
+        if (result.Success == false)
+        {
+            await Functions.ShowMessage(dialogService, "error", $"Record Not Saved");
+        }
+        else
+        {
+            await OnSaved.InvokeAsync();
+            await Functions.ShowMessage(dialogService, "success", $"Record {Action} Successfully");
+            if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                await Edit(result.Result!.Id);
+            else
+            {
+                await Clear();
+            }
+        }
+
+        LoadingPanel = false;
+
+    }
+}
+

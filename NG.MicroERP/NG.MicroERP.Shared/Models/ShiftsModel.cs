@@ -9,7 +9,6 @@ namespace NG.MicroERP.Shared.Models;
 public class ShiftsModel
 {
     public int Id { get; set; } = 0;
-    public Guid Guid { get; set; }
     public int OrganizationId { get; set; } = 0;
     public string? ShiftName { get; set; } = string.Empty;
     public string? StartTime { get; set; } 
@@ -23,6 +22,5 @@ public class ShiftsModel
     public DateTime UpdatedOn { get; set; } = DateTime.Today;
     public string? UpdatedFrom { get; set; } = string.Empty;
     public bool IsSoftDeleted { get; set; }
-    public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
 
 }

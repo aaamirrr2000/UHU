@@ -9,7 +9,6 @@ namespace NG.MicroERP.Shared.Models;
 public class HolidayCalendarModel
 {
     public int Id { get; set; } = 0;
-    public Guid Guid { get; set; }
     public int OrganizationId { get; set; } = 0;
     public DateTime HolidayDate { get; set; } = DateTime.Today;
     public string? Description { get; set; } = string.Empty;
@@ -22,6 +21,5 @@ public class HolidayCalendarModel
     public DateTime UpdatedOn { get; set; } = DateTime.Today;
     public string? UpdatedFrom { get; set; } = string.Empty;
     public int IsSoftDeleted { get; set; } = 0;
-    public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
 
 }

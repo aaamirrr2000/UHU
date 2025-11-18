@@ -1,7 +1,6 @@
 ﻿CREATE TABLE Locations
 (
     Id              INT IDENTITY(1,1) PRIMARY KEY,
-    Guid                UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
     OrganizationId  INT NULL DEFAULT 1,
     Code            VARCHAR(50) NOT NULL,
     Name            VARCHAR(50) NOT NULL,
@@ -21,7 +20,6 @@
     UpdatedOn       DATETIME NOT NULL DEFAULT GETDATE(),
     UpdatedFrom     VARCHAR(255) NULL,
     IsSoftDeleted   BIT NULL DEFAULT 0,
-    RowVersion      ROWVERSION,
     CONSTRAINT FK_Locations_Organizations FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id)
 );
 

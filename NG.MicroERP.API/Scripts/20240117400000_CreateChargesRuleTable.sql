@@ -1,7 +1,6 @@
 ﻿CREATE TABLE ChargeRules
 (
     Id              INT                 IDENTITY(1,1) PRIMARY KEY,
-    GUID            UNIQUEIDENTIFIER    NOT NULL DEFAULT NEWID(),
     OrganizationId  INT                 DEFAULT 1,
 
     RuleName        NVARCHAR(100)       NOT NULL,                        -- e.g. “VAT”, “Discount”, “Delivery Fee”
@@ -29,8 +28,7 @@
     UpdatedOn       DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedFrom     VARCHAR(255)        NULL,
 
-    IsSoftDeleted   BIT                 NOT NULL DEFAULT 0,
-    RowVersion      ROWVERSION
+    IsSoftDeleted   BIT                 NOT NULL DEFAULT 0
 );
 
 INSERT INTO ChargeRules (RuleName, RuleType, AmountType, Amount, SequenceOrder, CalculationBase, ChargeCategory, EffectiveFrom, EffectiveTo)

@@ -169,7 +169,7 @@
     List<TypeCodeModel> Int = null!;
     List<ChartOfAccountsModel> Par = new();
 
-    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public string? Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
 
     bool isReadOnly = true;
@@ -279,7 +279,7 @@
         record.UpdatedOn = DateTime.Now;
         record.UpdatedFrom = Functions.GetComputerDetails();
 
-        string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+        string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
         var result = await Functions.PostAsync<ChartOfAccountsModel>($"ChartOfAccounts/{url}", record, true);
         if (result.Success == false)
         {

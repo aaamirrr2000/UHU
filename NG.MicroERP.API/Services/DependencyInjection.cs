@@ -51,6 +51,7 @@ public static class DependencyInjection
         services.AddSingleton<ITaxMasterService, TaxMasterService>();
         services.AddSingleton<ITaxService, TaxService>();
         services.AddSingleton<IUsersService, UsersService>();
+        services.AddSingleton<ICurrenciesService, CurrenciesService>();
 
         services.AddScoped<Globals>();
         services.AddScoped<FileUploadService>();

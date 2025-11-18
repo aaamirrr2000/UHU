@@ -1,7 +1,6 @@
 ﻿CREATE TABLE Employees
 (
     Id                   INT IDENTITY(1,1) PRIMARY KEY,
-    Guid                UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
     OrganizationId       INT NULL DEFAULT 1,
     EmpId                VARCHAR(25) NOT NULL,
     Fullname             VARCHAR(50) NOT NULL,
@@ -25,7 +24,6 @@
     UpdatedOn            DATETIME NOT NULL DEFAULT GETDATE(),
     UpdatedFrom          VARCHAR(255) NULL,
     IsSoftDeleted        BIT NULL DEFAULT 0,
-    RowVersion           ROWVERSION,
     CONSTRAINT FK_Employees_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
     CONSTRAINT FK_Employees_Shifts FOREIGN KEY (ShiftId) REFERENCES Shifts(Id),
     CONSTRAINT FK_Employees_Locations FOREIGN KEY (LocationId) REFERENCES Locations(Id),

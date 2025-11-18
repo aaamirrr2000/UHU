@@ -75,7 +75,7 @@
         <!-- Amount in Words -->
         <div class="mt-3 mb-4">
             <strong>Amount in Words:</strong>
-            <em>@Functions.ConvertMoneyToWords((decimal)@cashbook.Amount)</em>
+            <em>@Functions.ConvertMoneyToWords((decimal)@cashbook!.Amount)</em>
         </div>
 
         <!-- Footer -->
@@ -88,7 +88,7 @@
                 @if (cashbook.UpdatedOn != DateTime.MinValue)
                 {
                     <p><strong>Modified By:</strong> @cashbook.UpdatedByName @cashbook.UpdatedByUser</p>
-                    <p><strong>Modified Date:</strong> @cashbook.UpdatedOn.Value.ToString("dd-MMM-yyyy HH:mm:ss tt")</p>
+                    <p><strong>Modified Date:</strong> @cashbook.UpdatedOn!.Value.ToString("dd-MMM-yyyy HH:mm:ss tt")</p>
                 }
             </div>
         </div>

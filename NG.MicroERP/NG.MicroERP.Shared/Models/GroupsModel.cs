@@ -9,7 +9,6 @@ namespace NG.MicroERP.Shared.Models;
 public class GroupsModel
 {
     public int Id { get; set; } = 0;
-    public Guid Guid { get; set; }
     public int OrganizationId { get; set; } = 0;
     public string? Name { get; set; } = string.Empty;
     public string? Dashboard { get; set; } = string.Empty;
@@ -21,6 +20,5 @@ public class GroupsModel
     public DateTime UpdatedOn { get; set; } = DateTime.Today;
     public string? UpdatedFrom { get; set; } = string.Empty;
     public int IsSoftDeleted { get; set; } = 0;
-    public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
 
 }

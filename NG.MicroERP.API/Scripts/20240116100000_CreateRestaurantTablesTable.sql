@@ -1,6 +1,5 @@
 ﻿CREATE TABLE RestaurantTables (
     Id                  INT             PRIMARY KEY IDENTITY(1,1),
-    Guid                UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
     OrganizationId      INT NULL,
     TableNumber         VARCHAR(10)     NOT NULL UNIQUE,
     Capacity            INT             NOT NULL,
@@ -14,8 +13,7 @@
     UpdatedBy           INT             NULL DEFAULT NULL,
     UpdatedOn           DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedFrom         VARCHAR(255)    NULL DEFAULT NULL,
-    IsSoftDeleted       SMALLINT        NULL DEFAULT 0,
-    RowVersion          ROWVERSION
+    IsSoftDeleted       SMALLINT        NULL DEFAULT 0
 );
 
 INSERT INTO RestaurantTables (OrganizationId, TableNumber, Capacity, IsAvailable, TableLocation, Notes,

@@ -8,7 +8,6 @@ namespace NG.MicroERP.Shared.Models;
 public class TaxModel
 {
     public int Id { get; set; } = 0;
-    public Guid GUID { get; set; }
     public int OrganizationId { get; set; } = 0;
     public string? TaxName { get; set; } = string.Empty;
     public string? TaxCode { get; set; } = string.Empty;
@@ -25,7 +24,6 @@ public class TaxModel
     public DateTime UpdatedOn { get; set; } = DateTime.Today;
     public string? UpdatedFrom { get; set; } = string.Empty;
     public int IsSoftDeleted { get; set; } = 0;
-    public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
 
     //
     public double TaxAmount { get; set; } = 0;

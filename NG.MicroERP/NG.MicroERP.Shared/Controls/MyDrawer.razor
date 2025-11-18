@@ -38,8 +38,8 @@
 @code {
     [Parameter] public bool Open { get; set; } = false;
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
-    [Parameter] public string Title { get; set; } = string.Empty;
-    [Parameter] public string FaIcon { get; set; } = string.Empty;
+    [Parameter] public string? Title { get; set; } = string.Empty;
+    [Parameter] public string? FaIcon { get; set; } = string.Empty;
     [Parameter] public RenderFragment HeaderContent { get; set; } = null!;
     [Parameter] public RenderFragment ChildContent { get; set; } = null!;
     [Parameter] public RenderFragment FooterContent { get; set; } = null!;

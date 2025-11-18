@@ -21,7 +21,7 @@
 
 @code {
     [Parameter] public string? Pic { get; set; }
-    [Parameter] public string Name { get; set; } = string.Empty;
+    [Parameter] public string? Name { get; set; } = string.Empty;
     [Parameter] public int Size { get; set; } = 36; // Default size
 
     private string ImageStyle => $"width: {Size}px; height: {Size}px; object-fit: cover; border-radius: 50%; margin-right: 10px; flex-shrink: 0;";

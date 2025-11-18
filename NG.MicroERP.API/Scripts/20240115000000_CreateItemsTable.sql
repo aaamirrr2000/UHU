@@ -1,7 +1,6 @@
 ﻿CREATE TABLE Items
 (
     Id                    INT              PRIMARY KEY IDENTITY(1,1),
-    Guid                  UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
     OrganizationId        INT              NOT NULL,
     Pic                   VARCHAR(255)     NULL,
     Code                  VARCHAR(50)      NOT NULL,
@@ -29,7 +28,6 @@
     UpdatedOn             DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedFrom           VARCHAR(255)     NULL DEFAULT NULL,
     IsSoftDeleted         SMALLINT         NOT NULL DEFAULT 0,
-    RowVersion            ROWVERSION,
 
     FOREIGN KEY (CreatedBy)          REFERENCES Users(Id),
     FOREIGN KEY (UpdatedBy)          REFERENCES Users(Id),

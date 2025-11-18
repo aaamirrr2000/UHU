@@ -166,9 +166,10 @@
     List<OrganizationsModel> Org = new();
     List<TaxMasterModel> TaxMaster = new();
     List<TaxItemConfigModel> TaxConfig = new();
-    public string Action { get; set; } = "INSERT";
+    public string? Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
-    public string GridCaption { get; set; }=string.Empty;
+    public string? GridCaption { get; set; }=string.Empty;
+    [Parameter] public EventCallback OnSaved { get; set; }
 
     bool isReadOnly = true;
     private bool LoadingPanel { get; set; } = false;
@@ -258,7 +259,7 @@
         record.UpdatedOn = DateTime.Now;
         record.UpdatedFrom = Functions.GetComputerDetails();
 
-        string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+        string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
         var result = await Functions.PostAsync<TaxItemsModel>($"TaxItems/{url}", record, true);
         if (result.Success == false)
         {
@@ -266,6 +267,7 @@
         }
         else
         {
+            await OnSaved.InvokeAsync();
             SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
             TaxConfig = await Functions.GetAsync<List<TaxItemConfigModel>>($"TaxItems/SearchTaxItemConfig/ItemId={record.Id}", true) ?? new List<TaxItemConfigModel>();
             if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)

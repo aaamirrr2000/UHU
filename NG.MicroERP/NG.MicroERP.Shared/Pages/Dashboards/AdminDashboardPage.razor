@@ -145,7 +145,7 @@
 
     public class LowStockModel
     {
-        public string ItemName { get; set; } = string.Empty;
+        public string? ItemName { get; set; } = string.Empty;
         public int Quantity { get; set; }
         public int ReorderLevel { get; set; }
     }
@@ -153,7 +153,7 @@
     public class TransactionModel
     {
         public DateTime Date { get; set; }
-        public string Description { get; set; } = string.Empty;
+        public string? Description { get; set; } = string.Empty;
         public double Amount { get; set; }
     }
 }

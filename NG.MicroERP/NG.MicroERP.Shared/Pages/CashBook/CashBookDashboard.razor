@@ -14,7 +14,7 @@
         <ChildContent>
             <EditForm Model="record" OnSubmit="Save">
                 <MudForm>
-                    <CashBookPage Action="@Action" CurrentRecord="record.Id"/>
+                    <CashBookPage Action="@Action" CurrentRecord="record.Id" OnSaved="ChildSaved"/>
                 </MudForm>
             </EditForm>
         </ChildContent>
@@ -87,7 +87,7 @@
     public DateTime endDate { get; set; } = DateTime.Today;
 
 
-    public string Action { get; set; } = "INSERT";
+    public string? Action { get; set; } = "INSERT";
 
     bool isReadOnly = true;
     private bool LoadingPanel { get; set; } = false;
@@ -198,6 +198,13 @@
         LoadingPanel = false;
         await _drawer.CloseDrawerAsync();
      
+    }
+
+    private async Task ChildSaved()
+    {
+        await GetAll();
+        await _drawer.CloseDrawerAsync();
+        StateHasChanged();
     }
 
 }

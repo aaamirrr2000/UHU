@@ -114,12 +114,13 @@
 
 @code {
     [Parameter] public int CurrentRecord { get; set; } = 0;
+    [Parameter] public EventCallback OnSaved { get; set; }
 
     private ItemsModel record = new();
     private ServingSizeModel servingSize = new();
     private List<ServingSizeModel> servingSizes = new();
     private bool LoadingPanel { get; set; }
-    public string Action { get; set; } = "INSERT";
+    public string? Action { get; set; } = "INSERT";
     private ServingSizeModel? selectedItem = null;
 
     protected override async Task OnInitializedAsync()
@@ -218,6 +219,7 @@
         }
         else
         {
+            await OnSaved.InvokeAsync();
             SnackbarService.Add($"Serving Size Saved Successfully", Severity.Success);
             record = new();
             //servingSizes = new();

@@ -1,7 +1,6 @@
 ﻿CREATE TABLE Cashbook
 (
     Id                  INT              PRIMARY KEY IDENTITY(1,1),
-    Guid                UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
     OrganizationId      INT             NOT NULL,
     SeqNo               VARCHAR(50)      NOT NULL,
     FileAttachment      VARCHAR(255),
@@ -22,7 +21,6 @@
 	UpdatedOn           DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	UpdatedFrom         VARCHAR(255)    NULL DEFAULT NULL,
     IsSoftDeleted       SMALLINT         NOT NULL DEFAULT 0,
-    RowVersion          ROWVERSION,
 
     FOREIGN KEY (LocationId)   REFERENCES Locations(Id),
     FOREIGN KEY (CreatedBy)    REFERENCES Users(Id),

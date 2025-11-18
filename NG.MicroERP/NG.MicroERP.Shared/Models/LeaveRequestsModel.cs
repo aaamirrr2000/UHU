@@ -9,7 +9,6 @@ namespace NG.MicroERP.Shared.Models;
 public class LeaveRequestsModel
 {
     public int Id { get; set; }
-    public Guid Guid { get; set; }
     public int OrganizationId { get; set; }
     public int EmpId { get; set; }
     public string? Fullname { get; set; }
@@ -40,5 +39,4 @@ public class LeaveRequestsModel
     public string? UpdatedFrom { get; set; }
 
     public int IsSoftDeleted { get; set; }
-    public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
 }

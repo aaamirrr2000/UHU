@@ -1,6 +1,5 @@
 ﻿CREATE TABLE TaxItems (
     Id              INT                 IDENTITY(1,1) PRIMARY KEY,
-    GUID            UNIQUEIDENTIFIER    NOT NULL DEFAULT NEWID(),
     OrganizationId  INT                 DEFAULT 1,
     TaxId           INT,
     ItemId          INT,
@@ -16,7 +15,6 @@
     UpdatedFrom     VARCHAR(255)        NULL,
 
     IsSoftDeleted   BIT                 NOT NULL DEFAULT 0,
-    RowVersion      ROWVERSION,
     FOREIGN KEY (TaxId)   REFERENCES TaxMaster(Id),
     FOREIGN KEY (ItemId)   REFERENCES Items(Id)
 );

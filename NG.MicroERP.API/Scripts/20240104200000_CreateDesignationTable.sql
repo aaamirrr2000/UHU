@@ -1,7 +1,6 @@
 ﻿CREATE TABLE Designations
 (
     Id              INT IDENTITY(1,1) PRIMARY KEY,
-    Guid                UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
     OrganizationId  INT NULL DEFAULT 1,
     DesignationName VARCHAR(150) NOT NULL,
     ParentId        INT NULL,
@@ -15,7 +14,6 @@
     UpdatedOn       DATETIME NULL,
     UpdatedFrom     VARCHAR(250),
     IsSoftDeleted   BIT DEFAULT 0,
-    RowVersion      ROWVERSION,
     CONSTRAINT FK_Designations_Department FOREIGN KEY (DepartmentId) REFERENCES Departments(Id)
 );
 

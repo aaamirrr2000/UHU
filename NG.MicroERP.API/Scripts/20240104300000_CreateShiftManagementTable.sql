@@ -1,7 +1,6 @@
 ﻿CREATE TABLE Shifts
 (
     Id              INT IDENTITY(1,1) PRIMARY KEY,
-    Guid                UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
     OrganizationId  INT NULL DEFAULT 1,
     ShiftName       VARCHAR(100) NOT NULL,
     StartTime       TIME NOT NULL,
@@ -14,8 +13,7 @@
     UpdatedBy       INT,
     UpdatedOn       DATETIME NULL,
     UpdatedFrom     VARCHAR(250),
-    IsSoftDeleted   BIT DEFAULT 0,
-    RowVersion      ROWVERSION
+    IsSoftDeleted   BIT DEFAULT 0
 );
 
 INSERT INTO Shifts 

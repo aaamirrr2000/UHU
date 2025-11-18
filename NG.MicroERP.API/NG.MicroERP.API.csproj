@@ -13,21 +13,14 @@
     <None Remove="Scripts\20240114000000_CreatePartiesTable.sql" />
     <None Remove="Scripts\20240115000000_CreateItemsTable.sql" />
     <None Remove="Scripts\20240115100000_CreateBundleTable.sql" />
-    <None Remove="Scripts\20240115200000_CreateSaleItemsView.sql" />
     <None Remove="Scripts\20240115300000_CategoriesHavingSomeItems.sql" />
     <None Remove="Scripts\20240116000000_CreateCashbookTable.sql" />
     <None Remove="Scripts\20240116100000_CreateRestaurantTablesTable.sql" />
     <None Remove="Scripts\20240116200000_CreateTaxesMasterTable.sql" />
-    <None Remove="Scripts\20240117000000_CreateBillTable.sql" />
     <None Remove="Scripts\20240117200000_CreateItemTaxesTable.sql" />
-    <None Remove="Scripts\20240117300000_CreateItemTaxesView.sql" />
     <None Remove="Scripts\20240117400000_CreateChargesRuleTable.sql" />
     <None Remove="Scripts\20240118000000_CreateStockReceivingTable.sql" />
-    <None Remove="Scripts\20250240000000_CategoriesItemsDineInInsert.sql" />
-    <None Remove="Scripts\20250250000000_DineInOrderStatusView.sql" />
     <None Remove="Scripts\20250304000000_CashBookReport.sql" />
-    <None Remove="Scripts\20250304100000_Bills.sql" />
-    <None Remove="Scripts\20250305000000_BillReport.sql" />
     <None Remove="Scripts\20250306000000_ItemTaxesView.sql" />
   </ItemGroup>
 
@@ -50,28 +43,21 @@
     <EmbeddedResource Include="Scripts\20240114000000_CreatePartiesTable.sql" />
     <EmbeddedResource Include="Scripts\20240115000000_CreateItemsTable.sql" />
     <EmbeddedResource Include="Scripts\20240115100000_CreateBundleTable.sql" />
-    <EmbeddedResource Include="Scripts\20240115200000_CreateSaleItemsView.sql" />
     <EmbeddedResource Include="Scripts\20240115300000_CategoriesHavingSomeItems.sql" />
     <EmbeddedResource Include="Scripts\20240116000000_CreateCashbookTable.sql" />
     <EmbeddedResource Include="Scripts\20240116100000_CreateRestaurantTablesTable.sql" />
     <EmbeddedResource Include="Scripts\20240116200000_CreateTaxesMasterTable.sql" />
-    <EmbeddedResource Include="Scripts\20240117000000_CreateBillTable.sql" />
     <EmbeddedResource Include="Scripts\20240117200000_CreateItemTaxesTable.sql" />
-    <EmbeddedResource Include="Scripts\20240117300000_CreateItemTaxesView.sql" />
     <EmbeddedResource Include="Scripts\20240117420000_CreatePaymentTermsTable.sql" />
     <EmbeddedResource Include="Scripts\20240117450000_CreatePurchaseOrderTable.sql" />
     <EmbeddedResource Include="Scripts\20240117410000_CreateCurrenciesTable.sql" />
     <EmbeddedResource Include="Scripts\20240117400000_CreateChargesRuleTable.sql" />
     <EmbeddedResource Include="Scripts\20240118000000_CreateStockReceivingTable.sql" />
-    <Content Include="Scripts\20250240000000_CategoriesItemsDineInInsert.sql" />
-    <EmbeddedResource Include="Scripts\20250250000000_DineInOrderStatusView.sql" />
     <EmbeddedResource Include="Scripts\20250303300000_CreateHolidayCalenderTables.sql" />
     <EmbeddedResource Include="Scripts\20250303400000_CreateLeavesRequestsTables.sql" />
     <EmbeddedResource Include="Scripts\20250303200000_CreateLeavesTypesTables.sql" />
     <EmbeddedResource Include="Scripts\20250303000000_GroupMenuView.sql" />
     <EmbeddedResource Include="Scripts\20250304000000_CashBookReport.sql" />
-    <EmbeddedResource Include="Scripts\20250304100000_Bills.sql" />
-    <EmbeddedResource Include="Scripts\20250305000000_BillReport.sql" />
     <EmbeddedResource Include="Scripts\20250306000000_ItemTaxesView.sql" />
   </ItemGroup>
 

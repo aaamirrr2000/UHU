@@ -9,7 +9,6 @@ namespace NG.MicroERP.Shared.Models;
 public class ItemsModel
 {
     public int Id { get; set; } = 0;
-    public Guid Guid { get; set; }
     public int OrganizationId { get; set; } = 0;
     public string? Pic { get; set; } = string.Empty;
     public string? Code { get; set; } = string.Empty;
@@ -39,22 +38,21 @@ public class ItemsModel
     public DateTime UpdatedOn { get; set; } = DateTime.Today;
     public string? UpdatedFrom { get; set; } = string.Empty;
     public int IsSoftDeleted { get; set; } = 0;
-    public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
     public int Recent_Sales_Volume { get; set; } = 0;
 
     //
     public double BasePrice { get; set; } 
     
     public List<ServingSizeModel> ServingSizes { get; set; } = new();
-    public string CategoryCode { get; set; } = string.Empty;
-    public string CategoryName { get; set; } = string.Empty;
+    public string? CategoryCode { get; set; } = string.Empty;
+    public string? CategoryName { get; set; } = string.Empty;
     public double Qty { get; set; } = 0;
     public int Person { get; set; } = 0;
 }
 
 public class ServingSizeModel
 {
-    public string Size { get; set; } = String.Empty;
+    public string? Size { get; set; } = String.Empty;
     public double Price { get; set; }= 0;
-    public string Pic { get; set; } = String.Empty;
+    public string? Pic { get; set; } = String.Empty;
 }

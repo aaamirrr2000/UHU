@@ -52,7 +52,7 @@ else
 @code {
     [Parameter] public List<DailyAttendanceModel> Data { get; set; } = new();
     [Parameter] public int? ParentDepartment { get; set; }
-    [Parameter] public string StatusType { get; set; } = "arrival"; // "arrival" or "leaving"
+    [Parameter] public string? StatusType { get; set; } = "arrival"; // "arrival" or "leaving"
     
     private AxisChartOptions _axisChartOptions = new()
     {
@@ -181,7 +181,7 @@ else
 
     private class ChartGroup
     {
-        public string Status { get; set; } = string.Empty;
+        public string? Status { get; set; } = string.Empty;
         public string[] Labels { get; set; } = Array.Empty<string>();
         public List<ChartSeries> Series { get; set; } = new();
     }

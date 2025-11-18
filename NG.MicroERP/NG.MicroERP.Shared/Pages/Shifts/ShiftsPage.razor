@@ -105,8 +105,9 @@
     public TimeSpan? StartTime { get; set; }
     public TimeSpan? EndTime { get; set; }
 
-    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public string? Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
+    [Parameter] public EventCallback OnSaved { get; set; }
 
     bool isReadOnly = true;
     private bool LoadingPanel { get; set; } = false;
@@ -212,7 +213,7 @@
         record.UpdatedOn = DateTime.Now;
         record.UpdatedFrom = Functions.GetComputerDetails();
 
-        string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+        string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
         var result = await Functions.PostAsync<ShiftsModel>($"Shifts/{url}", record, true);
         if (result.Success == false)
         {
@@ -220,6 +221,7 @@
         }
         else
         {
+            await OnSaved.InvokeAsync();
             SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
             if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
                 await Edit(result.Result!.Id);

@@ -15,7 +15,7 @@
         <ChildContent>
             <EditForm Model="record" OnSubmit="Save">
                 <MudForm>
-                     <OrganizationsPage Action="@Action" CurrentRecord="record.Id" />
+                     <OrganizationsPage Action="@Action" CurrentRecord="record.Id" OnSaved="ChildSaved"/>
                 </MudForm>
             </EditForm>
         </ChildContent>
@@ -41,11 +41,14 @@
 
                     <TemplateColumn Title="Actions" CellStyle="width: 80px; min-width: 80px;">
                         <CellTemplate Context="row">
-                            <MudIconButton Icon="@Icons.Material.TwoTone.Edit"
-                                           Size="Size.Small"
-                                           Variant="Variant.Outlined"
-                                           Color="Color.Primary"
-                                           OnClick="@(() => Edit(row.Item.Id))" >Edit</MudIconButton>
+                            <MudButton StartIcon="@Icons.Material.TwoTone.Edit"
+                                       Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       Color="Color.Primary"
+                                       OnClick="@(() => Edit(row.Item.Id))">
+                                Edit
+                            </MudButton>
+
                         </CellTemplate>
                     </TemplateColumn>
 
@@ -86,7 +89,7 @@
     static List<OrganizationsModel> data = new();
     static OrganizationsModel record = new();
 
-    public string Action { get; set; } = "INSERT";
+    public string? Action { get; set; } = "INSERT";
 
     bool isReadOnly = true;
     public int AccessLevel { get; set; } = 0;
@@ -167,7 +170,7 @@
         record.UpdatedSource = Functions.GetComputerDetails();
 
         var result = await Functions.PostAsync<OrganizationsModel>($"Organizations/{Action}", record, true);
-        if (result.Success)
+        if (result.Success == false)
         {
             SnackbarService.Add($"Record Not {Action.Replace("Soft", "")}", Severity.Error);
         }
@@ -213,6 +216,13 @@
             SnackbarService.Add($"Exception: {ex.Message}", Severity.Error);
             record.Logo = null;
         }
+    }
+
+    private async Task ChildSaved()
+    {
+        await GetAll();
+        await _drawer.CloseDrawerAsync();
+        StateHasChanged();
     }
 }
 

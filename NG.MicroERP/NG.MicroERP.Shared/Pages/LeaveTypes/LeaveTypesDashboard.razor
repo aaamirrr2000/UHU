@@ -14,7 +14,7 @@
         <ChildContent>
             <EditForm Model="record" OnSubmit="Save">
                 <MudForm>
-                    <LeaveTypesPage Action="@Action" CurrentRecord="record.Id"/>
+                    <LeaveTypesPage Action="@Action" CurrentRecord="record.Id" OnSaved="ChildSaved"/>
                 </MudForm>
             </EditForm>
         </ChildContent>
@@ -98,7 +98,7 @@
     List<LeaveTypesModel> data = new();
     LeaveTypesModel record = new();
 
-    public string Action { get; set; } = "INSERT";
+    public string? Action { get; set; } = "INSERT";
 
     bool isReadOnly = true;
     public int AccessLevel { get; set; } = 0;
@@ -192,6 +192,13 @@
         LoadingPanel = false;
         await _drawer.CloseDrawerAsync();
      
+    }
+
+    private async Task ChildSaved()
+    {
+        await GetAll();
+        await _drawer.CloseDrawerAsync();
+        StateHasChanged();
     }
 
 }

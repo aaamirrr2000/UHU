@@ -10,13 +10,12 @@ namespace NG.MicroERP.Shared.Models;
 public class OrganizationsModel
 {
     public int Id { get; set; } = 0;
-    public Guid Guid { get; set; }
     public string? Code { get; set; } = string.Empty;
     public string? EntraId { get; set; } = string.Empty;
     public string? Logo { get; set; } = string.Empty;
     public string? Wallpaper { get; set; }
-    public string ThemeColor { get; set; } = null!;
-    public string MenuColor { get; set; } = null!;
+    public string? ThemeColor { get; set; } = null!;
+    public string? MenuColor { get; set; } = null!;
     public string? Name { get; set; } = string.Empty;
     public string? Description { get; set; } = string.Empty;
     public string? Phone { get; set; } = string.Empty;
@@ -42,7 +41,6 @@ public class OrganizationsModel
     public string? UpdatedFrom { get; set; } = string.Empty;
     public string? UpdatedSource { get; set; } = string.Empty;
     public int IsSoftDeleted { get; set; } = 0;
-    public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
 
     //
     public string? ParentOrganizationName { get; set; } = string.Empty;

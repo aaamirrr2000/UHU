@@ -1,7 +1,6 @@
 ﻿CREATE TABLE dbo.ChartOfAccounts
 (
     Id                  INT IDENTITY(1,1) PRIMARY KEY,
-    Guid                UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
     OrganizationId      INT NULL,
     Pic                 VARCHAR(MAX) NULL,
     Code                VARCHAR(20) NOT NULL,
@@ -19,7 +18,6 @@
     UpdatedOn           DATETIME NOT NULL DEFAULT GETDATE(),
     UpdatedFrom         VARCHAR(255) NULL,
     IsSoftDeleted       SMALLINT NULL DEFAULT 0,
-    RowVersion          ROWVERSION,
     CONSTRAINT FK_ChartOfAccounts_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES dbo.Users(Id),
     CONSTRAINT FK_ChartOfAccounts_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES dbo.Users(Id),
     CONSTRAINT FK_ChartOfAccounts_Organization FOREIGN KEY (OrganizationId) REFERENCES dbo.Organizations(Id)

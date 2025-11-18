@@ -14,7 +14,7 @@
         <ChildContent>
             <EditForm Model="record" OnSubmit="Save">
                 <MudForm>
-                    <TaxMasterPage Action="@Action" CurrentRecord="record.Id" />
+                    <TaxMasterPage Action="@Action" CurrentRecord="record.Id" OnSaved="ChildSaved"/>
                 </MudForm>
             </EditForm>
         </ChildContent>
@@ -73,7 +73,7 @@
     static List<TaxMasterModel> data = new();
     static TaxMasterModel record = new();
 
-    public string Action { get; set; } = "INSERT";
+    public string? Action { get; set; } = "INSERT";
 
     bool isReadOnly = true;
     private bool LoadingPanel { get; set; } = false;
@@ -168,5 +168,11 @@
 
     }
 
+    private async Task ChildSaved()
+    {
+        await GetAll();
+        await _drawer.CloseDrawerAsync();
+        StateHasChanged();
+    }
 }
 

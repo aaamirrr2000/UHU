@@ -15,7 +15,7 @@
         <ChildContent>
             <EditForm Model="record" OnSubmit="Save">
                 <MudForm>
-                    <PartiesPage Action="@Action" CurrentRecord="record.Id" />
+                    <PartiesPage Action="@Action" CurrentRecord="record.Id" OnSaved="ChildSaved"/>
                 </MudForm>
             </EditForm>
         </ChildContent>
@@ -175,7 +175,7 @@
     List<PartiesModel> data = new();
     PartiesModel record = new();
 
-    public string Action { get; set; } = "INSERT";
+    public string? Action { get; set; } = "INSERT";
 
     bool isReadOnly = true;
     private bool LoadingPanel { get; set; } = false;
@@ -316,5 +316,11 @@
 
     }
 
+    private async Task ChildSaved()
+    {
+        await GetAll();
+        await _drawer.CloseDrawerAsync();
+        StateHasChanged();
+    }
 }
 

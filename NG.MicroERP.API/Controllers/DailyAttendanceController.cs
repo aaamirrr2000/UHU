@@ -53,7 +53,7 @@ public class DailyAttendanceController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, "An error occurred while generating the attendance report");
+            return StatusCode(500, $"An error occurred while generating the attendance report, {ex.Message}");
         }
     }
 }

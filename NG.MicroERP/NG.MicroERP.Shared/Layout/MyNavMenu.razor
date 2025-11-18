@@ -50,7 +50,7 @@
                     <ChildContent>
                         @foreach (var item in data.Where(x =>
                                         x.ParentId == group.MenuId &&
-                                        (Globals.User.GroupId == 1 ||
+                                        (Globals.User!.GroupId == 1 ||
                                         (x.My_Privilege == "READ ONLY" || x.My_Privilege == "FULL ACCESS"))))
                         {
                             <MudNavLink OnClick="() => LoadOption(item)" NavLinkMatch="NavLinkMatch.Prefix" Class="d-flex align-items-center">

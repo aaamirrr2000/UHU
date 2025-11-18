@@ -2,7 +2,6 @@
 CREATE TABLE Areas
 (
     Id              INT IDENTITY(1,1) PRIMARY KEY,
-    Guid                UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
     OrganizationId  INT NULL DEFAULT 1,
     AreaName        VARCHAR(100) NOT NULL,        -- City, Province, Region, Country
     AreaType        VARCHAR(50)  NULL,            -- City, Province, Region, Country
@@ -15,7 +14,6 @@ CREATE TABLE Areas
     UpdatedOn       DATETIME NULL,
     UpdatedFrom     VARCHAR(255) NULL,
     IsSoftDeleted   BIT NOT NULL DEFAULT 0,
-    RowVersion      ROWVERSION,
     CONSTRAINT FK_Areas_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
     CONSTRAINT FK_Areas_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id),
     CONSTRAINT FK_Areas_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),

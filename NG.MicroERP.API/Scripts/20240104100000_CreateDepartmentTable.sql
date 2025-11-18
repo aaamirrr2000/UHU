@@ -1,7 +1,6 @@
 ﻿CREATE TABLE Departments
 (
-    Id              INT IDENTITY(1,1) PRIMARY KEY,          -- Auto-increment identity
-    GUID            UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
+    Id              INT IDENTITY(1,1) PRIMARY KEY,
     OrganizationId  INT NULL DEFAULT 1,
     DepartmentName  NVARCHAR(150) NOT NULL,
     ParentId        INT NULL,                                -- For hierarchical departments
@@ -13,8 +12,7 @@
     UpdatedBy       INT NULL,
     UpdatedOn       DATETIME NULL,
     UpdatedFrom     NVARCHAR(250) NULL,
-    IsSoftDeleted   BIT NOT NULL DEFAULT 0,
-    RowVersion      ROWVERSION NOT NULL                      -- SQL Server's versioning column
+    IsSoftDeleted   BIT NOT NULL DEFAULT 0
 );
 
 INSERT INTO Departments

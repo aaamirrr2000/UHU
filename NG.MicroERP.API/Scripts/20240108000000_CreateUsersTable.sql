@@ -2,7 +2,6 @@
 CREATE TABLE Users
 (
     Id              INT IDENTITY(1,1) PRIMARY KEY,
-    Guid                UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
     Username        VARCHAR(30) NOT NULL,
     [Password]      VARCHAR(100) NOT NULL,
     UserType        VARCHAR(50) NOT NULL,
@@ -18,7 +17,6 @@ CREATE TABLE Users
     UpdatedOn       DATETIME NOT NULL DEFAULT GETDATE(),
     UpdatedFrom     VARCHAR(255) NULL,
     IsSoftDeleted   BIT NULL DEFAULT 0,
-    RowVersion      ROWVERSION,
     CONSTRAINT FK_Users_Group FOREIGN KEY (GroupId) REFERENCES Groups(Id),
     CONSTRAINT FK_Users_Employee FOREIGN KEY (EmpId) REFERENCES Employees(Id)
 );

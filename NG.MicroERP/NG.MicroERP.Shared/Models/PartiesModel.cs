@@ -9,7 +9,6 @@ namespace NG.MicroERP.Shared.Models;
 public class PartiesModel
 {
     public int Id { get; set; }
-    public Guid Guid { get; set; }
     public int OrganizationId { get; set; }
     public string? Code { get; set; }
     public string? Pic { get; set; }
@@ -34,7 +33,6 @@ public class PartiesModel
     public DateTime UpdatedOn { get; set; }
     public string? UpdatedFrom { get; set; }
     public int IsSoftDeleted { get; set; }
-    public byte[]? RowVersion { get; set; }
 
 }
 

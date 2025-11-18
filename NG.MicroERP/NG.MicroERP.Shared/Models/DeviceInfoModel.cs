@@ -12,40 +12,40 @@ namespace NG.MicroERP.Shared.Models;
     public class DeviceInfoModel
     {
         [XmlAttribute("version")]
-        public string Version { get; set; }
+        public string? Version { get; set; }
 
         [XmlElement("deviceName")]
-        public string DeviceName { get; set; }
+        public string? DeviceName { get; set; }
 
         [XmlElement("deviceID")]
         public int DeviceID { get; set; }
 
         [XmlElement("model")]
-        public string Model { get; set; }
+        public string? Model { get; set; }
 
         [XmlElement("serialNumber")]
-        public string SerialNumber { get; set; }
+        public string? SerialNumber { get; set; }
 
         [XmlElement("macAddress")]
-        public string MacAddress { get; set; }
+        public string? MacAddress { get; set; }
 
         [XmlElement("firmwareVersion")]
-        public string FirmwareVersion { get; set; }
+        public string? FirmwareVersion { get; set; }
 
         [XmlElement("firmwareReleasedDate")]
-        public string FirmwareReleasedDate { get; set; }
+        public string? FirmwareReleasedDate { get; set; }
 
         [XmlElement("encoderVersion")]
-        public string EncoderVersion { get; set; }
+        public string? EncoderVersion { get; set; }
 
         [XmlElement("encoderReleasedDate")]
-        public string EncoderReleasedDate { get; set; }
+        public string? EncoderReleasedDate { get; set; }
 
         [XmlElement("deviceType")]
-        public string DeviceType { get; set; }
+        public string? DeviceType { get; set; }
 
         [XmlElement("subDeviceType")]
-        public string SubDeviceType { get; set; }
+        public string? SubDeviceType { get; set; }
 
         [XmlElement("telecontrolID")]
         public int TelecontrolID { get; set; }
@@ -66,7 +66,7 @@ namespace NG.MicroERP.Shared.Models;
         public int RS485Num { get; set; }
 
         [XmlElement("manufacturer")]
-        public string Manufacturer { get; set; }
+        public string? Manufacturer { get; set; }
 
         [XmlElement("OEMCode")]
         public int OEMCode { get; set; }

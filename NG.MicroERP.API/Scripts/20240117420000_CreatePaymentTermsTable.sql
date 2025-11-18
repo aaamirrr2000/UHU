@@ -1,7 +1,6 @@
 ﻿CREATE TABLE PaymentTerms
 (
     Id              INT IDENTITY(1,1) PRIMARY KEY,
-    Guid            UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
     Code            VARCHAR(20) NOT NULL UNIQUE,      -- e.g. CASH, NET30, ADV, COD
     Description     VARCHAR(255) NOT NULL,            -- e.g. Cash Payment, Net 30 Days, Advance Payment, etc.
     DaysDue         INT NULL,                         -- No. of days from invoice date
@@ -12,8 +11,7 @@
     CreatedOn       DATETIME NOT NULL DEFAULT GETDATE(),
     UpdatedBy       INT NULL,
     UpdatedOn       DATETIME NULL,
-    IsSoftDeleted   BIT NOT NULL DEFAULT 0,
-    RowVersion         ROWVERSION
+    IsSoftDeleted   BIT NOT NULL DEFAULT 0
 );
 GO
 

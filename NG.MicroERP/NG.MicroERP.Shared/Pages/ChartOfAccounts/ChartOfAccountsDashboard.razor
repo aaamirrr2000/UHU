@@ -172,7 +172,7 @@
     private ChartOfAccountsModel? SelectedItem;
     private MudTreeView<ChartOfAccountsModel>? treeViewRef;
 
-    public string Action { get; set; } = "INSERT";
+    public string? Action { get; set; } = "INSERT";
 
     bool isReadOnly = true;
     private bool LoadingPanel { get; set; } = false;
@@ -308,5 +308,7 @@
         await _drawer.CloseDrawerAsync();
 
     }
+
+
 }
 

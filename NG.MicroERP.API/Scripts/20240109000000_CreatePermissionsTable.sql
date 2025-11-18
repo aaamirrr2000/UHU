@@ -2,7 +2,6 @@
 CREATE TABLE Permissions
 (
     Id              INT IDENTITY(1,1) PRIMARY KEY,
-    Guid                UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
     OrganizationId  INT NULL DEFAULT 1,
     GroupId         INT NOT NULL,
     MenuId          INT NULL,
@@ -15,7 +14,6 @@ CREATE TABLE Permissions
     UpdatedOn       DATETIME NOT NULL DEFAULT GETDATE(),
     UpdatedFrom     VARCHAR(255) NULL,
     IsSoftDeleted   BIT NULL DEFAULT 0,
-    RowVersion      ROWVERSION,
     CONSTRAINT FK_Permissions_Group FOREIGN KEY (GroupId) REFERENCES Groups(Id),
     CONSTRAINT FK_Permissions_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id)
 );

@@ -1,7 +1,6 @@
 ﻿CREATE TABLE Organizations
 (
     Id                  INT             IDENTITY(1,1) PRIMARY KEY,
-    Guid                UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
     Code                VARCHAR(15)     NOT NULL,
     EntraId             VARCHAR(255)    NULL,
     Logo                VARCHAR(2000)   NULL DEFAULT NULL,
@@ -30,8 +29,7 @@
     UpdatedBy           INT             NULL DEFAULT NULL,
     UpdatedOn           DATETIME        NOT NULL DEFAULT GETDATE(),
     UpdatedFrom         VARCHAR(255)    NULL DEFAULT NULL,
-    IsSoftDeleted       BIT             NULL DEFAULT 0,
-    RowVersion          ROWVERSION
+    IsSoftDeleted       BIT             NULL DEFAULT 0
 );
 
 -- Insert statement
@@ -40,7 +38,7 @@ INSERT INTO Organizations
      MaxUsers, DbSize, LoginPic, Industry, Website, TimeZone, GMT, IsVerified, Expiry, ParentId, 
      IsActive, CreatedBy, CreatedFrom, UpdatedBy, UpdatedFrom, IsSoftDeleted) 
 VALUES 
-    ('ORG001', 'SomeEntraId', 'images/logo.jpg', '#333333', '#222222', 'MoITT', 
-     'Ministry of IT and Telecom', 'xxxxx', 'contact@miott.com', 'Islamabad', 
-     100, 500.0, 'images/loginpic.jpg', 'Software', 'https://techcorp.com', 'Asia/Karachi', 5,
+    ('ORG002', 'SomeEntraId', 'images/logo.jpg', '#333333', '#222222', 'UHU', 
+     'UHU Corporation', 'xxxxx', 'contact@uhu.com', 'Karachi', 
+     100, 500.0, 'images/loginpic.jpg', 'Sales', 'https://uhu.com', 'Asia/Karachi', 5,
      1, '2026-12-31 23:59:59', NULL, 1, 101, 'System', NULL, 'System', 0);

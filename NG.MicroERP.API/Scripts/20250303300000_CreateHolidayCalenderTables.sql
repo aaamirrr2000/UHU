@@ -1,7 +1,6 @@
 ﻿CREATE TABLE HolidayCalendar
 (
     Id                  INT IDENTITY(1,1) PRIMARY KEY,
-    Guid                UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
     OrganizationId      INT NULL DEFAULT 1,
     HolidayDate         DATE            NOT NULL,
     Description         VARCHAR(100),
@@ -14,7 +13,6 @@
     UpdatedOn           DATETIME        NOT NULL DEFAULT GETDATE(),
     UpdatedFrom         VARCHAR(255)    NULL,
     IsSoftDeleted       BIT             NULL DEFAULT 0,
-    RowVersion          ROWVERSION,
 
     CONSTRAINT FK_HolidayCalendar_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
     CONSTRAINT FK_HolidayCalendar_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id),
