@@ -6,14 +6,14 @@ CREATE TABLE Areas
     AreaName        VARCHAR(100) NOT NULL,        -- City, Province, Region, Country
     AreaType        VARCHAR(50)  NULL,            -- City, Province, Region, Country
     ParentId        INT NULL,                      -- 0 or NULL for top-level (e.g., Country)
-    IsActive        BIT NOT NULL DEFAULT 1,
+    IsActive        INT NOT NULL DEFAULT 1,
     CreatedBy       INT NULL,
     CreatedOn       DATETIME NOT NULL DEFAULT GETDATE(),
     CreatedFrom     VARCHAR(255) NULL,
     UpdatedBy       INT NULL,
     UpdatedOn       DATETIME NULL,
     UpdatedFrom     VARCHAR(255) NULL,
-    IsSoftDeleted   BIT NOT NULL DEFAULT 0,
+    IsSoftDeleted   INT NOT NULL DEFAULT 0,
     CONSTRAINT FK_Areas_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
     CONSTRAINT FK_Areas_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id),
     CONSTRAINT FK_Areas_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),

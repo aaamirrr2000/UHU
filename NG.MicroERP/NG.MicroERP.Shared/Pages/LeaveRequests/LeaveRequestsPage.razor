@@ -52,7 +52,7 @@
 
                     @if (Globals.MyLeave == false)
                     {
-                        <div class="col-6 flex-input">
+                        <div class="col-12 col-md-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Employee</label>
 
                             <MudSelect T="int" @bind-Value="record.EmpId" Placeholder="Employee" >
@@ -70,7 +70,7 @@
 
                     }
 
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Leave Type</label>
 
                         <MudSelect @bind-Value="record.LeaveTypeId" Placeholder="Leave Type">
@@ -85,12 +85,12 @@
                         <ValidationMessage For="@(() => record.LeaveTypeId)" />
                     </div>
                     <div class="row"></div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">From</label>
                         <MudDatePicker @bind-Value="record.StartDate" Format="yyyy-MM-dd" placeholder="From" ReadOnly="@isReadOnly"></MudDatePicker>
                         <ValidationMessage For="@(() => record.StartDate)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">To</label>
                         <MudDatePicker @bind-Value="record.EndDate" Format="yyyy-MM-dd" placeholder="To" ReadOnly="@isReadOnly"></MudDatePicker>
                         <ValidationMessage For="@(() => record.EndDate)" />
@@ -105,7 +105,7 @@
                         <MudTextField id="ContactAddress" @bind-Value="record.ContactAddress" placeholder="Address" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.ContactAddress)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Mobile #</label>
                         <MudTextField id="ContactNumber" @bind-Value="record.ContactNumber" placeholder="Mobile #" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.ContactNumber)" />
@@ -113,7 +113,7 @@
 
                     @if(Globals.MyLeave == false)
                     {
-                        <div class="col-6 flex-input">
+                        <div class="col-12 col-md-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Approved By</label>
                             <MudSelect T="int?" @bind-Value="record.ApprovedBy" Placeholder="Approved By">
                                 <MudSelectItem T="int?" Value="null">-- Select Approver --</MudSelectItem>
@@ -126,7 +126,7 @@
                                 }
                             </MudSelect>
                         </div>
-                        <div class="col-6 flex-input">
+                        <div class="col-12 col-md-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Approved Date</label>
                             <MudDatePicker @bind-Value="record.ApprovedDate" Format="yyyy-MM-dd" placeholder="ApprovedDate" ReadOnly="@isReadOnly"></MudDatePicker>
                             <ValidationMessage For="@(() => record.ApprovedDate)" />
@@ -240,6 +240,12 @@
 
     protected async Task Save()
     {
+        if (record.StartDate.HasValue && record.EndDate.HasValue && record.StartDate.Value >= record.EndDate.Value)
+        {
+            SnackbarService.Add("Start time must be earlier than end time.", Severity.Warning);
+            return;
+        }
+
         LoadingPanel = true;
 
         if(Globals.MyLeave == false)

@@ -6,14 +6,14 @@
     ParentId        INT NULL,
     DepartmentId    INT NULL,
     Description     VARCHAR(250),
-    IsActive        BIT DEFAULT 1,
+    IsActive        INT DEFAULT 1,
     CreatedBy       INT,
     CreatedOn       DATETIME DEFAULT GETDATE(),
     CreatedFrom     VARCHAR(250),
     UpdatedBy       INT,
     UpdatedOn       DATETIME NULL,
     UpdatedFrom     VARCHAR(250),
-    IsSoftDeleted   BIT DEFAULT 0,
+    IsSoftDeleted   INT DEFAULT 0,
     CONSTRAINT FK_Designations_Department FOREIGN KEY (DepartmentId) REFERENCES Departments(Id)
 );
 

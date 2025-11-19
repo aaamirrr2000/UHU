@@ -53,7 +53,7 @@
                 {
                     <div class="row" style="width:100%; display: flex;">
                     
-                        <div class="col-6 flex-input">
+                        <div class="col-12 col-md-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Expense</label>
 
                             <MudSelect T="string"
@@ -77,12 +77,12 @@
 
                             <ValidationMessage For="@(() => record.ValueType)" />
                         </div>
-                        <div class="col-6 flex-input">
+                        <div class="col-12 col-md-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Value</label>
                             <MudNumericField @bind-Value="record.Value" placeholder="Value" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
                             <ValidationMessage For="@(() => record.Value)" />
                         </div>
-                        <div class="col-6 flex-input">
+                        <div class="col-12 col-md-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Percentage / Amount</label>
 
                             <MudSelect T="string"
@@ -101,7 +101,7 @@
 
                             <ValidationMessage For="@(() => record.PercentageAmount)" />
                         </div>
-                        <div class="col-6 flex-input">
+                        <div class="col-12 col-md-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Active</label>
 
                             <MudSelect T="int"

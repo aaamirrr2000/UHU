@@ -49,27 +49,27 @@
 
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Code</label>
                         <MudTextField id="Code" @bind-Value="record.Code" placeholder="Code" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Code)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Name</label>
                         <MudTextField id="Name" @bind-Value="record.Name" placeholder="Name" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Name)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Symbol</label>
                         <MudTextField id="Symbol" @bind-Value="record.Symbol" placeholder="Symbol" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Symbol)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Country</label>
                         <MudTextField id="Country" @bind-Value="record.Country" placeholder="Country" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Country)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Is Base Currency?</label>
 
                         <MudSelect T="int"
@@ -88,7 +88,7 @@
 
                         <ValidationMessage For="@(() => record.IsBaseCurrency)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Active</label>
 
                         <MudSelect T="int"
@@ -218,12 +218,12 @@
         var result = await Functions.PostAsync<CurrenciesModel>($"Currencies/{url}", record, true);
         if (result.Success == false)
         {
-            await Functions.ShowMessage(dialogService, "error", $"Record Not Saved");
+            SnackbarService.Add($"Record Not Saved", Severity.Error);
         }
         else
         {
             await OnSaved.InvokeAsync();
-            await Functions.ShowMessage(dialogService, "success", $"Record {Action} Successfully");
+            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
             if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
                 await Edit(result.Result!.Id);
             else

@@ -4,14 +4,14 @@
     Code            VARCHAR(20) NOT NULL UNIQUE,      -- e.g. CASH, NET30, ADV, COD
     Description     VARCHAR(255) NOT NULL,            -- e.g. Cash Payment, Net 30 Days, Advance Payment, etc.
     DaysDue         INT NULL,                         -- No. of days from invoice date
-    IsDefault       BIT NOT NULL DEFAULT 0,
-    IsActive        BIT NOT NULL DEFAULT 1,
+    IsDefault       INT NOT NULL DEFAULT 0,
+    IsActive        INT NOT NULL DEFAULT 1,
 
     CreatedBy       INT NULL,
     CreatedOn       DATETIME NOT NULL DEFAULT GETDATE(),
     UpdatedBy       INT NULL,
     UpdatedOn       DATETIME NULL,
-    IsSoftDeleted   BIT NOT NULL DEFAULT 0
+    IsSoftDeleted   INT NOT NULL DEFAULT 0
 );
 GO
 

@@ -100,8 +100,16 @@
 
     protected async Task GetAll()
     {
+        if (startDate > endDate)
+        {
+            SnackbarService.Add("Start date must be earlier than end date.", Severity.Warning);
+            return;
+        }
+
         var formattedStartDate = startDate.ToString("yyyy-MM-dd");
         var formattedEndDate = endDate.ToString("yyyy-MM-dd");
+
+
         string Criteria = string.Empty;
 
         LoadingPanel = true;

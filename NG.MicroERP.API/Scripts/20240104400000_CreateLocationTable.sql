@@ -12,14 +12,14 @@
     Latitude        VARCHAR(30) NULL,
     Longitude       VARCHAR(30) NULL,
     Radius          INT NULL,
-    IsActive        BIT NOT NULL DEFAULT 1,
+    IsActive        INT NOT NULL DEFAULT 1,
     CreatedBy       INT NULL,
     CreatedOn       DATETIME NOT NULL DEFAULT GETDATE(),
     CreatedFrom     VARCHAR(255) NULL,
     UpdatedBy       INT NULL,
     UpdatedOn       DATETIME NOT NULL DEFAULT GETDATE(),
     UpdatedFrom     VARCHAR(255) NULL,
-    IsSoftDeleted   BIT NULL DEFAULT 0,
+    IsSoftDeleted   INT NULL DEFAULT 0,
     CONSTRAINT FK_Locations_Organizations FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id)
 );
 

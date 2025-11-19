@@ -49,12 +49,12 @@
 
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Name</label>
                         <MudTextField id="DesignationName" @bind-Value="record.DesignationName" placeholder="Name" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.DesignationName)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">ParentId</label>
 
                         <AutoComplete TItem="DesignationsModel"
@@ -64,7 +64,7 @@
                                       @bind-SelectedId="record.ParentId" />
                         <ValidationMessage For="@(() => record.ParentId)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Department</label>
 
                         <MudSelect @bind-Value="record.DepartmentId"
@@ -82,12 +82,12 @@
                         <ValidationMessage For="@(() => record.DepartmentId)" />
                     </div>
                     <div class="row"></div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Description</label>
                         <MudTextField id="Description" @bind-Value="record.Description" placeholder="Description" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Description)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Active</label>
 
                         <MudSelect T="int"

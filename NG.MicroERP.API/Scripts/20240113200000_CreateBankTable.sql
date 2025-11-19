@@ -14,7 +14,7 @@
     AccountId       INT,
     Phone           VARCHAR(50) NULL,
     Email           VARCHAR(100) NULL,
-    IsActive        BIT NOT NULL DEFAULT 1,
+    IsActive        INT NOT NULL DEFAULT 1,
 	CreatedBy	    INT					NULL DEFAULT NULL,
 	CreatedOn       DATETIME			NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	CreatedFrom     VARCHAR(255)		NULL DEFAULT NULL,

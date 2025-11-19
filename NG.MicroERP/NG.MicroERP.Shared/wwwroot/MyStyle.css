@@ -15,15 +15,55 @@ h1, h2, h3, h4, h5, h6 {
 }
 
     /* Label Styling */
-    .flex-input label {
-        flex: 0 0 150px;
-        text-align: right;
-        font-weight: 500;
-        font-size: 12px;
-        line-height: 38px;
-        padding-right: 10px;
-        margin: 0;
+/* MOBILE RESPONSIVE FIX */
+@media (max-width: 576px) {
+
+    /* Stack label + input */
+    .flex-input {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 4px !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
     }
+
+        /* Responsive Label */
+        .flex-input label {
+            flex: unset !important;
+            width: 100% !important;
+            text-align: left !important;
+            line-height: normal !important;
+            padding-right: 0 !important;
+            padding-left: 0 !important;
+            margin: 0 0 2px 0 !important;
+        }
+
+        /* Full width input */
+        .flex-input :is(.mud-input, .mud-numeric-input, .mud-picker, .mud-color-picker) {
+            width: 100% !important;
+        }
+
+    /* Remove Bootstrap column padding */
+    .col-12,
+    .col-12.col-md-6 {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    /* Remove Mud internal padding */
+    .flex-input .mud-input-control,
+    .flex-input .mud-input-root,
+    .flex-input .mud-input,
+    .flex-input .mud-select,
+    .flex-input .mud-input-slot {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+}
+
+
 
     /* Wrapper for all Mud inputs */
     .flex-input :is( .mud-input, .mud-numeric-input, .mud-picker, .mud-color-picker ) {

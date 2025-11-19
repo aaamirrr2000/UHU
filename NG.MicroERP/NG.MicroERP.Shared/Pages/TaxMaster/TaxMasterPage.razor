@@ -46,7 +46,7 @@
                 <div class="row" style="width:100%; display: flex;">
 
                    
-                    <div class="col-6 mb-3">
+                    <div class="col-12 col-md-6 mb-3">
 
                         <MudSelect T="string"
                                    @bind-Value="record.TaxType"
@@ -74,15 +74,15 @@
 
                         <ValidationMessage For="@(() => record.TaxType)" />
                     </div>
-                    <div class="col-6 mb-3">
+                    <div class="col-12 col-md-6 mb-3">
                         <MudTextField Label="Name/Label" @bind-Value="record.TaxName" Variant="Variant.Filled" placeholder="Tax Name" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.TaxName)" />
                     </div>
-                    <div class="col-6 mb-3">
+                    <div class="col-12 col-md-6 mb-3">
                         <MudNumericField Label="TaxRate" @bind-Value="record.TaxRate" Variant="Variant.Filled" placeholder="TaxRate" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
                         <ValidationMessage For="@(() => record.TaxRate)" />
                     </div>
-                    <div class="col-6 mb-3">
+                    <div class="col-12 col-md-6 mb-3">
 
                         <MudSelect T="int"
                                    @bind-Value="record.IsActive"

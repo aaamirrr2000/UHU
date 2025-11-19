@@ -52,7 +52,7 @@
                 <div class="row" style="width:100%; display: flex;">
                   
                     <div class="row">
-                        <div class="col-6">
+                        <div class="col-12 col-md-6">
                             <div class="col-12 flex-input">
                                 <label class="form-label" style="font-weight: bold;">Code</label>
                                 <MudTextField id="Code" @bind-Value="record.Code" placeholder="Code" ReadOnly="true"></MudTextField>
@@ -141,7 +141,7 @@
 
 
                         </div>
-                        <div class="col-6">
+                        <div class="col-12 col-md-6">
                             <div class="w-100 d-flex justify-content-center">
                                 <div class="p-3 border rounded" style="width: 300px;">
                                     <label class="small fw-bold text-uppercase d-block mb-2 text-center">Items Image</label>
@@ -175,7 +175,7 @@
                         <MudTextField id="Address" @bind-Value="record.Address" placeholder="Address" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Address)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">City</label>
 
                         <MudSelect @bind-Value="record.CityId"
@@ -193,7 +193,7 @@
                         <ValidationMessage For="@(() => record.CityId)" />
                     </div>
 
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Active Status</label>
 
                         <MudSelect T="int"
@@ -219,17 +219,17 @@
                     <div class="row">
                     <br />
                         <p style="font-weight: bold; margin:5px;">Party's Physical Location</p>
-                        <div class="col-6 flex-input">
+                        <div class="col-12 col-md-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Latitude</label>
                             <MudTextField id="Latitude" @bind-Value="record.Latitude" placeholder="Latitude" ReadOnly="@isReadOnly"></MudTextField>
                             <ValidationMessage For="@(() => record.Latitude)" />
                         </div>
-                        <div class="col-6 flex-input">
+                        <div class="col-12 col-md-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Longitude</label>
                             <MudTextField id="Longitude" @bind-Value="record.Longitude" placeholder="Longitude" ReadOnly="@isReadOnly"></MudTextField>
                             <ValidationMessage For="@(() => record.Longitude)" />
                         </div>
-                        <div class="col-6 flex-input">
+                        <div class="col-12 col-md-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Radius (meters)</label>
                             <MudNumericField @bind-Value="record.Radius" placeholder="Radius" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
                             <ValidationMessage For="@(() => record.Radius)" />

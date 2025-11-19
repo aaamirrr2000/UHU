@@ -51,7 +51,7 @@
                 <div class="row" style="width:100%; display: flex;">
                    
                     <div class="row">
-                        <div class="col-6">
+                        <div class="col-12 col-md-6">
                             <div class="col-12 flex-input">
                                 <label class="form-label" style="font-weight: bold;">Code</label>
                                 <MudTextField id="Code" @bind-Value="record.Code" placeholder="Code" ReadOnly="@isReadOnly"></MudTextField>
@@ -144,7 +144,7 @@
                         
                            
                         </div>
-                        <div class="col-6">
+                        <div class="col-12 col-md-6">
                             <div class="w-100 d-flex justify-content-center">
                                 <div class="p-3 border rounded" style="width: 300px;">
                                     <label class="small fw-bold text-uppercase d-block mb-2 text-center">Items Image</label>
@@ -172,7 +172,7 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-6 flex-input">
+                            <div class="col-12 col-md-6 flex-input">
                                 <label class="form-label" style="font-weight: bold;">Is Inventory Item</label>
 
                                 <MudSelect T="int"
@@ -193,43 +193,43 @@
                             </div>
 
 
-                            <div class="col-6 flex-input">
+                            <div class="col-12 col-md-6 flex-input">
                                 <label class="form-label" style="font-weight: bold;">Minimum Qty</label>
                                 <MudNumericField @bind-Value="record.MinQty" placeholder="MinQty" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
                                 <ValidationMessage For="@(() => record.MinQty)" />
                             </div>
-                            <div class="col-6 flex-input">
+                            <div class="col-12 col-md-6 flex-input">
                                 <label class="form-label" style="font-weight: bold;">Maximum Qty</label>
                                 <MudNumericField @bind-Value="record.MaxQty" placeholder="MaxQty" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
                                 <ValidationMessage For="@(() => record.MaxQty)" />
                             </div>
-                            <div class="col-6 flex-input">
+                            <div class="col-12 col-md-6 flex-input">
                                 <label class="form-label" style="font-weight: bold;">Reorder Qty</label>
                                 <MudNumericField @bind-Value="record.ReorderQty" placeholder="Reorder Qty" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
                                 <ValidationMessage For="@(() => record.ReorderQty)" />
                             </div>
-                            <div class="col-6 flex-input">
+                            <div class="col-12 col-md-6 flex-input">
                                 <label class="form-label" style="font-weight: bold;">Discount</label>
                                 <MudNumericField @bind-Value="record.Discount" placeholder="Discount" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
                                 <ValidationMessage For="@(() => record.Discount)" />
                             </div>
-                            <div class="col-6 flex-input">
+                            <div class="col-12 col-md-6 flex-input">
                                 <label class="form-label" style="font-weight: bold;">Tax</label>
                                 <MudNumericField @bind-Value="record.Tax" placeholder="Tax" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
                                 <ValidationMessage For="@(() => record.Tax)" />
                             </div>
-                            <div class="col-6 flex-input">
+                            <div class="col-12 col-md-6 flex-input">
                                 <label class="form-label" style="font-weight: bold;">Cost Price (Average)</label>
                                 <MudNumericField @bind-Value="record.CostPrice" placeholder="CostPrice" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
                                 <ValidationMessage For="@(() => record.CostPrice)" />
                             </div>
-                            <div class="col-6 flex-input">
+                            <div class="col-12 col-md-6 flex-input">
                                 <label class="form-label" style="font-weight: bold;">Retail Price (Current)</label>
                                 <MudNumericField @bind-Value="record.RetailPrice" placeholder="RetailPrice" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
                                 <ValidationMessage For="@(() => record.RetailPrice)" />
                             </div>
 
-                            <div class="col-6 flex-input">
+                            <div class="col-12 col-md-6 flex-input">
                                 <label class="form-label" style="font-weight: bold;">Is Favourate item</label>
 
                                 <MudSelect T="int"
@@ -248,7 +248,7 @@
 
                                 <ValidationMessage For="@(() => record.IsFavItem)" />
                             </div>
-                            <div class="col-6 flex-input">
+                            <div class="col-12 col-md-6 flex-input">
                                 <label class="form-label" style="font-weight: bold;">Active</label>
 
                                 <MudSelect T="int"

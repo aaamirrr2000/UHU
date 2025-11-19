@@ -106,7 +106,7 @@ public class EmployeesService : IEmployeesService
 				{obj.CreatedBy},
 				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
 				'{obj.CreatedFrom!.ToUpper()}', 
-				{obj.IsSoftDeleted}
+				0
 			);";
 
             var res = await dapper.Insert(SQLInsert, SQLDuplicate);

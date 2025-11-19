@@ -49,37 +49,37 @@
 
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Code</label>
                         <MudTextField id="Code" @bind-Value="record.Code" placeholder="Code" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Code)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Bank Name</label>
                         <MudTextField id="BankName" @bind-Value="record.BankName" placeholder="BankName" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.BankName)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Branch Code</label>
                         <MudTextField id="BranchCode" @bind-Value="record.BranchCode" placeholder="BranchCode" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.BranchCode)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Branch Name</label>
                         <MudTextField id="BranchName" @bind-Value="record.BranchName" placeholder="BranchName" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.BranchName)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Account Title</label>
                         <MudTextField id="AccountTitle" @bind-Value="record.AccountTitle" placeholder="AccountTitle" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.AccountTitle)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Account Number</label>
                         <MudTextField id="AccountNumber" @bind-Value="record.AccountNumber" placeholder="AccountNumber" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.AccountNumber)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">IBAN</label>
                         <MudTextField id="IBAN" @bind-Value="record.IBAN" placeholder="IBAN" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.IBAN)" />
@@ -89,7 +89,7 @@
                         <MudTextField id="Address" @bind-Value="record.Address" placeholder="Address" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Address)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">City</label>
 
                         <MudSelect @bind-Value="record.CityId"
@@ -106,7 +106,7 @@
                         </MudSelect>
                         <ValidationMessage For="@(() => record.CityId)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Account</label>
 
                         <MudSelect @bind-Value="record.AccountId"
@@ -123,17 +123,17 @@
                         </MudSelect>
                         <ValidationMessage For="@(() => record.AccountId)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Phone</label>
                         <MudTextField id="Phone" @bind-Value="record.Phone" placeholder="Phone" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Phone)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Email</label>
                         <MudTextField id="Email" @bind-Value="record.Email" placeholder="Email" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Email)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Active</label>
 
                         <MudSelect T="int"

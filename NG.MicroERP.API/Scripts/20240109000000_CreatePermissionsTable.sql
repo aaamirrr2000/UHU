@@ -6,14 +6,14 @@ CREATE TABLE Permissions
     GroupId         INT NOT NULL,
     MenuId          INT NULL,
     Privilege       VARCHAR(20) NULL,
-    IsActive        BIT NOT NULL DEFAULT 1,
+    IsActive        INT NOT NULL DEFAULT 1,
     CreatedBy       INT NULL,
     CreatedOn       DATETIME NOT NULL DEFAULT GETDATE(),
     CreatedFrom     VARCHAR(255) NULL,
     UpdatedBy       INT NULL,
     UpdatedOn       DATETIME NOT NULL DEFAULT GETDATE(),
     UpdatedFrom     VARCHAR(255) NULL,
-    IsSoftDeleted   BIT NULL DEFAULT 0,
+    IsSoftDeleted   INT NULL DEFAULT 0,
     CONSTRAINT FK_Permissions_Group FOREIGN KEY (GroupId) REFERENCES Groups(Id),
     CONSTRAINT FK_Permissions_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id)
 );

@@ -18,7 +18,7 @@
 
     EffectiveFrom   DATE                NOT NULL,
     EffectiveTo     DATE                NULL,
-    IsActive        BIT                 NOT NULL DEFAULT 1,
+    IsActive        INT                 NOT NULL DEFAULT 1,
 
     CreatedBy       INT                 NULL,
     CreatedOn       DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -28,7 +28,7 @@
     UpdatedOn       DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedFrom     VARCHAR(255)        NULL,
 
-    IsSoftDeleted   BIT                 NOT NULL DEFAULT 0
+    IsSoftDeleted   INT                 NOT NULL DEFAULT 0
 );
 
 INSERT INTO ChargeRules (RuleName, RuleType, AmountType, Amount, SequenceOrder, CalculationBase, ChargeCategory, EffectiveFrom, EffectiveTo)

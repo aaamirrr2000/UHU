@@ -5,8 +5,8 @@
     Name            VARCHAR(100) NOT NULL,            -- e.g. Pakistani Rupee, US Dollar
     Symbol          VARCHAR(10) NULL,                 -- e.g. ₨, $, €
     Country         VARCHAR(100) NULL,                -- e.g. Pakistan, United States
-    IsBaseCurrency  BIT NOT NULL DEFAULT 0,           -- marks your system's default currency
-    IsActive        BIT NOT NULL DEFAULT 1,
+    IsBaseCurrency  INT NOT NULL DEFAULT 0,           -- marks your system's default currency
+    IsActive        INT NOT NULL DEFAULT 1,
 	CreatedBy	    INT					NULL DEFAULT NULL,
 	CreatedOn       DATETIME			NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	CreatedFrom     VARCHAR(255)		NULL DEFAULT NULL,
@@ -47,7 +47,7 @@ CREATE TABLE ExchangeRates
     UpdatedBy          INT NULL,
     UpdatedOn          DATETIME NULL,
     UpdatedFrom        VARCHAR(100) NULL,
-    IsSoftDeleted      BIT NOT NULL DEFAULT 0,
+    IsSoftDeleted      INT NOT NULL DEFAULT 0,
     FOREIGN KEY (BaseCurrencyId) REFERENCES Currencies(Id),
     FOREIGN KEY (TargetCurrencyId) REFERENCES Currencies(Id)
 );

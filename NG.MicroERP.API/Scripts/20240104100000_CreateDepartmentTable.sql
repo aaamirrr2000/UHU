@@ -5,14 +5,14 @@
     DepartmentName  NVARCHAR(150) NOT NULL,
     ParentId        INT NULL,                                -- For hierarchical departments
     Description     NVARCHAR(250) NULL,
-    IsActive        BIT NOT NULL DEFAULT 1,                 -- Use BIT instead of INT/BOOLEAN
+    IsActive        INT NOT NULL DEFAULT 1,                 -- Use BIT instead of INT/BOOLEAN
     CreatedBy       INT NULL,
     CreatedOn       DATETIME NOT NULL DEFAULT GETDATE(),
     CreatedFrom     NVARCHAR(250) NULL,
     UpdatedBy       INT NULL,
     UpdatedOn       DATETIME NULL,
     UpdatedFrom     NVARCHAR(250) NULL,
-    IsSoftDeleted   BIT NOT NULL DEFAULT 0
+    IsSoftDeleted   INT NOT NULL DEFAULT 0
 );
 
 INSERT INTO Departments

@@ -4,7 +4,7 @@
     TaxType         VARCHAR(100)        NOT NULL,  -- e.g., "VAT", "GST"
     TaxName         VARCHAR(255)        NOT NULL,  -- e.g., "Standard VAT", "Reduced Rate VAT"
     TaxRate         DECIMAL(5,2)        NOT NULL,  -- Percentage (e.g., 17.00)
-    IsActive        BIT                 NOT NULL DEFAULT 1,
+    IsActive        INT                 NOT NULL DEFAULT 1,
 
     CreatedBy       INT                 NULL,
     CreatedOn       DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -14,7 +14,7 @@
     UpdatedOn       DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedFrom     VARCHAR(255)        NULL,
 
-    IsSoftDeleted   BIT                 NOT NULL DEFAULT 0
+    IsSoftDeleted   INT                 NOT NULL DEFAULT 0
 );
 
 

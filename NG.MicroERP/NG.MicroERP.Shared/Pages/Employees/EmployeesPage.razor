@@ -56,22 +56,22 @@
                         <MudTextField id="Fullname" @bind-Value="record.Fullname" placeholder="Name" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Fullname)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Employee Id/Code</label>
                         <MudTextField id="EmpId" @bind-Value="record.EmpId" placeholder="Employee Id/Code" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.EmpId)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Phone</label>
                         <MudTextField id="Phone" @bind-Value="record.Phone" placeholder="Phone" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Phone)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Email</label>
                         <MudTextField id="Email" @bind-Value="record.Email" placeholder="Email" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Email)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">CNIC/SSN</label>
                         <MudTextField id="Cnic" @bind-Value="record.Cnic" placeholder="CNIC / SSN" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Cnic)" />
@@ -87,7 +87,7 @@
 
                 <div class="row">
 
-                    <div class="col-6">
+                    <div class="col-12 col-md-6">
                         <div class="col-12 flex-input">
                             <label class="form-label" style="font-weight: bold;">Type</label>
 
@@ -216,10 +216,10 @@
 
                     </div>
 
-                    <div class="col-6">
+                    <div class="col-12 col-md-6">
                         <div class="w-100 d-flex justify-content-center">
                             <div class="p-3 border rounded" style="width: 300px;">
-                                <label class="small fw-bold text-uppercase d-block mb-2 text-center">Logo</label>
+                                <label class="small fw-bold text-uppercase d-block mb-2 text-center">Picture</label>
 
                                 <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
                                     @if (!string.IsNullOrEmpty(record.Pic))

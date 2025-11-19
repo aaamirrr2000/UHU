@@ -50,17 +50,17 @@
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
                     
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Holiday</label>
                         <MudDatePicker @bind-Value="record.HolidayDate" Format="yyyy-MM-dd" placeholder="Holiday" ReadOnly="@isReadOnly"></MudDatePicker>
                         <ValidationMessage For="@(() => record.HolidayDate)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Description</label>
                         <MudTextField id="Description" @bind-Value="record.Description" placeholder="Description" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.Description)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Recurring</label>
 
                         <MudSelect T="int"
@@ -79,7 +79,7 @@
 
                         <ValidationMessage For="@(() => record.IsRecurring)" />
                     </div>
-                    <div class="col-6 flex-input">
+                    <div class="col-12 col-md-6 flex-input">
                         <label class="form-label" style="font-weight: bold;">Active</label>
 
                         <MudSelect T="int"

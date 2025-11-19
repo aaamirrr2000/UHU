@@ -6,14 +6,14 @@
     StartTime       TIME NOT NULL,
     EndTime         TIME NOT NULL,
     FlexiTime       INT DEFAULT 0,
-    IsActive        BIT DEFAULT 1,
+    IsActive        INT DEFAULT 1,
     CreatedBy       INT,
     CreatedOn       DATETIME DEFAULT GETDATE(),
     CreatedFrom     VARCHAR(250),
     UpdatedBy       INT,
     UpdatedOn       DATETIME NULL,
     UpdatedFrom     VARCHAR(250),
-    IsSoftDeleted   BIT DEFAULT 0
+    IsSoftDeleted   INT DEFAULT 0
 );
 
 INSERT INTO Shifts 

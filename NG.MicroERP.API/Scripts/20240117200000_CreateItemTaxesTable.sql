@@ -4,7 +4,7 @@
     TaxId           INT,
     ItemId          INT,
     Invoicetype     VARCHAR(50),
-    IsActive        BIT                 NOT NULL DEFAULT 1,
+    IsActive        INT                 NOT NULL DEFAULT 1,
 
     CreatedBy       INT                 NULL,
     CreatedOn       DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -14,7 +14,7 @@
     UpdatedOn       DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedFrom     VARCHAR(255)        NULL,
 
-    IsSoftDeleted   BIT                 NOT NULL DEFAULT 0,
+    IsSoftDeleted   INT                 NOT NULL DEFAULT 0,
     FOREIGN KEY (TaxId)   REFERENCES TaxMaster(Id),
     FOREIGN KEY (ItemId)   REFERENCES Items(Id)
 );

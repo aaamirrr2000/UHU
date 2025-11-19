@@ -35,7 +35,7 @@ CREATE TABLE PurchaseOrderCharges
     AccountId         INT NULL,
     ChargeDescription VARCHAR(255) NULL,
     Amount            DECIMAL(18,2) NOT NULL DEFAULT 0.00,
-    IsPercentage      BIT NOT NULL DEFAULT 0,
+    IsPercentage      INT NOT NULL DEFAULT 0,
     PercentageValue   DECIMAL(9,2) NULL,
     CreatedBy         INT NOT NULL,
     CreatedOn         DATETIME NOT NULL DEFAULT GETDATE(),

@@ -48,17 +48,17 @@
 
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
-                    <div class="col-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Areaname</label>
-                        <MudTextField id="AreaName" @bind-Value="record.AreaName" placeholder="AreaName" ReadOnly="@isReadOnly"></MudTextField>
+                    <div class="col-12 col-md-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Area Name</label>
+                        <MudTextField id="AreaName" @bind-Value="record.AreaName" placeholder="Area Name" ReadOnly="@isReadOnly"></MudTextField>
                         <ValidationMessage For="@(() => record.AreaName)" />
                     </div>
-                    <div class="col-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Areatype</label>
+                    <div class="col-12 col-md-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Type</label>
 
                         <MudSelect T="string"
                                    @bind-Value="record.AreaType"
-                                   Placeholder="AreaType"
+                                   Placeholder="Area Type"
                                    Clearable="true">
 
                             @if (Are != null && Are.Any())
@@ -78,8 +78,8 @@
                         <ValidationMessage For="@(() => record.AreaType)" />
                     </div>
                    
-                    <div class="col-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">active</label>
+                    <div class="col-12 col-md-6 flex-input">
+                        <label class="form-label" style="font-weight: bold;">Active</label>
 
                         <MudSelect T="int"
                                    @bind-Value="record.IsActive"

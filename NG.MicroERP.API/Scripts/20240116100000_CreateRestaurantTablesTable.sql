@@ -3,7 +3,7 @@
     OrganizationId      INT NULL,
     TableNumber         VARCHAR(10)     NOT NULL UNIQUE,
     Capacity            INT             NOT NULL,
-    IsAvailable         BIT             NOT NULL DEFAULT 1,
+    IsAvailable         INT             NOT NULL DEFAULT 1,
     TableLocation       VARCHAR(50),    -- e.g., Indoor, Outdoor, Balcony
     Notes               VARCHAR(255),
     IsActive            SMALLINT        NOT NULL DEFAULT 1,

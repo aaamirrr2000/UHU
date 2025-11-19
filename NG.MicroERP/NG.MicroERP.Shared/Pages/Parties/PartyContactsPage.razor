@@ -52,7 +52,7 @@
                  @if (IsVisible)
                 {
                     <div class="row" style="width:100%; display: flex;">
-                        <div class="col-6 flex-input">
+                        <div class="col-12 col-md-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Contact Type</label>
 
                             <MudSelect T="string"
@@ -76,12 +76,12 @@
 
                             <ValidationMessage For="@(() => record.ContactType)" />
                         </div>
-                        <div class="col-6 flex-input">
+                        <div class="col-12 col-md-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Contact Value</label>
                             <MudTextField id="ContactValue" @bind-Value="record.ContactValue" placeholder="Contact Value" ReadOnly="@isReadOnly"></MudTextField>
                             <ValidationMessage For="@(() => record.ContactValue)" />
                         </div>
-                        <div class="col-6 flex-input">
+                        <div class="col-12 col-md-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Isprimary</label>
 
                             <MudSelect T="int"
@@ -100,12 +100,12 @@
 
                             <ValidationMessage For="@(() => record.IsPrimary)" />
                         </div>
-                        <div class="col-6 flex-input">
+                        <div class="col-12 col-md-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Point of contact</label>
                             <MudTextField id="PointOfContact" @bind-Value="record.PointOfContact" placeholder="Point Of Contact" ReadOnly="@isReadOnly"></MudTextField>
                             <ValidationMessage For="@(() => record.PointOfContact)" />
                         </div>
-                        <div class="col-6 flex-input">
+                        <div class="col-12 col-md-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Active</label>
 
                             <MudSelect T="int"

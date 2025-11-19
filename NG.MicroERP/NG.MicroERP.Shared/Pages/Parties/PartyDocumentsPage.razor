@@ -52,7 +52,7 @@
                 @if(IsVisible)
                 {
                     <div class="row" style="width:100%; display: flex;">
-                        <div class="col-6 flex-input">
+                        <div class="col-12 col-md-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Document Type</label>
 
                             <MudSelect T="string"
@@ -76,17 +76,17 @@
 
                             <ValidationMessage For="@(() => record.DocumentType)" />
                         </div>
-                        <div class="col-6 flex-input">
+                        <div class="col-12 col-md-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Document Number</label>
                             <MudTextField id="DocumentNumber" @bind-Value="record.DocumentNumber" placeholder="Document Number" ReadOnly="@isReadOnly"></MudTextField>
                             <ValidationMessage For="@(() => record.DocumentNumber)" />
                         </div>
-                        <div class="col-6 flex-input">
+                        <div class="col-12 col-md-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Point of Contact</label>
                             <MudTextField id="PointOfContact" @bind-Value="record.PointOfContact" placeholder="Point Of Contact" ReadOnly="@isReadOnly"></MudTextField>
                             <ValidationMessage For="@(() => record.PointOfContact)" />
                         </div>
-                        <div class="col-6 flex-input">
+                        <div class="col-12 col-md-6 flex-input">
                             <label class="form-label" style="font-weight: bold;">Active</label>
 
                             <MudSelect T="int"

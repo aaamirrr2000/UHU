@@ -112,113 +112,73 @@
 
 
 <style>
-    .professional-drawer {
-        height: 100vh;
+
+    /* DRAWER HEADER */
+    .professional-drawer .drawer-header {
         display: flex;
-        flex-direction: column;
-        background-color: gray;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        background-color: rgba(255, 255, 255, 0.03); /* subtle overlay */
+        backdrop-filter: blur(6px);
     }
 
-        .professional-drawer .drawer-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem 1.5rem;
-            flex-shrink: 0;
-            width: 100%;
-            box-sizing: border-box;
-            margin: 0;
-            border-bottom: 1px solid var(--mud-palette-lines-default);
-        }
+    /* Dark mode header */
+    body.mud-theme-dark .professional-drawer .drawer-header {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+        background-color: rgba(0, 0, 0, 0.2);
+    }
 
-        .professional-drawer .icon-container {
-            border-radius: 8px;
-            padding: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-            .professional-drawer .icon-container i {
-                font-size: 1.5rem;
-            }
-
-        .professional-drawer .drawer-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1.5rem;
-            min-height: 0;
-        }
-
-        .professional-drawer .drawer-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-            padding: 1rem 1.5rem;
-            border-top: 1px solid var(--mud-palette-lines-default);
-            flex-shrink: 0;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        /* Remove the default MudDrawer padding */
-        .professional-drawer .mud-drawer-content {
-            padding: 0 !important;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
-    .drawer-tab-right {
-        position: fixed;
-        top: 50%;
-        right: 0;
-        transform: translateY(-50%);
-        width: 12px; /* slim tab (about 25% of the previous width) */
-        height: 100px; /* enough to be clickable but minimal */
-        background-color: var(--mud-palette-primary);
-        color: var(--mud-palette-primary-text);
-        border: none;
-        border-top-left-radius: 8px; /* curved outer top edge */
-        border-bottom-left-radius: 8px; /* curved outer bottom edge */
-        border-top-right-radius: 0; /* sharp edge flush with screen */
-        border-bottom-right-radius: 0;
+    /* ICON CONTAINER */
+    .professional-drawer .icon-container {
+        padding: 8px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        cursor: pointer;
-        z-index: 1300;
-        transition: background-color 0.3s ease;
-        box-shadow: none; /* no shadow */
+        background-color: rgba(0,0,0,0.05); /* subtle for light mode */
+        transition: all 0.2s ease;
     }
 
-        /* Hover follows theme */
-        .drawer-tab-right:hover {
-            background-color: var(--mud-palette-primary-hover);
-        }
+    body.mud-theme-dark .professional-drawer .icon-container {
+        background-color: rgba(255,255,255,0.08); /* subtle for dark mode */
+    }
 
-        /* Make icon small and centered */
-        .drawer-tab-right .mud-icon-root {
-            font-size: 14px;
-        }
+    .professional-drawer .icon-container i {
+        font-size: 1.6rem;
+        color: var(--mud-palette-primary);
+    }
 
-        /* Transparent space above and below */
-        .drawer-tab-right::before,
-        .drawer-tab-right::after {
-            content: "";
-            position: absolute;
-            right: 0;
-            width: 12px;
-            height: 9999px;
-            background-color: transparent;
-            pointer-events: none;
-        }
+    body.mud-theme-dark .professional-drawer .icon-container i {
+        color: var(--mud-palette-primary-light);
+    }
 
-        .drawer-tab-right::before {
-            top: -9999px;
-        }
+    /* TITLE TEXT */
+    .professional-drawer .drawer-title {
+        font-weight: 600;
+        font-size: 1.3rem;
+        color: var(--mud-palette-text-primary);
+    }
 
-        .drawer-tab-right::after {
-            bottom: -9999px;
-        }
+    body.mud-theme-dark .professional-drawer .drawer-title {
+        color: #ffffff;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+
+    /* CLOSE BUTTON */
+    .professional-drawer .close-btn {
+        color: var(--mud-palette-text-primary);
+        transition: all 0.2s ease;
+    }
+
+    body.mud-theme-dark .professional-drawer .close-btn {
+        color: #ffffff;
+    }
+
+    .professional-drawer .close-btn:hover {
+        transform: scale(1.1);
+        color: var(--mud-palette-error);
+    }
+
 </style>

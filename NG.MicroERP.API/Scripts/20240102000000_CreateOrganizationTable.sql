@@ -19,7 +19,7 @@
     Website             VARCHAR(255)    NULL,
     TimeZone            VARCHAR(100)    NULL,
     GMT                 DECIMAL(16,2)   DEFAULT 0,
-    IsVerified          BIT             NOT NULL DEFAULT 0,
+    IsVerified          INT             NOT NULL DEFAULT 0,
     Expiry              DATETIME        NULL DEFAULT NULL,
     ParentId            INT             NULL,
     IsActive            BIT             NOT NULL DEFAULT 1,
@@ -29,7 +29,7 @@
     UpdatedBy           INT             NULL DEFAULT NULL,
     UpdatedOn           DATETIME        NOT NULL DEFAULT GETDATE(),
     UpdatedFrom         VARCHAR(255)    NULL DEFAULT NULL,
-    IsSoftDeleted       BIT             NULL DEFAULT 0
+    IsSoftDeleted       INT             NULL DEFAULT 0
 );
 
 -- Insert statement
