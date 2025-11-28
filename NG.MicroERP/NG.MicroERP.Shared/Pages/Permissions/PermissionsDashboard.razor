@@ -4,6 +4,8 @@
 @inject IDialogService dialogService
 @inject NavigationManager NavManager
 @inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
 
 <Loading IsLoading="@LoadingPanel" />
 
@@ -270,10 +272,10 @@
         rec.OrganizationId = Globals.User.OrganizationId;
         rec.CreatedBy = Globals.User.Id;
         rec.CreatedOn = DateTime.Now;
-        rec.CreatedFrom = Functions.GetComputerDetails();
+        rec.CreatedFrom = Globals.ClientInfo;
         rec.UpdatedBy = Globals.User.Id;
         rec.UpdatedOn = DateTime.Now;
-        rec.UpdatedFrom = Functions.GetComputerDetails();
+        rec.UpdatedFrom = Globals.ClientInfo;
 
         var result = await Functions.PostAsync<PermissionsModel>($"Permissions/Save", rec, true);
         if (result.Success == true)

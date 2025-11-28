@@ -25,7 +25,14 @@ namespace NG.MicroERP.Shared.Helper;
 
 public class Functions
 {
-    public static async Task<T?> GetAsync<T>(string url, bool useTokenAuthorize = false)
+    private readonly Globals Globals;
+
+    public Functions(Globals globals, HttpClient http)
+    {
+        Globals = globals;
+    }
+
+    public  async Task<T?> GetAsync<T>(string url, bool useTokenAuthorize = false)
     {
         try
         {
@@ -80,7 +87,7 @@ public class Functions
     }
 
 
-    public static async Task<(bool Success, T? Result, string Message)> PostAsync<T>(string url, object? data = null, bool useTokenAuthorize = false)
+    public  async Task<(bool Success, T? Result, string Message)> PostAsync<T>(string url, object? data = null, bool useTokenAuthorize = false)
     {
         try
         {
@@ -137,7 +144,7 @@ public class Functions
     }
 
 
-    public static async Task<(int?, string?)> DeleteAsync(string url, bool Authorized = true)
+    public  async Task<(int?, string?)> DeleteAsync(string url, bool Authorized = true)
     {
         try
         {
@@ -172,7 +179,7 @@ public class Functions
         }
     }
 
-    public static async Task<bool> ShowConfirmation(
+    public  async Task<bool> ShowConfirmation(
         IDialogService dialogService,
         string message,
         string icon = "🔔",
@@ -249,7 +256,7 @@ public class Functions
         return result ?? false;
     }
 
-    public static async Task ShowMessage(IDialogService dialogService, string type, string message)
+    public  async Task ShowMessage(IDialogService dialogService, string type, string message)
     {
         string icon = type.ToLower() switch
         {
@@ -351,7 +358,7 @@ public class Functions
     }
 
 
-    public static async Task<(bool, string)> FileUpload(InputFileChangeEventArgs fileuploadevent, FileUploadService fs, int FileSizeinMB = 2)
+    public  async Task<(bool, string)> FileUpload(InputFileChangeEventArgs fileuploadevent, FileUploadService fs, int FileSizeinMB = 2)
     {
         try
         {
@@ -373,7 +380,7 @@ public class Functions
         return (false, "No file selected");
     }
 
-    public static string GetComputerDetails()
+    public  string GetComputerDetails()
     {
 
         string ipAddress = Dns.GetHostEntry(Dns.GetHostName()).AddressList
@@ -392,7 +399,7 @@ public class Functions
 
 
     [Obsolete]
-    public static async Task<(bool, string)> UploadAsync(InputFileChangeEventArgs e, Microsoft.AspNetCore.Hosting.IHostingEnvironment webHostEnvironment, string folder = "Images")
+    public  async Task<(bool, string)> UploadAsync(InputFileChangeEventArgs e, Microsoft.AspNetCore.Hosting.IHostingEnvironment webHostEnvironment, string folder = "Images")
     {
         try
         {
@@ -433,14 +440,14 @@ public class Functions
         }
     }
 
-    private static string GetReadableFileSize(long fileSizeInBytes)
+    private  string GetReadableFileSize(long fileSizeInBytes)
     {
         return fileSizeInBytes < 1024
             ? $"{fileSizeInBytes} bytes"
             : fileSizeInBytes < 1048576 ? $"{fileSizeInBytes / 1024} KB" : $"{fileSizeInBytes / 1048576} MB";
     }
 
-    public static string GenerateNewFileName(string fileName)
+    public  string GenerateNewFileName(string fileName)
     {
         string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
         string extension = Path.GetExtension(fileName);
@@ -449,7 +456,7 @@ public class Functions
 
  
 
-    public static string GenerateRandomPassword(int iNumChars = 8)
+    public  string GenerateRandomPassword(int iNumChars = 8)
     {
         string strDefault = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890";
         string strFirstChar = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -474,7 +481,7 @@ public class Functions
         return strReturn;
     }
 
-    public static bool sendEmail(string toEmail, string subject, string content, string attachment = "")
+    public  bool sendEmail(string toEmail, string subject, string content, string attachment = "")
     {
         try
         {
@@ -511,14 +518,14 @@ public class Functions
     }
 
 
-    public static string Base64ToString(string base64String)
+    public  string Base64ToString(string base64String)
     {
         byte[] bytes = Convert.FromBase64String(base64String);
         return Encoding.UTF8.GetString(bytes);
     }
 
 
-    public static string NumberToWords(int number)
+    public  string NumberToWords(int number)
     {
         string[] UnitsMap = { "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
                                                   "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen",
@@ -586,7 +593,7 @@ public class Functions
         return words.Trim();
     }
 
-    public static string ConvertMoneyToWords(decimal amount)
+    public  string ConvertMoneyToWords(decimal amount)
     {
         int dollars = (int)amount;
         int cents = (int)((amount - dollars) * 100);
@@ -597,7 +604,7 @@ public class Functions
         return dollarPart + centPart + " Only";
     }
 
-    public static List<string> GetPageNamesInFolder(string folderNamespace)
+    public  List<string> GetPageNamesInFolder(string folderNamespace)
     {
         List<string> pages = [];
         // Get all types in the current assembly
@@ -627,7 +634,7 @@ public class Functions
         return pages;
     }
 
-    public static void NavigateToEncryptedPage(NavigationManager navManager, string pageName)
+    public  void NavigateToEncryptedPage(NavigationManager navManager, string pageName)
     {
         if (navManager == null)
         {
@@ -645,7 +652,7 @@ public class Functions
     }
 
     /*
-    public static List<string> GetDashboardPages()
+    public  List<string> GetDashboardPages()
     {
         try
         {
@@ -673,7 +680,7 @@ public class Functions
     }
     */
 
-    public static List<string> GetFilesFromFolder()
+    public  List<string> GetFilesFromFolder()
     {
         IConfigurationBuilder builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json", optional: false);
         _ = builder.Build();

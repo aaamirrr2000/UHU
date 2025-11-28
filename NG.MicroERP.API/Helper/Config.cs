@@ -2,15 +2,14 @@
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.VisualBasic;
 using MudBlazor;
 using Newtonsoft.Json;
-using Microsoft.Extensions.Hosting;
 using NG.MicroERP.API.Services;
-
-
+using NG.MicroERP.Shared.Helper;
+using NG.MicroERP.Shared.Models;
 using Serilog;
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,9 +21,8 @@ using System.Net.Mail;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using NG.MicroERP.Shared.Models;
-using NG.MicroERP.Shared.Helper;
 
 
 namespace NG.MicroERP.API.Helper;
@@ -54,27 +52,7 @@ public class Config
     public string DefaultDB() => DefaultConnectionString;
     public string GlobalDB() => GlobalConnectionString;
 
-    public static bool IsSafeSearchCriteria(string criteria)
-    {
-        if (string.IsNullOrEmpty(criteria))
-            return true;
-
-        if (criteria.Length > 500)
-            return false;
-
-        var upperCriteria = criteria.ToUpperInvariant();
-
-        // Only block the most dangerous patterns
-        var dangerous = new[] { ";", "--", "/*", "*/", "DROP ", "DELETE ", "UPDATE ", "INSERT ", "EXEC " };
-
-        foreach (var danger in dangerous)
-        {
-            if (upperCriteria.Contains(danger))
-                return false;
-        }
-
-        return true;
-    }
+  
 
     public static string GenerateRandomPassword(int iNumChars = 8)
     {
@@ -103,23 +81,35 @@ public class Config
 
     public static bool sendEmail(string toEmail, string subject, string content, string attachment = "")
     {
+        MailMessage message = null;
+        Attachment emailAttachment = null;
+        SmtpClient smtp = null;
+
         try
         {
-            MailMessage message = new();
-            SmtpClient smtp = new()!;
+            Log.Information("=== Starting email send process ===");
 
-            message.From = new MailAddress("mail@nexgentechstudios.com", "Ozone Technologies Support");
+            message = new MailMessage();
+            smtp = new SmtpClient();
+
+            message.From = new MailAddress("mail@nexgentechstudios.com", "Cybercom Support");
             message.To.Add(new MailAddress(toEmail));
             message.Bcc.Add(new MailAddress("aamir.rashid.1973@gmail.com"));
             message.Subject = subject;
             message.IsBodyHtml = true;
             message.Body = content;
 
-            if (attachment != null)
+            if (!string.IsNullOrEmpty(attachment))
             {
-                if (attachment.Length > 0)
+                if (File.Exists(attachment))
                 {
-                    message.Attachments.Add(new Attachment(attachment));
+                    FileInfo fileInfo = new FileInfo(attachment);
+                    long fileSize = fileInfo.Length;
+                    Log.Information($"Attachment found: {attachment}, Size: {fileSize} bytes ({fileSize / 1024}KB)");
+
+                    emailAttachment = new Attachment(attachment);
+                    message.Attachments.Add(emailAttachment);
+                    Log.Information("Attachment successfully added to message");
                 }
             }
 
@@ -129,13 +119,78 @@ public class Config
             smtp.UseDefaultCredentials = false;
             smtp.Credentials = new NetworkCredential("mail@nexgentechstudios.com", "Solution_00");
             smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
+            smtp.Timeout = 120000;
+
+            Log.Information("Attempting to send email...");
             smtp.Send(message);
+            Log.Information("=== Email sent successfully! ===");
+
+            return true;
         }
-        catch
+        catch (Exception ex)
         {
+            Log.Error($"Email failed: {ex.Message}");
             return false;
         }
-        return true;
+        finally
+        {
+            emailAttachment?.Dispose();
+            message?.Dispose();
+            smtp?.Dispose();
+            Log.Information("Email resources disposed");
+        }
+    }
+
+    public static async Task<bool> UploadToFtpAsync(string ftpUrl, string username, string password, string localFilePath)
+    {
+        try
+        {
+            if (!File.Exists(localFilePath))
+            {
+                Log.Error($"File not found: {localFilePath}");
+                return false;
+            }
+
+            string filename = Path.GetFileName(localFilePath);
+            string fullUrl = $"{ftpUrl.TrimEnd('/')}/{filename}";
+
+            Log.Information($"Uploading to FTP: {fullUrl}");
+
+            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(fullUrl);
+            request.Method = WebRequestMethods.Ftp.UploadFile;
+            request.Credentials = new NetworkCredential(username, password);
+            request.UseBinary = true;
+            request.UsePassive = true;
+            request.KeepAlive = false;
+            request.Timeout = 60000;
+
+            byte[] fileBytes = await File.ReadAllBytesAsync(localFilePath);
+
+            using (Stream requestStream = await request.GetRequestStreamAsync())
+            {
+                await requestStream.WriteAsync(fileBytes, 0, fileBytes.Length);
+            }
+
+            using (FtpWebResponse response = (FtpWebResponse)await request.GetResponseAsync())
+            {
+                Log.Information($"FTP Upload Success: {response.StatusDescription}");
+                return true;
+            }
+        }
+        catch (WebException ex)
+        {
+            string ftpError = (ex.Response is FtpWebResponse ftpResponse)
+                ? ftpResponse.StatusDescription
+                : "No FTP response";
+
+            Log.Error($"FTP Upload Failed: {ex.Message} | FTP: {ftpError}");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"FTP Error: {ex.Message}");
+            return false;
+        }
     }
 
 

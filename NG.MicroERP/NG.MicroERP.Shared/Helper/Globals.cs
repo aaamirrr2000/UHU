@@ -17,29 +17,29 @@ namespace NG.MicroERP.Shared.Helper;
 public class Globals
 {
 
-    public static string BaseURI = "";
-    public static string key = "aT4hmLHkxfeXaT4h";
+    public  string BaseURI = "";
+    public  string key = "aT4hmLHkxfeXaT4h";
 
-    public static string Computer_sr = string.Empty;
-    public static string Token { get; set; } = string.Empty;
-    public static string ListName = string.Empty;
-    public static string Icon = string.Empty;
-    public static string Version = "1.0p";
-    public static bool _tabsInitialized = false;
-    public static bool _isDarkMode;
+    public  string Computer_sr = string.Empty;
+    public  string Token { get; set; } = string.Empty;
+    public  string ListName = string.Empty;
+    public  string Icon = string.Empty;
+    public  string Version = "1.0p";
+    public  bool _tabsInitialized = false;
+    public  bool _isDarkMode;
 
-    public static string PageTitle { get; set; } = "";
-    public static OrganizationsModel Organization { get; set; } = null!;
-    //public static EmployeesModel Emp { get; set; } = null!;
-    public static UsersModel User { get; set; } = null!;
-    public static EmployeesModel Employee { get; set; } = null!;
-    public static DepartmentsModel Department { get; set; } = null!;
-    public static List<MyMenuModel>? menu { get; set; } = null;
-    public static bool isVisible { get; set; } = true;
-    public static string seletctedMenuItem { get; set; } = string.Empty;
-    public static bool MyLeave { get; set; } = true;
-    public static List<GroupMenuModel> MyPermissions { get; set; } = null;
-
+    public  string PageTitle { get; set; } = "";
+    public  OrganizationsModel Organization { get; set; } = null!;
+    //public  EmployeesModel Emp { get; set; } = null!;
+    public  UsersModel User { get; set; } = null!;
+    public  EmployeesModel Employee { get; set; } = null!;
+    public  DepartmentsModel Department { get; set; } = null!;
+    public  List<MyMenuModel>? menu { get; set; } = null;
+    public  bool isVisible { get; set; } = true;
+    public  string seletctedMenuItem { get; set; } = string.Empty;
+    public  bool MyLeave { get; set; } = true;
+    public  List<GroupMenuModel> MyPermissions { get; set; } = null;
+    public string? ClientInfo { get; set; }
     public Globals()
     {
         IConfigurationBuilder builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json", optional: false);
@@ -53,7 +53,7 @@ public class Globals
         BaseURI = configuration.GetValue<string>("ApiUrl:BaseUrl") ?? string.Empty;
     }
 
-    public static string Encrypt(string text)
+    public  string Encrypt(string text)
     {
         byte[] keyBytes = Encoding.UTF8.GetBytes(key);
         using Aes aes = Aes.Create();
@@ -68,7 +68,7 @@ public class Globals
         return Convert.ToBase64String(memoryStream.ToArray());
     }
 
-    public static string Decrypt(string cipherText)
+    public  string Decrypt(string cipherText)
     {
         byte[] keyBytes = Encoding.UTF8.GetBytes(key);
         byte[] cipherBytes = Convert.FromBase64String(cipherText);
@@ -84,7 +84,7 @@ public class Globals
         return Encoding.UTF8.GetString(textBytes, 0, bytesRead);
     }
 
-    public static int PageAccess(NavigationManager? navManager, string pageName)
+    public  int PageAccess(NavigationManager? navManager, string pageName)
     {
         try
         {
@@ -97,18 +97,18 @@ public class Globals
             }
 
             // 🧑‍💼 Validate user
-            if (Globals.User == null)
+            if (User == null)
             {
                 navManager.NavigateTo("/", true);
                 return -1;
             }
 
             // 👑 Admin (GroupId = 1) always has full access
-            if (Globals.User.GroupId == 1)
+            if (User.GroupId == 1)
                 return 1;
 
             // 🗂 Validate permissions
-            if (Globals.MyPermissions == null || !Globals.MyPermissions.Any())
+            if (MyPermissions == null || !MyPermissions.Any())
             {
                 navManager.NavigateTo("/", true);
                 return -1;
@@ -117,9 +117,9 @@ public class Globals
             string normalizedPage = pageName.Trim().ToLower();
 
             // 🔎 Find matching permission
-            var menuPermission = Globals.MyPermissions.FirstOrDefault(p =>
+            var menuPermission = MyPermissions.FirstOrDefault(p =>
                 p.PageName?.Trim().ToLower() == normalizedPage &&
-                p.GroupId == Globals.User.GroupId &&
+                p.GroupId == User.GroupId &&
                 p.IsActive == 1);
 
             if (menuPermission == null)
@@ -148,7 +148,7 @@ public class Globals
         }
     }
 
-    public static List<int> GetAllSubDepartmentIds(List<DepartmentsModel> allDepartments, int parentId)
+    public  List<int> GetAllSubDepartmentIds(List<DepartmentsModel> allDepartments, int parentId)
     {
         var result = new List<int> { parentId };
 

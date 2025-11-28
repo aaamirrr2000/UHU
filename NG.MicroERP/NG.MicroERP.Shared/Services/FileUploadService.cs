@@ -9,11 +9,13 @@ using NG.MicroERP.Shared.Helper;
 public class FileUploadService
 {
     private readonly HttpClient _httpClient;
+    private readonly Globals Globals;
     
 
-    public FileUploadService(HttpClient httpClient)
+    public FileUploadService(HttpClient httpClient, Globals _globals)
     {
         _httpClient = httpClient;
+        Globals = _globals;
     }
 
     public async Task<(bool, string)> UploadFileAsync(IBrowserFile file, bool useTokenAuthorize = false, int FileSizeinMB=2)

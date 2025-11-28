@@ -52,6 +52,7 @@ public static class DependencyInjection
         services.AddSingleton<ITaxService, TaxService>();
         services.AddSingleton<IUsersService, UsersService>();
         services.AddSingleton<ICurrenciesService, CurrenciesService>();
+        services.AddSingleton<IBackupService, BackupService>();
 
         services.AddScoped<Globals>();
         services.AddScoped<FileUploadService>();

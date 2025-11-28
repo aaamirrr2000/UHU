@@ -64,6 +64,7 @@
   <ItemGroup>
 	  <PackageReference Include="dbup-mysql" Version="6.0.4" />
 	  <PackageReference Include="DinkToPdf" Version="1.0.8" />
+	  <PackageReference Include="DotNetZip" Version="1.16.0" />
 	  <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.3" />
 	  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.3" />
 	  <PackageReference Include="MySql.Data" Version="9.4.0" />

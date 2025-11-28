@@ -7,6 +7,8 @@ namespace NG.MicroERP
         
         public MainPage()
         {
+            Globals Globals = new Globals();
+
             InitializeComponent();
             if (!Globals._tabsInitialized)
             {

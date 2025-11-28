@@ -4,6 +4,8 @@
 @inject IDialogService dialogService
 @inject NavigationManager NavManager
 @inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
 
 <Loading IsLoading="@LoadingPanel" />
 
@@ -45,7 +47,7 @@
                         <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Party's Documents</MudText>
                     </div>
                 </div>
-                <hr />
+                <hr style="height: 6px; border: none; background: #667eea; border-radius: 10px;" />
             </TitleContent>
 
             <ChildContent>
@@ -316,10 +318,10 @@
             LoadingPanel = true;
             record.CreatedBy = Globals.User.Id;
             record.CreatedOn = DateTime.Now;
-            record.CreatedFrom = Functions.GetComputerDetails();
+            record.CreatedFrom = Globals.ClientInfo;
             record.UpdatedBy = Globals.User.Id;
             record.UpdatedOn = DateTime.Now;
-            record.UpdatedFrom = Functions.GetComputerDetails();
+            record.UpdatedFrom = Globals.ClientInfo;
 
             string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
             var result = await Functions.PostAsync<PartyDocumentsModel>($"PartyDocuments/{url}", record, true);

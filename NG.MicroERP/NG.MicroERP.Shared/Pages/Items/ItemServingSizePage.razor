@@ -6,6 +6,8 @@
 @inject NavigationManager NavManager
 @inject ISnackbar SnackbarService
 @inject FileUploadService FileUploadService
+@inject Functions Functions
+@inject Globals Globals
 
 <MudExpansionPanels MultiExpansion="true">
     <div class="text-end" style="margin-top:10px;">
@@ -27,7 +29,7 @@
                     <MudText Typo="Typo.caption" Class="text-muted">@record.Description</MudText>
                 </div>
             </div>
-
+            <hr style="height: 6px; border: none; background: #667eea; border-radius: 10px;" />
             </TitleContent>
 
             <ChildContent>
@@ -209,7 +211,7 @@
         record.Id = CurrentRecord;
         record.UpdatedBy = Globals.User.Id;
         record.UpdatedOn = DateTime.Now;
-        record.UpdatedFrom = Functions.GetComputerDetails();
+        record.UpdatedFrom = Globals.ClientInfo;
         record.ServingSize = JsonSerializer.Serialize(servingSizes);
 
         var result = await Functions.PostAsync<ItemsModel>($"Items/ServingSizeUpdate", record, true);

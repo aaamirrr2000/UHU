@@ -25,4 +25,6 @@ public class DesignationsModel
     public string? UpdatedFrom { get; set; } = string.Empty;
     public bool IsSoftDeleted { get; set; }
 
+    public string? DisplayName => string.Format("{0} ({1})", DesignationName, DepartmentName);
+
 }

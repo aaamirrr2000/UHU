@@ -2,6 +2,8 @@
 @inject ISnackbar SnackbarService
 @inject NavigationManager Nav
 @inject IJSRuntime JS
+@inject Functions Functions
+@inject Globals Globals
 
 <MudThemeProvider />
 <MudPopoverProvider />
@@ -27,14 +29,14 @@
 
         <MudHidden Breakpoint="Breakpoint.MdAndUp">
             <a href="/@(Globals.User?.Dashboard ?? "dashboard")" class="nav-link"><i class="fas fa-home"></i></a>
-            <a href="#" class="nav-link"><i class="fa-solid fa-clock"></i> Idle: @_idleDisplay</a>
+           @*  <a href="#" class="nav-link"><i class="fa-solid fa-clock"></i> Idle: @_idleDisplay</a> *@
             <a href="/ChangePasswordPage" class="nav-link"><i class="fas fa-key"></i></a>
             <a href="/" class="nav-link"><i class="fas fa-power-off"></i> </a>
         </MudHidden>
 
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
             <a href="/@(Globals.User?.Dashboard ?? "dashboard")" class="nav-link"><i class="fas fa-home"></i> Home</a>
-            <a href="#" class="nav-link"><i class="fa-solid fa-clock"></i> Idle: @_idleDisplay</a>
+           @*  <a href="#" class="nav-link"><i class="fa-solid fa-clock"></i> Idle: @_idleDisplay</a> *@
             <a href="/ChangePasswordPage" class="nav-link"><i class="fas fa-key"></i> Change Password</a>
 
             @* <a href="/" class="nav-link"><i class="fa-solid fa-code-merge"></i> @(Globals.Version ?? "")</a> *@
@@ -77,9 +79,10 @@
     {
         try
         {
-            if (Globals.User == null)
+            if (Globals.User.Id == 0)
             {
-                return;
+                Nav.NavigateTo("/");
+                //return;
             }
 
             if (Globals.User.DarKLightTheme == 1)

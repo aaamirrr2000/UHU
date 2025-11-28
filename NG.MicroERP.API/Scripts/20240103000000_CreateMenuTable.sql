@@ -54,6 +54,7 @@ VALUES
 (105, 'Categories', NULL, 'Product categories and grouping', 'CategoriesDashboard', 100, 'fas fa-tags', 5050, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
 (106, 'Items', NULL, 'Product and SKU management', 'ItemsDashboard', 100, 'fas fa-barcode', 5060, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
 (108, 'Areas', NULL, 'Cities, regions, provinces, and countries setup', 'AreasDashboard', 100, 'fas fa-map', 5080, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+(109, 'Backup', NULL, 'Backup your data', 'BackupPage', 100, 'fas fa-database', 5080, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
 
 /*──────────────────────────── HR SETUP ─────────────────────────────*/
 (110, 'HR Setup', NULL, 'Human Resources management setup', NULL, 0, 'fas fa-users', 5100, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),

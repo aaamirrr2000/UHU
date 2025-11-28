@@ -3,6 +3,9 @@
 @inject NavigationManager Nav
 @inject Globals Globals
 @inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+@inject ClientInfoService ClientInfoService
 
 <Loading IsLoading="@LoadingPanel" />
 <div class="login-page" style="@BackgroundStyle">
@@ -52,6 +55,7 @@
         {
             var org = await Functions.GetAsync<List<OrganizationsModel>>("Organizations/Search", true) ?? new List<OrganizationsModel>();
             Globals.Organization = org.FirstOrDefault()!;
+            Globals.ClientInfo = ClientInfoService.GetDetailedClientInfo();
 
             if (!string.IsNullOrEmpty(Globals.Organization.Wallpaper))
             {

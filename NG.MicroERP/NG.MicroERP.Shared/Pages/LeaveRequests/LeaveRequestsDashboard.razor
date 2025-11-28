@@ -4,6 +4,8 @@
 @inject IDialogService dialogService
 @inject NavigationManager NavManager
 @inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
 
 <Loading IsLoading="@LoadingPanel" />
 
@@ -213,10 +215,10 @@
         record.OrganizationId = Globals.User.OrganizationId;
         record.CreatedBy = Globals.User.Id;
         record.CreatedOn = DateTime.Now;
-        record.CreatedFrom = Functions.GetComputerDetails();
+        record.CreatedFrom = Globals.ClientInfo;
         record.UpdatedBy = Globals.User.Id;
         record.UpdatedOn = DateTime.Now;
-        record.UpdatedFrom = Functions.GetComputerDetails();
+        record.UpdatedFrom = Globals.ClientInfo;
 
         var result = await Functions.PostAsync<LeaveRequestsModel>($"LeaveRequests/{Action}", record, true);
         if (result.Success == true)

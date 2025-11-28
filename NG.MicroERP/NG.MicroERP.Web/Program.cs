@@ -2,7 +2,7 @@
 
 using MudBlazor;
 using MudBlazor.Services;
-
+using NG.MicroERP.Shared.Helper;
 using NG.MicroERP.Shared.Services;
 using NG.MicroERP.Web.Components;
 using NG.MicroERP.Web.Services;
@@ -35,6 +35,12 @@ builder.Services.AddMudServices(config =>
 });
 
 builder.Services.AddServices();
+builder.Services.AddScoped<Globals>();
+builder.Services.AddScoped<Functions>();
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ClientInfoService>();
+
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.File("logs/log-.txt",

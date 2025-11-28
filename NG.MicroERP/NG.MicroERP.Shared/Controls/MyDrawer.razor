@@ -1,6 +1,4 @@
-﻿@using MudBlazor
-
-<MudDrawer @bind-Open="Open"
+﻿<MudDrawer @bind-Open="Open"
            Width="900px"
            Anchor="Anchor.Right"
            Elevation="3"
@@ -8,20 +6,23 @@
            Class="professional-drawer">
 
     <!-- Clean Professional Header -->
-    <div class="drawer-header">
-        <div class="d-flex align-center flex-grow-1">
-            @if (!string.IsNullOrEmpty(FaIcon))
-            {
-                <div class="icon-container me-3">
-                    <i class="@FaIcon"></i>
-                </div>
-            }
-            <MudText Typo="Typo.h5" Class="drawer-title flex-grow-1 mb-0">@Title</MudText>
+    <MudPaper Elevation="1" Class="drawer-header-paper" Stretch="true">
+        <div class="drawer-header">
+            <div class="d-flex align-center flex-grow-1">
+                @if (!string.IsNullOrEmpty(FaIcon))
+                {
+                    <div class="icon-container me-3">
+                        <i class="@FaIcon"></i>
+                    </div>
+                }
+                <MudText Typo="Typo.h5" Class="drawer-title flex-grow-1 mb-0">@Title</MudText>
+            </div>
+            <MudIconButton Icon="@Icons.Material.Filled.Close"
+                           OnClick="CloseDrawerAsync"
+                           Size="Size.Small"
+                           Color="Color.Inherit" />
         </div>
-        <MudIconButton Icon="@Icons.Material.Filled.Close"
-                       OnClick="CloseDrawerAsync"
-                       Size="Size.Small" />
-    </div>
+    </MudPaper>
 
     <!-- Content Area -->
     <div class="drawer-content">
@@ -34,7 +35,6 @@
     </div>
 </MudDrawer>
 
-
 @code {
     [Parameter] public bool Open { get; set; } = false;
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
@@ -46,30 +46,26 @@
     private bool _hasRenderHandle = false;
     [Parameter] public EventCallback OnClose { get; set; }
 
-
     protected override async Task OnInitializedAsync()
     {
         Console.WriteLine("Component Initialized");
         await Task.Delay(50);
     }
 
-
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             await Task.Delay(50);
-            await InvokeAsync(StateHasChanged); // Ensures UI updates correctly
+            await InvokeAsync(StateHasChanged);
         }
     }
-
 
     public async Task OpenDrawer()
     {
         Open = true;
         await Task.Delay(50);
         await OpenChanged.InvokeAsync(Open);
-        //await InvokeAsync(StateHasChanged); // Ensures UI updates correctly
     }
 
     public async Task CloseDrawerAsync()
@@ -83,15 +79,12 @@
             {
                 await InvokeAsync(StateHasChanged);
             }
-
         }
         catch (Exception ex)
         {
-
             Console.WriteLine($"CloseDrawer exception: {ex.Message}");
         }
     }
-
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -101,7 +94,6 @@
         }
     }
 
-
     public async Task OpenDrawerAsync()
     {
         await CloseDrawerAsync();
@@ -110,8 +102,15 @@
     }
 }
 
-
 <style>
+    /* DRAWER HEADER PAPER - Stretched with theme support */
+    .professional-drawer .drawer-header-paper {
+        background-color: var(--mud-palette-primary) !important;
+        color: var(--mud-palette-primary-contast-text) !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
 
     /* DRAWER HEADER */
     .professional-drawer .drawer-header {
@@ -119,15 +118,10 @@
         align-items: center;
         justify-content: space-between;
         padding: 1rem 1.5rem;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-        background-color: rgba(255, 255, 255, 0.03); /* subtle overlay */
-        backdrop-filter: blur(6px);
-    }
-
-    /* Dark mode header */
-    body.mud-theme-dark .professional-drawer .drawer-header {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-        background-color: rgba(0, 0, 0, 0.2);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        background-color: transparent;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     /* ICON CONTAINER */
@@ -137,48 +131,57 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: rgba(0,0,0,0.05); /* subtle for light mode */
+        background-color: rgba(255, 255, 255, 0.15);
         transition: all 0.2s ease;
     }
 
-    body.mud-theme-dark .professional-drawer .icon-container {
-        background-color: rgba(255,255,255,0.08); /* subtle for dark mode */
-    }
+        .professional-drawer .icon-container:hover {
+            background-color: rgba(255, 255, 255, 0.25);
+            transform: scale(1.05);
+        }
 
-    .professional-drawer .icon-container i {
-        font-size: 1.6rem;
-        color: var(--mud-palette-primary);
-    }
-
-    body.mud-theme-dark .professional-drawer .icon-container i {
-        color: var(--mud-palette-primary-light);
-    }
+        .professional-drawer .icon-container i {
+            font-size: 1.6rem;
+            color: white;
+        }
 
     /* TITLE TEXT */
     .professional-drawer .drawer-title {
         font-weight: 600;
         font-size: 1.3rem;
-        color: var(--mud-palette-text-primary);
-    }
-
-    body.mud-theme-dark .professional-drawer .drawer-title {
-        color: #ffffff;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        color: white !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     }
 
     /* CLOSE BUTTON */
-    .professional-drawer .close-btn {
-        color: var(--mud-palette-text-primary);
+    .professional-drawer .mud-icon-button {
+        color: white !important;
         transition: all 0.2s ease;
     }
 
-    body.mud-theme-dark .professional-drawer .close-btn {
-        color: #ffffff;
+        .professional-drawer .mud-icon-button:hover {
+            transform: scale(1.1);
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            color: white !important;
+        }
+
+    /* CONTENT AREA */
+    .professional-drawer .drawer-content {
+        padding: 1.5rem;
+        flex-grow: 1;
+        overflow-y: auto;
     }
 
-    .professional-drawer .close-btn:hover {
-        transform: scale(1.1);
-        color: var(--mud-palette-error);
+    /* FOOTER AREA */
+    .professional-drawer .drawer-footer {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--mud-palette-divider);
+        background-color: var(--mud-palette-background);
     }
 
+    /* Dark theme adjustments */
+    body.mud-theme-dark .professional-drawer .drawer-footer {
+        background-color: var(--mud-palette-surface);
+        border-top: 1px solid var(--mud-palette-divider);
+    }
 </style>

@@ -60,7 +60,7 @@ INSERT INTO Employees
 VALUES
 (
     1,                                      -- OrganizationId
-    'ADMIN001',                             -- EmpId
+    '00001',                             -- EmpId
     'System Administrator',                 -- Fullname
     NULL,                                   -- Pic
     '0000000000',                            -- Phone

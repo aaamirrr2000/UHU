@@ -17,7 +17,7 @@ public class ItemsController : ControllerBase
     [HttpGet("Search/{Criteria?}/{TopN?}")]
     public async Task<IActionResult> Search(string Criteria = "", string TopN="")
     {
-        if (!string.IsNullOrEmpty(Criteria) && !Config.IsSafeSearchCriteria(Criteria))
+        if (!string.IsNullOrEmpty(Criteria) && !SQLInjectionHelper.IsSafeSearchCriteria(Criteria))
             return BadRequest("Invalid search criteria");
 
         var result = await Srv.Search(Criteria, TopN)!;

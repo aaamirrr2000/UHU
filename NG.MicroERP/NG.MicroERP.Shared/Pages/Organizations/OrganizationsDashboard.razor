@@ -5,6 +5,8 @@
 @inject NavigationManager NavManager
 @inject ISnackbar SnackbarService
 @inject FileUploadService FileUploadService
+@inject Functions Functions
+@inject Globals Globals
 
 <Loading IsLoading="@LoadingPanel" />
 
@@ -164,10 +166,10 @@
 
         record.CreatedBy = Globals.User.Id;
         record.CreatedOn = DateTime.Now;
-        record.CreatedSource = Functions.GetComputerDetails();
+        record.CreatedSource = Globals.ClientInfo;
         record.UpdatedBy = Globals.User.Id;
         record.UpdatedOn = DateTime.Now;
-        record.UpdatedSource = Functions.GetComputerDetails();
+        record.UpdatedSource = Globals.ClientInfo;
 
         var result = await Functions.PostAsync<OrganizationsModel>($"Organizations/{Action}", record, true);
         if (result.Success == false)

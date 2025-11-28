@@ -34,4 +34,8 @@ public class EmployeesModel
     public DateTime UpdatedOn { get; set; } = DateTime.Today;
     public string? UpdatedFrom { get; set; } = string.Empty;
     public bool IsSoftDeleted { get; set; }
+
+    public string? DisplayName =>
+            string.Format("{0} ({1}), {2}, {3}",
+                Fullname, EmpId, DesignationName, DepartmentName);
 }
