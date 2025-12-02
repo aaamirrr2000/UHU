@@ -33,223 +33,385 @@
     <br />
 
     <MudExpansionPanels MultiExpansion="true">
-        <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
 
+        <!-- Personal Information Panel -->
+        <MudExpansionPanel Text="Personal Information" Expanded="true" Style="margin-bottom:10px;">
             <TitleContent>
                 <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
-
-                    <i class="fa fa-info-circle"
+                    <i class="fa fa-user"
                        style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
                     </i>
-
                     <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">Employees</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Employees</MudText>
+                        <MudText Typo="Typo.h6" Class="fw-bold">@(string.IsNullOrWhiteSpace(record.Fullname) ? "NO NAME" : record.Fullname)</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Employee personal details</MudText>
                     </div>
                 </div>
-                <hr style="height: 6px; border: none; background: #667eea; border-radius: 10px;" />
+                <hr style="height: 6px; border: none; background: #4CAF50; border-radius: 10px;" />
             </TitleContent>
 
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
-                   
-                    <div class="col-12 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Name</label>
-                        <MudTextField id="Fullname" @bind-Value="record.Fullname" placeholder="Name" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.Fullname)" />
-                    </div>
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Employee Id/Code</label>
-                        <MudTextField id="EmpId" @bind-Value="record.EmpId" placeholder="Employee Id/Code" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.EmpId)" />
-                    </div>
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Phone</label>
-                        <MudTextField id="Phone" @bind-Value="record.Phone" placeholder="Phone" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.Phone)" />
-                    </div>
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Email</label>
-                        <MudTextField id="Email" @bind-Value="record.Email" placeholder="Email" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.Email)" />
-                    </div>
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">CNIC/SSN</label>
-                        <MudTextField id="Cnic" @bind-Value="record.Cnic" placeholder="CNIC / SSN" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.Cnic)" />
-                    </div>
-                    <div class="col-12 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Address</label>
-                        <MudTextField id="Address" @bind-Value="record.Address" placeholder="Address" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.Address)" />
+                    <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Name</label>
+                        <MudTextField id="Fullname"
+                                      @bind-Value="record.Fullname"
+                                      placeholder="Name"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Fullname)" />
+                        </div>
                     </div>
 
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Employee Id/Code</label>
+                        <MudTextField id="EmpId"
+                                      @bind-Value="record.EmpId"
+                                      placeholder="Employee Id/Code"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.EmpId)" />
+                        </div>
+                    </div>
 
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">CNIC/SSN</label>
+                        <MudTextField id="Cnic"
+                                      @bind-Value="record.Cnic"
+                                      placeholder="CNIC / SSN"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Cnic)" />
+                        </div>
+                    </div>
                 </div>
+            </ChildContent>
+        </MudExpansionPanel>
 
-                <div class="row">
+        <!-- Contact Information Panel -->
+        <MudExpansionPanel Text="Contact Information" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-address-book"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Contact Information</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Employee contact details</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #2196F3; border-radius: 10px;" />
+            </TitleContent>
 
-                    <div class="col-12 col-md-6">
-                        <div class="col-12 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Type</label>
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Phone</label>
+                        <MudTextField id="Phone"
+                                      @bind-Value="record.Phone"
+                                      placeholder="Phone"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Phone)" />
+                        </div>
+                    </div>
 
-                            <MudSelect T="string"
-                                       @bind-Value="record.EmpType"
-                                       Placeholder="Type"
-                                       Clearable="true">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Email</label>
+                        <MudTextField id="Email"
+                                      @bind-Value="record.Email"
+                                      placeholder="Email"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Email)" />
+                        </div>
+                    </div>
 
-                                @if (Emp != null && Emp.Any())
+                    <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Address</label>
+                        <MudTextField id="Address"
+                                      @bind-Value="record.Address"
+                                      placeholder="Address"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Address)" />
+                        </div>
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <!-- Employment Details Panel -->
+        <MudExpansionPanel Text="Employment Details" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-briefcase"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Employment Details</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Job role and department information</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #FF9800; border-radius: 10px;" />
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Type</label>
+                        <MudSelect T="string"
+                                   @bind-Value="record.EmpType"
+                                   Placeholder="Type"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
+                            @if (Emp != null && Emp.Any())
+                            {
+                                if (string.IsNullOrWhiteSpace(record.EmpType))
                                 {
-                                    if (string.IsNullOrWhiteSpace(record.EmpType))
-                                    {
-                                        record.EmpType = Emp.First().ListValue;
-                                    }
-
-                                    foreach (var i in Emp)
-                                    {
-                                        <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
-                                    }
+                                    record.EmpType = Emp.First().ListValue;
                                 }
-                            </MudSelect>
-
+                                foreach (var i in Emp)
+                                {
+                                    <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.EmpType)" />
                         </div>
-                        <div class="col-12 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Department</label>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Department</label>
+                        <div class="flex-grow-1">
                             <AutoComplete TItem="DepartmentsModel"
                                           DataList="@Dep"
                                           IdProperty="@(e => e.Id)"
                                           DisplayProperty="@(e => e.DepartmentName)"
                                           SelectedId="@record.DepartmentId"
-                                          SelectedIdChanged="@(id => record.DepartmentId = id)" />
-
+                                          SelectedIdChanged="@(id => record.DepartmentId = id)"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="true" />
+                        </div>
+                        <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.DepartmentId)" />
                         </div>
-                        <div class="col-12 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Designation</label>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Designation</label>
+                        <div class="flex-grow-1">
                             <AutoComplete TItem="DesignationsModel"
                                           DataList="@Des"
                                           IdProperty="@(e => e.Id)"
                                           DisplayProperty="@(e => e.DesignationName)"
                                           SelectedId="@record.DesignationId"
-                                          SelectedIdChanged="@(id => record.DesignationId = id)" />
-
+                                          SelectedIdChanged="@(id => record.DesignationId = id)"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="true" />
+                        </div>
+                        <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.DesignationId)" />
                         </div>
-                        <div class="col-12 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Shift</label>
+                    </div>
 
-                            <MudSelect @bind-Value="record.ShiftId"
-                                       Placeholder="Shift"
-                                       Clearable="true">
-
-                                @if (Shi != null && Shi.Any())
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Shift</label>
+                        <MudSelect @bind-Value="record.ShiftId"
+                                   Placeholder="Shift"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
+                            @if (Shi != null && Shi.Any())
+                            {
+                                foreach (var i in Shi)
                                 {
-                                    foreach (var i in Shi)
-                                    {
-                                        <MudSelectItem T="int" Value="@i.Id">@i.ShiftName</MudSelectItem>
-                                    }
+                                    <MudSelectItem T="int" Value="@i.Id">@i.ShiftName</MudSelectItem>
                                 }
-                            </MudSelect>
+                            }
+                        </MudSelect>
+                        <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.ShiftId)" />
                         </div>
-                        <div class="col-12 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Location</label>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Location</label>
+                        <div class="flex-grow-1">
                             <AutoComplete TItem="LocationsModel"
                                           DataList="@Loc"
                                           IdProperty="@(e => e.Id)"
                                           DisplayProperty="@(e => e.Name)"
                                           SelectedId="@record.LocationId"
-                                          SelectedIdChanged="@(id => record.LocationId = id)" />
-
+                                          SelectedIdChanged="@(id => record.LocationId = id)"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="true" />
+                        </div>
+                        <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.LocationId)" />
                         </div>
+                    </div>
 
-                        <div class="col-12 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Report To</label>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Report To</label>
+                        <div class="flex-grow-1">
                             <AutoComplete TItem="EmployeesModel"
                                           DataList="@Par"
                                           IdProperty="@(e => e.Id)"
                                           DisplayProperty="@(e => e.Fullname)"
-                                          SelectedId="@record.LocationId"
-                                          SelectedIdChanged="@(id => record.ParentId = id)" />
-
+                                          SelectedId="@record.ParentId"
+                                          SelectedIdChanged="@(id => record.ParentId = id)"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="true" />
+                        </div>
+                        <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.ParentId)" />
                         </div>
-
-                        <div class="col-12 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Ex.From Att.</label>
-
-                            <MudSelect T="int"
-                                       @bind-Value="record.ExcludeFromAttendance"
-                                       Placeholder="Exclude From Attendance"
-                                       Clearable="true">
-
-                                @if (record.ExcludeFromAttendance != 0 && record.ExcludeFromAttendance != 1)
-                                {
-                                    record.ExcludeFromAttendance = 1;
-                                }
-
-                                <MudSelectItem T="int" Value="1">Yes</MudSelectItem>
-                                <MudSelectItem T="int" Value="0">No</MudSelectItem>
-                            </MudSelect>
-
-                            <ValidationMessage For="@(() => record.IsActive)" />
-                        </div>
-                        <div class="col-12 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Active</label>
-
-                            <MudSelect T="int"
-                                       @bind-Value="record.IsActive"
-                                       Placeholder="Active"
-                                       Clearable="true">
-
-                                @if (record.IsActive != 0 && record.IsActive != 1)
-                                {
-                                    record.IsActive = 1;
-                                }
-
-                                <MudSelectItem T="int" Value="1">Yes</MudSelectItem>
-                                <MudSelectItem T="int" Value="0">No</MudSelectItem>
-                            </MudSelect>
-
-                            <ValidationMessage For="@(() => record.IsActive)" />
-                        </div>
-
                     </div>
-
-                    <div class="col-12 col-md-6">
-                        <div class="w-100 d-flex justify-content-center">
-                            <div class="p-3 border rounded" style="width: 300px;">
-                                <label class="small fw-bold text-uppercase d-block mb-2 text-center">Picture</label>
-
-                                <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
-                                    @if (!string.IsNullOrEmpty(record.Pic))
-                                    {
-                                        <img src="@record.Pic"
-                                             class="img-fluid rounded"
-                                             alt="Company Logo"
-                                             style="max-height: 100%; max-width: 100%; object-fit: cover;" />
-                                    }
-                                    else
-                                    {
-                                        <div class="d-flex align-items-center justify-content-center bg-secondary rounded-circle"
-                                             style="width: 120px; height: 120px;">
-                                            <i class="fas fa-image text-white fs-3"></i>
-                                        </div>
-                                    }
-                                </div>
-
-                                <InputFile OnChange="OnFileInputChanged" />
-                            </div>
-                        </div>
-                    </div>
-
-                   
                 </div>
             </ChildContent>
-
         </MudExpansionPanel>
+
+        <!-- Profile Picture Panel -->
+        <MudExpansionPanel Text="Profile Picture" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-camera"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Profile Picture</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Employee photo and image upload</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #9C27B0; border-radius: 10px;" />
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 d-flex justify-content-center">
+                        <div class="p-3 border rounded" style="width: 300px;">
+                            <label class="small fw-bold text-uppercase d-block mb-2 text-center">Picture</label>
+
+                            <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
+                                @if (!string.IsNullOrEmpty(record.Pic))
+                                {
+                                    <img src="@record.Pic"
+                                         class="img-fluid rounded"
+                                         alt="Employee Picture"
+                                         style="max-height: 100%; max-width: 100%; object-fit: cover;" />
+                                }
+                                else
+                                {
+                                    <div class="d-flex align-items-center justify-content-center bg-secondary rounded-circle"
+                                         style="width: 120px; height: 120px;">
+                                        <i class="fas fa-user text-white fs-3"></i>
+                                    </div>
+                                }
+                            </div>
+
+                            <InputFile OnChange="OnFileInputChanged" />
+                        </div>
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <!-- Settings & Status Panel -->
+        <MudExpansionPanel Text="Settings & Status" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-cogs"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Settings & Status</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Employee settings and activation status</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #F44336; border-radius: 10px;" />
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Ex.From Att.</label>
+                        <MudSelect T="int"
+                                   @bind-Value="record.ExcludeFromAttendance"
+                                   Placeholder="Exclude From Attendance"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
+                            @if (record.ExcludeFromAttendance != 0 && record.ExcludeFromAttendance != 1)
+                            {
+                                record.ExcludeFromAttendance = 1;
+                            }
+                            <MudSelectItem T="int" Value="1">
+                                <MudIcon Icon="@Icons.Material.Filled.DoNotDisturb" Color="Color.Warning" Size="Size.Small" Class="me-2" />
+                                Yes
+                            </MudSelectItem>
+                            <MudSelectItem T="int" Value="0">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                No
+                            </MudSelectItem>
+                        </MudSelect>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.ExcludeFromAttendance)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Active</label>
+                        <MudSelect T="int"
+                                   @bind-Value="record.IsActive"
+                                   Placeholder="Active"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
+                            @if (record.IsActive != 0 && record.IsActive != 1)
+                            {
+                                record.IsActive = 1;
+                            }
+                            <MudSelectItem T="int" Value="1">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                Yes
+                            </MudSelectItem>
+                            <MudSelectItem T="int" Value="0">
+                                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" Class="me-2" />
+                                No
+                            </MudSelectItem>
+                        </MudSelect>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.IsActive)" />
+                        </div>
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
     </MudExpansionPanels>
 
 </div>
@@ -365,36 +527,47 @@
 
     protected async Task Save()
     {
-        LoadingPanel = true;
-
-        record.OrganizationId = Globals.User.OrganizationId;
-        record.CreatedBy = Globals.User.Id;
-        record.CreatedOn = DateTime.Now;
-        record.CreatedFrom = Globals.ClientInfo;
-        record.UpdatedBy = Globals.User.Id;
-        record.UpdatedOn = DateTime.Now;
-        record.UpdatedFrom = Globals.ClientInfo;
-
-        string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
-        var result = await Functions.PostAsync<EmployeesModel>($"Employees/{url}", record, true);
-        if (result.Success == false)
+        try
         {
-            SnackbarService.Add($"Record Not Saved", Severity.Error);
-        }
-        else
-        {
-            await OnSaved.InvokeAsync();
-            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
-            if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
-                await Edit(result.Result!.Id);
+            LoadingPanel = true;
+
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<EmployeesModel>($"Employees/{url}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"Record Not Saved", Severity.Error);
+            }
             else
             {
-                await Clear();
+                await OnSaved.InvokeAsync();
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                    await Edit(result.Result!.Id);
+                else
+                {
+                    await Clear();
+                }
             }
         }
+        catch (Exception ex)
+        {
+            Log.Warning($"Error: {ex.Message}");
+        }
+        finally
+        {
+            LoadingPanel = false;
 
-        LoadingPanel = false;
-        await _drawer.CloseDrawerAsync();
+
+        }
+
 
     }
 

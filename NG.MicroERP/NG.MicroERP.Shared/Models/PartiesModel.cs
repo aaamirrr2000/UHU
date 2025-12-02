@@ -8,31 +8,46 @@ namespace NG.MicroERP.Shared.Models;
 
 public class PartiesModel
 {
-    public int Id { get; set; }
-    public int OrganizationId { get; set; }
-    public string? Code { get; set; }
-    public string? Pic { get; set; }
-    public string? Name { get; set; }
-    public string? PartyType { get; set; }
-    public string? PartyTypeCode { get; set; }
-    public int ParentId { get; set; }
+    public int Id { get; set; } = 0;
+    public int OrganizationId { get; set; } = 0;
+    public string? Code { get; set; } = string.Empty;
+    public string? Name { get; set; } = string.Empty;
+    public string? PartyType { get; set; } = string.Empty;
+    public string? PartyTypeCode { get; set; } = string.Empty;
+    public int ParentId { get; set; } = 0;
     public string? ParentName { get; set; }
-    public string? Address { get; set; }
-    public int CityId { get; set; }
-    public string? City { get; set; }
-    public int AccountId { get; set; }
+    public double CustomerRating { get; set; } = 0;
+    public string? CustomerClass { get; set; } = string.Empty;
+    public DateTime? CustomerSince { get; set; } = DateTime.Today;
+    public int SalesPersonId { get; set; } = 0;
+    public double CreditLimit { get; set; } = 0;
+    public int PaymentTermsId { get; set; } = 0;
+    public int AccountId { get; set; } = 0;
     public string? Account { get; set; }
-    public string? Latitude { get; set; }
-    public string? Longitude { get; set; }
-    public int Radius { get; set; }
-    public int IsActive { get; set; }
-    public int CreatedBy { get; set; }
-    public DateTime CreatedOn { get; set; }
-    public string? CreatedFrom { get; set; }
-    public int UpdatedBy { get; set; }
-    public DateTime UpdatedOn { get; set; }
-    public string? UpdatedFrom { get; set; }
-    public int IsSoftDeleted { get; set; }
+    public string? TaxCategory { get; set; } = string.Empty;
+    public string? TaxNumber { get; set; } = string.Empty;
+    public string? NTN { get; set; } = string.Empty;
+    public string? Address { get; set; } = string.Empty;
+    public int CityId { get; set; } = 0;
+    public string? AreaName { get; set; }
+    public string? Latitude { get; set; } = string.Empty;
+    public string? Longitude { get; set; } = string.Empty;
+    public int Radius { get; set; } = 0;
+    public string? ContactPerson { get; set; } = string.Empty;
+    public string? ContactDesignation { get; set; } = string.Empty;
+    public string? ContactEmail { get; set; } = string.Empty;
+    public string? Pic { get; set; } = string.Empty;
+    public int IsActive { get; set; } = 0;
+    public int IsApproved { get; set; } = 0;
+    public int ApprovedBy { get; set; } = 0;
+    public DateTime ApprovedOn { get; set; } = DateTime.Today;
+    public int CreatedBy { get; set; } = 0;
+    public DateTime CreatedOn { get; set; } = DateTime.Today;
+    public string? CreatedFrom { get; set; } = string.Empty;
+    public int UpdatedBy { get; set; } = 0;
+    public DateTime UpdatedOn { get; set; } = DateTime.Today;
+    public string? UpdatedFrom { get; set; } = string.Empty;
+    public int IsSoftDeleted { get; set; } = 0;
 
 }
 

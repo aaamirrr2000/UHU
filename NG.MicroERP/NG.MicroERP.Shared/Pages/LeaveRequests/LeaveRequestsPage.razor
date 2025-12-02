@@ -30,34 +30,35 @@
     </div>
 
     <br />
-
     <MudExpansionPanels MultiExpansion="true">
-        <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
 
+        <!-- Leave Request Information Panel -->
+        <MudExpansionPanel Text="Leave Request Information" Expanded="true" Style="margin-bottom:10px;">
             <TitleContent>
                 <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
-
-                    <i class="fa fa-info-circle"
+                    <i class="fa fa-calendar-check"
                        style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
                     </i>
-
                     <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">Leave Requests</MudText>
+                        <MudText Typo="Typo.h6" Class="fw-bold">@(string.IsNullOrWhiteSpace(record.LeaveName) ? "NO NAME" : record.LeaveName)</MudText>
                         <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Leave Requests</MudText>
                     </div>
                 </div>
-                <hr style="height: 6px; border: none; background: #667eea; border-radius: 10px;" />
+                <hr style="height: 6px; border: none; background: #4CAF50; border-radius: 10px;" />
             </TitleContent>
 
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
-
                     @if (Globals.MyLeave == false)
                     {
-                        <div class="col-12 col-md-6 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Employee</label>
-
-                            <MudSelect T="int" @bind-Value="record.EmpId" Placeholder="Employee" >
+                        <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                            <label class="form-label fw-bold mb-1">Employee</label>
+                            <MudSelect T="int"
+                                       @bind-Value="record.EmpId"
+                                       Placeholder="Employee"
+                                       Variant="Variant.Outlined"
+                                       FullWidth="true"
+                                       Class="flex-grow-1">
                                 @if (Emp != null && Emp.Any())
                                 {
                                     foreach (var i in Emp)
@@ -66,16 +67,19 @@
                                     }
                                 }
                             </MudSelect>
-
-                            <ValidationMessage For="@(() => record.EmpId)" />
+                            <div class="validation-container" style="min-height: 22px;">
+                                <ValidationMessage For="@(() => record.EmpId)" />
+                            </div>
                         </div>
-
                     }
 
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Leave Type</label>
-
-                        <MudSelect @bind-Value="record.LeaveTypeId" Placeholder="Leave Type">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Leave Type</label>
+                        <MudSelect @bind-Value="record.LeaveTypeId"
+                                   Placeholder="Leave Type"
+                                   Variant="Variant.Outlined"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
                             @if (Lea != null && Lea.Any())
                             {
                                 foreach (var i in Lea)
@@ -84,40 +88,151 @@
                                 }
                             }
                         </MudSelect>
-                        <ValidationMessage For="@(() => record.LeaveTypeId)" />
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.LeaveTypeId)" />
+                        </div>
                     </div>
-                    <div class="row"></div>
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">From</label>
-                        <MudDatePicker @bind-Value="record.StartDate" Format="yyyy-MM-dd" placeholder="From" ReadOnly="@isReadOnly"></MudDatePicker>
-                        <ValidationMessage For="@(() => record.StartDate)" />
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <!-- Leave Period Panel -->
+        <MudExpansionPanel Text="Leave Period" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-calendar-day"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Leave Period</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Leave start and end dates</MudText>
                     </div>
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">To</label>
-                        <MudDatePicker @bind-Value="record.EndDate" Format="yyyy-MM-dd" placeholder="To" ReadOnly="@isReadOnly"></MudDatePicker>
-                        <ValidationMessage For="@(() => record.EndDate)" />
-                    </div>
-                    <div class="col-12 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Reason</label>
-                        <MudTextField id="Reason" @bind-Value="record.Reason" placeholder="Reason" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.Reason)" />
-                    </div>
-                    <div class="col-12 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Address</label>
-                        <MudTextField id="ContactAddress" @bind-Value="record.ContactAddress" placeholder="Address" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.ContactAddress)" />
-                    </div>
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Mobile #</label>
-                        <MudTextField id="ContactNumber" @bind-Value="record.ContactNumber" placeholder="Mobile #" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.ContactNumber)" />
+                </div>
+                <hr style="height: 6px; border: none; background: #2196F3; border-radius: 10px;" />
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">From</label>
+                        <MudDatePicker @bind-Value="record.StartDate"
+                                       Format="yyyy-MM-dd"
+                                       placeholder="From"
+                                       ReadOnly="@isReadOnly"
+                                       Variant="Variant.Outlined"
+                                       FullWidth="true"
+                                       Class="flex-grow-1"></MudDatePicker>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.StartDate)" />
+                        </div>
                     </div>
 
-                    @if(Globals.MyLeave == false)
-                    {
-                        <div class="col-12 col-md-6 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Approved By</label>
-                            <MudSelect T="int?" @bind-Value="record.ApprovedBy" Placeholder="Approved By">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">To</label>
+                        <MudDatePicker @bind-Value="record.EndDate"
+                                       Format="yyyy-MM-dd"
+                                       placeholder="To"
+                                       ReadOnly="@isReadOnly"
+                                       Variant="Variant.Outlined"
+                                       FullWidth="true"
+                                       Class="flex-grow-1"></MudDatePicker>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.EndDate)" />
+                        </div>
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <!-- Contact & Details Panel -->
+        <MudExpansionPanel Text="Contact & Details" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-address-card"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Contact & Details</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Reason and contact information</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #FF9800; border-radius: 10px;" />
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Reason</label>
+                        <MudTextField id="Reason"
+                                      @bind-Value="record.Reason"
+                                      placeholder="Reason"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Reason)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Address</label>
+                        <MudTextField id="ContactAddress"
+                                      @bind-Value="record.ContactAddress"
+                                      placeholder="Address"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.ContactAddress)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Mobile #</label>
+                        <MudTextField id="ContactNumber"
+                                      @bind-Value="record.ContactNumber"
+                                      placeholder="Mobile #"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.ContactNumber)" />
+                        </div>
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <!-- Approval Details Panel (Conditional) -->
+        @if (Globals.MyLeave == false)
+        {
+            <MudExpansionPanel Text="Approval Details" Style="margin-bottom:10px;">
+                <TitleContent>
+                    <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                        <i class="fa fa-check-circle"
+                           style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                        </i>
+                        <div class="ms-2">
+                            <MudText Typo="Typo.h6" Class="fw-bold">Approval Details</MudText>
+                            <MudText Typo="Typo.caption" Class="text-muted">Approval information and dates</MudText>
+                        </div>
+                    </div>
+                    <hr style="height: 6px; border: none; background: #9C27B0; border-radius: 10px;" />
+                </TitleContent>
+
+                <ChildContent>
+                    <div class="row" style="width:100%; display: flex;">
+                        <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                            <label class="form-label fw-bold mb-1">Approved By</label>
+                            <MudSelect T="int?"
+                                       @bind-Value="record.ApprovedBy"
+                                       Placeholder="Approved By"
+                                       Variant="Variant.Outlined"
+                                       FullWidth="true"
+                                       Class="flex-grow-1">
                                 <MudSelectItem T="int?" Value="null">-- Select Approver --</MudSelectItem>
                                 @if (EmpApproved != null && EmpApproved.Any())
                                 {
@@ -127,17 +242,29 @@
                                     }
                                 }
                             </MudSelect>
+                            <div class="validation-container" style="min-height: 22px;">
+                                <ValidationMessage For="@(() => record.ApprovedBy)" />
+                            </div>
                         </div>
-                        <div class="col-12 col-md-6 flex-input">
-                            <label class="form-label" style="font-weight: bold;">Approved Date</label>
-                            <MudDatePicker @bind-Value="record.ApprovedDate" Format="yyyy-MM-dd" placeholder="ApprovedDate" ReadOnly="@isReadOnly"></MudDatePicker>
-                            <ValidationMessage For="@(() => record.ApprovedDate)" />
-                        </div>
-                    }
-                </div>
-            </ChildContent>
 
-        </MudExpansionPanel>
+                        <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                            <label class="form-label fw-bold mb-1">Approved Date</label>
+                            <MudDatePicker @bind-Value="record.ApprovedDate"
+                                           Format="yyyy-MM-dd"
+                                           placeholder="Approved Date"
+                                           ReadOnly="@isReadOnly"
+                                           Variant="Variant.Outlined"
+                                           FullWidth="true"
+                                           Class="flex-grow-1"></MudDatePicker>
+                            <div class="validation-container" style="min-height: 22px;">
+                                <ValidationMessage For="@(() => record.ApprovedDate)" />
+                            </div>
+                        </div>
+                    </div>
+                </ChildContent>
+            </MudExpansionPanel>
+        }
+
     </MudExpansionPanels>
 
 </div>
@@ -248,45 +375,56 @@
             return;
         }
 
-        LoadingPanel = true;
+        try
+        {
+            LoadingPanel = true;
 
-        if(Globals.MyLeave == false)
-        {
-            record.Status = "APPROVED";
-        }
-        else
-        {
-            record.Status = "PENDING";
-        }
-
-        record.OrganizationId = Globals.User.OrganizationId;
-        record.CreatedBy = Globals.User.Id;
-        record.CreatedOn = DateTime.Now;
-        record.CreatedFrom = Globals.ClientInfo;
-        record.UpdatedBy = Globals.User.Id;
-        record.UpdatedOn = DateTime.Now;
-        record.UpdatedFrom = Globals.ClientInfo;
-
-        string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
-        var result = await Functions.PostAsync<LeaveRequestsModel>($"LeaveRequests/{url}", record, true);
-        if (result.Success == false)
-        {
-            SnackbarService.Add($"Record Not Saved", Severity.Error);
-        }
-        else
-        {
-            await OnSaved.InvokeAsync();
-            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
-            if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
-                await Edit(result.Result!.Id);
+            if(Globals.MyLeave == false)
+            {
+                record.Status = "APPROVED";
+            }
             else
             {
-                await Clear();
+                record.Status = "PENDING";
+            }
+
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<LeaveRequestsModel>($"LeaveRequests/{url}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"Record Not Saved", Severity.Error);
+            }
+            else
+            {
+                await OnSaved.InvokeAsync();
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                    await Edit(result.Result!.Id);
+                else
+                {
+                    await Clear();
+                }
             }
         }
+        catch (Exception ex)
+        {
+            Log.Warning($"Error: {ex.Message}");
+        }
+        finally
+        {
+            LoadingPanel = false;
 
-        LoadingPanel = false;
-        await _drawer.CloseDrawerAsync();
+
+        }
+
 
     }
 }

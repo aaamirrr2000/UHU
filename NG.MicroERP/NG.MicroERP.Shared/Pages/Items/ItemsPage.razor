@@ -31,61 +31,60 @@
 	</div>
 
 	<br />
-    
     <MudExpansionPanels MultiExpansion="true">
-        <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
-            
+
+        <!-- Panel 1: Basic Details with Image on Right -->
+        <MudExpansionPanel Text="Basic Details" Expanded="true" Style="margin-bottom:10px;">
             <TitleContent>
                 <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
-
-                    <i class="fa fa-info-circle"
+                    <i class="fas fa-box-open"
                        style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
                     </i>
-
                     <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">@record.Name</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted">Description</MudText>
+                        <MudText Typo="Typo.h6" Class="fw-bold">@(string.IsNullOrWhiteSpace(record.Name) ? "NO NAME" : record.Name)</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Item Identification & Classification</MudText>
                     </div>
                 </div>
-                <hr style="height: 6px; border: none; background: #667eea; border-radius: 10px;" />
+                <hr style="height: 6px; border: none; background: #4CAF50; border-radius: 10px;" />
             </TitleContent>
 
             <ChildContent>
-                <div class="row" style="width:100%; display: flex;">
-                   
-                    <div class="row">
-                        <div class="col-12 col-md-6">
-                            <div class="col-12 flex-input">
-                                <label class="form-label" style="font-weight: bold;">Code</label>
-                                <MudTextField id="Code" @bind-Value="record.Code" placeholder="Code" ReadOnly="@isReadOnly"></MudTextField>
+                <div class="row">
+                    <!-- Left Column: Form Fields -->
+                    <div class="col-12 col-md-8">
+                        <div class="row">
+                            <div class="col-12 col-md-6 mb-3">
+                                <label class="form-label fw-bold">Item Code *</label>
+                                <MudTextField id="Code" @bind-Value="record.Code" placeholder="Auto-generated"
+                                              ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true" Required="true"></MudTextField>
                                 <ValidationMessage For="@(() => record.Code)" />
                             </div>
 
-                            <div class="col-12 flex-input">
-                                <label class="form-label" style="font-weight: bold;">HS Code</label>
-                                <MudTextField id="HsCode" @bind-Value="record.HsCode" placeholder="HS Code" ReadOnly="@isReadOnly"></MudTextField>
+                            <div class="col-12 col-md-6 mb-3">
+                                <label class="form-label fw-bold">HS Code</label>
+                                <MudTextField id="HsCode" @bind-Value="record.HsCode" placeholder="Harmonized System Code"
+                                              ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true"></MudTextField>
                                 <ValidationMessage For="@(() => record.HsCode)" />
                             </div>
 
-                            <div class="col-12 flex-input">
-                                <label class="form-label" style="font-weight: bold;">Name</label>
-                                <MudTextField id="Name" @bind-Value="record.Name" placeholder="Name" ReadOnly="@isReadOnly"></MudTextField>
+                            <div class="col-12 mb-3">
+                                <label class="form-label fw-bold">Item Name *</label>
+                                <MudTextField id="Name" @bind-Value="record.Name" placeholder="Enter item name"
+                                              ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true" Required="true"></MudTextField>
                                 <ValidationMessage For="@(() => record.Name)" />
                             </div>
 
-                            <div class="col-12 flex-input">
-                                <label class="form-label" style="font-weight: bold;">Description</label>
-                                <MudTextField id="Description" @bind-Value="record.Description" placeholder="Description" ReadOnly="@isReadOnly"></MudTextField>
+                            <div class="col-12 mb-3">
+                                <label class="form-label fw-bold">Description</label>
+                                <MudTextField id="Description" @bind-Value="record.Description" placeholder="Item description"
+                                              ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true" Lines="2"></MudTextField>
                                 <ValidationMessage For="@(() => record.Description)" />
                             </div>
 
-
-                            <div class="col-12 flex-input">
-                                <label class="form-label" style="font-weight: bold;">Category</label>
-                                <MudSelect @bind-Value="record.CategoriesId"
-                                           Placeholder="Categories"
-                                           Clearable="true">
-
+                            <div class="col-12 col-md-6 mb-3">
+                                <label class="form-label fw-bold">Category *</label>
+                                <MudSelect @bind-Value="record.CategoriesId" Placeholder="Select category"
+                                           Variant="Variant.Outlined" Clearable="true" FullWidth="true" Required="true">
                                     @if (Cat != null && Cat.Any())
                                     {
                                         foreach (var i in Cat)
@@ -93,24 +92,24 @@
                                             <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
                                         }
                                     }
+                                    else
+                                    {
+                                        <MudSelectItem T="int" Value="0" Disabled="true">No categories available</MudSelectItem>
+                                    }
                                 </MudSelect>
                                 <ValidationMessage For="@(() => record.CategoriesId)" />
                             </div>
-                            <div class="col-12 flex-input">
-                                <label class="form-label" style="font-weight: bold;">Stock Type</label>
 
-                                <MudSelect T="string"
-                                           @bind-Value="record.StockType"
-                                           Placeholder="Stock Type"
-                                           Clearable="true">
-
+                            <div class="col-12 col-md-6 mb-3">
+                                <label class="form-label fw-bold">Stock Type</label>
+                                <MudSelect T="string" @bind-Value="record.StockType" Placeholder="Select stock type"
+                                           Variant="Variant.Outlined" Clearable="true" FullWidth="true">
                                     @if (Sto != null && Sto.Any())
                                     {
                                         if (string.IsNullOrWhiteSpace(record.StockType))
                                         {
                                             record.StockType = Sto.First().ListValue;
                                         }
-
                                         foreach (var i in Sto)
                                         {
                                             <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
@@ -120,172 +119,256 @@
                                 <ValidationMessage For="@(() => record.StockType)" />
                             </div>
 
-                            <div class="col-12 flex-input">
-                                <label class="form-label" style="font-weight: bold;">Unit</label>
-                                <MudSelect T="string"
-                                           @bind-Value="record.Unit"
-                                           Placeholder="Unit of Measure"
-                                           Clearable="true">
-
+                            <div class="col-12 col-md-6 mb-3">
+                                <label class="form-label fw-bold">Unit of Measure</label>
+                                <MudSelect T="string" @bind-Value="record.Unit" Placeholder="Select unit"
+                                           Variant="Variant.Outlined" Clearable="true" FullWidth="true">
                                     @if (Unit != null && Unit.Any())
                                     {
                                         if (string.IsNullOrWhiteSpace(record.Unit))
                                         {
-                                            record.Unit = Sto.First().ListValue;
+                                            record.Unit = Unit.First().ListValue;
                                         }
-
                                         foreach (var i in Unit)
                                         {
                                             <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
                                         }
                                     }
                                 </MudSelect>
-
                                 <ValidationMessage For="@(() => record.Unit)" />
                             </div>
-                        
-                        
-                           
+
+                            <div class="col-12 col-md-6 mb-3">
+                                <label class="form-label fw-bold">Serving Size</label>
+                                <MudTextField id="ServingSize" @bind-Value="record.ServingSize" placeholder="Serving size details"
+                                              ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true"></MudTextField>
+                                <ValidationMessage For="@(() => record.ServingSize)" />
+                            </div>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <div class="w-100 d-flex justify-content-center">
-                                <div class="p-3 border rounded" style="width: 300px;">
-                                    <label class="small fw-bold text-uppercase d-block mb-2 text-center">Items Image</label>
+                    </div>
+
+                    <!-- Right Column: Picture -->
+                    <div class="col-12 col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="p-3 border rounded">
+                                    <label class="small fw-bold text-uppercase d-block mb-2 text-center">Item Image</label>
 
                                     <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
                                         @if (!string.IsNullOrEmpty(record.Pic))
                                         {
                                             <img src="@record.Pic"
                                                  class="img-fluid rounded"
-                                                 alt="Items Image"
+                                                 alt="Party Image"
                                                  style="max-height: 100%; max-width: 100%; object-fit: cover;" />
                                         }
                                         else
                                         {
                                             <div class="d-flex align-items-center justify-content-center bg-secondary rounded-circle"
                                                  style="width: 120px; height: 120px;">
-                                                <i class="fas fa-image text-white fs-3"></i>
+                                                <i class="fas fa-user-circle text-white fs-3"></i>
                                             </div>
                                         }
                                     </div>
 
-                                    <InputFile OnChange="OnFileInputChanged" />
+                                    <InputFile OnChange="OnFileInputChanged" class="form-control form-control-sm" />
                                 </div>
                             </div>
                         </div>
-
-                        <div class="row">
-                            <div class="col-12 col-md-6 flex-input">
-                                <label class="form-label" style="font-weight: bold;">Is Inventory Item</label>
-
-                                <MudSelect T="int"
-                                           @bind-Value="record.IsInventoryItem"
-                                           Placeholder="InventoryItem"
-                                           Clearable="true">
-
-                                    @if (record.IsInventoryItem != 0 && record.IsInventoryItem != 1)
-                                    {
-                                        record.IsInventoryItem = 1;
-                                    }
-
-                                    <MudSelectItem T="int" Value="1">Yes</MudSelectItem>
-                                    <MudSelectItem T="int" Value="0">No</MudSelectItem>
-                                </MudSelect>
-
-                                <ValidationMessage For="@(() => record.IsInventoryItem)" />
-                            </div>
-
-
-                            <div class="col-12 col-md-6 flex-input">
-                                <label class="form-label" style="font-weight: bold;">Minimum Qty</label>
-                                <MudNumericField @bind-Value="record.MinQty" placeholder="MinQty" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
-                                <ValidationMessage For="@(() => record.MinQty)" />
-                            </div>
-                            <div class="col-12 col-md-6 flex-input">
-                                <label class="form-label" style="font-weight: bold;">Maximum Qty</label>
-                                <MudNumericField @bind-Value="record.MaxQty" placeholder="MaxQty" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
-                                <ValidationMessage For="@(() => record.MaxQty)" />
-                            </div>
-                            <div class="col-12 col-md-6 flex-input">
-                                <label class="form-label" style="font-weight: bold;">Reorder Qty</label>
-                                <MudNumericField @bind-Value="record.ReorderQty" placeholder="Reorder Qty" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
-                                <ValidationMessage For="@(() => record.ReorderQty)" />
-                            </div>
-                            <div class="col-12 col-md-6 flex-input">
-                                <label class="form-label" style="font-weight: bold;">Discount</label>
-                                <MudNumericField @bind-Value="record.Discount" placeholder="Discount" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
-                                <ValidationMessage For="@(() => record.Discount)" />
-                            </div>
-                            <div class="col-12 col-md-6 flex-input">
-                                <label class="form-label" style="font-weight: bold;">Tax</label>
-                                <MudNumericField @bind-Value="record.Tax" placeholder="Tax" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
-                                <ValidationMessage For="@(() => record.Tax)" />
-                            </div>
-                            <div class="col-12 col-md-6 flex-input">
-                                <label class="form-label" style="font-weight: bold;">Cost Price (Average)</label>
-                                <MudNumericField @bind-Value="record.CostPrice" placeholder="CostPrice" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
-                                <ValidationMessage For="@(() => record.CostPrice)" />
-                            </div>
-                            <div class="col-12 col-md-6 flex-input">
-                                <label class="form-label" style="font-weight: bold;">Retail Price (Current)</label>
-                                <MudNumericField @bind-Value="record.RetailPrice" placeholder="RetailPrice" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
-                                <ValidationMessage For="@(() => record.RetailPrice)" />
-                            </div>
-
-                            <div class="col-12 col-md-6 flex-input">
-                                <label class="form-label" style="font-weight: bold;">Is Favourate item</label>
-
-                                <MudSelect T="int"
-                                           @bind-Value="record.IsFavItem"
-                                           Placeholder="FavItem"
-                                           Clearable="true">
-
-                                    @if (record.IsFavItem != 0 && record.IsFavItem != 1)
-                                    {
-                                        record.IsFavItem = 1;
-                                    }
-
-                                    <MudSelectItem T="int" Value="1">Yes</MudSelectItem>
-                                    <MudSelectItem T="int" Value="0">No</MudSelectItem>
-                                </MudSelect>
-
-                                <ValidationMessage For="@(() => record.IsFavItem)" />
-                            </div>
-                            <div class="col-12 col-md-6 flex-input">
-                                <label class="form-label" style="font-weight: bold;">Active</label>
-
-                                <MudSelect T="int"
-                                           @bind-Value="record.IsActive"
-                                           Placeholder="Active"
-                                           Clearable="true">
-
-                                    @if (record.IsActive != 0 && record.IsActive != 1)
-                                    {
-                                        record.IsActive = 1;
-                                    }
-
-                                    <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
-                                    <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
-                                </MudSelect>
-
-                                <ValidationMessage For="@(() => record.IsActive)" />
-                            </div>
-
-                            <div class="col-12 flex-input">
-                                <label class="form-label" style="font-weight: bold;">Serving Size</label>
-                                <MudTextField id="ServingSize" @bind-Value="record.ServingSize" placeholder="Serving Size" ReadOnly="true"></MudTextField>
-                                <ValidationMessage For="@(() => record.ServingSize)" />
-                            </div>
-
-                        </div>
-
-
-
                     </div>
                 </div>
             </ChildContent>
-
         </MudExpansionPanel>
+
+        <!-- Panel 2: Inventory Settings -->
+        <MudExpansionPanel Text="Inventory Settings" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fas fa-warehouse"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Inventory Control</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Stock levels and reorder settings</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #2196F3; border-radius: 10px;" />
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row">
+                    <div class="col-12 col-md-6 mb-3">
+                        <label class="form-label fw-bold">Inventory Item</label>
+                        <MudSelect T="int" @bind-Value="record.IsInventoryItem" Placeholder="Select"
+                                   Variant="Variant.Outlined" Clearable="true" FullWidth="true">
+                            @if (record.IsInventoryItem != 0 && record.IsInventoryItem != 1)
+                            {
+                                record.IsInventoryItem = 1;
+                            }
+                            <MudSelectItem T="int" Value="1">
+                                <MudIcon Icon="@Icons.Material.Filled.Inventory" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                Yes - Track in Inventory
+                            </MudSelectItem>
+                            <MudSelectItem T="int" Value="0">
+                                <MudIcon Icon="@Icons.Material.Filled.Block" Color="Color.Error" Size="Size.Small" Class="me-2" />
+                                No - Non-inventory Item
+                            </MudSelectItem>
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.IsInventoryItem)" />
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3">
+                        <label class="form-label fw-bold">Favorite Item</label>
+                        <MudSelect T="int" @bind-Value="record.IsFavItem" Placeholder="Select"
+                                   Variant="Variant.Outlined" Clearable="true" FullWidth="true">
+                            @if (record.IsFavItem != 0 && record.IsFavItem != 1)
+                            {
+                                record.IsFavItem = 0;
+                            }
+                            <MudSelectItem T="int" Value="1">
+                                <MudIcon Icon="@Icons.Material.Filled.Star" Color="Color.Warning" Size="Size.Small" Class="me-2" />
+                                Yes - Mark as Favorite
+                            </MudSelectItem>
+                            <MudSelectItem T="int" Value="0">
+                                <MudIcon Icon="@Icons.Material.Filled.StarOutline" Color="Color.Default" Size="Size.Small" Class="me-2" />
+                                No - Regular Item
+                            </MudSelectItem>
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.IsFavItem)" />
+                    </div>
+
+                    <div class="col-12 mb-3">
+                        <MudDivider Class="my-3">
+                            <MudText Typo="Typo.subtitle2" Class="text-muted">Stock Level Settings</MudText>
+                        </MudDivider>
+                    </div>
+
+                    <div class="col-12 col-md-4 mb-3">
+                        <label class="form-label fw-bold">Minimum Quantity *</label>
+                        <MudNumericField @bind-Value="record.MinQty" placeholder="0.00" ReadOnly="@isReadOnly"
+                                         Variant="Variant.Outlined" FullWidth="true" Format="#,##0.00" Min="0" Required="true"></MudNumericField>
+                        <ValidationMessage For="@(() => record.MinQty)" />
+                        <MudText Typo="Typo.caption" Class="text-muted mt-1">Alert when stock falls below this level</MudText>
+                    </div>
+
+                    <div class="col-12 col-md-4 mb-3">
+                        <label class="form-label fw-bold">Maximum Quantity</label>
+                        <MudNumericField @bind-Value="record.MaxQty" placeholder="0.00" ReadOnly="@isReadOnly"
+                                         Variant="Variant.Outlined" FullWidth="true" Format="#,##0.00" Min="0"></MudNumericField>
+                        <ValidationMessage For="@(() => record.MaxQty)" />
+                        <MudText Typo="Typo.caption" Class="text-muted mt-1">Maximum stock capacity</MudText>
+                    </div>
+
+                    <div class="col-12 col-md-4 mb-3">
+                        <label class="form-label fw-bold">Reorder Quantity *</label>
+                        <MudNumericField @bind-Value="record.ReorderQty" placeholder="0.00" ReadOnly="@isReadOnly"
+                                         Variant="Variant.Outlined" FullWidth="true" Format="#,##0.00" Min="0" Required="true"></MudNumericField>
+                        <ValidationMessage For="@(() => record.ReorderQty)" />
+                        <MudText Typo="Typo.caption" Class="text-muted mt-1">Quantity to order when restocking</MudText>
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <!-- Panel 3: Pricing & Taxation -->
+        <MudExpansionPanel Text="Pricing & Taxation" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fas fa-tag"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Price Management</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Cost, pricing, and tax settings</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #FF9800; border-radius: 10px;" />
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row">
+                    <div class="col-12 col-md-6 mb-3">
+                        <label class="form-label fw-bold">Cost Price (Average) *</label>
+                        <MudNumericField @bind-Value="record.CostPrice" placeholder="0.00" ReadOnly="@isReadOnly"
+                                         Variant="Variant.Outlined" FullWidth="true" Format="#,##0.00" Min="0" Required="true"></MudNumericField>
+                        <ValidationMessage For="@(() => record.CostPrice)" />
+                        <MudText Typo="Typo.caption" Class="text-muted mt-1">Average purchase cost per unit</MudText>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3">
+                        <label class="form-label fw-bold">Retail Price (Current) *</label>
+                        <MudNumericField @bind-Value="record.RetailPrice" placeholder="0.00" ReadOnly="@isReadOnly"
+                                         Variant="Variant.Outlined" FullWidth="true" Format="#,##0.00" Min="0" Required="true"></MudNumericField>
+                        <ValidationMessage For="@(() => record.RetailPrice)" />
+                        <MudText Typo="Typo.caption" Class="text-muted mt-1">Current selling price per unit</MudText>
+                    </div>
+
+                    <div class="col-12 mb-3">
+                        <MudDivider Class="my-3">
+                            <MudText Typo="Typo.subtitle2" Class="text-muted">Discount & Tax Settings</MudText>
+                        </MudDivider>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3">
+                        <label class="form-label fw-bold">Discount (%)</label>
+                        <MudNumericField @bind-Value="record.Discount" placeholder="0.00" ReadOnly="@isReadOnly"
+                                         Variant="Variant.Outlined" FullWidth="true" Format="#,##0.000000" Min="0" Max="100"></MudNumericField>
+                        <ValidationMessage For="@(() => record.Discount)" />
+                        <MudText Typo="Typo.caption" Class="text-muted mt-1">Default discount percentage</MudText>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3">
+                        <label class="form-label fw-bold">Tax (%)</label>
+                        <MudNumericField @bind-Value="record.Tax" placeholder="0.00" ReadOnly="@isReadOnly"
+                                         Variant="Variant.Outlined" FullWidth="true" Format="#,##0.000000" Min="0" Max="100"></MudNumericField>
+                        <ValidationMessage For="@(() => record.Tax)" />
+                        <MudText Typo="Typo.caption" Class="text-muted mt-1">Default tax percentage</MudText>
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <!-- Panel 4: Status & System -->
+        <MudExpansionPanel Text="Status & System">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fas fa-cog"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">System Settings</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Activation and system preferences</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #9C27B0; border-radius: 10px;" />
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row">
+                    <div class="col-12 col-md-6 mb-3">
+                        <label class="form-label fw-bold">Status</label>
+                        <MudSelect T="int" @bind-Value="record.IsActive" Placeholder="Select status"
+                                   Variant="Variant.Outlined" Clearable="true" FullWidth="true">
+                            @if (record.IsActive != 0 && record.IsActive != 1)
+                            {
+                                record.IsActive = 1;
+                            }
+                            <MudSelectItem T="int" Value="1">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                Active
+                            </MudSelectItem>
+                            <MudSelectItem T="int" Value="0">
+                                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" Class="me-2" />
+                                Inactive
+                            </MudSelectItem>
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.IsActive)" />
+                    </div>
+
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
     </MudExpansionPanels>
 
 </div>
@@ -332,7 +415,7 @@
             await Get(CurrentRecord);
             isReadOnly = false;
         }
-        else if (Action != "VIEW")
+        else if (Action != "EDIT")
         {
             await Get(CurrentRecord);
             isReadOnly = true;
@@ -375,37 +458,45 @@
 
     protected async Task Save()
     {
-        LoadingPanel = true;
-
-        record.OrganizationId = Globals.User.OrganizationId;
-        record.CreatedBy = Globals.User.Id;
-        record.CreatedOn = DateTime.Now;
-        record.CreatedFrom = Globals.ClientInfo;
-        record.UpdatedBy = Globals.User.Id;
-        record.UpdatedOn = DateTime.Now;
-        record.UpdatedFrom = Globals.ClientInfo;
-
-        string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
-        var result = await Functions.PostAsync<ItemsModel>($"Items/{url}", record, true);
-        if (result.Success == false)
+        try
         {
-            SnackbarService.Add($"Record Not Saved", Severity.Error);
-        }
-        else
-        {
-            await OnSaved.InvokeAsync();
-            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
-            if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
-                await Edit(result.Result!.Id);
+            LoadingPanel = true;
+
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<ItemsModel>($"Items/{url}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"Record Not Saved", Severity.Error);
+            }
             else
             {
-                await Clear();
+                await OnSaved.InvokeAsync();
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                    await Edit(result.Result!.Id);
+                else
+                {
+                    await Clear();
+                }
             }
         }
+        catch (Exception ex)
+        {
+            Log.Warning($"Error: {ex.Message}");
+        }
+        finally
+        {
+            LoadingPanel = false;
 
-        LoadingPanel = false;
-        await _drawer.CloseDrawerAsync();
-
+        }
     }
 
     private async Task OnFileInputChanged(InputFileChangeEventArgs e)

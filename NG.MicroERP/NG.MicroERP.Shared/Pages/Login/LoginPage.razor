@@ -1,53 +1,58 @@
 ﻿@page "/"
+@using System.Text.Json
+@using Microsoft.AspNetCore.Http
 @layout BlankLayout
 @inject NavigationManager Nav
 @inject Globals Globals
 @inject ISnackbar SnackbarService
 @inject Functions Functions
-@inject Globals Globals
+@inject IJSRuntime JS
 @inject ClientInfoService ClientInfoService
 
 <Loading IsLoading="@LoadingPanel" />
-<div class="login-page" style="@BackgroundStyle">
-@* <div class="login-page" style="background: url('_content/NG.MicroERP.Shared/images/background.jpg') no-repeat center center fixed; background-size: cover;">
- *@    <div class="top-bar">
-        <div class="clock-container">
-            <div id="clock" class="clock"></div>
-            <div id="date" class="date"></div>
-        </div>
-    </div>
-    <div class="login-container">
-        <div class="login-header">
-            @if(Globals.Organization != null)
-            {
-                <h2 style="font-size:16px;letter-spacing:2px;">@Globals.Organization.Description</h2>
-            }
-            <p>Welcome back! Please login to your account.</p>
-            @* <p id="expiry" style="font-size:12px;" class="expiry">AI Enabled</p> *@
-        </div>
-        <div class="login-form">
-            <div class="form-group">
-                <input type="text" class="form-control" placeholder="Username" @bind="@Username" style="color:gray;" />
-            </div>
-            <div class="form-group">
-                <input type="password" class="form-control" placeholder="Password" @bind="@Password" style="color:gray;" />
-            </div>
-            <button type="button" class="btn btn-primary btn-block" @onclick="async () => await Login()">Login</button>
 
-            <div class="forgot-password">
-                <button type="button" class="btn btn-link" @onclick="ForgotPassword" style="color: gray;">Forgot Password?</button>
-            </div>
+<!-- MAIN SPLIT LAYOUT -->
+<div class="split-container">
+
+    <!-- LEFT LOGIN PANEL -->
+    <div class="left-panel">
+        <div class="login-box-image-style">
+
+            <img src="@Globals.Organization.Logo"
+                 alt="Company Logo"
+                 class="brand-logo" style="width:200px; height:150px; border-radius: 5px;"/>
+
+            <h2 class="login-title">Login</h2>
+
+            <p class="login-subtext">
+                Welcome back! Login to access the Smart Marketplace.<br />
+                Can’t login? <a class="recover-link" @onclick="ForgotPassword">recover your password</a>
+            </p>
+
+            <input type="text" class="input-field" placeholder="Username" @bind="Username" />
+            <input type="password" class="input-field" placeholder="Password" @bind="Password" />
+
+            <button class="btn-gradient" @onclick="async () => await Login()">
+                Continue
+            </button>
+
         </div>
     </div>
+
+
+    <!-- RIGHT PANEL BACKGROUND IMAGE -->
+    <div class="right-panel" style="@BackgroundStyle"></div>
+
 </div>
 
+
 @code {
-    public string? Username { get; set; } = string.Empty;
-    public string? Password { get; set; } = string.Empty;
+    public string Username { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
     private bool LoadingPanel { get; set; } = false;
 
     private string BackgroundImagePath = "_content/NG.MicroERP.Shared/images/default.jpg";
-    private string BackgroundStyle => $"background: url('{BackgroundImagePath}') no-repeat center center fixed; background-size: cover;";
+    private string BackgroundStyle => $"background: url('{BackgroundImagePath}') no-repeat center center; background-size: cover; background-color:#1976D2;";
 
     protected override async Task OnInitializedAsync()
     {
@@ -80,15 +85,16 @@
 
             if (res == null || string.IsNullOrEmpty(res.Token))
             {
-                Log.Warning($"{Username} tried Login but failed.");
                 SnackbarService.Add("User Name or Password is Incorrect.", Severity.Error);
                 return;
             }
 
-            Log.Information($"User {Username} Logged in.");
-
             Globals.User = res;
+            Globals.User.Password = Globals.Decrypt(Globals.User.Password);
             Globals.Token = res.Token;
+
+            var org = await Functions.GetAsync<List<OrganizationsModel>>("Organizations/Search", true) ?? new List<OrganizationsModel>();
+            Globals.Organization = org.FirstOrDefault()!;
 
             var emp = await Functions.GetAsync<EmployeesModel>($"Employees/Get/{res.EmpId}", true) ?? new EmployeesModel();
             Globals.Employee = emp;
@@ -102,14 +108,13 @@
             }
             else
             {
-                await Task.Delay(500); 
+                await Task.Delay(500);
                 Nav.NavigateTo($"/{Globals.User.Dashboard}");
             }
         }
-        catch (Exception ex)
+        catch
         {
             LoadingPanel = false;
-            Log.Error(ex, "Login failed with exception.");
             SnackbarService.Add("An unexpected error occurred during login.", Severity.Error);
         }
     }
@@ -121,211 +126,153 @@
 }
 
 <style>
-    .top-bar {
-        position: absolute; 
-        top: 0;
+
+    /* MAIN 2-COLUMN LAYOUT */
+    .split-container {
+        display: flex;
+        height: 100vh;
         width: 100%;
-        text-align: center;
-        padding-top: 50px; /* Margin-top for the clock */
-        color: white;
-        /* Add your styles here */
+        overflow: hidden;
     }
 
-    .clock-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center; /* Center horizontally */
-        color: gray;
-        /* Add your styles here */
-    }
-
-    .clock, .date {
-        font-family: 'Arial', sans-serif; /* Ensure a clean, readable font */
-        /*color: white;  White text color */
-        margin: 0; /* Remove any default margin */
-    }
-
-    .clock {
-        font-size: 72px; /* Increased font size */
-        font-weight: bold; /* Bold text */
-        /* Add your styles here */
-    }
-
-    .date {
-        font-size: 24px; /* Smaller font size for the date */
-        margin: 5px; /* Space between clock and date */
-        /* Add your styles here */
-    }
-
-    .company {
-        font-size: 24px; /* Smaller font size for the date */
-        margin-top: 5px; /* Space between clock and date */
-        letter-spacing: 2px;
-        /* Add your styles here */
-    }
-
-    .expiry {
-        font-size: 18px; /* Smaller font size for the date */
-        margin-top: 5px; /* Space between clock and date */
-        letter-spacing: 2px;
-        /* Add your styles here */
-    }
-    /* Default styles */
-    .login-content {
-        display: flex;
-        flex-direction: column; /* Stack elements vertically by default */
-        align-items: center;
-        justify-content: flex-end; /* Aligns content to the bottom */
-        width: 100%;
-        max-width: 100%; /* Ensure content doesn't overflow */
-        padding: 0 20px; /* Add padding to prevent touching the edges */
-        box-sizing: border-box; /* Includes padding in the element's width */
-        margin-bottom: 10px; /* Space from the bottom */
-        position: absolute; /* Positioning absolute to stick to bottom */
-        bottom: 0; /* Stick to the bottom */
-        /* Add your styles here */
-    }
-
-    /* Horizontal layout for larger screens */
-    .horizontal-layout .login-row {
-        display: flex;
-        flex-direction: row; /* Align items horizontally */
-        gap: 15px; /* Space between items */
-        width: auto; /* Adjust width */
-    }
-
-    .horizontal-layout .form-group {
-        flex: 1; /* Allow items to grow and fill available space */
-    }
-
-    .horizontal-layout .btn-primary {
-        flex: none; /* Prevent button from growing */
-    }
-
-    /* Vertical layout for smaller screens */
-    .vertical-layout .login-row {
-        display: flex;
-        flex-direction: column; /* Stack items vertically */
-        gap: 10px; /* Space between items */
-    }
-
-    .vertical-layout .form-group {
-        width: 100%; /* Make inputs full width */
-    }
-
-    .vertical-layout .btn-primary {
-        width: 100%; /* Make button full width */
-    }
-
-    .login-row {
-        display: flex;
-        flex-direction: column; /* Stack inputs vertically */
-        gap: 10px;
-        width: 100%;
-        max-width: 400px; /* Set max-width for responsiveness */
-    }
-
-    .form-control {
-        width: 100%; /* Make inputs responsive */
-        max-width: 100%; /* Ensure inputs don’t exceed max-width */
-        padding: 10px;
-        border: none;
-        background-color: rgba(255, 255, 255, 0.1);
-        color: white;
-        font-size: 16px;
-        text-align: center;
-        border-radius: 8px;
-    }
-
-    .form-group {
-        /* Add your styles here */
-    }
-
-    .btn-primary {
-        width: 100%;
-        max-width: 150px; /* Ensure button is responsive */
-        padding: 10px 20px;
-        background-color: rgba(0, 122, 255, 0.8);
-        border: none;
-        border-radius: 8px;
-        color: white;
-        cursor: pointer;
-        font-size: 16px;
-    }
-
-    .btn {
-        /* Add your styles here */
-    }
-
-    .btn-link {
-        margin-top: 20px;
-        background: none;
-        border: none;
-        color: white;
-        text-decoration: none;
-        cursor: pointer;
-    }
-
-    .login-page {
+    /* LEFT LOGIN PANEL */
+    .left-panel {
+        flex: 0 0 40%; /* Left panel always 40% width */
+        background: white;
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 100vh;
-        background-size: cover;
-        background-position: center;
+        padding: 40px;
+        box-sizing: border-box;
     }
 
-    .login-container {
-        background: rgba(255, 255, 255, 0.9);
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        max-width: 400px;
+    /* LOGIN BOX */
+    .login-box {
         width: 100%;
+        max-width: 350px;
     }
 
     .login-header {
         text-align: center;
-        margin-bottom: 20px;
+        margin-bottom: 25px;
     }
 
-        .login-header h2 {
-            margin: 0;
-            font-size: 24px;
-            color: #333;
-        }
-
-        .login-header p {
-            margin: 5px 0 0;
-            color: #666;
-        }
-
-    .login-form .form-group {
-        margin-bottom: 15px;
-    }
-
-    .login-form .form-control {
+    /* FORM STYLING */
+    .form-control {
         width: 100%;
-        padding: 10px;
+        padding: 12px;
         border: 1px solid #ccc;
-        border-radius: 5px;
+        border-radius: 6px;
+        font-size: 15px;
     }
 
-    .login-form .btn {
+    .btn-primary {
         width: 100%;
-        padding: 10px;
-        border: none;
-        border-radius: 5px;
+        margin-top: 10px;
+        padding: 12px;
         font-size: 16px;
+        border-radius: 6px;
+        background-color: #ff5c39; /* SeedProd orange */
+        border: none;
+    }
+
+    .btn-link {
+        background: none;
+        border: none;
+        color: gray;
+        margin-top: 10px;
     }
 
     .forgot-password {
         text-align: center;
-        margin-top: 10px;
     }
 
-        .forgot-password .btn-link {
-            color: #007bff;
-            text-decoration: none;
+    /* RIGHT IMAGE PANEL */
+    .right-panel {
+        flex: 1;
+        background-size: cover !important;
+        background-position: center !important;
+    }
+
+    /* MOBILE – hide right panel */
+    @@media (max-width: 900px) {
+        .left-panel {
+            flex: 1 !important;
+            width: 100%;
+        }
+
+        .right-panel {
+            display: none;
+        }
+    }
+
+    .login-box-image-style {
+        width: 100%;
+        max-width: 360px;
+        text-align: center;
+    }
+
+    /* LOGO */
+    .brand-logo {
+        width: 80px;
+        margin-bottom: 20px;
+    }
+
+    /* TITLE */
+    .login-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: #333;
+    }
+
+    /* SUBTEXT */
+    .login-subtext {
+        font-size: 14px;
+        color: #777;
+        line-height: 1.5;
+        margin-bottom: 30px;
+    }
+
+    .recover-link {
+        color: #ff5faf;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    /* INPUT FIELDS */
+    .input-field {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        font-size: 14px;
+        background: #fafafa;
+        outline: none;
+    }
+
+        .input-field:focus {
+            border-color: #d06bff;
+            background: white;
+        }
+
+    /* GRADIENT BUTTON */
+    .btn-gradient {
+        width: 100%;
+        padding: 13px;
+        border: none;
+        border-radius: 25px;
+        margin-top: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        background: linear-gradient(90deg, #fc466b, #3f5efb);
+        color: white;
+        transition: 0.3s;
+    }
+
+        .btn-gradient:hover {
+            opacity: 0.85;
         }
 </style>

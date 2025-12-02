@@ -1,0 +1,335 @@
+﻿/* Professional Grid Container - More Compact */
+.professional-grid {
+    border-radius: var(--mud-default-borderradius, 8px);
+    overflow: hidden;
+    box-shadow: var(--mud-elevation-4, 0 4px 12px rgba(0, 0, 0, 0.08));
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--mud-palette-surface, white);
+}
+
+    .professional-grid:hover {
+        box-shadow: var(--mud-elevation-6, 0 6px 16px rgba(0, 0, 0, 0.12));
+    }
+
+/* Toolbar Wrapper - Fix for full width */
+.grid-toolbar-wrapper {
+    width: 100%;
+    background: linear-gradient(135deg, var(--mud-palette-primary, #667eea) 0%, var(--mud-palette-secondary, #764ba2) 100%);
+    border-radius: var(--mud-default-borderradius, 8px) var(--mud-default-borderradius, 8px) 0 0;
+}
+
+/* Compact Toolbar Styles */
+.grid-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+    min-height: 56px;
+    width: 100%;
+    max-width: 100%;
+}
+
+.toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: var(--mud-grid-gap, 10px);
+}
+
+.toolbar-icon {
+    color: var(--mud-palette-text-primary, white) !important;
+    font-size: 1.5rem !important;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+}
+
+.toolbar-title {
+    color: var(--mud-palette-text-primary, white) !important;
+    font-weight: 600 !important;
+    font-size: 1.1rem !important;
+    letter-spacing: 0.3px !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    margin: 0 !important;
+}
+
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: var(--mud-grid-gap, 10px);
+}
+
+/* Compact Action Buttons */
+.action-btn {
+    border-radius: var(--mud-default-borderradius, 6px) !important;
+    padding: 0.375rem 0.875rem !important;
+    font-weight: 500 !important;
+    font-size: 0.875rem !important;
+    text-transform: none !important;
+    transition: all 0.2s ease !important;
+    border: none !important;
+    min-width: 90px;
+    height: 32px;
+    box-shadow: var(--mud-elevation-2, 0 2px 4px rgba(0, 0, 0, 0.1)) !important;
+}
+
+    .action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--mud-elevation-4, 0 4px 8px rgba(0, 0, 0, 0.15)) !important;
+    }
+
+    .action-btn:active {
+        transform: translateY(0);
+    }
+
+.new-btn {
+    background: linear-gradient(135deg, var(--mud-palette-success, #4CAF50) 0%, color-mix(in srgb, var(--mud-palette-success) 70%, black) 100%) !important;
+}
+
+    .new-btn:hover {
+        background: linear-gradient(135deg, color-mix(in srgb, var(--mud-palette-success) 90%, black) 0%, color-mix(in srgb, var(--mud-palette-success) 50%, black) 100%) !important;
+    }
+
+.refresh-btn {
+    background: linear-gradient(135deg, var(--mud-palette-info, #2196F3) 0%, color-mix(in srgb, var(--mud-palette-info) 70%, black) 100%) !important;
+}
+
+    .refresh-btn:hover {
+        background: linear-gradient(135deg, color-mix(in srgb, var(--mud-palette-info) 90%, black) 0%, color-mix(in srgb, var(--mud-palette-info) 50%, black) 100%) !important;
+    }
+
+/* Compact Header Styles */
+.grid-header {
+    background: linear-gradient(135deg, var(--mud-palette-background, #f8f9fa) 0%, color-mix(in srgb, var(--mud-palette-background) 80%, var(--mud-palette-grey-default)) 100%) !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    color: var(--mud-palette-text-primary, #2c3e50) !important;
+    border-bottom: 1px solid var(--mud-palette-lines-default, #dee2e6) !important;
+    padding: 0.5rem 0.75rem !important;
+    height: 42px;
+}
+
+/* Compact Cell Styles - Narrower rows */
+.grid-cell {
+    font-weight: 400 !important;
+    font-size: 0.8125rem !important;
+    color: var(--mud-palette-text-primary, #374151) !important;
+    padding: 0.5rem 0.75rem !important;
+    border-bottom: 1px solid var(--mud-palette-lines-inputs, #f1f3f4) !important;
+    height: 40px;
+    line-height: 1.3;
+}
+
+/* Fixed row hover with visible text */
+.professional-grid .mud-table-row:hover .grid-cell {
+    background-color: color-mix(in srgb, var(--mud-palette-primary) 8%, transparent) !important;
+    color: var(--mud-palette-text-primary) !important;
+    transition: all 0.2s ease;
+}
+
+/* Selected row styling */
+.professional-grid .mud-table-row.mud-selected .grid-cell {
+    background-color: color-mix(in srgb, var(--mud-palette-primary) 15%, transparent) !important;
+    color: var(--mud-palette-text-primary) !important;
+    font-weight: 500 !important;
+}
+
+/* Striped rows for better readability */
+.professional-grid .mud-table-striped .mud-table-row:nth-child(even) .grid-cell {
+    background-color: color-mix(in srgb, var(--mud-palette-background) 95%, var(--mud-palette-surface)) !important;
+}
+
+/* Actions Column - Compact */
+.actions-cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    min-height: 40px;
+}
+
+.actions-menu {
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+    padding: 0.25rem !important;
+}
+
+    .actions-menu:hover {
+        opacity: 1;
+    }
+
+/* Menu Items - Compact */
+.menu-item {
+    padding: 0.5rem 0.75rem !important;
+    border-radius: var(--mud-default-borderradius, 4px) !important;
+    margin: 1px 0 !important;
+    min-width: 140px;
+    font-size: 0.8125rem !important;
+}
+
+    .menu-item:hover {
+        background-color: var(--mud-palette-hover-default, #f5f7fa) !important;
+    }
+
+.menu-icon {
+    margin-right: var(--mud-grid-gap, 6px) !important;
+    font-size: 16px !important;
+}
+
+.view-item .menu-icon {
+    color: var(--mud-palette-info, #2196F3) !important;
+}
+
+.edit-item .menu-icon {
+    color: var(--mud-palette-warning, #FF9800) !important;
+}
+
+.delete-item .menu-icon {
+    color: var(--mud-palette-error, #f44336) !important;
+}
+
+.menu-item span {
+    font-weight: 500;
+    color: var(--mud-palette-text-primary, #2c3e50);
+}
+
+/* Compact Pager Styles */
+.pager-container {
+    background: linear-gradient(135deg, var(--mud-palette-background, #f8f9fa) 0%, color-mix(in srgb, var(--mud-palette-background) 80%, var(--mud-palette-grey-default)) 100%);
+    padding: 0.5rem 1rem;
+    border-top: 1px solid var(--mud-palette-lines-default, #e0e0e0);
+    border-radius: 0 0 var(--mud-default-borderradius, 8px) var(--mud-default-borderradius, 8px);
+    height: 52px;
+}
+
+.grid-pager {
+    --mud-palette-primary: var(--mud-palette-primary, #2196F3);
+    --mud-palette-secondary: var(--mud-palette-text-secondary, #757575);
+}
+
+    .grid-pager .mud-button {
+        min-width: 32px !important;
+        height: 32px !important;
+        font-size: 0.875rem !important;
+    }
+
+    .grid-pager .mud-input {
+        font-size: 0.875rem !important;
+        height: 32px !important;
+    }
+
+/* Ensure MudDataGrid toolbar stretches properly */
+.professional-grid .mud-toolbar {
+    padding: 0 !important;
+    min-height: auto !important;
+    background: transparent !important;
+}
+
+    .professional-grid .mud-toolbar > .mud-grid {
+        width: 100%;
+    }
+
+/* Make table more compact */
+.professional-grid .mud-table {
+    background-color: transparent;
+}
+
+.professional-grid .mud-table-container {
+    border-radius: 0;
+    font-size: 0.8125rem;
+}
+
+.professional-grid .mud-table-cell {
+    vertical-align: middle;
+    height: 40px;
+}
+
+.professional-grid .mud-table-row {
+    min-height: 40px;
+    height: 40px;
+}
+
+/* Dense mode enhancements */
+.professional-grid.mud-table-dense .grid-cell {
+    padding: 0.375rem 0.625rem !important;
+    height: 36px;
+    font-size: 0.75rem !important;
+}
+
+.professional-grid.mud-table-dense .grid-header {
+    height: 38px;
+    padding: 0.375rem 0.625rem !important;
+    font-size: 0.8125rem !important;
+}
+
+.professional-grid.mud-table-dense .actions-cell {
+    min-height: 36px;
+}
+
+/* Responsive Design for compact layout */
+@media (max-width: 768px) {
+    .grid-toolbar {
+        flex-direction: column;
+        gap: var(--mud-grid-gap, 12px);
+        padding: 0.75rem;
+        min-height: auto;
+    }
+
+    .toolbar-left, .toolbar-right {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .toolbar-title {
+        font-size: 1rem !important;
+    }
+
+    .action-btn {
+        min-width: 80px;
+        height: 30px;
+        font-size: 0.8125rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .grid-toolbar-wrapper {
+        padding: 0;
+    }
+
+    .toolbar-right {
+        flex-direction: column;
+        gap: var(--mud-grid-gap-small, 6px);
+    }
+
+    .action-btn {
+        width: 100%;
+        max-width: 180px;
+        height: 32px;
+    }
+
+    .grid-cell, .grid-header {
+        padding: 0.375rem 0.5rem !important;
+        font-size: 0.75rem !important;
+    }
+}
+
+/* Fix for dark mode compatibility - ensure text remains visible */
+.professional-grid .mud-table-sticky-header {
+    background: transparent;
+}
+
+.mud-theme-dark .professional-grid {
+    background: var(--mud-palette-surface, #1e1e1e);
+}
+
+.mud-theme-dark .grid-cell {
+    color: var(--mud-palette-text-primary, #e0e0e0) !important;
+}
+
+.mud-theme-dark .grid-header {
+    color: var(--mud-palette-text-primary, #e0e0e0) !important;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--mud-palette-background) 30%, black) 0%, color-mix(in srgb, var(--mud-palette-background) 20%, black) 100%) !important;
+}
+
+.mud-theme-dark .professional-grid .mud-table-row:hover .grid-cell {
+    background-color: color-mix(in srgb, var(--mud-palette-primary) 15%, transparent) !important;
+    color: var(--mud-palette-text-primary) !important;
+}
+

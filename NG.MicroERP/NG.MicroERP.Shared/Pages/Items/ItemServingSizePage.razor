@@ -25,7 +25,7 @@
                      style="width: 60px; height: 60px; object-fit: cover; border-radius: 10%;" />
 
                 <div class="ms-2">
-                    <MudText Typo="Typo.h6" Class="fw-bold text-dark">@record.Name</MudText>
+                    <MudText Typo="Typo.h6" Class="fw-bold">@(string.IsNullOrWhiteSpace(record.Name) ? "NO NAME" : record.Name)</MudText>
                     <MudText Typo="Typo.caption" Class="text-muted">@record.Description</MudText>
                 </div>
             </div>
@@ -207,27 +207,38 @@
 
     private async Task Save()
     {
-        LoadingPanel = true;
-        record.Id = CurrentRecord;
-        record.UpdatedBy = Globals.User.Id;
-        record.UpdatedOn = DateTime.Now;
-        record.UpdatedFrom = Globals.ClientInfo;
-        record.ServingSize = JsonSerializer.Serialize(servingSizes);
-
-        var result = await Functions.PostAsync<ItemsModel>($"Items/ServingSizeUpdate", record, true);
-        if (result.Success == false)
+        try
         {
-            SnackbarService.Add($"Serving Size Not Saved.", Severity.Error);
+            LoadingPanel = true;
+            record.Id = CurrentRecord;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+            record.ServingSize = JsonSerializer.Serialize(servingSizes);
+
+            var result = await Functions.PostAsync<ItemsModel>($"Items/ServingSizeUpdate", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"Serving Size Not Saved.", Severity.Error);
+            }
+            else
+            {
+                await OnSaved.InvokeAsync();
+                SnackbarService.Add($"Serving Size Saved Successfully", Severity.Success);
+                record = new();
+                //servingSizes = new();
+            }
         }
-        else
+        catch (Exception ex)
         {
-            await OnSaved.InvokeAsync();
-            SnackbarService.Add($"Serving Size Saved Successfully", Severity.Success);
-            record = new();
-            //servingSizes = new();
+            Log.Warning($"Error: {ex.Message}");
+        }
+        finally
+        {
+            LoadingPanel = false;
         }
 
-        LoadingPanel = false;
+
     }
 
     private async Task OnFileInputChanged(InputFileChangeEventArgs e)

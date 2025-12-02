@@ -29,17 +29,20 @@ public class Globals
     public  bool _isDarkMode;
 
     public  string PageTitle { get; set; } = "";
-    public  OrganizationsModel Organization { get; set; } = null!;
-    //public  EmployeesModel Emp { get; set; } = null!;
-    public  UsersModel User { get; set; } = null!;
-    public  EmployeesModel Employee { get; set; } = null!;
-    public  DepartmentsModel Department { get; set; } = null!;
-    public  List<MyMenuModel>? menu { get; set; } = null;
+    public  OrganizationsModel Organization { get; set; } = new();
+    public  UsersModel User { get; set; } = new();
+    public  EmployeesModel Employee { get; set; } = new()!;
+    public  DepartmentsModel Department { get; set; } = new()!;
+    public  List<MyMenuModel>? menu { get; set; } = new();
     public  bool isVisible { get; set; } = true;
     public  string seletctedMenuItem { get; set; } = string.Empty;
     public  bool MyLeave { get; set; } = true;
-    public  List<GroupMenuModel> MyPermissions { get; set; } = null;
+    public  List<GroupMenuModel> MyPermissions { get; set; } = new();
     public string? ClientInfo { get; set; }
+    public string? SelectedMenuItem { get; set; }
+    public bool IsSidebarExpanded { get; set; } = true;
+    public event Action? OnSidebarToggle;
+
     public Globals()
     {
         IConfigurationBuilder builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json", optional: false);
@@ -53,6 +56,11 @@ public class Globals
         BaseURI = configuration.GetValue<string>("ApiUrl:BaseUrl") ?? string.Empty;
     }
 
+
+    public void NotifySidebarToggle()
+    {
+        OnSidebarToggle?.Invoke();
+    }
     public  string Encrypt(string text)
     {
         byte[] keyBytes = Encoding.UTF8.GetBytes(key);

@@ -31,54 +31,210 @@
     else
     {
         <div class="row">
-            <MudDataGrid T="BankModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
+            <MudDataGrid T="BankModel"
+                         MultiSelection="false"
+                         Items="@data"
+                         SortMode="SortMode.Multiple"
+                         Filterable="true"
+                         Hideable="true"
+                         RowsPerPage="10"
+                         Dense="true"
+                         Class="professional-grid elevation-8"
+                         Striped="true"
+                         Hover="true">
+
                 <ToolBarContent>
-                    <MudText Typo="Typo.h6">Bank Managment</MudText>
-                    <MudSpacer />
-                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Clear())">New</MudButton>
-                    <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Info" OnClick="@(() => Refresh())">Refresh</MudButton>
+                    <div class="grid-toolbar-wrapper">
+                        <div class="grid-toolbar">
+                            <div class="toolbar-left">
+                                <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="toolbar-icon" />
+                                <MudText Typo="Typo.h6" Class="toolbar-title">
+                                    Bank Management
+                                </MudText>
+                            </div>
+
+                            <div class="toolbar-right">
+                                <MudButton StartIcon="@Icons.Material.TwoTone.Add"
+                                           Size="MudBlazor.Size.Small"
+                                           Variant="Variant.Filled"
+                                           Color="Color.Success"
+                                           Class="action-btn new-btn"
+                                           OnClick="@(() => Clear())">
+                                    New Bank
+                                </MudButton>
+
+                                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh"
+                                           Size="MudBlazor.Size.Small"
+                                           Variant="Variant.Filled"
+                                           Color="Color.Info"
+                                           Class="action-btn refresh-btn"
+                                           OnClick="@(() => Refresh())">
+                                    Refresh
+                                </MudButton>
+                            </div>
+                        </div>
+                    </div>
                 </ToolBarContent>
 
                 <Columns>
-
-                    <TemplateColumn Title="Actions" CellStyle="width: 60px; min-width: 60px;">
+                    <TemplateColumn Title="Actions"
+                                    CellStyle="width: 80px; min-width: 80px;"
+                                    HeaderClass="grid-header">
                         <CellTemplate Context="row">
-                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Dense="true">
-                                <MudMenuItem OnClick="@(() => View(row.Item.Id))">
-                                    <MudIcon Icon="@Icons.Material.Filled.Search" Class="me-2" /> View
-                                </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => Edit(row.Item.Id))">
-                                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="me-2" /> Edit
-                                </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => Delete(row.Item.Id))" Color="Color.Error">
-                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
-                                </MudMenuItem>
-                            </MudMenu>
+                            <div class="actions-cell">
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                         Color="Color.Primary"
+                                         Dense="true"
+                                         Class="actions-menu">
+                                    <MudMenuItem OnClick="@(() => View(row.Item.Id))"
+                                                 Class="menu-item view-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
+                                        <span>View Details</span>
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
+                                                 Class="menu-item edit-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
+                                        <span>Edit</span>
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => Delete(row.Item.Id))"
+                                                 Color="Color.Error"
+                                                 Class="menu-item delete-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
+                                        <span>Delete</span>
+                                    </MudMenuItem>
+                                </MudMenu>
+                            </div>
                         </CellTemplate>
                     </TemplateColumn>
 
-				<PropertyColumn Property="x => x.Code" Title="Code" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.BankName" Title="BankName" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.BranchCode" Title="BranchCode" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.BranchName" Title="BranchName" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.AccountTitle" Title="AccountTitle" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.AccountNumber" Title="AccountNumber" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.IBAN" Title="IBAN" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.Address" Title="Address" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.AreaName" Title="Area" Sortable="true" Filterable="true"/>
-				<PropertyColumn Property="x => x.Account" Title="Account" Sortable="true" Filterable="true"/>
-				<PropertyColumn Property="x => x.Phone" Title="Phone" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.Email" Title="Email" Sortable="true" Filterable="true" />
-                <TemplateColumn Title="Active" Sortable="true" Filterable="true">
-                    <CellTemplate Context="row">
-                        @(row.Item.IsActive==1 ? "" : "Locked")
-                    </CellTemplate>
-                </TemplateColumn>
+                    <PropertyColumn Property="x => x.Code"
+                                    Title="Code"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="80px" />
+
+                    <PropertyColumn Property="x => x.BankName"
+                                    Title="Bank Name"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="150px" />
+
+                    <PropertyColumn Property="x => x.BranchCode"
+                                    Title="Branch Code"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="100px" />
+
+                    <PropertyColumn Property="x => x.BranchName"
+                                    Title="Branch Name"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="150px" />
+
+                    <PropertyColumn Property="x => x.AccountTitle"
+                                    Title="Account Title"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="150px" />
+
+                    <PropertyColumn Property="x => x.AccountNumber"
+                                    Title="Account Number"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="140px" />
+
+                    <PropertyColumn Property="x => x.IBAN"
+                                    Title="IBAN"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="180px" />
+
+                    <PropertyColumn Property="x => x.Address"
+                                    Title="Address"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="200px" />
+
+                    <PropertyColumn Property="x => x.AreaName"
+                                    Title="Area"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="120px" />
+
+                    <PropertyColumn Property="x => x.Account"
+                                    Title="Account"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="120px" />
+
+                    <PropertyColumn Property="x => x.Phone"
+                                    Title="Phone"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="120px" />
+
+                    <PropertyColumn Property="x => x.Email"
+                                    Title="Email"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="180px" />
+
+                    <TemplateColumn Title="Status"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="80px">
+                        <CellTemplate Context="row">
+                            <div class="d-flex align-center">
+                                @if (row.Item.IsActive == 1)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                                             Class="me-1"
+                                             Style="color: #4CAF50; font-size: 16px;" />
+                                    <span style="color: #4CAF50; font-weight: 500;">Active</span>
+                                }
+                                else
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Lock"
+                                             Class="me-1"
+                                             Style="color: #f44336; font-size: 16px;" />
+                                    <span style="color: #f44336; font-weight: 500;">Locked</span>
+                                }
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
 
                 </Columns>
 
                 <PagerContent>
-                    <MudDataGridPager T="BankModel" />
+                    <div class="pager-container">
+                        <MudDataGridPager T="BankModel" Class="grid-pager" />
+                    </div>
                 </PagerContent>
             </MudDataGrid>
         </div>

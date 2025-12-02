@@ -31,50 +31,270 @@
     else
     {
         <div class="row">
-            <MudDataGrid T="CashBookModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
-                <ToolBarContent>
-                    <MudText Typo="Typo.h6">CashBook Managment</MudText>
-                    <MudSpacer />
-                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Clear())">New</MudButton>
-                    <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Info" OnClick="@(() => Refresh())">Refresh</MudButton>
-                    <InputDate @bind-Value="startDate" Label="Start Date" Format="yyyy-MM-dd" @bind-Value:after="GetAll" class="InputDateStyle" />
-                    <InputDate @bind-Value="endDate" Label="End Date" Format="yyyy-MM-dd" @bind-Value:after="GetAll" class="InputDateStyle" />
-                    <MudButton StartIcon="@Icons.Material.TwoTone.Search" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => GetAll())">Search</MudButton>
-                </ToolBarContent>
-                 
+            <MudDataGrid T="CashBookModel"
+                         MultiSelection="false"
+                         Items="@data"
+                         SortMode="SortMode.Multiple"
+                         Filterable="true"
+                         Hideable="true"
+                         RowsPerPage="10"
+                         Dense="true"
+                         Striped="true"
+                         Hover="true"
+                         Class="professional-grid elevation-8">
+
+                   <ToolBarContent>
+        <div class="grid-toolbar-wrapper">
+            <div class="grid-toolbar" style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.75rem 1.25rem;
+                min-height: 56px;
+                width: 100%;
+            ">
+                <div class="toolbar-left" style="
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                ">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" 
+                             style="color: white !important; font-size: 1.5rem !important; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));"/>
+                    <MudText Typo="Typo.h6" style="
+                        color: white !important;
+                        font-weight: 600 !important;
+                        font-size: 1.1rem !important;
+                        letter-spacing: 0.3px !important;
+                        text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+                        margin: 0 !important;
+                    ">
+                        CashBook Management
+                    </MudText>
+                </div>
+                
+                <div class="toolbar-right" style="
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    flex-wrap: nowrap;
+                    white-space: nowrap;
+                ">
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
+                              Size="MudBlazor.Size.Small" 
+                              Variant="Variant.Filled" 
+                              Color="Color.Success"
+                              style="
+                                  border-radius: 6px !important;
+                                  padding: 0.375rem 0.875rem !important;
+                                  font-weight: 500 !important;
+                                  font-size: 0.875rem !important;
+                                  text-transform: none !important;
+                                  border: none !important;
+                                  min-width: 80px;
+                                  height: 32px;
+                                  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+                                  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%) !important;
+                              "
+                              OnClick="@(() => Clear())">
+                        New
+                    </MudButton>
+
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
+                              Size="MudBlazor.Size.Small" 
+                              Variant="Variant.Filled" 
+                              Color="Color.Info"
+                              style="
+                                  border-radius: 6px !important;
+                                  padding: 0.375rem 0.875rem !important;
+                                  font-weight: 500 !important;
+                                  font-size: 0.875rem !important;
+                                  text-transform: none !important;
+                                  border: none !important;
+                                  min-width: 80px;
+                                  height: 32px;
+                                  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+                                  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%) !important;
+                              "
+                              OnClick="@(() => Refresh())">
+                        Refresh
+                    </MudButton>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div style="position: relative;">
+                                        <InputDate @bind-Value="startDate"
+                                                   Format="yyyy-MM-dd"
+                                                   class="styled-date-input"
+                                                   style="
+                           width: 140px;
+                           background: rgba(255, 255, 255, 0.1);
+                           border: 1px solid rgba(255, 255, 255, 0.3);
+                           border-radius: 6px;
+                           color: white;
+                           padding: 8px 12px;
+                           font-size: 0.875rem;
+                       " />
+                                        <label style="
+                position: absolute;
+                top: -8px;
+                left: 8px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                padding: 0 4px;
+                font-size: 0.75rem;
+                color: white;
+                border-radius: 2px;
+            ">Start Date</label>
+                                    </div>
+
+                                    <div style="position: relative;">
+                                        <InputDate @bind-Value="endDate"
+                                                   Format="yyyy-MM-dd"
+                                                   class="styled-date-input"
+                                                   style="
+                           width: 140px;
+                           background: rgba(255, 255, 255, 0.1);
+                           border: 1px solid rgba(255, 255, 255, 0.3);
+                           border-radius: 6px;
+                           color: white;
+                           padding: 8px 12px;
+                           font-size: 0.875rem;
+                       " />
+                                        <label style="
+                position: absolute;
+                top: -8px;
+                left: 8px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                padding: 0 4px;
+                font-size: 0.75rem;
+                color: white;
+                border-radius: 2px;
+            ">End Date</label>
+                                    </div>
+                                </div>
+
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Search"
+                              Size="MudBlazor.Size.Small"
+                              Variant="Variant.Filled"
+                              Color="Color.Primary"
+                              style="
+                                  border-radius: 6px !important;
+                                  padding: 0.375rem 0.875rem !important;
+                                  font-weight: 500 !important;
+                                  font-size: 0.875rem !important;
+                                  text-transform: none !important;
+                                  border: none !important;
+                                  min-width: 80px;
+                                  height: 32px;
+                                  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+                                  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%) !important;
+                              "
+                              OnClick="@(() => GetAll())">
+                        Search
+                    </MudButton>
+                </div>
+            </div>
+        </div>
+    </ToolBarContent>
+
                 <Columns>
-                    <TemplateColumn Title="Actions" Style="width: 50px; min-width: 50px;">
+                    <TemplateColumn Title="Actions"
+                                    CellStyle="width: 80px; min-width: 80px;"
+                                    HeaderClass="grid-header">
                         <CellTemplate Context="row">
-                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true" Color="Color.Inherit">
-                                <MudMenuItem OnClick="@(() => View(row.Item.Id))">
-                                    <MudIcon Icon="@Icons.Material.TwoTone.Search" Class="me-2" /> View
-                                </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => Edit(row.Item.Id))">
-                                    <MudIcon Icon="@Icons.Material.TwoTone.Edit" Class="me-2" /> Edit
-                                </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => Delete(row.Item.Id))" Style="color:red;">
-                                    <MudIcon Icon="@Icons.Material.TwoTone.DeleteSweep" Class="me-2" /> Delete
-                                </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => Print(row.Item.Id))">
-                                    <MudIcon Icon="@Icons.Material.TwoTone.Print" Class="me-2" /> Print
-                                </MudMenuItem>
-                            </MudMenu>
+                            <div class="actions-cell">
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                         Color="Color.Primary"
+                                         Dense="true"
+                                         Class="actions-menu">
+                                    <MudMenuItem OnClick="@(() => View(row.Item.Id))"
+                                                 Class="menu-item view-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
+                                        <span>View</span>
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
+                                                 Class="menu-item edit-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
+                                        <span>Edit</span>
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => Print(row.Item.Id))"
+                                                 Class="menu-item print-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Print" Class="menu-icon" />
+                                        <span>Print</span>
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => Delete(row.Item.Id))"
+                                                 Color="Color.Error"
+                                                 Class="menu-item delete-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
+                                        <span>Delete</span>
+                                    </MudMenuItem>
+                                </MudMenu>
+                            </div>
                         </CellTemplate>
                     </TemplateColumn>
 
+                    <PropertyColumn Property="x => x.SeqNo"
+                                    Title="Seq No"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="80px" />
 
-                    <PropertyColumn Property="x => x.SeqNo" Title="SeqNo" Sortable="true" Filterable="true" />
-				    <PropertyColumn Property="x => x.TranDate" Title="Tran Date" Sortable="true" Filterable="true" Format="dd-MMM-yyy"/>
-				    <PropertyColumn Property="x => x.Description" Title="Description" Sortable="true" Filterable="true" />
-				    <PropertyColumn Property="x => x.TranType" Title="Tran Type" Sortable="true" Filterable="true" />
-				    <PropertyColumn Property="x => x.PaymentMethod" Title="Payment Method" Sortable="true" Filterable="true" />
-				    <PropertyColumn Property="x => x.RefNo" Title="Reference #" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.TranRef" Title="Bill Transaction" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.TranDate"
+                                    Title="Transaction Date"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Format="dd-MMM-yyyy"
+                                    Width="120px" />
+
+                    <PropertyColumn Property="x => x.Description"
+                                    Title="Description"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="200px" />
+
+                    <PropertyColumn Property="x => x.TranType"
+                                    Title="Transaction Type"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="120px" />
+
+                    <PropertyColumn Property="x => x.PaymentMethod"
+                                    Title="Payment Method"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="130px" />
+
+                    <PropertyColumn Property="x => x.RefNo"
+                                    Title="Reference #"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="120px" />
+
+                    <PropertyColumn Property="x => x.TranRef"
+                                    Title="Bill Transaction"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="150px" />
+
                 </Columns>
 
                 <PagerContent>
-                    <MudDataGridPager T="CashBookModel" />
+                    <div class="pager-container">
+                        <MudDataGridPager T="CashBookModel" Class="grid-pager" />
+                    </div>
                 </PagerContent>
+
             </MudDataGrid>
         </div>
     }

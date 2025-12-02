@@ -1,0 +1,284 @@
+﻿@page "/PaymentTermsDashboard"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Globals Globals
+@inject Functions Functions
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="row" style="margin: 2px; height: 90vh; display: flex;">
+    <MyDrawer @ref="_drawer" Title="PaymentTerms" FaIcon="fas fa-address-book">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <PaymentTermsPage Action="@Action" CurrentRecord="record.Id" OnSaved="ChildSaved"/>
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    @if (data == null)
+    {
+        <SimpleLoading />
+    }
+    else
+    {
+        <div class="row">
+            <MudDataGrid T="PaymentTermsModel"
+                         MultiSelection="false"
+                         Items="@data"
+                         SortMode="SortMode.Multiple"
+                         Filterable="true"
+                         Hideable="true"
+                         RowsPerPage="10"
+                         Dense="true"
+                         Striped="true"
+                         Class="professional-grid elevation-8">
+
+                <ToolBarContent>
+                    <div class="grid-toolbar-wrapper">
+                        <div class="grid-toolbar">
+                            <div class="toolbar-left">
+                                <MudIcon Icon="@Icons.Material.Filled.Schedule" Class="toolbar-icon" />
+                                <MudText Typo="Typo.h6" Class="toolbar-title">
+                                    Payment Terms Management
+                                </MudText>
+                            </div>
+
+                            <div class="toolbar-right">
+                                @if (AccessLevel == 1)
+                                {
+                                    <MudButton StartIcon="@Icons.Material.TwoTone.Add"
+                                               Size="MudBlazor.Size.Small"
+                                               Variant="Variant.Filled"
+                                               Color="Color.Success"
+                                               Class="action-btn new-btn"
+                                               OnClick="@(() => Clear())">
+                                        New Payment Term
+                                    </MudButton>
+                                }
+
+                                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh"
+                                           Size="MudBlazor.Size.Small"
+                                           Variant="Variant.Filled"
+                                           Color="Color.Info"
+                                           Class="action-btn refresh-btn"
+                                           OnClick="@(() => Refresh())">
+                                    Refresh
+                                </MudButton>
+                            </div>
+                        </div>
+                    </div>
+                </ToolBarContent>
+
+                <Columns>
+                    <TemplateColumn Title="Actions"
+                                    CellStyle="width: 80px; min-width: 80px;"
+                                    HeaderClass="grid-header">
+                        <CellTemplate Context="row">
+                            <div class="actions-cell">
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                         Color="Color.Primary"
+                                         Dense="true"
+                                         Class="actions-menu">
+                                    <MudMenuItem OnClick="@(() => View(row.Item.Id))"
+                                                 Class="menu-item view-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
+                                        <span>View Details</span>
+                                    </MudMenuItem>
+                                    @if (AccessLevel == 1)
+                                    {
+                                        <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
+                                                     Class="menu-item edit-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
+                                            <span>Edit</span>
+                                        </MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => Delete(row.Item.Id))"
+                                                     Color="Color.Error"
+                                                     Class="menu-item delete-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
+                                            <span>Delete</span>
+                                        </MudMenuItem>
+                                    }
+                                </MudMenu>
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="x => x.Code"
+                                    Title="Code"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.Description"
+                                    Title="Description"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.DaysDue"
+                                    Title="Days Due"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    Format="#,##0"
+                                    CellStyle="text-align: right;"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <TemplateColumn Title="Default"
+                                    CellStyle="width: 80px; min-width: 80px;"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell">
+                        <CellTemplate Context="row">
+                            @if (row.Item.IsDefault == 1)
+                            {
+                                <MudChip Color="Color.Warning" Size="Size.Small" Variant="Variant.Filled">Default</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip Color="Color.Default" Size="Size.Small" Variant="Variant.Outlined">No</MudChip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <TemplateColumn Title="Status"
+                                    CellStyle="width: 70px; min-width: 70px;"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell">
+                        <CellTemplate Context="row">
+                            @if (row.Item.IsActive == 1)
+                            {
+                                <MudChip Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">Active</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">Locked</MudChip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+
+                <PagerContent>
+                    <div class="pager-container">
+                        <MudDataGridPager T="PaymentTermsModel" Class="grid-pager" />
+                    </div>
+                </PagerContent>
+
+            </MudDataGrid>
+        </div>
+    }
+</div>
+
+@code
+{
+    List<PaymentTermsModel> data = new();
+    PaymentTermsModel record = new();
+
+    public string Action { get; set; } = "INSERT";
+    public int AccessLevel { get; set; } = 0;
+
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        AccessLevel = Globals.PageAccess(NavManager, "PaymentTermsDashboard");
+        await GetAll();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        data = await Functions.GetAsync<List<PaymentTermsModel>>($"PaymentTerms/Search", true) ?? new List<PaymentTermsModel>();
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<PaymentTermsModel>($"PaymentTerms/Get?Id={id}", true) ?? new PaymentTermsModel();
+        LoadingPanel = false;
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new PaymentTermsModel();
+        record.IsActive = 1;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Refresh()
+    {
+        await GetAll();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE"; 
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Get(id);
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+         
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+
+        var result = await Functions.PostAsync<PaymentTermsModel>($"PaymentTerms/{Action}", record, true);
+        if (result.Success == true)
+        {
+            SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
+            if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) await Edit(result.Result!.Id);
+        }
+        else
+        {
+            SnackbarService.Add($"Record Not Deleted", Severity.Error);
+            record = new();
+        }
+    
+        await GetAll();
+        LoadingPanel = false;
+     
+    }
+
+    private async Task ChildSaved()
+    {
+        await GetAll();           
+        await _drawer.CloseDrawerAsync();
+        StateHasChanged(); 
+    }
+
+}
+

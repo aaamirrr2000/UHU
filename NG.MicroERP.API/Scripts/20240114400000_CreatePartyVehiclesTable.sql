@@ -1,0 +1,28 @@
+﻿CREATE TABLE PartyVehicles
+(
+	Id					INT PRIMARY KEY IDENTITY(1,1),
+	Guid				UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
+	PartyId				INT NOT NULL,
+	VehicleRegNo		VARCHAR(50) NULL,
+	EngineNo			VARCHAR(50) NULL,
+	ChasisNo			VARCHAR(50) NULL,
+	VehicleType			VARCHAR(50) NULL,
+	MakeType			VARCHAR(50) NULL,
+	Model				VARCHAR(50) NULL,
+	IsActive            SMALLINT			NOT NULL DEFAULT 1,
+	CreatedBy			INT					NULL DEFAULT NULL,
+	CreatedOn           DATETIME			NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	CreatedFrom         VARCHAR(255)		NULL DEFAULT NULL,
+	UpdatedBy           INT					NULL DEFAULT NULL,
+	UpdatedOn           DATETIME			NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	UpdatedFrom         VARCHAR(255)		NULL DEFAULT NULL,
+	IsSoftDeleted       SMALLINT			NOT NULL DEFAULT 0,
+	RowVersion          ROWVERSION,
+	FOREIGN KEY (PartyId) REFERENCES Parties(Id),
+	FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+	FOREIGN KEY (UpdatedBy) REFERENCES Users(Id)
+);
+
+INSERT INTO PartyVehicles (PartyId, VehicleRegNo, EngineNo, ChasisNo, VehicleType, MakeType, Model)
+SELECT Id, 'KHI-1234', 'ENG123456789', 'CHS123456789', 'TRUCK', 'HINO', '2023'
+FROM Parties WHERE Name = 'S&S ENTERPRISES, KARACHI (210-4)';

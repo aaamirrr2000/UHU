@@ -3,7 +3,7 @@
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @inject Functions Functions
-@inject Globals Globals
+@inject IFormFactor FormFactor
 
 <MudThemeProvider />
 <MudPopoverProvider />
@@ -12,13 +12,13 @@
 
 <MudLayout>
     <MudAppBar Elevation="1" Dense=true>
-        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+@*         <MudIconButton Icon="@Icons.Material.Filled.Menu"
                        Color="Color.Inherit"
                        Edge="Edge.Start"
-                       OnClick="@(() => DrawerToggle())" />
+                       OnClick="@(() => DrawerToggle())" /> *@
 
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <img src="@(Globals.Organization?.Logo ?? "")" class="company-logo" />
+            <img src="@Globals.Organization.Logo" alt="Company Logo" class="company-logo" />
             <span style="margin-left:5px; font-size: 24px; color: white; letter-spacing:2px;">
                 @(Globals.Organization?.Name ?? "Organization")
                 @* @DateTime.Now.ToString("dddd, dd MMMM yyyy") *@
@@ -29,16 +29,15 @@
 
         <MudHidden Breakpoint="Breakpoint.MdAndUp">
             <a href="/@(Globals.User?.Dashboard ?? "dashboard")" class="nav-link"><i class="fas fa-home"></i></a>
-           @*  <a href="#" class="nav-link"><i class="fa-solid fa-clock"></i> Idle: @_idleDisplay</a> *@
+            @* <a href="#" class="nav-link"><i class="fa-solid fa-clock"></i> Idle: @_idleDisplay</a> *@
             <a href="/ChangePasswordPage" class="nav-link"><i class="fas fa-key"></i></a>
             <a href="/" class="nav-link"><i class="fas fa-power-off"></i> </a>
         </MudHidden>
 
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
             <a href="/@(Globals.User?.Dashboard ?? "dashboard")" class="nav-link"><i class="fas fa-home"></i> Home</a>
-           @*  <a href="#" class="nav-link"><i class="fa-solid fa-clock"></i> Idle: @_idleDisplay</a> *@
+            @* <a href="#" class="nav-link"><i class="fa-solid fa-clock"></i> Idle: @_idleDisplay</a> *@
             <a href="/ChangePasswordPage" class="nav-link"><i class="fas fa-key"></i> Change Password</a>
-
             @* <a href="/" class="nav-link"><i class="fa-solid fa-code-merge"></i> @(Globals.Version ?? "")</a> *@
             <a href="/" class="nav-link"><i class="fas fa-power-off"></i> Log Out</a>
         </MudHidden>
@@ -46,20 +45,22 @@
         <MudThemeProvider @bind-IsDarkMode="@Globals._isDarkMode" Theme="_theme" />
         @if (true)
         {
-            <MudSwitch Value="@Globals._isDarkMode"
-                       ValueChanged="Save"
-                       Color="Color.Primary"
-                       Class="ma-4"
-                       T="bool"
-                       Label="Theme" />
+            <MudSwitch Value="@Globals._isDarkMode" ValueChanged="Save" Color="Color.Primary" Class="ma-4" T="bool" Label="Theme" />
         }
     </MudAppBar>
 
-    <MudDrawer @bind-Open="@_drawerOpen">
-        <MyNavMenu />
+    <!-- Use inline styles to control drawer width -->
+    <MudDrawer @bind-Open="@_drawerOpen" @attributes="@GetDrawerAttributes()">
+        <div style="height:100%;">
+            <MyNavMenu OnSidebarToggle="HandleSidebarToggle" @ref="navMenuComponent" />
+        </div>
     </MudDrawer>
-    <MudMainContent>
-        @Body
+
+    <!-- Main content with dynamic margin -->
+    <MudMainContent Class="@GetMainContentClass()">
+        <div class="content-wrapper">
+            @Body
+        </div>
     </MudMainContent>
 </MudLayout>
 
@@ -69,10 +70,118 @@
     private DotNetObjectReference<MainLayout>? _dotNetRef;
     private string _idleDisplay = "0:00";
     private System.Threading.Timer? _refreshTimer;
+    [Inject] private Globals Globals { get; set; } = null!;
 
-    void DrawerToggle()
+    // Sidebar state variables
+    private bool _isSidebarExpanded = true;
+    private MyNavMenu navMenuComponent;
+    private bool _isMobile = false;
+    private bool _initialized = false;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckMobile();
+        _initialized = true;
+    }
+
+    private async Task CheckMobile()
+    {
+        try
+        {
+            _isMobile = await JS.InvokeAsync<bool>("eval", "window.innerWidth <= 768");
+
+            // Auto-collapse on mobile by default
+            if (_isMobile)
+            {
+                _drawerOpen = false;
+                _isSidebarExpanded = false;
+            }
+            else
+            {
+                _drawerOpen = true;
+                _isSidebarExpanded = true;
+            }
+        }
+        catch
+        {
+            // Fallback values
+            _isMobile = false;
+            _drawerOpen = true;
+            _isSidebarExpanded = true;
+        }
+    }
+
+    async void DrawerToggle()
     {
         _drawerOpen = !_drawerOpen;
+
+        // If opening drawer on mobile, ensure sidebar is expanded
+        if (_drawerOpen && _isMobile)
+        {
+            _isSidebarExpanded = true;
+            if (navMenuComponent != null)
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleSidebarToggle(bool isExpanded)
+    {
+        _isSidebarExpanded = isExpanded;
+        StateHasChanged();
+    }
+
+    private Dictionary<string, object> GetDrawerAttributes()
+    {
+        var attributes = new Dictionary<string, object>();
+
+        if (_isSidebarExpanded)
+        {
+            attributes["Width"] = "240px";
+        }
+        else
+        {
+            attributes["Width"] = "52px";
+        }
+
+        // Only make it persistent on desktop
+        if (!_isMobile)
+        {
+            attributes["Variant"] = Variant.Filled;
+        }
+        else
+        {
+            attributes["Variant"] = Variant.Outlined;
+        }
+
+        return attributes;
+    }
+
+    private string GetMainContentClass()
+    {
+        var classes = new List<string>();
+
+        if (!_isMobile)
+        {
+            if (_isSidebarExpanded)
+            {
+                classes.Add("sidebar-expanded");
+            }
+            else
+            {
+                classes.Add("sidebar-collapsed");
+            }
+        }
+        else
+        {
+            classes.Add("mobile-view");
+        }
+
+        return string.Join(" ", classes);
     }
 
     protected override async Task OnParametersSetAsync()
@@ -99,6 +208,53 @@
             Console.WriteLine($"Error in MainLayout OnParametersSetAsync: {ex.Message}");
         }
     }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("idleHandler.startIdleTimer", _dotNetRef);
+
+            // Add resize listener for responsive behavior
+            await JS.InvokeVoidAsync("eval",
+                @"window.addEventListener('resize', function() {
+                    DotNet.invokeMethodAsync('YourAssemblyName', 'HandleResize');
+                });");
+
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public static async Task HandleResize()
+    {
+        // This will be called from JavaScript when window resizes
+        // You might need to implement a service to notify components
+    }
+
+    [JSInvokable]
+    public void UpdateIdleTime(int seconds)
+    {
+        var minutes = seconds / 60;
+        var secs = seconds % 60;
+        _idleDisplay = $"{minutes}:{secs:D2}";
+        InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public async Task RefreshPage()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public async void LogoutUser()
+    {
+        Nav.NavigateTo("/", true);
+    }
+
+    public void Dispose() => _dotNetRef?.Dispose();
 
     protected async Task Save(bool newValue)
     {
@@ -132,42 +288,6 @@
             SnackbarService.Add($"Error saving theme: {ex.Message}", Severity.Error);
         }
     }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            _dotNetRef = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("idleHandler.startIdleTimer", _dotNetRef);
-        }
-    }
-
-    [JSInvokable]
-    public void UpdateIdleTime(int seconds)
-    {
-        var minutes = seconds / 60;
-        var secs = seconds % 60;
-        _idleDisplay = $"{minutes}:{secs:D2}";
-
-        // Force UI refresh on the Blazor render thread
-        InvokeAsync(StateHasChanged);
-    }
-
-    [JSInvokable]
-    public async Task RefreshPage()
-    {
-        //await JS.InvokeVoidAsync("location.reload");
-        await InvokeAsync(StateHasChanged);
-    }
-
-    [JSInvokable]
-    public void LogoutUser()
-    {
-        Nav.NavigateTo("/", true);
-        //JS.InvokeVoidAsync("location.replace", "/");
-    }
-
-    public void Dispose() => _dotNetRef?.Dispose();
 }
 
 <style>
@@ -178,6 +298,57 @@
     }
 
     .company-logo {
-        height: 40px;
+        height: 35px;
+        border-radius: 5px;
+    }
+
+    /* Main content dynamic margin */
+    .mud-main-content.sidebar-expanded {
+        margin-left: 240px !important;
+        transition: margin-left 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+        width: calc(100% - 240px) !important;
+    }
+
+    .mud-main-content.sidebar-collapsed {
+        margin-left: 52px !important;
+        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        width: calc(100% - 52px) !important;
+    }
+
+    /* Mobile view - no margin */
+    .mud-main-content.mobile-view {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Ensure content wrapper takes full available space */
+    .content-wrapper {
+        height: 100%;
+        padding: 16px;
+        background: var(--mud-palette-background);
+    }
+
+    /* Drawer styling adjustments */
+    .mud-drawer {
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        overflow: hidden !important;
+    }
+
+    /* Ensure MudDrawer content doesn't overflow */
+    .mud-drawer-content {
+        overflow-x: hidden !important;
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .mud-main-content.sidebar-expanded,
+        .mud-main-content.sidebar-collapsed {
+            margin-left: 0 !important;
+            width: 100% !important;
+        }
+
+        .mud-drawer-open {
+            box-shadow: 2px 0 10px rgba(0,0,0,0.2) !important;
+        }
     }
 </style>

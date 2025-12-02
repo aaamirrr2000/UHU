@@ -40,6 +40,11 @@
     <EmbeddedResource Include="Scripts\20240113000000_CreateAreasTable.sql" />
     <EmbeddedResource Include="Scripts\20240113100000_CreateCategoriesTable.sql" />
     <EmbeddedResource Include="Scripts\20240113200000_CreateBankTable.sql" />
+    <EmbeddedResource Include="Scripts\20240114100000_CreatePartyContactsTable.sql" />
+    <EmbeddedResource Include="Scripts\20240114200000_CreatePartyFinancialsTable.sql" />
+    <EmbeddedResource Include="Scripts\20240114300000_CreatePartyDocumentsTable.sql" />
+    <EmbeddedResource Include="Scripts\20240114400000_CreatePartyVehiclesTable.sql" />
+    <EmbeddedResource Include="Scripts\20240114500000_CreatePartyBankDetailsTable.sql" />
     <EmbeddedResource Include="Scripts\20240114000000_CreatePartiesTable.sql" />
     <EmbeddedResource Include="Scripts\20240115000000_CreateItemsTable.sql" />
     <EmbeddedResource Include="Scripts\20240115100000_CreateBundleTable.sql" />
@@ -48,7 +53,7 @@
     <EmbeddedResource Include="Scripts\20240116100000_CreateRestaurantTablesTable.sql" />
     <EmbeddedResource Include="Scripts\20240116200000_CreateTaxesMasterTable.sql" />
     <EmbeddedResource Include="Scripts\20240117200000_CreateItemTaxesTable.sql" />
-    <EmbeddedResource Include="Scripts\20240117420000_CreatePaymentTermsTable.sql" />
+    <EmbeddedResource Include="Scripts\20240113300000_CreatePaymentTermsTable.sql" />
     <EmbeddedResource Include="Scripts\20240117450000_CreatePurchaseOrderTable.sql" />
     <EmbeddedResource Include="Scripts\20240117410000_CreateCurrenciesTable.sql" />
     <EmbeddedResource Include="Scripts\20240117400000_CreateChargesRuleTable.sql" />

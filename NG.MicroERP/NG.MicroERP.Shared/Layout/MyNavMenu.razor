@@ -1,5 +1,4 @@
 ﻿@using Microsoft.AspNetCore.Components.Web
-@using System.Diagnostics
 @inject NavigationManager NavManager
 @inject ISnackbar SnackbarService
 @inject Globals Globals
@@ -7,219 +6,800 @@
 @inject IFormFactor FormFactor
 @using MudBlazor
 @inject Functions Functions
-@inject Globals Globals
 
-<div class="sidebar-container">
-    <div class="employee-info">
-        @if (Globals.User == null)
-        {
-           @*  <SimpleLoading /> *@
-        }
-        else
-        {
-            @if (Globals.User != null && System.IO.File.Exists(Path.Combine("wwwroot/images", Globals.User.Pic!)))
-            {
-                <img src="@Globals.User.Pic" alt="Profile Picture" style="width: 50px; height: 50px; border-radius: 50%;" />
-            }
+@implements IDisposable
 
-            <MudStack Spacing="1" Margin="Margin.Top">
-                <MudText Typo="Typo.subtitle1" FontWeight="FontWeight.Bold" Color="Color.Primary">
-                    @Globals.User?.FullName
-                </MudText>
-                <MudText Typo="Typo.body2" Color="Color.Primary">
-                    @Globals.User?.GroupName
-                </MudText>
-            </MudStack>
-
-            @* <hr />
-            <MudText Color="Color.Primary" Class="platform-text" Typo="Typo.caption">
-                @platform
-            </MudText> *@
-            <hr />
-        }
+<div class="@GetSidebarClass()" @onclick:stopPropagation>
+    <!-- Collapse Toggle Button -->
+    <div class="sidebar-toggle" @onclick="ToggleSidebar">
+        <i class="@GetToggleIcon()" style="font-size: 14px;"></i>
     </div>
 
-    <MudNavMenu Dense=true>
-        @if (MenuGroupData != null && MenuGroupData.Count > 0)
+    <!-- Loading State -->
+    @if (isLoading)
+    {
+        <div class="sidebar-loading">
+            <MudProgressCircular Size="Size.Small" Color="Color.Primary" />
+            <MudText Typo="Typo.caption" Class="mt-2">Loading menu...</MudText>
+        </div>
+    }
+    else if (hasError)
+    {
+        <div class="sidebar-error">
+            <i class="fas fa-exclamation-triangle text-warning fa-lg mb-2"></i>
+            <MudText Typo="Typo.caption">Failed to load menu</MudText>
+            <MudButton Variant="Variant.Text"
+                       Color="Color.Primary"
+                       Size="Size.Small"
+                       OnClick="RetryLoadMenu"
+                       Class="mt-2">
+                Retry
+            </MudButton>
+        </div>
+    }
+    else if (MenuGroupData == null || MenuGroupData.Count == 0)
+    {
+        <div class="sidebar-empty">
+            <i class="fas fa-folder-open text-muted fa-lg mb-2"></i>
+            <MudText Typo="Typo.caption">No menu items available</MudText>
+        </div>
+    }
+    else
+    {
+        <!-- User Profile (Only show when expanded) -->
+        @if (IsExpanded)
         {
-            @foreach (var group in MenuGroupData)
-            {
-                <MudNavGroup Title="@group.MenuCaption" Expanded="@IsExpanded(group.MenuId)" OnClick="() => ToggleGroup(group.MenuId)">
-                    <TitleContent>
-                        <i class="@group.Icon" style="margin-right: 8px;"></i>
-                        @group.MenuCaption
-                    </TitleContent>
-                    <ChildContent>
-                        @foreach (var item in data.Where(x =>
-                                        x.ParentId == group.MenuId &&
-                                        (Globals.User!.GroupId == 1 ||
-                                        (x.My_Privilege == "READ ONLY" || x.My_Privilege == "FULL ACCESS"))))
+            <div class="user-profile">
+                <div class="d-flex align-items-center">
+                    <div class="profile-pic-container">
+                        @if (Globals.User != null && !string.IsNullOrEmpty(Globals.User.Pic))
                         {
-                            <MudNavLink OnClick="() => LoadOption(item)" NavLinkMatch="NavLinkMatch.Prefix" Class="d-flex align-items-center">
-                                <!-- Main icon -->
-                                <i class="@item.Icon" style="width: 24px; text-align: center;"></i>
-
-                                <!-- Menu caption with privilege-based color -->
-                                <span style="font-size: 14px; margin-left: 8px; color:@GetFontColor(item.My_Privilege)">
-                                    @item.MenuCaption
-                                </span>
-                            </MudNavLink>
+                            <img src="@Globals.User.Pic" alt="Profile" class="profile-pic" />
                         }
-
-                    </ChildContent>
-                </MudNavGroup>
-            }
+                        else
+                        {
+                            <div class="profile-pic-fallback">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        }
+                    </div>
+                    <div class="user-details ms-2">
+                        <div class="user-name">@Globals.User?.FullName</div>
+                        <div class="user-role">@Globals.User?.GroupName</div>
+                    </div>
+                </div>
+            </div>
         }
         else
         {
-            @* <SimpleLoading /> *@
-        }
-    </MudNavMenu>
-
-    <!-- ORGANIZATION INFO AT BOTTOM -->
-    @* <div style="text-align: center; padding-top: 15px; border-top: 1px solid #ddd; margin-top: auto;">
-        @if (Globals.Organization != null)
-        {
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                @if (!string.IsNullOrWhiteSpace(Globals.Organization.Logo))
+            <!-- Mini Profile when collapsed -->
+            <div class="mini-profile" @onclick="() => ExpandTemporarily()">
+                @if (Globals.User != null && !string.IsNullOrEmpty(Globals.User.Pic))
                 {
-                    <img src="@Globals.Organization.Logo" alt="Organization Logo"
-                         style="width: 64px; height: 64px; border-radius: 50%; margin-bottom: 10px; object-fit: cover;" />
+                    <img src="@Globals.User.Pic" alt="Profile" class="mini-profile-pic" />
                 }
-                <MudText Typo="Typo.h6" Align="Align.Center" Color="Color.Primary"
-                         Style="font-weight: bold; font-size: 1.1rem; letter-spacing: 0.5px;">
-                    @Globals.Organization.Name
-                </MudText>
+                else
+                {
+                    <div class="mini-profile-fallback">
+                        <i class="fas fa-user"></i>
+                    </div>
+                }
             </div>
         }
-    </div> *@
 
+        <!-- Navigation Menu -->
+        <div class="nav-menu">
+            @foreach (var group in MenuGroupData)
+            {
+                <div class="nav-group">
+                    <!-- Group Header -->
+                    <div class="nav-group-header" @onclick="() => ToggleGroup(group.MenuId)">
+                        <div class="d-flex align-items-center">
+                            <div class="group-icon">
+                                <i class="@group.Icon"></i>
+                            </div>
+                            @if (IsExpanded || temporaryExpand)
+                            {
+                                <span class="group-title">@group.MenuCaption</span>
+                                <MudSpacer />
+                                <i class="fas fa-chevron-@(IsGroupExpanded(group.MenuId) ? "down" : "right") group-arrow"></i>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Group Items -->
+                    @if (IsExpanded && IsGroupExpanded(group.MenuId) || temporaryExpand)
+                    {
+                        <div class="nav-group-items">
+                            @if (data != null)
+                            {
+                                var groupItems = data.Where(x =>
+                                x.ParentId == group.MenuId &&
+                                (Globals.User.GroupId == 1 ||
+                                (x.My_Privilege == "READ ONLY" || x.My_Privilege == "FULL ACCESS")))
+                                .ToList();
+
+                                @if (groupItems.Count == 0)
+                                {
+                                    <div class="no-items">
+                                        <MudText Typo="Typo.caption" Class="text-muted">No items</MudText>
+                                    </div>
+                                }
+                                else
+                                {
+                                    @foreach (var item in groupItems)
+                                    {
+                                        <div class="nav-item @(IsActive(item) ? "active" : "")"
+                                             @onclick="() => LoadOption(item)"
+                                             @onmouseover="() => ShowTooltip(item)"
+                                             @onmouseout="HideTooltip">
+                                            <div class="d-flex align-items-center">
+                                                <div class="item-icon" @onclick="() => ExpandForIconClick(item)">
+                                                    <i class="@item.Icon"></i>
+                                                </div>
+                                                @if (IsExpanded || temporaryExpand)
+                                                {
+                                                    <span class="item-title">@item.MenuCaption</span>
+                                                }
+                                            </div>
+                                        </div>
+
+                                        <!-- Tooltip for collapsed state -->
+                                        @if (!IsExpanded && showTooltip && tooltipItem == item.MenuId)
+                                        {
+                                            <div class="item-tooltip" style="left: 52px; top: @tooltipTop">
+                                                @item.MenuCaption
+                                            </div>
+                                        }
+                                    }
+                                }
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
 </div>
+
+<!-- Overlay when sidebar is expanded on mobile -->
+@if (IsExpanded && IsMobile)
+{
+    <div class="sidebar-overlay" @onclick="ToggleSidebar"></div>
+}
+
+<style>
+    /* REMOVE THESE CUSTOM VARIABLES - MudBlazor provides them automatically */
+    /*
+        .sidebar {
+            --mud-palette-primary: #594ae2;
+            --mud-palette-primary-lighten: #7265e3;
+            --mud-palette-primary-darken: #4638c5;
+            --mud-palette-surface: #ffffff;
+            --mud-palette-background: #f5f7fa;
+            --mud-palette-text-primary: #424242;
+            --mud-palette-text-secondary: #757575;
+            --mud-palette-action-default: #757575;
+            --mud-palette-action-disabled: #bdbdbd;
+            --mud-palette-divider: #e0e0e0;
+        }
+        */
+
+    /* Loading, Error, Empty States */
+    .sidebar-loading,
+    .sidebar-error,
+    .sidebar-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        text-align: center;
+        color: var(--mud-palette-text-secondary);
+    }
+
+    .sidebar-error {
+        color: var(--mud-palette-warning);
+    }
+
+    /* Windows 10 Style Sidebar */
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        width: 240px;
+        background: var(--mud-palette-surface);
+        border-right: 1px solid var(--mud-palette-lines-default);
+        z-index: 1000;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+        .sidebar.collapsed {
+            width: 52px;
+        }
+
+        .sidebar.overlay {
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+            z-index: 1100;
+        }
+
+    /* Toggle Button */
+    .sidebar-toggle {
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border-bottom: 1px solid var(--mud-palette-lines-default);
+        background: var(--mud-palette-background);
+        color: var(--mud-palette-text-secondary);
+        transition: all 0.2s;
+    }
+
+        .sidebar-toggle:hover {
+            background: var(--mud-palette-action-hover);
+            color: var(--mud-palette-primary);
+        }
+
+    /* User Profile */
+    .user-profile {
+        padding: 16px;
+        border-bottom: 1px solid var(--mud-palette-lines-default);
+        background: var(--mud-palette-background);
+    }
+
+    .profile-pic {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--mud-palette-primary);
+    }
+
+    .profile-pic-fallback {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--mud-palette-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--mud-palette-primary-contrast);
+        font-size: 18px;
+    }
+
+    .user-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--mud-palette-text-primary);
+        line-height: 1.2;
+    }
+
+    .user-role {
+        font-size: 12px;
+        color: var(--mud-palette-text-secondary);
+        line-height: 1.2;
+    }
+
+    /* Mini Profile (Collapsed) */
+    .mini-profile {
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border-bottom: 1px solid var(--mud-palette-lines-default);
+        transition: all 0.2s;
+    }
+
+        .mini-profile:hover {
+            background: var(--mud-palette-action-hover);
+        }
+
+    .mini-profile-pic {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .mini-profile-fallback {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--mud-palette-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--mud-palette-primary-contrast);
+        font-size: 14px;
+    }
+
+    /* Navigation Menu */
+    .nav-menu {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 0;
+    }
+
+    .no-items {
+        padding: 12px 16px;
+        text-align: center;
+        color: var(--mud-palette-text-disabled);
+    }
+
+    /* Group Styles */
+    .nav-group {
+        margin-bottom: 2px;
+    }
+
+    .nav-group-header {
+        padding: 10px 16px;
+        cursor: pointer;
+        color: var(--mud-palette-text-primary);
+        transition: all 0.2s;
+        border-left: 3px solid transparent;
+    }
+
+        .nav-group-header:hover {
+            background: var(--mud-palette-action-hover);
+            border-left-color: var(--mud-palette-primary-lighten);
+        }
+
+    .group-icon {
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--mud-palette-primary);
+        font-size: 14px;
+    }
+
+    .group-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin-left: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .group-arrow {
+        font-size: 10px;
+        color: var(--mud-palette-text-secondary);
+        transition: transform 0.2s;
+    }
+
+    /* Group Items */
+    .nav-group-items {
+        background: var(--mud-palette-background);
+        border-left: 2px solid var(--mud-palette-primary);
+        margin-left: 24px;
+        margin-bottom: 4px;
+    }
+
+    .nav-item {
+        padding: 8px 16px;
+        cursor: pointer;
+        color: var(--mud-palette-text-primary);
+        transition: all 0.2s;
+        position: relative;
+        border-left: 3px solid transparent;
+    }
+
+        .nav-item:hover {
+            background: var(--mud-palette-action-hover);
+            border-left-color: var(--mud-palette-primary-lighten);
+        }
+
+        .nav-item.active {
+            background: var(--mud-palette-primary);
+            color: var(--mud-palette-primary-contrast);
+            border-left-color: var(--mud-palette-primary-darken);
+        }
+
+            .nav-item.active .item-icon {
+                color: var(--mud-palette-primary-contrast);
+            }
+
+    .item-icon {
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--mud-palette-text-secondary);
+        font-size: 13px;
+        cursor: pointer;
+    }
+
+    .item-title {
+        font-size: 13px;
+        margin-left: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+    }
+
+    /* Tooltip for collapsed state */
+    .item-tooltip {
+        position: fixed;
+        background: var(--mud-palette-surface);
+        color: var(--mud-palette-text-primary);
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        z-index: 1200;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        border: 1px solid var(--mud-palette-lines-default);
+    }
+
+    /* Overlay */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 900;
+    }
+
+    /* Scrollbar Styling */
+    .nav-menu::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .nav-menu::-webkit-scrollbar-track {
+        background: var(--mud-palette-background);
+    }
+
+    .nav-menu::-webkit-scrollbar-thumb {
+        background: var(--mud-palette-divider);
+        border-radius: 2px;
+    }
+
+        .nav-menu::-webkit-scrollbar-thumb:hover {
+            background: var(--mud-palette-text-disabled);
+        }
+
+    /* Mobile Responsive */
+    @@media (max-width: 768px) {
+        .sidebar {
+            transform: translateX(-100%);
+        }
+
+            .sidebar.expanded {
+                transform: translateX(0);
+            }
+
+            .sidebar.collapsed {
+                transform: translateX(-100%);
+            }
+    }
+
+    /* Dark theme specific adjustments */
+    .mud-theme-dark .sidebar {
+        background: var(--mud-palette-surface);
+        border-right-color: var(--mud-palette-lines-default);
+    }
+
+    .mud-theme-dark .sidebar-toggle {
+        background: var(--mud-palette-background);
+        border-bottom-color: var(--mud-palette-lines-default);
+    }
+
+    .mud-theme-dark .user-profile {
+        background: var(--mud-palette-background);
+        border-bottom-color: var(--mud-palette-lines-default);
+    }
+
+    .mud-theme-dark .nav-group-items {
+        background: rgba(var(--mud-palette-primary-rgb), 0.05);
+    }
+
+    .mud-theme-dark .nav-item:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .mud-theme-dark .item-tooltip {
+        background: var(--mud-palette-surface);
+        color: var(--mud-palette-text-primary);
+        border-color: var(--mud-palette-lines-default);
+    }
+</style>
 
 @code {
     private List<GroupMenuModel> MenuGroupData = new();
     private List<GroupMenuModel> data = new();
-    private bool LoadingPanel = false;
+    private bool isLoading = true;
+    private bool hasError = false;
     private string factor => FormFactor.GetFormFactor();
     private string platform => FormFactor.GetPlatform();
-    int? expandedGroupId = null;
+
+    // Sidebar state
+    private bool IsExpanded = true;
+    private bool IsMobile = false;
+    private int? expandedGroupId = null;
+    private bool temporaryExpand = false;
+    private bool showTooltip = false;
+    private int? tooltipItem = null;
+    private string tooltipTop = "0px";
+
+    [Parameter] public EventCallback<bool> OnSidebarToggle { get; set; } // Add this parameter
 
     protected override async Task OnInitializedAsync()
     {
-        if (Globals.User == null || Globals.Organization == null)
+        await LoadMenuData();
+        await CheckMobile();
+    }
+
+    private async Task LoadMenuData()
+    {
+        try
         {
-            SnackbarService.Add("Cannot Get User or Organization Details. Please try login again.", Severity.Error);
-            return;
-        }
+            isLoading = true;
+            hasError = false;
+            StateHasChanged();
 
-        LoadingPanel = true;
-
-        data = await Functions.GetAsync<List<GroupMenuModel>>($"Permissions/SearchGroupPermissions/{Globals.User.OrganizationId}", true
-        ) ?? new List<GroupMenuModel>();
-
-        LoadingPanel = false;
-
-        if (data?.Count > 0)
-        {
-            data = data
-                .Where(x => x.AdditionalInfo != "Report" && x.GroupId == Globals.User.GroupId)
-                .ToList();
-
-            if (Globals.User.GroupId != 1)
+            // Check if user is authenticated
+            if (Globals.User == null || Globals.Organization == null)
             {
-                MenuGroupData = data
-                    .Where(parent => parent.ParentId == 0 &&
-                        data.Any(child => child.ParentId == parent.MenuId &&
-                            (child.My_Privilege == "READ ONLY" || child.My_Privilege == "FULL ACCESS")))
+                SnackbarService.Add("User session expired. Please login again.", Severity.Warning);
+                hasError = true;
+                return;
+            }
+
+            Console.WriteLine($"Loading menu for OrganizationId: {Globals.User.OrganizationId}, GroupId: {Globals.User.GroupId}");
+
+            // Load menu data
+            data = await Functions.GetAsync<List<GroupMenuModel>>(
+                $"Permissions/SearchGroupPermissions/{Globals.User.OrganizationId}",
+                true) ?? new List<GroupMenuModel>();
+
+            Console.WriteLine($"Raw data count: {data.Count}");
+
+            if (data.Count > 0)
+            {
+                // Filter out reports and ensure correct group
+                data = data
+                    .Where(x => x.AdditionalInfo != "Report" && x.GroupId == Globals.User.GroupId)
                     .ToList();
+
+                Console.WriteLine($"Filtered data count: {data.Count}");
+
+                // Get parent groups (MenuLevel == 0)
+                if (Globals.User.GroupId != 1)
+                {
+                    MenuGroupData = data
+                        .Where(parent => parent.ParentId == 0 &&
+                            data.Any(child => child.ParentId == parent.MenuId &&
+                                (child.My_Privilege == "READ ONLY" || child.My_Privilege == "FULL ACCESS")))
+                        .ToList();
+                }
+                else
+                {
+                    MenuGroupData = data.Where(x => x.ParentId == 0).ToList();
+                }
+
+                Console.WriteLine($"MenuGroupData count: {MenuGroupData.Count}");
+
+                // Store in globals
+                Globals.MyPermissions = data;
+
+                // Auto-expand first group if available
+                if (MenuGroupData.Count > 0)
+                {
+                    expandedGroupId = MenuGroupData[0].MenuId;
+                    Console.WriteLine($"Auto-expanding group: {MenuGroupData[0].MenuCaption}");
+                }
+
+                // Log menu structure
+                foreach (var group in MenuGroupData)
+                {
+                    var items = data.Count(x => x.ParentId == group.MenuId);
+                    Console.WriteLine($"Group: {group.MenuCaption} ({group.MenuId}), Items: {items}");
+                }
             }
             else
             {
-                MenuGroupData = data.Where(x => x.ParentId == 0).ToList();
+                Console.WriteLine("No data returned from API");
+                SnackbarService.Add("No menu permissions configured for your account.", Severity.Info);
             }
-
-            Globals.MyPermissions = data;
-
-            foreach (var item in MenuGroupData)
-                item.IsToggled = false;
-
-            if (MenuGroupData.Count > 0)
-                MenuGroupData[^1].IsToggled = true;
-
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading menu: {ex.Message}");
+            SnackbarService.Add($"Failed to load menu: {ex.Message}", Severity.Error);
+            hasError = true;
+        }
+        finally
+        {
+            isLoading = false;
             StateHasChanged();
         }
     }
 
-    private void LoadOption(GroupMenuModel item)
+    private async Task CheckMobile()
     {
-        LoadingPanel = true;
-        Globals.seletctedMenuItem = item.MenuCaption!;
-        NavManager.NavigateTo($"/{item.PageName}/{item.AdditionalInfo}");
-        LoadingPanel = false;
+        try
+        {
+            IsMobile = await JSRuntime.InvokeAsync<bool>("eval", "window.innerWidth <= 768");
+
+            // Auto-collapse on mobile
+            if (IsMobile)
+            {
+                IsExpanded = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error checking mobile: {ex.Message}");
+        }
+    }
+
+    private void RetryLoadMenu()
+    {
+        _ = LoadMenuData();
+    }
+
+    private void ToggleSidebar()
+    {
+        IsExpanded = !IsExpanded;
+
+        // Clear temporary states when collapsing
+        if (!IsExpanded)
+        {
+            temporaryExpand = false;
+            showTooltip = false;
+        }
+
+        // Notify parent about the state change
+        OnSidebarToggle.InvokeAsync(IsExpanded);
+
         StateHasChanged();
     }
 
-    private string GetFontColor(string? privilege)
-    {
-        var normalized = privilege?.Trim().ToUpper();
-        return normalized switch
-        {
-            "FULL ACCESS" => "#546E7A", // Blue Gray 600 — balanced for both themes
-            "READ ONLY" => "#90A4AE",   // Blue Gray 300 — readable in both themes
-            _ => "#78909C"              // Blue Gray 400 — fallback neutral
-        };
-    }
-
-    void ToggleGroup(int groupId)
+    private void ToggleGroup(int groupId)
     {
         if (expandedGroupId == groupId)
+        {
             expandedGroupId = null;
+        }
         else
+        {
             expandedGroupId = groupId;
+        }
+        StateHasChanged();
     }
 
-    bool IsExpanded(int groupId)
+    private bool IsGroupExpanded(int groupId)
     {
         return expandedGroupId == groupId;
     }
 
-    private void ToggleMenuGroup(int menuid)
+    private void ExpandForIconClick(GroupMenuModel item)
     {
-        foreach (var menuGroup in MenuGroupData)
+        if (!IsExpanded)
         {
-            menuGroup.IsToggled = menuGroup.MenuId == menuid;
+            temporaryExpand = true;
+            expandedGroupId = item.ParentId;
+
+            // Auto-navigate after a short delay
+            Task.Delay(300).ContinueWith(_ =>
+            {
+                InvokeAsync(() =>
+                {
+                    LoadOption(item);
+                    // Auto-collapse after navigation
+                    temporaryExpand = false;
+                    StateHasChanged();
+                });
+            });
+        }
+        else
+        {
+            LoadOption(item);
         }
     }
 
-    private void OnMenuItemClick(string icon = "")
+    private void ExpandTemporarily()
     {
-        Console.WriteLine($"Icon clicked: {icon}");
+        if (!IsExpanded && IsMobile)
+        {
+            IsExpanded = true;
+            StateHasChanged();
+        }
     }
 
+    private void ShowTooltip(GroupMenuModel item)
+    {
+        if (!IsExpanded)
+        {
+            showTooltip = true;
+            tooltipItem = item.MenuId;
+            StateHasChanged();
+        }
+    }
+
+    private void HideTooltip()
+    {
+        showTooltip = false;
+        tooltipItem = null;
+        StateHasChanged();
+    }
+
+    private void LoadOption(GroupMenuModel item)
+    {
+        try
+        {
+            Console.WriteLine($"Loading option: {item.MenuCaption}, Page: {item.PageName}, Info: {item.AdditionalInfo}");
+
+            Globals.SelectedMenuItem = item.MenuCaption!;
+
+            // Navigate to the page
+            var url = $"/{item.PageName}/{item.AdditionalInfo}";
+            Console.WriteLine($"Navigating to: {url}");
+            NavManager.NavigateTo(url);
+
+            // Auto-collapse on mobile after selection
+            if (IsMobile)
+            {
+                IsExpanded = false;
+                temporaryExpand = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error navigating: {ex.Message}");
+            SnackbarService.Add($"Navigation error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private bool IsActive(GroupMenuModel item)
+    {
+        return Globals.SelectedMenuItem == item.MenuCaption;
+    }
+
+    private string GetToggleIcon()
+    {
+        return IsExpanded ? "fas fa-chevron-left" : "fas fa-chevron-right";
+    }
+
+    private string GetSidebarClass()
+    {
+        var classes = new List<string> { "sidebar" };
+
+        if (!IsExpanded)
+        {
+            classes.Add("collapsed");
+        }
+
+        if (IsMobile && IsExpanded)
+        {
+            classes.Add("overlay");
+        }
+
+        if (IsExpanded)
+        {
+            classes.Add("expanded");
+        }
+
+        return string.Join(" ", classes);
+    }
+
+    public void Dispose()
+    {
+        // Clean up if needed
+    }
+
+    
 }
-
-
-<style>
-
-    .employee-info {
-        border-radius: 5px;
-        color: white; /* White text color */
-        padding: 5px; /* Add padding */
-        margin-bottom: 15px; /* Space below the profile section */
-        /* background-color: rgba(255, 255, 255, 0.1);  */
-        text-align: center;
-    }
-
-    .sidebar-container {
-        display: flex;
-        flex-direction: column;
-        height: 90vh; /* Full height of viewport */
-        padding: 1rem;
-    }
-
-    .platform-text {
-        margin-top: auto;
-        font-size: 10px;
-    }
-</style>
-

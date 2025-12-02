@@ -28,33 +28,35 @@
     </div>
 
     <br />
-
     <MudExpansionPanels MultiExpansion="true">
-        <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
 
+        <!-- Item Tax Configuration Panel -->
+        <MudExpansionPanel Text="Item Tax Configuration" Expanded="true" Style="margin-bottom:10px;">
             <TitleContent>
                 <div class="d-flex align-items-center p-2 rounded shadow-sm" style="gap: 10px;">
                     <img src="@Item.Pic"
-                    alt="Item Image"
-                    class="img-thumbnail"
-                    style="width: 60px; height: 60px; object-fit: cover; border-radius: 10%;" />
+                         alt="Item Image"
+                         class="img-thumbnail"
+                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 10%;" />
 
                     <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold text-dark">@Item.Name</MudText>
+                        <MudText Typo="Typo.h6" Class="fw-bold">@(string.IsNullOrWhiteSpace(Item.Name) ? "NO NAME" : Item.Name)</MudText>
                         <MudText Typo="Typo.caption" Class="fw-bold text-dark">@Item.Description</MudText>
                     </div>
                 </div>
-                <hr style="height: 6px; border: none; background: #667eea; border-radius: 10px;" />
+                <hr style="height: 6px; border: none; background: #4CAF50; border-radius: 10px;" />
             </TitleContent>
 
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Tax</label>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Tax</label>
                         <MudSelect @bind-Value="record.TaxId"
-                        Placeholder="Tax"
-                        Clearable="true">
-
+                                   Placeholder="Tax"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
                             @if (TaxMaster != null && TaxMaster.Any())
                             {
                                 foreach (var i in TaxMaster)
@@ -63,72 +65,105 @@
                                 }
                             }
                         </MudSelect>
-                        <ValidationMessage For="@(() => record.TaxId)" />
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.TaxId)" />
+                        </div>
                     </div>
 
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Invoice Type</label>
-
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Invoice Type</label>
                         <MudSelect T="string"
-                        @bind-Value="record.InvoiceType"
-                        Placeholder="Invoice Type"
-                        Clearable="true">
-
-                            <MudSelectItem T="string" Value="@("SALE")">SALE</MudSelectItem>
-                            <MudSelectItem T="string" Value="@("PURCHASE")">PURCHASE</MudSelectItem>
+                                   @bind-Value="record.InvoiceType"
+                                   Placeholder="Invoice Type"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
+                            <MudSelectItem T="string" Value="@("SALE")">
+                                <MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                SALE
+                            </MudSelectItem>
+                            <MudSelectItem T="string" Value="@("PURCHASE")">
+                                <MudIcon Icon="@Icons.Material.Filled.Inventory" Color="Color.Info" Size="Size.Small" Class="me-2" />
+                                PURCHASE
+                            </MudSelectItem>
                         </MudSelect>
-
-
-                        <ValidationMessage For="@(() => record.InvoiceType)" />
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.InvoiceType)" />
+                        </div>
                     </div>
 
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Active</label>
-
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Active</label>
                         <MudSelect T="int"
-                        @bind-Value="record.IsActive"
-                        Placeholder="Active"
-                        Clearable="true">
-
+                                   @bind-Value="record.IsActive"
+                                   Placeholder="Active"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
                             @if (record.IsActive != 0 && record.IsActive != 1)
                             {
                                 record.IsActive = 1;
                             }
-
-                            <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
-                            <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                            <MudSelectItem T="int" Value="1">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                Enable
+                            </MudSelectItem>
+                            <MudSelectItem T="int" Value="0">
+                                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" Class="me-2" />
+                                Disable
+                            </MudSelectItem>
                         </MudSelect>
-
-                        <ValidationMessage For="@(() => record.IsActive)" />
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.IsActive)" />
+                        </div>
                     </div>
-
                 </div>
             </ChildContent>
-
         </MudExpansionPanel>
+
     </MudExpansionPanels>
 
     <MudExpansionPanels MultiExpansion="true">
-        <MudExpansionPanel Text="@GridCaption" Expanded=true Style="margin-bottom:10px;">
 
+        <!-- Tax Configuration List Panel -->
+        <MudExpansionPanel Text="@GridCaption" Expanded="true" Style="margin-bottom:10px;">
             <TitleContent>
-                @GridCaption
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-list-alt"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">@GridCaption</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Tax item configuration management</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #2196F3; border-radius: 10px;" />
             </TitleContent>
 
             <ChildContent>
-
                 @if (TaxConfig == null)
                 {
-                    <SimpleLoading />
+                    <div class="d-flex justify-content-center align-items-center" style="height: 200px;">
+                        <SimpleLoading />
+                    </div>
                 }
                 else
                 {
                     <div class="row">
-                        <MudDataGrid T="TaxItemConfigModel" MultiSelection="false" Items="@TaxConfig" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
+                        <MudDataGrid T="TaxItemConfigModel" MultiSelection="false" Items="@TaxConfig" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true" Hover="true" Striped="true">
                             <ToolBarContent>
-@*                                 <MudText Typo="Typo.h6">Tax ItemConfig Managment</MudText>
+                                <MudText Typo="Typo.h6" Class="text-primary fw-bold">Tax Item Configuration Management</MudText>
                                 <MudSpacer />
-                                <MudButton StartIcon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Clear())">New</MudButton> *@
+                                <MudButton StartIcon="@Icons.Material.TwoTone.Add"
+                                           Size="MudBlazor.Size.Small"
+                                           Class="mx-1"
+                                           Variant="Variant.Filled"
+                                           Color="Color.Success"
+                                           OnClick="@(() => Clear())">
+                                    New Configuration
+                                </MudButton>
                             </ToolBarContent>
 
                             <Columns>
@@ -145,7 +180,6 @@
                                 <PropertyColumn Property="x => x.TaxName" Title="Tax Name" Sortable="true" Filterable="true" />
                                 <PropertyColumn Property="x => x.TaxRate" Title="Tax Rate" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
                                 <PropertyColumn Property="x => x.TaxType" Title="Tax Type" Sortable="true" Filterable="true" />
-
                             </Columns>
 
                             <PagerContent>
@@ -154,10 +188,9 @@
                         </MudDataGrid>
                     </div>
                 }
-
             </ChildContent>
-
         </MudExpansionPanel>
+
     </MudExpansionPanels>
 
 </div>
@@ -252,38 +285,47 @@
 
     protected async Task Save()
     {
-        LoadingPanel = true;
-        record.ItemId = CurrentRecord;
-        record.OrganizationId = Globals.User.OrganizationId;
-        record.CreatedBy = Globals.User.Id;
-        record.CreatedOn = DateTime.Now;
-        record.CreatedFrom = Globals.ClientInfo;
-        record.UpdatedBy = Globals.User.Id;
-        record.UpdatedOn = DateTime.Now;
-        record.UpdatedFrom = Globals.ClientInfo;
+        try
+        {
+            LoadingPanel = true;
+            record.ItemId = CurrentRecord;
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
 
-        string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
-        var result = await Functions.PostAsync<TaxItemsModel>($"TaxItems/{url}", record, true);
-        if (result.Success == false)
-        {
-            SnackbarService.Add($"Record Not Saved", Severity.Error);
-        }
-        else
-        {
-            await OnSaved.InvokeAsync();
-            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
-            TaxConfig = await Functions.GetAsync<List<TaxItemConfigModel>>($"TaxItems/SearchTaxItemConfig/ItemId={record.Id}", true) ?? new List<TaxItemConfigModel>();
-            if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
-                await Edit(result.Result!.Id);
+            string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<TaxItemsModel>($"TaxItems/{url}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"Record Not Saved", Severity.Error);
+            }
             else
             {
-                Clear();
+                await OnSaved.InvokeAsync();
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                TaxConfig = await Functions.GetAsync<List<TaxItemConfigModel>>($"TaxItems/SearchTaxItemConfig/ItemId={record.Id}", true) ?? new List<TaxItemConfigModel>();
+                if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                    await Edit(result.Result!.Id);
+                else
+                {
+                    Clear();
+                }
             }
         }
+        catch (Exception ex)
+        {
+            Log.Warning($"Error: {ex.Message}");
+        }
+        finally
+        {
+            LoadingPanel = false;
 
-        LoadingPanel = false;
-        await _drawer.CloseDrawerAsync();
 
+        }
     }
 }
 

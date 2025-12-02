@@ -81,17 +81,20 @@
         display: flex;
         flex-direction: column;
         box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        padding: 10px;
+        padding: 0; /* Remove padding to avoid borders */
         border-radius: 8px;
         overflow: hidden;
-        box-sizing: border-box; /* ensures padding doesn't overflow */
+        box-sizing: border-box;
+        border: none; /* Ensure no border */
     }
 
     .modal-header,
     .modal-footer {
-        padding: 8px;
+        padding: 16px 20px;
         flex-shrink: 0;
         box-sizing: border-box;
+        border: none; /* Remove borders */
+        background: transparent; /* Ensure no background colors create visual borders */
     }
 
     .modal-title {
@@ -101,19 +104,21 @@
         align-items: center;
         justify-content: space-between;
         padding: 12px;
+        border: none; /* Remove any borders */
     }
 
     .modal-body {
         flex-grow: 1;
         overflow-y: auto;
-        overflow-x: auto; /* ✅ allow horizontal scroll if content wider */
-        padding: 10px;
+        overflow-x: auto;
+        padding: 20px; /* Keep padding for content spacing */
         box-sizing: border-box;
+        border: none; /* Remove borders */
     }
-
 
     .footer-content {
         width: 100%;
+        border: none; /* Remove borders */
     }
 
     .close {
@@ -122,6 +127,7 @@
         cursor: pointer;
         color: #666;
         padding: 0 10px;
+        border: none; /* Remove borders */
     }
 
         .close:hover {
@@ -133,5 +139,18 @@
         background: transparent;
     }
 
+    /* Remove any default browser borders */
+    .modal-header, .modal-body, .modal-footer {
+        outline: none;
+        border-style: none;
+        border-width: 0;
+    }
 
+        /* Ensure no visual separation lines */
+        .modal-header:after,
+        .modal-body:before,
+        .modal-body:after,
+        .modal-footer:before {
+            content: none;
+        }
 </style>

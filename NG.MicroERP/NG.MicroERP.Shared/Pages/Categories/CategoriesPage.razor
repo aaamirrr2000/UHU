@@ -32,18 +32,17 @@
     <br />
 
     <MudExpansionPanels MultiExpansion="true">
-        <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
 
+        <!-- Basic Information Panel -->
+        <MudExpansionPanel Text="Basic Information" Expanded="true" Style="margin-bottom:10px;">
             <TitleContent>
                 <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
-
                     <i class="fa fa-info-circle"
                        style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
                     </i>
-
                     <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">@record.Name</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted">@record.Name</MudText>
+                        <MudText Typo="Typo.h6" Class="fw-bold">@(string.IsNullOrWhiteSpace(record.Name) ? "NO NAME" : record.Name)</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Category basic information</MudText>
                     </div>
                 </div>
                 <hr style="height: 6px; border: none; background: #667eea; border-radius: 10px;" />
@@ -51,23 +50,56 @@
 
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Code</label>
-                        <MudTextField id="Code" @bind-Value="record.Code" placeholder="Code" ReadOnly="true"></MudTextField>
-                        <ValidationMessage For="@(() => record.Code)" />
+                    <!-- Identification Group -->
+                    <div class="col-12 mb-3">
+                        <MudDivider Class="my-3">
+                            <MudText Typo="Typo.subtitle2" Class="text-muted">Identification</MudText>
+                        </MudDivider>
                     </div>
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Name</label>
-                        <MudTextField id="Name" @bind-Value="record.Name" placeholder="Name" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.Name)" />
-                    </div>
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Parent Category</label>
 
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Code</label>
+                        <MudTextField id="Code"
+                                      @bind-Value="record.Code"
+                                      placeholder="Code"
+                                      ReadOnly="true"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Code)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Name</label>
+                        <MudTextField id="Name"
+                                      @bind-Value="record.Name"
+                                      placeholder="Name"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Name)" />
+                        </div>
+                    </div>
+
+                    <!-- Category Details Group -->
+                    <div class="col-12 mb-3 mt-2">
+                        <MudDivider Class="my-3">
+                            <MudText Typo="Typo.subtitle2" Class="text-muted">Category Details</MudText>
+                        </MudDivider>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Parent Category</label>
                         <MudSelect @bind-Value="record.ParentId"
                                    Placeholder="Parent Category"
-                                   Clearable="true">
-
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
                             @if (Par != null && Par.Any())
                             {
                                 foreach (var i in Par)
@@ -76,54 +108,68 @@
                                 }
                             }
                         </MudSelect>
-                        <ValidationMessage For="@(() => record.ParentId)" />
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.ParentId)" />
+                        </div>
                     </div>
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Sub Type</label>
 
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Sub Type</label>
                         <MudSelect T="string"
                                    @bind-Value="record.CategoryType"
                                    Placeholder="Category Type"
-                                   Clearable="true">
-
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
                             @if (Cat != null && Cat.Any())
                             {
                                 if (string.IsNullOrWhiteSpace(record.CategoryType))
                                 {
                                     record.CategoryType = Cat.First().ListValue;
                                 }
-
                                 foreach (var i in Cat)
                                 {
                                     <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
                                 }
                             }
                         </MudSelect>
-                        <ValidationMessage For="@(() => record.CategoryType)" />
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.CategoryType)" />
+                        </div>
                     </div>
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Active</label>
 
+                    <!-- Status Group -->
+                    <div class="col-12 mb-3 mt-2">
+                        <MudDivider Class="my-3">
+                            <MudText Typo="Typo.subtitle2" Class="text-muted">Status</MudText>
+                        </MudDivider>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Active</label>
                         <MudSelect T="int"
                                    @bind-Value="record.IsActive"
                                    Placeholder="Active"
-                                   Clearable="true">
-
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
                             @if (record.IsActive != 0 && record.IsActive != 1)
                             {
                                 record.IsActive = 1;
                             }
-
                             <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
                             <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
                         </MudSelect>
-
-                        <ValidationMessage For="@(() => record.IsActive)" />
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.IsActive)" />
+                        </div>
                     </div>
                 </div>
             </ChildContent>
-
         </MudExpansionPanel>
+
     </MudExpansionPanels>
 
 </div>
@@ -160,9 +206,15 @@
             record.IsActive = 1;
             isReadOnly = false;
         }
-        else
+        else if (Action != "VIEW")
         {
             await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action != "EDIT")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
         }
 
         LoadingPanel = false;
@@ -202,37 +254,48 @@
 
     protected async Task Save()
     {
-        LoadingPanel = true;
-
-        record.OrganizationId = Globals.User.OrganizationId;
-        record.CreatedBy = Globals.User.Id;
-        record.CreatedOn = DateTime.Now;
-        record.CreatedFrom = Globals.ClientInfo;
-        record.UpdatedBy = Globals.User.Id;
-        record.UpdatedOn = DateTime.Now;
-        record.UpdatedFrom = Globals.ClientInfo;
-
-        string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
-        var result = await Functions.PostAsync<CategoriesModel>($"Categories/{url}", record, true);
-        if (result.Success == false)
+        try
         {
-            SnackbarService.Add($"Record Not Saved", Severity.Error);
-        }
-        else
-        {
-            await OnSaved.InvokeAsync();
-            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
-            if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
-                await Edit(result.Result!.Id);
+            LoadingPanel = true;
+
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<CategoriesModel>($"Categories/{url}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"Record Not Saved", Severity.Error);
+            }
             else
             {
-                await Clear();
+                await OnSaved.InvokeAsync();
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                    await Edit(result.Result!.Id);
+                else
+                {
+                    await Clear();
+                }
+
             }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning($"Error: {ex.Message}");
+        }
+        finally
+        {
+            LoadingPanel = false;
+
 
         }
 
-        LoadingPanel = false;
-        await _drawer.CloseDrawerAsync();
 
     }
 }

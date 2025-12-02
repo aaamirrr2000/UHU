@@ -8,6 +8,9 @@
                  ToStringFunc="@ItemToString"
                  Clearable="true"
                  DebounceInterval="300"
+                 FullWidth="FullWidth"
+                 Variant="Variant"
+                 Label="@Label"
                  @attributes="AdditionalAttributes">
 
     <ProgressIndicatorTemplate>
@@ -16,6 +19,19 @@
 </MudAutocomplete>
 
 @code {
+    /** ============================
+     **     NEW PARAMETERS ADDED
+     ** ============================ */
+
+    [Parameter] public bool FullWidth { get; set; } = true;
+
+    [Parameter] public Variant Variant { get; set; } = Variant.Outlined;
+
+
+    /** ============================
+     **     EXISTING PARAMETERS
+     ** ============================ */
+
     [Parameter] public string? Label { get; set; } = "Select";
 
     // Original object binding
@@ -36,7 +52,6 @@
 
     protected override void OnParametersSet()
     {
-        // Initialize or update selected item when parameters change
         _selectedItem = GetSelectedItem();
     }
 
@@ -78,7 +93,6 @@
     {
         if (IdProperty != null && SelectedId > 0 && DataList?.Any() == true)
         {
-            // Find item by ID
             return DataList.FirstOrDefault(x => IdProperty(x) == SelectedId);
         }
 

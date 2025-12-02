@@ -1,7 +1,7 @@
 ﻿CREATE TABLE Categories
 (
 	Id                  INT					PRIMARY KEY IDENTITY(1,1),
-	OrganizationId      INT					NOT NULL,
+	OrganizationId      INT					NOT NULL	DEFAULT 1,
 	Code                VARCHAR(50)			NOT NULL,
 	Attribute           VARCHAR(255)		NULL,			--RAW MATERIAL, FINISHED GOODS, CATEGORY, SUB CATEGORY
 	Name                VARCHAR(255)		NOT NULL,
@@ -19,3 +19,31 @@
 	FOREIGN KEY (UpdatedBy)        REFERENCES Users(Id),
 	FOREIGN KEY (OrganizationId)   REFERENCES Organizations(Id)
 );
+
+INSERT INTO Categories (Code, Attribute, Name, CategoryType, ParentId) 
+VALUES 
+('1', 'TYPE', 'RAW MATERIAL', 'RAW', 0),
+('2', 'TYPE', 'FINISH GOODS', 'FINISHED GOODS', 0),
+('1', 'CATEGORY', 'FC - INDONESIA', 'RAW', 1),
+('2', 'CATEGORY', 'FC - CHINA', 'RAW', 1),
+('3', 'CATEGORY', 'FC - GERMANY', 'RAW', 1),
+('4', 'CATEGORY', 'FC - OTHERS', 'RAW', 1),
+('5', 'CATEGORY', 'UHU', 'RAW', 1),
+('6', 'CATEGORY', 'PACKING MATERIAL', 'RAW', 1),
+('7', 'CATEGORY', 'TOOTH BRUSH', 'RAW', 1),
+('8', 'CATEGORY', 'UHU GLUE STIC', 'RAW', 1),
+('1', 'SUB CATEGORY', 'CLASSIC / WATER COLOUR PENCIL', 'RAW', 3),
+('2', 'SUB CATEGORY', 'BLACK LEAD PENCIL', 'RAW', 3),
+('3', 'SUB CATEGORY', 'WATER COLOUR PENCIL', 'RAW', 3),
+('4', 'SUB CATEGORY', 'MECHANICAL PENCIL', 'RAW', 3),
+('5', 'SUB CATEGORY', 'MECHANICAL PENCIL LEAD', 'RAW', 3),
+('6', 'SUB CATEGORY', 'OTHER ITEMS', 'RAW', 3),
+('7', 'SUB CATEGORY', 'ADHESIVE', 'RAW', 3),
+('8', 'SUB CATEGORY', 'GLUE STIC', 'RAW', 3),
+('9', 'SUB CATEGORY', 'BULK', 'RAW', 3),
+('10', 'SUB CATEGORY', 'EPOXY', 'RAW', 3),
+('11', 'SUB CATEGORY', 'WATER SOLUBLE SINGLE COLOUR', 'RAW', 3),
+('12', 'SUB CATEGORY', 'GOLD FABER', 'RAW', 3),
+('13', 'SUB CATEGORY', 'ALL PURPOSE ADHESIVE', 'RAW', 3),
+('14', 'SUB CATEGORY', 'EPOXY PLUS', 'RAW', 3),
+('15', 'SUB CATEGORY', 'TRISA', 'RAW', 3);

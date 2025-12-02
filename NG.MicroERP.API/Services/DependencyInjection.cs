@@ -54,6 +54,12 @@ public static class DependencyInjection
         services.AddSingleton<ICurrenciesService, CurrenciesService>();
         services.AddSingleton<IBackupService, BackupService>();
 
+        services.AddSingleton<IPurchaseOrdersService, PurchaseOrdersService>();
+        services.AddSingleton<IPurchaseOrderDetailsService, PurchaseOrderDetailsService>();
+        services.AddSingleton<IPurchaseOrderChargesService, PurchaseOrderChargesService>();
+        
+        services.AddSingleton<IPaymentTermsService, PaymentTermsService>();
+
         services.AddScoped<Globals>();
         services.AddScoped<FileUploadService>();
     }

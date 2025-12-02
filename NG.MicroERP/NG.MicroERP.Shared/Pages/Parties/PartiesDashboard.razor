@@ -102,71 +102,209 @@
     else
     {
         <div class="row">
-            <MudDataGrid T="PartiesModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
+            <MudDataGrid T="PartiesModel"
+                         MultiSelection="false"
+                         Items="@data"
+                         SortMode="SortMode.Multiple"
+                         Filterable="true"
+                         Hideable="true"
+                         RowsPerPage="10"
+                         Dense="true"
+                         Striped="true"
+                         Class="professional-grid elevation-8">
+
                 <ToolBarContent>
-                    <MudText Typo="Typo.h6">Parties Managment</MudText>
-                    <MudSpacer />
-                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Clear())">New</MudButton>
-                    <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Info" OnClick="@(() => Refresh())">Refresh</MudButton>
+                    <div class="grid-toolbar-wrapper">
+                        <div class="grid-toolbar">
+                            <div class="toolbar-left">
+                                <MudIcon Icon="@Icons.Material.Filled.Groups" Class="toolbar-icon" />
+                                <MudText Typo="Typo.h6" Class="toolbar-title">
+                                    Parties Management
+                                </MudText>
+                            </div>
+
+                            <div class="toolbar-right">
+                                @if (AccessLevel == 1)
+                                {
+                                    <MudButton StartIcon="@Icons.Material.TwoTone.Add"
+                                               Size="MudBlazor.Size.Small"
+                                               Variant="Variant.Filled"
+                                               Color="Color.Success"
+                                               Class="action-btn new-btn"
+                                               OnClick="@(() => Clear())">
+                                        New Party
+                                    </MudButton>
+                                }
+
+                                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh"
+                                           Size="MudBlazor.Size.Small"
+                                           Variant="Variant.Filled"
+                                           Color="Color.Info"
+                                           Class="action-btn refresh-btn"
+                                           OnClick="@(() => Refresh())">
+                                    Refresh
+                                </MudButton>
+                            </div>
+                        </div>
+                    </div>
                 </ToolBarContent>
 
                 <Columns>
-                  
-                    <TemplateColumn Title="Actions" CellStyle="width: 60px; min-width: 60px;">
+                    <TemplateColumn Title="Actions"
+                                    CellStyle="width: 80px; min-width: 80px;"
+                                    HeaderClass="grid-header">
                         <CellTemplate Context="row">
-                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Dense="true">
-                                <MudMenuItem OnClick="@(() => View(row.Item.Id))">
-                                    <MudIcon Icon="@Icons.Material.Filled.Search" Class="me-2" /> View
-                                </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => Edit(row.Item.Id))">
-                                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="me-2" /> Edit
-                                </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => Delete(row.Item.Id))" Color="Color.Error">
-                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
-                                </MudMenuItem>
-                                <hr />
-                                <MudMenuItem OnClick="@(() => Contacts(row.Item.Id))">
-                                    <MudIcon Icon="@Icons.Material.Filled.Person" Class="me-2" /> Contacts
-                                </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => Documents(row.Item.Id))">
-                                    <MudIcon Icon="@Icons.Material.Filled.Book" Class="me-2" /> Documents
-                                </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => Vehicles(row.Item.Id))">
-                                    <MudIcon Icon="@Icons.Material.Filled.CarCrash" Class="me-2" /> Vehicles
-                                </MudMenuItem>
-                                <hr />
-                                <MudMenuItem OnClick="@(() => BankDetails(row.Item.Id))">
-                                    <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Class="me-2" /> Banking Details
-                                </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => Financials(row.Item.Id))">
-                                    <MudIcon Icon="@Icons.Material.Filled.Money" Class="me-2" /> Financials
-                                </MudMenuItem>
-                            </MudMenu>
+                            <div class="actions-cell">
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                         Color="Color.Primary"
+                                         Dense="true"
+                                         Class="actions-menu">
+                                    <MudMenuItem OnClick="@(() => View(row.Item.Id))"
+                                                 Class="menu-item view-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
+                                        <span>View Details</span>
+                                    </MudMenuItem>
+                                    @if (AccessLevel == 1)
+                                    {
+                                        <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
+                                                     Color="Color.Primary"
+                                                     Class="menu-item edit-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" Color="Color.Primary" />
+                                            <span>Edit</span>
+                                        </MudMenuItem>
+
+                                        <MudMenuItem OnClick="@(() => Delete(row.Item.Id))"
+                                                     Color="Color.Error"
+                                                     Class="menu-item delete-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" Color="Color.Error" />
+                                            <span>Delete</span>
+                                        </MudMenuItem>
+
+                                        <hr />
+
+                                        <MudMenuItem OnClick="@(() => Contacts(row.Item.Id))"
+                                                     Color="Color.Info"
+                                                     Class="menu-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Contacts" Class="menu-icon" Color="Color.Info" />
+                                            <span>Contacts</span>
+                                        </MudMenuItem>
+
+                                        <MudMenuItem OnClick="@(() => Documents(row.Item.Id))"
+                                                     Color="Color.Secondary"
+                                                     Class="menu-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Description" Class="menu-icon" Color="Color.Secondary" />
+                                            <span>Documents</span>
+                                        </MudMenuItem>
+
+                                        <MudMenuItem OnClick="@(() => Vehicles(row.Item.Id))"
+                                                     Color="Color.Warning"
+                                                     Class="menu-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.DirectionsCar" Class="menu-icon" Color="Color.Warning" />
+                                            <span>Vehicles</span>
+                                        </MudMenuItem>
+
+                                        <hr />
+
+                                        <MudMenuItem OnClick="@(() => BankDetails(row.Item.Id))"
+                                                     Color="Color.Success"
+                                                     Class="menu-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="menu-icon" Color="Color.Success" />
+                                            <span>Banking Details</span>
+                                        </MudMenuItem>
+
+                                        <MudMenuItem OnClick="@(() => Financials(row.Item.Id))"
+                                                     Color="Color.Info"
+                                                     Class="menu-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Class="menu-icon" Color="Color.Info" />
+                                            <span>Financials</span>
+                                        </MudMenuItem>
+                                    }
+                                </MudMenu>
+                            </div>
                         </CellTemplate>
                     </TemplateColumn>
 
-                    <TemplateColumn Title="Picture" CellStyle="width: 50px; min-width: 50px;">
+                    <TemplateColumn Title="Photo"
+                                    CellStyle="width: 50px; min-width: 50px;"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell">
                         <CellTemplate Context="row">
                             <AvatarDisplay Pic="@row.Item.Pic" Name="@row.Item.Name" Size="24" />
                         </CellTemplate>
                     </TemplateColumn>
-                    <PropertyColumn Property="x => x.Code" Title="Code" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.Name" Title="Party" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.PartyType" Title="Party Type" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.PartyTypeCode" Title="Party Type Code" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.ParentName" Title="Parent" Sortable="true" Filterable="true"/>
-                    <PropertyColumn Property="x => x.Address" Title="Address" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.City" Title="City" Sortable="true" Filterable="true"/>
-                    <TemplateColumn Title="Active" CellStyle="width: 50px; min-width: 50px;">
+
+                    <PropertyColumn Property="x => x.Code"
+                                    Title="Code"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.Name"
+                                    Title="Party Name"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.PartyType"
+                                    Title="Party Type"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.PartyTypeCode"
+                                    Title="Type Code"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.ParentName"
+                                    Title="Parent"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.Address"
+                                    Title="Address"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.AreaName"
+                                    Title="City"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <TemplateColumn Title="Status"
+                                    CellStyle="width: 70px; min-width: 70px;"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell">
                         <CellTemplate Context="row">
-                            @((row.Item.IsActive == 1) ? "" : "Locked")
+                            @if (row.Item.IsActive == 1)
+                            {
+                                <MudChip Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">Active</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">Locked</MudChip>
+                            }
                         </CellTemplate>
                     </TemplateColumn>
                 </Columns>
 
                 <PagerContent>
-                    <MudDataGridPager T="PartiesModel" />
+                    <div class="pager-container">
+                        <MudDataGridPager T="PartiesModel" Class="grid-pager" />
+                    </div>
                 </PagerContent>
+
             </MudDataGrid>
         </div>
     }
@@ -178,6 +316,7 @@
     PartiesModel record = new();
 
     public string? Action { get; set; } = "INSERT";
+    public int AccessLevel { get; set; } = 0;
 
     bool isReadOnly = true;
     private bool LoadingPanel { get; set; } = false;
@@ -195,6 +334,7 @@
 
     protected async Task GetAll()
     {
+        AccessLevel = Globals.PageAccess(NavManager, "PartiesDashboard");
         LoadingPanel = true;
         data = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search", true) ?? new List<PartiesModel>();
         LoadingPanel = false;

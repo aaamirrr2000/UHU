@@ -30,74 +30,110 @@
     </div>
 
     <br />
-
     <MudExpansionPanels MultiExpansion="true">
-        <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
 
+        <!-- User Authentication Panel -->
+        <MudExpansionPanel Text="User Authentication" Expanded="true" Style="margin-bottom:10px;">
             <TitleContent>
                 <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
-
-                    <i class="fa fa-info-circle"
+                    <i class="fa fa-user-lock"
                        style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
                     </i>
-
                     <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">Users</MudText>
+                        <MudText Typo="Typo.h6" Class="fw-bold">@(string.IsNullOrWhiteSpace(record.Username) ? "NO NAME" : record.Username)</MudText>
                         <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Users</MudText>
                     </div>
                 </div>
-                <hr style="height: 6px; border: none; background: #667eea; border-radius: 10px;" />
+                <hr style="height: 6px; border: none; background: #4CAF50; border-radius: 10px;" />
             </TitleContent>
 
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">User Name</label>
-                        <MudTextField id="Username" @bind-Value="record.Username" placeholder="User Name" ReadOnly="@isReadOnly"></MudTextField>
-                        <ValidationMessage For="@(() => record.Username)" />
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">User Name</label>
+                        <MudTextField id="Username"
+                                      @bind-Value="record.Username"
+                                      placeholder="User Name"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Username)" />
+                        </div>
                     </div>
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">User Type</label>
 
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">User Type</label>
                         <MudSelect T="string"
                                    @bind-Value="record.UserType"
                                    Placeholder="User Type"
-                                   Clearable="true">
-
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
                             @if (Use != null && Use.Any())
                             {
                                 if (string.IsNullOrWhiteSpace(record.UserType))
                                 {
                                     record.UserType = Use.First().ListValue;
                                 }
-
                                 foreach (var i in Use)
                                 {
                                     <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
                                 }
                             }
                         </MudSelect>
-
-                        <ValidationMessage For="@(() => record.UserType)" />
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.UserType)" />
+                        </div>
                     </div>
-                  
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Employee</label>
-                        <AutoComplete TItem="EmployeesModel"
-                            DataList="@Emp"
-                            IdProperty="@(e => e.Id)"
-                            DisplayProperty="@(e => e.Fullname)"
-                            SelectedId="@record.EmpId"
-                            SelectedIdChanged="@(id => record.EmpId = id)" />
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <!-- User Assignment Panel -->
+        <MudExpansionPanel Text="User Assignment" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-id-card"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">User Assignment</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Employee and group assignment</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #2196F3; border-radius: 10px;" />
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Employee</label>
+                        <div class="flex-grow-1">
+                            <AutoComplete TItem="EmployeesModel"
+                                          DataList="@Emp"
+                                          IdProperty="@(e => e.Id)"
+                                          DisplayProperty="@(e => e.Fullname)"
+                                          SelectedId="@record.EmpId"
+                                          SelectedIdChanged="@(id => record.EmpId = id)"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="true" />
+                        </div>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.EmpId)" />
+                        </div>
                     </div>
 
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Group</label>
-
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Group</label>
                         <MudSelect @bind-Value="record.GroupId"
                                    Placeholder="Group"
-                                   Clearable="true">
-
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
                             @if (Gro != null && Gro.Any())
                             {
                                 foreach (var i in Gro)
@@ -106,17 +142,39 @@
                                 }
                             }
                         </MudSelect>
-                        <ValidationMessage For="@(() => record.GroupId)" />
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.GroupId)" />
+                        </div>
                     </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
 
+        <!-- Access & Status Panel -->
+        <MudExpansionPanel Text="Access & Status" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-shield-alt"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Access & Status</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Location access and activation status</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #FF9800; border-radius: 10px;" />
+            </TitleContent>
 
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Location</label>
-
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Location</label>
                         <MudSelect @bind-Value="record.LocationId"
                                    Placeholder="Location"
-                                   Clearable="true">
-
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
                             @if (Loc != null && Loc.Any())
                             {
                                 foreach (var i in Loc)
@@ -125,32 +183,41 @@
                                 }
                             }
                         </MudSelect>
-                        <ValidationMessage For="@(() => record.LocationId)" />
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.LocationId)" />
+                        </div>
                     </div>
-                    <div class="col-12 col-md-6 flex-input">
-                        <label class="form-label" style="font-weight: bold;">Active</label>
 
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Active</label>
                         <MudSelect T="int"
                                    @bind-Value="record.IsActive"
                                    Placeholder="Active"
-                                   Clearable="true">
-
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
                             @if (record.IsActive != 0 && record.IsActive != 1)
                             {
                                 record.IsActive = 1;
                             }
-
-                            <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
-                            <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                            <MudSelectItem T="int" Value="1">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                Enable
+                            </MudSelectItem>
+                            <MudSelectItem T="int" Value="0">
+                                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" Class="me-2" />
+                                Disable
+                            </MudSelectItem>
                         </MudSelect>
-
-                        <ValidationMessage For="@(() => record.IsActive)" />
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.IsActive)" />
+                        </div>
                     </div>
-
                 </div>
             </ChildContent>
-
         </MudExpansionPanel>
+
     </MudExpansionPanels>
 
 </div>
@@ -269,37 +336,45 @@
 
     protected async Task Save()
     {
-        LoadingPanel = true;
-
-        record.OrganizationId = Globals.User.OrganizationId;
-        record.CreatedBy = Globals.User.Id;
-        record.CreatedOn = DateTime.Now;
-        record.CreatedFrom = Globals.ClientInfo;
-        record.UpdatedBy = Globals.User.Id;
-        record.UpdatedOn = DateTime.Now;
-        record.UpdatedFrom = Globals.ClientInfo;
-
-        string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
-        var result = await Functions.PostAsync<UsersModel>($"Users/{url}", record, true);
-        if (result.Success == false)
+        try
         {
-            SnackbarService.Add($"Record Not Saved", Severity.Error);
-        }
-        else
-        {
-            await OnSaved.InvokeAsync();
-            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
-            if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
-                await Edit(result.Result!.Id);
+            LoadingPanel = true;
+
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<UsersModel>($"Users/{url}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"Record Not Saved", Severity.Error);
+            }
             else
             {
-                Clear();
+                await OnSaved.InvokeAsync();
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                    await Edit(result.Result!.Id);
+                else
+                {
+                    Clear();
+                }
             }
+
         }
-
-        LoadingPanel = false;
-        await _drawer.CloseDrawerAsync();
-
+        catch (Exception ex)
+        {
+            Log.Warning($"Error: {ex.Message}");
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
     }
 }
 

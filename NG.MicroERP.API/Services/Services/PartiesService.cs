@@ -62,45 +62,68 @@ public class PartiesService : IPartiesService
 
         try
         {
-
             string Code = dapper.GetCode("", "Parties", "Code")!;
-            //string SQLDuplicate = $@"SELECT * FROM Parties WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
+            string SQLDuplicate = $@"SELECT * FROM Parties WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
             string SQLInsert = $@"INSERT INTO Parties 
 			(
 				OrganizationId, 
 				Code, 
-				Pic, 
 				Name, 
 				PartyType, 
 				PartyTypeCode, 
 				ParentId, 
+				CustomerRating, 
+				CustomerClass, 
+				CustomerSince, 
+				SalesPersonId, 
+				CreditLimit, 
+				PaymentTermsId, 
+				AccountId, 
+				TaxCategory, 
+				TaxNumber, 
+				NTN, 
 				Address, 
-				CityId,
-                AccountId,
+				CityId, 
 				Latitude, 
 				Longitude, 
 				Radius, 
+				ContactPerson, 
+				ContactDesignation, 
+				ContactEmail, 
+				Pic, 
 				IsActive, 
 				CreatedBy, 
 				CreatedOn, 
 				CreatedFrom, 
-				IsSoftDeleted 
+				IsSoftDeleted
 			) 
 			VALUES 
 			(
 				{obj.OrganizationId},
-				'{Code}', 
-				'{obj.Pic!}', 
+				'{obj.Code!.ToUpper()}', 
 				'{obj.Name!.ToUpper()}', 
 				'{obj.PartyType!.ToUpper()}', 
 				'{obj.PartyTypeCode!.ToUpper()}', 
 				{obj.ParentId},
+				{obj.CustomerRating},
+				'{obj.CustomerClass!.ToUpper()}', 
+				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
+				{obj.SalesPersonId},
+				{obj.CreditLimit},
+				{obj.PaymentTermsId},
+				{obj.AccountId},
+				'{obj.TaxCategory!.ToUpper()}', 
+				'{obj.TaxNumber!.ToUpper()}', 
+				'{obj.NTN!.ToUpper()}', 
 				'{obj.Address!.ToUpper()}', 
 				{obj.CityId},
-                {obj.AccountId},
 				'{obj.Latitude!.ToUpper()}', 
 				'{obj.Longitude!.ToUpper()}', 
 				{obj.Radius},
+				'{obj.ContactPerson!.ToUpper()}', 
+				'{obj.ContactDesignation!.ToUpper()}', 
+				'{obj.ContactEmail!.ToUpper()}', 
+				'{obj.Pic!.ToUpper()}', 
 				{obj.IsActive},
 				{obj.CreatedBy},
 				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
@@ -108,11 +131,11 @@ public class PartiesService : IPartiesService
 				{obj.IsSoftDeleted}
 			);";
 
-            var res = await dapper.Insert(SQLInsert);
+            var res = await dapper.Insert(SQLInsert, SQLDuplicate);
             if (res.Item1 == true)
             {
                 List<PartiesModel> Output = new List<PartiesModel>();
-                var result = await Search($"a.id={res.Item2}")!;
+                var result = await Search($"id={res.Item2}")!;
                 Output = result.Item2;
                 return (true, Output.FirstOrDefault()!, "");
             }
@@ -135,29 +158,41 @@ public class PartiesService : IPartiesService
             string SQLUpdate = $@"UPDATE Parties SET 
 					OrganizationId = {obj.OrganizationId}, 
 					Code = '{obj.Code!.ToUpper()}', 
-					Pic = '{obj.Pic!.ToUpper()}', 
 					Name = '{obj.Name!.ToUpper()}', 
 					PartyType = '{obj.PartyType!.ToUpper()}', 
 					PartyTypeCode = '{obj.PartyTypeCode!.ToUpper()}', 
 					ParentId = {obj.ParentId}, 
+					CustomerRating = {obj.CustomerRating}, 
+					CustomerClass = '{obj.CustomerClass!.ToUpper()}', 
+					CustomerSince = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					SalesPersonId = {obj.SalesPersonId}, 
+					CreditLimit = {obj.CreditLimit}, 
+					PaymentTermsId = {obj.PaymentTermsId}, 
+					AccountId = {obj.AccountId}, 
+					TaxCategory = '{obj.TaxCategory!.ToUpper()}', 
+					TaxNumber = '{obj.TaxNumber!.ToUpper()}', 
+					NTN = '{obj.NTN!.ToUpper()}', 
 					Address = '{obj.Address!.ToUpper()}', 
 					CityId = {obj.CityId}, 
-                    AccountId = {obj.AccountId}, 
 					Latitude = '{obj.Latitude!.ToUpper()}', 
 					Longitude = '{obj.Longitude!.ToUpper()}', 
 					Radius = {obj.Radius}, 
+					ContactPerson = '{obj.ContactPerson!.ToUpper()}', 
+					ContactDesignation = '{obj.ContactDesignation!.ToUpper()}', 
+					ContactEmail = '{obj.ContactEmail!.ToUpper()}', 
+					Pic = '{obj.Pic!.ToUpper()}', 
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
-					IsSoftDeleted = {obj.IsSoftDeleted}
+					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
 
             var res = await dapper.Update(SQLUpdate, SQLDuplicate);
             if (res.Item1 == true)
             {
                 List<PartiesModel> Output = new List<PartiesModel>();
-                var result = await Search($"a.id={obj.Id}")!;
+                var result = await Search($"id={res.Item2}")!;
                 Output = result.Item2;
                 return (true, Output.FirstOrDefault()!, "");
             }

@@ -70,74 +70,86 @@
                              Filterable="true"
                              Hideable="true"
                              RowsPerPage="10"
-                             Dense="true">
+                             Dense="true"
+                             Striped="true"
+                             Class="professional-grid elevation-8">
 
-@*                     <ToolBarContent>
-                        <MudText Typo="Typo.h6" Color="Color.Primary">Menu Permissions</MudText>
-                        <MudSpacer />
-                    </ToolBarContent> *@
+                    <ToolBarContent>
+                        <div class="grid-toolbar-wrapper">
+                            <div class="grid-toolbar">
+                                <div class="toolbar-left">
+                                    <MudIcon Icon="@Icons.Material.Filled.Security" Class="toolbar-icon" />
+                                    <MudText Typo="Typo.h6" Class="toolbar-title">
+                                        Menu Permissions
+                                    </MudText>
+                                </div>
+                            </div>
+                        </div>
+                    </ToolBarContent>
 
                     <Columns>
-
-                        <!-- Actions Column -->
-                        <TemplateColumn Title="Actions" Style="width: 120px; min-width: 120px;">
+                        <TemplateColumn Title="Actions"
+                                        CellStyle="width: 120px; min-width: 120px;"
+                                        HeaderClass="grid-header">
                             <CellTemplate Context="row">
-                                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Dense="true">
-
-                                    @if (AccessLevel == 1)
-                                    {
-                                        <!-- No Access Option -->
-                                        <MudMenuItem OnClick="@(() => NoAccess(row.Item.MenuId))">
-                                            <MudIcon Icon="@Icons.Material.Filled.Block"
-                                            Color="Color.Error"
-                                            Class="me-2" />
-                                            <MudText Typo="Typo.body2" Style="display: inline;">No Access</MudText>
-                                        </MudMenuItem>
-
-                                        <!-- Read Only Option -->
-                                        @if (row.Item.ParentId != 0)
+                                <div class="actions-cell">
+                                    <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                             Color="Color.Primary"
+                                             Dense="true"
+                                             Class="actions-menu">
+                                        @if (AccessLevel == 1)
                                         {
-                                            <MudMenuItem OnClick="@(() => ReadOnly(row.Item.MenuId))">
-                                                <MudIcon Icon="@Icons.Material.Filled.RemoveRedEye"
-                                                Color="Color.Warning"
-                                                Class="me-2" />
-                                                <MudText Typo="Typo.body2" Style="display: inline;">Read Only</MudText>
+                                            <MudMenuItem OnClick="@(() => NoAccess(row.Item.MenuId))"
+                                                         Class="menu-item">
+                                                <MudIcon Icon="@Icons.Material.Filled.Block"
+                                                         Color="Color.Error"
+                                                         Class="menu-icon" />
+                                                <span>No Access</span>
+                                            </MudMenuItem>
+
+                                            @if (row.Item.ParentId != 0)
+                                            {
+                                                <MudMenuItem OnClick="@(() => ReadOnly(row.Item.MenuId))"
+                                                             Class="menu-item">
+                                                    <MudIcon Icon="@Icons.Material.Filled.Visibility"
+                                                             Color="Color.Warning"
+                                                             Class="menu-icon" />
+                                                    <span>Read Only</span>
+                                                </MudMenuItem>
+                                            }
+
+                                            <MudMenuItem OnClick="@(() => FullAccess(row.Item.MenuId))"
+                                                         Class="menu-item">
+                                                <MudIcon Icon="@Icons.Material.Filled.Verified"
+                                                         Color="Color.Success"
+                                                         Class="menu-icon" />
+                                                <span>Full Access</span>
                                             </MudMenuItem>
                                         }
-                                        <MudDivider />
-
-                                        <!-- Full Access Option -->
-                                        <MudMenuItem OnClick="@(() => FullAccess(row.Item.MenuId))">
-                                            <MudIcon Icon="@Icons.Material.Filled.Verified"
-                                            Color="Color.Success"
-                                            Class="me-2" />
-                                            <MudText Typo="Typo.body2" Style="display: inline;">Full Access</MudText>
-                                        </MudMenuItem>
-                                    }
-                                </MudMenu>
+                                    </MudMenu>
+                                </div>
                             </CellTemplate>
                         </TemplateColumn>
 
-                        <!-- Menu Information Column -->
-                        <!-- Combined Menu Item - Compact -->
-                        <TemplateColumn Title="Menu Item" Sortable="true" Filterable="true" Width="280px">
+                        <TemplateColumn Title="Menu Item"
+                                        Sortable="true"
+                                        Filterable="true"
+                                        Width="280px"
+                                        HeaderClass="grid-header"
+                                        CellClass="grid-cell">
                             <CellTemplate Context="row">
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     @if (row.Item.ParentId == 0)
                                     {
-                                        <MudTooltip Text="">
-                                            <MudIcon Icon="@Icons.Material.Filled.Dashboard"
-                                                     Style="font-size: 1.2rem;"
-                                                     Color="Color.Primary" />
-                                        </MudTooltip>
+                                        <MudIcon Icon="@Icons.Material.Filled.Dashboard"
+                                                 Style="font-size: 1.2rem;"
+                                                 Color="Color.Primary" />
                                     }
                                     else
                                     {
-                                        <MudTooltip Text="">
-                                            <MudIcon Icon="@Icons.Material.Filled.MenuOpen"
-                                                     Style="font-size: 1rem; margin-left: 4px;"
-                                                     Color="Color.Secondary" />
-                                        </MudTooltip>
+                                        <MudIcon Icon="@Icons.Material.Filled.MenuOpen"
+                                                 Style="font-size: 1rem; margin-left: 4px;"
+                                                 Color="Color.Secondary" />
                                     }
 
                                     <MudText Typo="Typo.body1" Style="@(row.Item.ParentId == 0 ? "font-weight: 600;" : "font-weight: 400; margin-left: 4px;")">
@@ -147,12 +159,12 @@
                             </CellTemplate>
                         </TemplateColumn>
 
-                        <!-- Current Permission Column -->
-                        <TemplateColumn Title="Current Access" Style="width: 150px; min-width: 150px;">
+                        <TemplateColumn Title="Current Access"
+                                        CellStyle="width: 150px; min-width: 150px;"
+                                        HeaderClass="grid-header"
+                                        CellClass="grid-cell">
                             <CellTemplate Context="row">
                                 <div style="display: flex; align-items: center; justify-content: center;">
-
-
                                     @if (row.Item.My_Privilege == "NO ACCESS")
                                     {
                                         <MudChip Color="Color.Error" Variant="Variant.Filled" Size="Size.Small">
@@ -181,17 +193,15 @@
                                             Undefined
                                         </MudChip>
                                     }
-
                                 </div>
                             </CellTemplate>
                         </TemplateColumn>
-
-                    
-
                     </Columns>
 
                     <PagerContent>
-                        <MudDataGridPager T="GroupMenuModel" />
+                        <div class="pager-container">
+                            <MudDataGridPager T="GroupMenuModel" Class="grid-pager" />
+                        </div>
                     </PagerContent>
                 </MudDataGrid>
             </div>
@@ -220,7 +230,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        AccessLevel = Globals.PageAccess(NavManager, "OrganizationsDashboard");
+        AccessLevel = Globals.PageAccess(NavManager, "PermissionDashboard");
         await GetAll();
     }
 

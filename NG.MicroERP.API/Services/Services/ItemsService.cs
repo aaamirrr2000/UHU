@@ -62,11 +62,9 @@ public class ItemsService : IItemsService
                     Items.UpdatedBy,
                     Items.UpdatedOn,
                     Items.UpdatedFrom,
-                    Items.IsInventoryItem,
-                    AVG(BillDetail.Rating) AS Rating
+                    Items.IsInventoryItem
                 FROM Items
                 LEFT JOIN Categories ON Categories.Id = Items.CategoriesId
-                LEFT JOIN BillDetail ON Items.Id = BillDetail.ItemId
                 WHERE Items.IsSoftDeleted = 0 {SQL}
                 GROUP BY
                     Items.Id,

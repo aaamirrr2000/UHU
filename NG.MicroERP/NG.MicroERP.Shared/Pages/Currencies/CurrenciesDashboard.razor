@@ -31,47 +31,145 @@
     else
     {
         <div class="row">
-            <MudDataGrid T="CurrenciesModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
+            <MudDataGrid T="CurrenciesModel"
+                         MultiSelection="false"
+                         Items="@data"
+                         SortMode="SortMode.Multiple"
+                         Filterable="true"
+                         Hideable="true"
+                         RowsPerPage="10"
+                         Dense="true"
+                         Striped="true"
+                         Class="professional-grid elevation-8">
+
                 <ToolBarContent>
-                    <MudText Typo="Typo.h6">Currencies Managment</MudText>
-                    <MudSpacer />
-                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => Clear())">New</MudButton>
-                    <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" Size="MudBlazor.Size.Small" Class="mx-1" Variant="Variant.Filled" Color="Color.Info" OnClick="@(() => Refresh())">Refresh</MudButton>
+                    <div class="grid-toolbar-wrapper">
+                        <div class="grid-toolbar">
+                            <div class="toolbar-left">
+                                <MudIcon Icon="@Icons.Material.Filled.CurrencyExchange" Class="toolbar-icon" />
+                                <MudText Typo="Typo.h6" Class="toolbar-title">
+                                    Currencies Management
+                                </MudText>
+                            </div>
+
+                            <div class="toolbar-right">
+                                @if (AccessLevel == 1)
+                                {
+                                    <MudButton StartIcon="@Icons.Material.TwoTone.Add"
+                                               Size="MudBlazor.Size.Small"
+                                               Variant="Variant.Filled"
+                                               Color="Color.Success"
+                                               Class="action-btn new-btn"
+                                               OnClick="@(() => Clear())">
+                                        New Currency
+                                    </MudButton>
+                                }
+
+                                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh"
+                                           Size="MudBlazor.Size.Small"
+                                           Variant="Variant.Filled"
+                                           Color="Color.Info"
+                                           Class="action-btn refresh-btn"
+                                           OnClick="@(() => Refresh())">
+                                    Refresh
+                                </MudButton>
+                            </div>
+                        </div>
+                    </div>
                 </ToolBarContent>
 
                 <Columns>
-
-                    <TemplateColumn Title="Actions" CellStyle="width: 60px; min-width: 60px;">
+                    <TemplateColumn Title="Actions"
+                                    CellStyle="width: 80px; min-width: 80px;"
+                                    HeaderClass="grid-header">
                         <CellTemplate Context="row">
-                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Dense="true">
-                                <MudMenuItem OnClick="@(() => View(row.Item.Id))">
-                                    <MudIcon Icon="@Icons.Material.Filled.Search" Class="me-2" /> View
-                                </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => Edit(row.Item.Id))">
-                                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="me-2" /> Edit
-                                </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => Delete(row.Item.Id))" Color="Color.Error">
-                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
-                                </MudMenuItem>
-                            </MudMenu>
+                            <div class="actions-cell">
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                         Color="Color.Primary"
+                                         Dense="true"
+                                         Class="actions-menu">
+                                    <MudMenuItem OnClick="@(() => View(row.Item.Id))"
+                                                 Class="menu-item view-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
+                                        <span>View Details</span>
+                                    </MudMenuItem>
+                                    @if (AccessLevel == 1)
+                                    {
+                                        <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
+                                                     Class="menu-item edit-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
+                                            <span>Edit</span>
+                                        </MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => Delete(row.Item.Id))"
+                                                     Color="Color.Error"
+                                                     Class="menu-item delete-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
+                                            <span>Delete</span>
+                                        </MudMenuItem>
+                                    }
+                                </MudMenu>
+                            </div>
                         </CellTemplate>
                     </TemplateColumn>
 
-                    				<PropertyColumn Property="x => x.Code" Title="Code" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.Name" Title="Name" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.Symbol" Title="Symbol" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.Country" Title="Country" Sortable="true" Filterable="true" />
-				<PropertyColumn Property="x => x.IsBaseCurrency" Title="IsBaseCurrency" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
-                    <TemplateColumn Title="Active" CellStyle="width: 50px; min-width: 50px;">
+                    <PropertyColumn Property="x => x.Code"
+                                    Title="Code"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.Name"
+                                    Title="Name"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.Symbol"
+                                    Title="Symbol"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.Country"
+                                    Title="Country"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.IsBaseCurrency"
+                                    Title="Base Currency"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <TemplateColumn Title="Status"
+                                    CellStyle="width: 70px; min-width: 70px;"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell">
                         <CellTemplate Context="row">
-                            @((row.Item.IsActive == 1) ? "" : "Locked")
+                            @if (row.Item.IsActive == 1)
+                            {
+                                <MudChip Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">Active</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">Locked</MudChip>
+                            }
                         </CellTemplate>
                     </TemplateColumn>
                 </Columns>
 
                 <PagerContent>
-                    <MudDataGridPager T="CurrenciesModel" />
+                    <div class="pager-container">
+                        <MudDataGridPager T="CurrenciesModel" Class="grid-pager" />
+                    </div>
                 </PagerContent>
+
             </MudDataGrid>
         </div>
     }
@@ -83,11 +181,14 @@
     CurrenciesModel record = new();
 
     public string Action { get; set; } = "INSERT";
+    public int AccessLevel { get; set; } = 0;
+
     private bool LoadingPanel { get; set; } = false;
     private MyDrawer _drawer = new();
 
     protected override async Task OnInitializedAsync()
     {
+        AccessLevel = Globals.PageAccess(NavManager, "CurrenciesDashboard");
         await GetAll();
     }
 
