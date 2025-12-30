@@ -1,0 +1,286 @@
+﻿@using System.Collections.ObjectModel
+@inject IDialogService dialogService
+@inject ISnackbar Snackbar
+@inject Functions Functions
+
+<MudDialog @bind-Visible="_visible" Options="_dialogOptions">
+    <TitleContent>
+        <MudGrid Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudItem xs="10">
+                <MudText Typo="Typo.h6">
+                    <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Class="mr-2" />
+                    Payments
+                </MudText>
+            </MudItem>
+        </MudGrid>
+    </TitleContent>
+
+    <DialogContent>
+        <MudPaper Class="pa-4" Style="max-width: 700px; width: 100%; border: 1px solid #ccc; border-radius: 8px; min-height: 50vh;">
+            <MudGrid GutterSize="GutterSize.Small" Class="mb-4">
+                <MudItem xs="12" sm="4">
+                    <MudSelect T="int"
+                               @bind-Value="InvoicePayments.AccountId"
+                               Variant="Variant.Outlined"
+                               Clearable="true"
+                               FullWidth="true"
+                               @bind-Value:after="PaymentMethodChanged">
+                        @if (PaymentMethod != null)
+                        {
+                            @foreach (var pm in PaymentMethod)
+                            {
+                                <MudSelectItem Value="@pm.Id">@pm.Name</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudTextField T="string"
+                                  Dense="true"
+                                  @bind-Value="InvoicePayments.PaymentRef"
+                                  Variant="Variant.Outlined"
+                                  Label="Payment Reference"
+                                  Immediate="true"
+                                  Class="w-100 text-center" />
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudTextField T="decimal"
+                                  Dense="true"
+                                  @bind-Value="InvoicePayments.Amount"
+                                  Variant="Variant.Outlined"
+                                  Label="Amount"
+                                  Format="#,##0.00"
+                                  InputClass="text-end"
+                                  Style="text-align:right;" />
+                </MudItem>
+            </MudGrid>
+
+            <!-- Buttons Row with Balance Label -->
+            <MudGrid Class="mb-2">
+                <MudItem xs="12">
+                    <div class="d-flex justify-content-between align-items-center" style="gap: 8px;">
+                        <div style="border:1px solid #dee2e6; border-radius:6px; padding:8px 16px;">
+                            <div style="display:flex; gap:12px; align-items:center;">
+                                <span style="font-weight:bold;">Balance:</span>
+                                <span style="color:#dc3545; font-weight:bold; font-size:1.1rem;">
+                                    @(CalculateRemainingBalance().ToString("#,##0.00"))
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end align-items-center" style="gap: 8px;">
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Success"
+                                       Dense="true"
+                                       OnClick="AddPayment">
+                                Add Payment
+                            </MudButton>
+
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Secondary"
+                                       Dense="true"
+                                       OnClick="CloseDialogMethod">
+                                Close
+                            </MudButton>
+                        </div>
+                    </div>
+                </MudItem>
+            </MudGrid>
+
+            <MudTable T="InvoicePaymentModel"
+                      Items="@Record.InvoicePayments"
+                      Dense="true"
+                      Hover="true"
+                      Bordered="true"
+                      Striped="true">
+
+                <HeaderContent>
+                    <MudTh style="width:160px;">Actions</MudTh>
+                    <MudTh>Payment Method</MudTh>
+                    <MudTh>Payment Reference</MudTh>
+                    <MudTh class="text-end">Amount</MudTh>
+                </HeaderContent>
+
+                <RowTemplate>
+                    <MudTd>
+                        <MudButton StartIcon="@Icons.Material.TwoTone.DeleteSweep"
+                                   Size="MudBlazor.Size.Small"
+                                   Class="mx-1"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Error"
+                                   OnClick="@(() => DeletePayment(context))">Remove</MudButton>
+                    </MudTd>
+                    <MudTd>@context.PaymentMethod</MudTd>
+                    <MudTd>@context.PaymentRef</MudTd>
+                    <MudTd class="text-end">@context.Amount.ToString("N2")</MudTd>
+                </RowTemplate>
+
+                <FooterContent></FooterContent>
+            </MudTable>
+
+            <div style="display:flex; justify-content:flex-end; margin-top:15px;">
+                <div style="border:1px solid #dee2e6; border-radius:6px; padding:12px 20px; min-width:250px;">
+                    <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:6px;">
+                        <span>Invoice Total</span>
+                        <span style="color:#198754;">
+                            @Record.Invoice.TotalInvoiceAmount.ToString("#,##0.00")
+                        </span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                        <span>Total Paid</span>
+                        <span style="color:#198754;">
+                            @Record.Invoice.TotalPayments.ToString("#,##0.00")
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </MudPaper>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    private bool _visible;
+    private DialogOptions _dialogOptions = new()
+    {
+        CloseOnEscapeKey = true,
+        FullWidth = false,
+        MaxWidth = MaxWidth.False,
+        CloseButton = true,
+        BackdropClick = true
+    };
+
+    [Parameter] public InvoicesModel Record { get; set; } = new();
+    [Parameter] public InvoicePaymentModel InvoicePayments { get; set; } = new();
+    [Parameter] public List<ChartOfAccountsModel> PaymentMethod { get; set; } = new();
+    [Parameter] public EventCallback OnPaymentMethodChange { get; set; }
+    [Parameter] public EventCallback OnAddPayment { get; set; }
+    [Parameter] public EventCallback<InvoicePaymentModel> OnDeletePayment { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Auto-populate amount with remaining balance when dialog is opened
+        if (_visible && InvoicePayments != null)
+        {
+            if (InvoicePayments.Amount == 0)
+            {
+                InvoicePayments.Amount = CalculateRemainingBalance();
+            }
+            if (InvoicePayments.PaidOn == default)
+            {
+                InvoicePayments.PaidOn = DateTime.UtcNow;
+            }
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    /// <summary>
+    /// Calculates the remaining balance considering already-added payments
+    /// </summary>
+    private decimal CalculateRemainingBalance()
+    {
+        if (Record == null || Record.Invoice == null)
+            return 0;
+
+        decimal totalPaid = Record.InvoicePayments?.Sum(x => x.Amount) ?? 0;
+        return Record.Invoice.TotalInvoiceAmount - totalPaid;
+    }
+
+    private async Task AddPayment()
+    {
+        if (InvoicePayments == null || InvoicePayments.Amount <= 0)
+        {
+            Snackbar.Add("Please enter a valid payment amount", Severity.Warning);
+            return;
+        }
+
+        // Validate payment amount doesn't exceed remaining balance
+        decimal remainingBalance = CalculateRemainingBalance();
+        if (InvoicePayments.Amount > remainingBalance)
+        {
+            Snackbar.Add($"Payment amount exceeds remaining balance of {remainingBalance:N2}", Severity.Warning);
+            return;
+        }
+
+        // Resolve account name from PaymentMethod lookup (dialog binds AccountId)
+        var methodName = PaymentMethod?.FirstOrDefault(pm => pm.Id == InvoicePayments.AccountId)?.Name
+                         ?? InvoicePayments.PaymentMethod
+                         ?? string.Empty;
+
+        // Update InvoicePayments with resolved payment method name and default PaidOn if needed
+        InvoicePayments.PaymentMethod = methodName;
+        if (InvoicePayments.PaidOn == default)
+        {
+            InvoicePayments.PaidOn = DateTime.UtcNow;
+        }
+        
+        // Notify parent to add payment and recalculate totals
+        if (OnAddPayment.HasDelegate)
+        {
+            await OnAddPayment.InvokeAsync();
+        }
+        
+        // Reset the input model after parent has processed
+        InvoicePayments = new InvoicePaymentModel();
+        
+        // Trigger refresh so balance updates dynamically
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task DeletePayment(InvoicePaymentModel payment)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do You want to REMOVE Payment?");
+        if (res == false) return;
+
+        try
+        {
+            await OnDeletePayment.InvokeAsync(payment);
+            // Refresh UI after payment deletion
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error deleting payment: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task CloseDialogMethod()
+    {
+        try
+        {
+            await OnClose.InvokeAsync();
+            _visible = false;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error closing dialog: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task PaymentMethodChanged()
+    {
+        if (OnPaymentMethodChange.HasDelegate)
+            await OnPaymentMethodChange.InvokeAsync();
+    }
+
+    public async Task Open()
+    {
+        // Auto-populate amount with remaining balance when opening
+        if (InvoicePayments != null)
+        {
+            InvoicePayments.Amount = CalculateRemainingBalance();
+            if (InvoicePayments.PaidOn == default)
+            {
+                InvoicePayments.PaidOn = DateTime.UtcNow;
+            }
+        }
+
+        _visible = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async void CloseDialog()
+    {
+        await CloseDialogMethod();
+    }
+}
