@@ -52,12 +52,12 @@
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
                         <label class="form-label fw-bold mb-1">Holiday</label>
-                        <MudDatePicker @bind-Value="record.HolidayDate"
-                                       Format="yyyy-MM-dd"
+                        <MudDatePicker @bind-Date="record.HolidayDate"
+                                       DateFormat="yyyy-MM-dd"
                                        placeholder="Holiday"
                                        ReadOnly="@isReadOnly"
                                        Variant="Variant.Outlined"
-                                       FullWidth="true"
+                     
                                        Class="flex-grow-1"></MudDatePicker>
                         <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.HolidayDate)" />

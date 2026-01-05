@@ -18,17 +18,16 @@ public class ItemsModel
     public double MinQty { get; set; } = 0;
     public double MaxQty { get; set; } = 0;
     public double ReorderQty { get; set; } = 0;
-    public double Discount { get; set; } = 0;
-    public double Tax { get; set; } = 0;
+    public double DefaultDiscount { get; set; } = 0;
     public double CostPrice { get; set; } = 0;
-    public double RetailPrice { get; set; } = 0;
-    public int CategoriesId { get; set; } = 0;
+    public double BasePrice { get; set; } = 0;
+    public int CategoryId { get; set; } = 0;
     public string? StockType { get; set; } = string.Empty;
     public string? SaleType { get; set; } = string.Empty;
     public string? Unit { get; set; } = string.Empty;
+    public int TaxRuleId { get; set; }
     public string? ServingSize { get; set; }
-    public int IsInventoryItem { get; set; } = 1;
-    public int IsFavItem { get; set; } = 0;
+    public int IsFavorite { get; set; } = 0;
     public int IsActive { get; set; } = 0;
     public int Rating { get; set; } = 0;
     public int CreatedBy { get; set; } = 0;
@@ -40,14 +39,16 @@ public class ItemsModel
     public int IsSoftDeleted { get; set; } = 0;
     public int Recent_Sales_Volume { get; set; } = 0;
 
-    //
-    public double BasePrice { get; set; } 
-    
     public List<ServingSizeModel> ServingSizes { get; set; } = new();
     public string? CategoryCode { get; set; } = string.Empty;
     public string? CategoryName { get; set; } = string.Empty;
     public double Qty { get; set; } = 0;
     public int Person { get; set; } = 0;
+    public double RetailPrice { get; set; } = 0; // Calculated retail price (base + tax - discount per unit)
+    public string? DisplayName =>
+        string.Format("{0} ({1})",
+            Name, CategoryName);
+
 }
 
 public class ServingSizeModel

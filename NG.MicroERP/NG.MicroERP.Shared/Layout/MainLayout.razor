@@ -1,4 +1,5 @@
 ﻿@inherits LayoutComponentBase
+@using NG.MicroERP.Shared.Models
 @inject ISnackbar SnackbarService
 @inject NavigationManager Nav
 @inject IJSRuntime JS
@@ -8,7 +9,8 @@
 <MudThemeProvider />
 <MudPopoverProvider />
 <MudDialogProvider />
-<MudSnackbarProvider />
+<MudSnackbarProvider/>
+
 
 <MudLayout>
     <MudAppBar Elevation="1" Dense=true>
@@ -20,33 +22,68 @@
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
             <img src="@Globals.Organization.Logo" alt="Company Logo" class="company-logo" />
             <span style="margin-left:5px; font-size: 24px; color: white; letter-spacing:2px;">
-                @(Globals.Organization?.Name ?? "Organization")
-                @* @DateTime.Now.ToString("dddd, dd MMMM yyyy") *@
+                @(Globals.Organization?.Description ?? "Organization")
             </span>
         </MudHidden>
 
         <MudSpacer />
 
-        <MudHidden Breakpoint="Breakpoint.MdAndUp">
-            <a href="/@(Globals.User?.Dashboard ?? "dashboard")" class="nav-link"><i class="fas fa-home"></i></a>
-            @* <a href="#" class="nav-link"><i class="fa-solid fa-clock"></i> Idle: @_idleDisplay</a> *@
-            <a href="/ChangePasswordPage" class="nav-link"><i class="fas fa-key"></i></a>
-            <a href="/" class="nav-link"><i class="fas fa-power-off"></i> </a>
-        </MudHidden>
+       <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <a href="/@(Globals.User?.Dashboard ?? "dashboard")" class="nav-link">
+                <i class="fas fa-home"></i>
+            </a>
 
-        <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <a href="/@(Globals.User?.Dashboard ?? "dashboard")" class="nav-link"><i class="fas fa-home"></i> Home</a>
-            @* <a href="#" class="nav-link"><i class="fa-solid fa-clock"></i> Idle: @_idleDisplay</a> *@
-            <a href="/ChangePasswordPage" class="nav-link"><i class="fas fa-key"></i> Change Password</a>
-            @* <a href="/" class="nav-link"><i class="fa-solid fa-code-merge"></i> @(Globals.Version ?? "")</a> *@
-            <a href="/" class="nav-link"><i class="fas fa-power-off"></i> Log Out</a>
+            <MudMenu @ref="setupMenuRef"
+                     OffsetY="true"
+                     Dense="true"
+                     AnchorOrigin="Origin.BottomCenter"
+                     TransformOrigin="Origin.TopCenter">
+
+                <ActivatorContent>
+                    <MudIconButton Icon="@Icons.Material.Filled.Settings"
+                                   Color="Color.Inherit"
+                                   Edge="Edge.End" />
+                </ActivatorContent>
+
+                <ChildContent>
+                    <MudPaper Class="pa-6 setup-mega-menu" Style="width: fit-content; max-width: 1400px;">
+                        <div class="setup-menu-grid">
+                            @foreach (var parentMenu in setupParentMenus.OrderBy(x => x.SeqNo))
+                            {
+                                var childItems = setupMenuItems
+                                    .Where(x => x.ParentId == parentMenu.MenuId)
+                                    .OrderBy(x => x.SeqNo)
+                                    .ToList();
+
+                                <div class="setup-menu-column">
+                                    <MudText Typo="Typo.subtitle1" Class="mb-3 fw-bold setup-menu-header">
+                                        <i class="@parentMenu.Icon me-2" style="font-size: 16px;"></i>
+                                        <span class="setup-menu-header-text">@parentMenu.MenuCaption</span>
+                                    </MudText>
+
+                                    <div class="setup-menu-items">
+                                        @foreach (var item in childItems)
+                                        {
+                                            <div class="setup-menu-item"
+                                                 @onclick="@(() => NavigateToSetupAndClose(item))">
+                                                <i class="@item.Icon me-2"></i>
+                                                <span class="setup-menu-item-text">@item.MenuCaption</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </MudPaper>
+                </ChildContent>
+            </MudMenu>
+
+            <MudChip T="string" Color="Color.Secondary">
+                @DateTime.Now.ToString("dddd, dd MMMM yyyy")
+            </MudChip>
         </MudHidden>
 
         <MudThemeProvider @bind-IsDarkMode="@Globals._isDarkMode" Theme="_theme" />
-        @if (true)
-        {
-            <MudSwitch Value="@Globals._isDarkMode" ValueChanged="Save" Color="Color.Primary" Class="ma-4" T="bool" Label="Theme" />
-        }
     </MudAppBar>
 
     <!-- Use inline styles to control drawer width -->
@@ -71,6 +108,9 @@
     private string _idleDisplay = "0:00";
     private System.Threading.Timer? _refreshTimer;
     [Inject] private Globals Globals { get; set; } = null!;
+    private List<GroupMenuModel> setupMenuItems = new();
+    private List<GroupMenuModel> setupParentMenus = new();
+    private MudMenu? setupMenuRef;
 
     // Sidebar state variables
     private bool _isSidebarExpanded = true;
@@ -82,7 +122,133 @@
     protected override async Task OnInitializedAsync()
     {
         await CheckMobile();
+        await LoadSetupMenuItems();
         _initialized = true;
+    }
+
+    private async Task LoadSetupMenuItems()
+    {
+        try
+        {
+            if (Globals.User == null || Globals.Organization == null)
+            {
+                return;
+            }
+
+            var allMenuData = await Functions.GetAsync<List<GroupMenuModel>>(
+                $"Permissions/SearchGroupPermissions/{Globals.User.OrganizationId}",
+                true) ?? new List<GroupMenuModel>();
+
+            // Find all parent menu items with Parameter = "SETUP"
+            if (Globals.User.GroupId == 1)
+            {
+                // Admin: Get all setup parents, deduplicate by MenuId
+                setupParentMenus = allMenuData
+                    .Where(x =>
+                        (x.Parameter?.ToUpper() == "SETUP" || x.Parameter == "Setup") &&
+                        x.ParentId == 0 &&
+                        x.Live == 1)
+                    .GroupBy(x => x.MenuId)
+                    .Select(g => g.First())
+                    .OrderBy(x => x.SeqNo)
+                    .ToList();
+            }
+            else
+            {
+                // Non-admin: Filter by GroupId
+                setupParentMenus = allMenuData
+                    .Where(x =>
+                        (x.Parameter?.ToUpper() == "SETUP" || x.Parameter == "Setup") &&
+                        x.ParentId == 0 &&
+                        x.Live == 1 &&
+                        x.GroupId == Globals.User.GroupId &&
+                        (x.My_Privilege == "READ ONLY" || x.My_Privilege == "FULL ACCESS"))
+                    .OrderBy(x => x.SeqNo)
+                    .ToList();
+            }
+
+            if (setupParentMenus.Any())
+            {
+                // Get all child items of all setup parents
+                var setupParentIds = setupParentMenus.Select(p => p.MenuId).ToList();
+                
+                if (Globals.User.GroupId == 1)
+                {
+                    // Admin: Get all setup children, deduplicate by MenuId
+                    setupMenuItems = allMenuData
+                        .Where(x =>
+                            setupParentIds.Contains(x.ParentId) &&
+                            x.Live == 1)
+                        .GroupBy(x => x.MenuId)
+                        .Select(g => g.First())
+                        .OrderBy(x => x.SeqNo)
+                        .ToList();
+                }
+                else
+                {
+                    // Non-admin: Filter by GroupId and privilege
+                    setupMenuItems = allMenuData
+                        .Where(x =>
+                            setupParentIds.Contains(x.ParentId) &&
+                            x.Live == 1 &&
+                            x.GroupId == Globals.User.GroupId &&
+                            (x.My_Privilege == "READ ONLY" || x.My_Privilege == "FULL ACCESS"))
+                        .OrderBy(x => x.SeqNo)
+                        .ToList();
+                }
+            }
+            else
+            {
+                setupMenuItems = new List<GroupMenuModel>();
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading setup menu items: {ex.Message}");
+        }
+    }
+
+    private void NavigateToSetup(GroupMenuModel item)
+    {
+        if (string.IsNullOrEmpty(item.PageName))
+        {
+            SnackbarService.Add("Page not configured for this setup item", Severity.Warning);
+            return;
+        }
+
+        // Check access using centralized function
+        int accessLevel = Globals.PageAccess(Nav, item.PageName);
+        
+        if (accessLevel < 0)
+        {
+            SnackbarService.Add("You do not have permission to access this page", Severity.Warning);
+            return;
+        }
+
+        string url = $"/{item.PageName}";
+        
+        if (!string.IsNullOrEmpty(item.Parameter) && 
+            item.Parameter.ToUpper() != "SETUP" && 
+            item.Parameter != "Setup")
+        {
+            url += $"/{item.Parameter}";
+        }
+        
+        Nav.NavigateTo(url);
+    }
+
+    private void NavigateToSetupAndClose(GroupMenuModel item)
+    {
+        // Close the menu first
+        if (setupMenuRef != null)
+        {
+            setupMenuRef.CloseMenuAsync();
+        }
+        
+        // Then navigate
+        NavigateToSetup(item);
     }
 
     private async Task CheckMobile()
@@ -255,39 +421,6 @@
     }
 
     public void Dispose() => _dotNetRef?.Dispose();
-
-    protected async Task Save(bool newValue)
-    {
-        try
-        {
-            if (Globals.User == null)
-            {
-                SnackbarService.Add("User not found. Please log in again.", Severity.Error);
-                return;
-            }
-
-            Globals._isDarkMode = newValue;
-
-            int theme = newValue ? 1 : 0;
-            var theme_name = newValue ? "DARK" : "LIGHT";
-
-            var result = await Functions.PostAsync<UsersModel>($"Users/SetTheme/{Globals.User.Id}/{theme}", null, true);
-            if (!result.Success)
-            {
-                SnackbarService.Add("Theme not updated.", Severity.Error);
-                Globals._isDarkMode = !newValue;
-            }
-            else
-            {
-                Globals.User.DarKLightTheme = theme;
-                SnackbarService.Add($"Theme changed to {theme_name} mode", Severity.Success);
-            }
-        }
-        catch (Exception ex)
-        {
-            SnackbarService.Add($"Error saving theme: {ex.Message}", Severity.Error);
-        }
-    }
 }
 
 <style>
@@ -300,6 +433,48 @@
     .company-logo {
         height: 35px;
         border-radius: 5px;
+    }
+
+    /* Mega Menu Styles */
+    .mega-menu-paper {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+        border-radius: 8px;
+    }
+
+    .mega-menu-header {
+        color: var(--mud-palette-text-primary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.875rem;
+        margin-bottom: 12px !important;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--mud-palette-divider);
+    }
+
+    .mega-menu-list {
+        padding: 0 !important;
+    }
+
+    .mega-menu-item {
+        padding: 8px 0 !important;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-radius: 4px;
+        margin-bottom: 2px;
+    }
+
+    .mega-menu-item:hover {
+        background-color: var(--mud-palette-action-hover);
+        padding-left: 8px !important;
+    }
+
+    .mega-menu-item .mud-list-item-text {
+        color: var(--mud-palette-text-primary);
+        font-size: 0.875rem;
+    }
+
+    .mega-menu-item:hover .mud-list-item-text {
+        color: var(--mud-palette-primary);
     }
 
     /* Main content dynamic margin */
@@ -350,5 +525,79 @@
         .mud-drawer-open {
             box-shadow: 2px 0 10px rgba(0,0,0,0.2) !important;
         }
+    }
+
+    /* Setup Mega Menu Styles */
+    .setup-mega-menu {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+        border-radius: 8px;
+    }
+
+    .setup-menu-grid {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 24px;
+        width: 100%;
+    }
+
+    .setup-menu-column {
+        min-width: 250px;
+        flex: 0 1 auto;
+    }
+
+    .setup-menu-header {
+        color: var(--mud-palette-text-primary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.875rem;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--mud-palette-divider);
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+    }
+
+    .setup-menu-header-text {
+        white-space: nowrap;
+    }
+
+    .setup-menu-header i {
+        flex-shrink: 0;
+    }
+
+    .setup-menu-items {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .setup-menu-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        color: var(--mud-palette-text-primary);
+        font-size: 0.875rem;
+        white-space: nowrap;
+        width: 100%;
+    }
+
+    .setup-menu-item:hover {
+        background-color: var(--mud-palette-action-hover);
+        color: var(--mud-palette-primary);
+    }
+
+    .setup-menu-item i {
+        width: 18px;
+        text-align: center;
+        font-size: 14px;
+        margin-right: 8px;
+        flex-shrink: 0;
+    }
+
+    .setup-menu-item-text {
+        white-space: nowrap;
     }
 </style>

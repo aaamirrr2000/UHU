@@ -23,4 +23,10 @@ public class CurrenciesModel
     public string? UpdatedFrom { get; set; } = string.Empty;
     public int IsSoftDeleted { get; set; } = 0;
 
+    public string? DisplayName => $"{Code} - {Name}";
+
+    public override string ToString()
+    {
+        return DisplayName ?? string.Empty;
+    }
 }

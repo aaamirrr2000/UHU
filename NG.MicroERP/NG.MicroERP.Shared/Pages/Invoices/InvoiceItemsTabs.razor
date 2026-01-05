@@ -1,0 +1,389 @@
+﻿<MudTabs Rounded="true" Centered="false" Elevation="1" Class="mb-2" ScrollButtons="ScrollButtons.Auto">
+    <MudTabPanel Text=@($"Items ({SelectedItems.Count:#,##0})") Class="p-2">
+        <div class="d-flex flex-row gap-3" style="height: calc(100vh - 300px); overflow: hidden;">
+            <!-- Categories Panel -->
+            <div style="width: 240px; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px; margin-top: 10px; display: flex; flex-direction: column; height: 100%;">
+
+                <!-- Categories Header with Search -->
+                <div style="margin-bottom: 8px; /* removed border-bottom */">
+                    <MudText Typo="Typo.subtitle2" Class="fw-semibold mb-2">Categories</MudText>
+                    <MudTextField Dense="true"
+                                  Placeholder="Search categories…"
+                                  @bind-Value="_categorySearch"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  Class="w-100" />
+                </div>
+
+                <!-- Categories List -->
+                <div style="overflow-y: auto; flex: 1;">
+                    <div style="display: flex; flex-direction: column;">
+                        @foreach (var category in FilteredCategories)
+                        {
+                            var isActive = ActiveCategory?.Id == category.Id;
+                            var borderColor = isActive ? "#3f51b5" : "transparent";
+                            var bgColor = isActive ? "rgba(63, 81, 181, 0.08)" : "transparent";
+                            var style = $"text-align: left; border: 1px solid rgba(0,0,0,0.12); border-left: 4px solid {borderColor}; background-color: {bgColor};";
+
+                            <MudButton @onclick="async () => await HandleCategoryClick(category)"
+                                       Variant="Variant.Filled"
+                                       Color="Color.Inherit"
+                                       FullWidth="@true"
+                                       Class="text-transform-none justify-start mb-1 category-button"
+                                       Style="@style">
+                                <span style="font-weight: 600; font-size: 14px; color: #212529; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    @category.Name (@category.ItemCount)
+                                </span>
+                            </MudButton>
+                        }
+
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Items Panel -->
+            <div class="flex-grow-1" style="display: flex; flex-direction: column; height: 100%; overflow: hidden;">
+                <!-- Items Search Bar -->
+                <div style="flex-shrink: 0; margin-bottom: 8px;">
+                    <MudTextField Dense="true"
+                                  Placeholder="Search items…"
+                                  @bind-Value="ClickedItem.Name"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  Class="w-100" />
+                </div>
+
+                <!-- Items Grid -->
+                <div style="flex:1; overflow-y:auto; padding-right:4px;">
+                    <MudGrid GutterSize="GutterSize.Small">
+
+                        @foreach (var i in SelectedItems.Where(f =>
+                                                string.IsNullOrWhiteSpace(ClickedItem.Name) ||
+                                                f.Name!.Contains(ClickedItem!.Name!, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            <MudItem xs="12">
+
+                                <MudPaper Elevation="1"
+                                          Class="item-list-row"
+                                          @onclick="async () => await HandleItemClick(i.Id.ToString())">
+
+                                    <div class="item-row">
+
+                                        <!-- Image (left, spans rows) -->
+                                        <div class="item-img">
+                                            <AvatarDisplay Pic="@i.Pic"
+                                                           Name="@i.Name"
+                                                           Size="48" />
+                                        </div>
+
+                                        <!-- Text content -->
+                                        <div class="item-content">
+
+                                            <!-- Name Row -->
+                                            <MudText Class="item-name" Typo="Typo.body1" Style="font-size:14px; font-weight:600;">
+                                                @i.Name
+                                            </MudText>
+
+                                            <!-- Meta Row -->
+                                            <div class="item-meta" style="font-size:12px;">
+                                                <MudText Typo="Typo.caption" 
+                                                         Class="item-price" 
+                                                         Style="font-size:12px; font-weight:700;"
+                                                         Color="@(GetRetailPriceDisplay(i) > 0 ? (HasTaxRule?.Invoke(i) == true ? Color.Error : Color.Success) : Color.Default)">
+                                                    @GetRetailPriceDisplay(i).ToString("#,##0.00")
+                                                </MudText>
+                                                <span class="item-dot">•</span>
+                                                <span class="item-extra">@i.CategoryName</span>
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </MudPaper>
+
+                            </MudItem>
+                        }
+
+                    </MudGrid>
+                </div>
+
+
+            </div>
+        </div>
+    </MudTabPanel>
+
+    <MudTabPanel Text=@($"Favorites ({FavItemsData.Count:#,##0})") Class="p-2">
+        <div style="height: calc(100vh - 300px); overflow-y: auto;">
+            <MudTextField Dense="true" Class="mb-2" Placeholder="Search…"
+                          @bind-Value="SelectedFavItem.Name"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search" />
+
+            <MudGrid GutterSize="GutterSize.Small">
+                @foreach (var fav in FavItemsData.Where(f => string.IsNullOrWhiteSpace(SelectedFavItem.Name) ||
+                                f.Name!.Contains(SelectedFavItem.Name, StringComparison.OrdinalIgnoreCase)))
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudButton @onclick="async () => await HandleItemClick(fav.Id.ToString())"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Inherit"
+                                   FullWidth="@true"
+                                   Class="text-transform-none p-2 overflow-hidden"
+                                   Style="height: auto; min-height: 80px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.12); display: flex; flex-direction: row; align-items: center; gap: 8px;">
+
+                            <!-- Image on the left -->
+                            <AvatarDisplay Pic="@fav.Pic" Name="@fav.Name" Size="48" />
+
+                            <!-- Text content on the right -->
+                            <div style="display:flex; flex-direction:column; justify-content:center; gap:2px; flex:1;">
+                                <!-- First row: name -->
+                                <MudText Style="font-size:14px; font-weight:600; line-height:1.2; color:black;">
+                                    @fav.Name
+                                </MudText>
+
+                                <!-- Second row: price / meta -->
+                                <div style="font-size:12px; display:flex; gap:4px; align-items:center; color:gray;">
+                                    <MudText Typo="Typo.caption" 
+                                             Style="font-weight:700;"
+                                             Color="@(GetRetailPriceDisplay(fav) > 0 ? (HasTaxRule?.Invoke(fav) == true ? Color.Error : Color.Success) : Color.Default)">
+                                        @GetRetailPriceDisplay(fav).ToString("#,##0.00")
+                                    </MudText>
+                                    <span style="opacity:0.4;">•</span>
+                                    <span>@fav.CategoryName</span>
+                                </div>
+                            </div>
+                        </MudButton>
+                    </MudItem>
+                }
+            </MudGrid>
+        </div>
+
+    </MudTabPanel>
+
+    <MudTabPanel Text=@($"Recent ({RecentItemsData.Count:#,##0})") Class="p-2">
+        <div style="height: calc(100vh - 300px); overflow-y: auto;">
+            <MudTextField Dense="@true" Class="mb-2" Placeholder="Search…"
+                          @bind-Value="SelectedRecentItem.Name"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search" />
+
+            <MudGrid GutterSize="GutterSize.Small">
+                @foreach (var fav in RecentItemsData.Where(f => string.IsNullOrWhiteSpace(SelectedRecentItem.Name) || f.Name!.Contains(SelectedRecentItem.Name, StringComparison.OrdinalIgnoreCase)))
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudButton @onclick="async () => await HandleItemClick(fav.Id.ToString())"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Inherit"
+                                   FullWidth="@true"
+                                   Class="text-transform-none p-2 overflow-hidden"
+                                   Style="height: auto; min-height: 80px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.12); display: flex; flex-direction: row; align-items: center; gap: 8px;">
+
+                            <!-- Image on the left -->
+                            <AvatarDisplay Pic="@fav.Pic" Name="@fav.Name" Size="48" />
+
+                            <!-- Text content on the right -->
+                            <div style="display:flex; flex-direction:column; justify-content:center; gap:2px; flex:1;">
+                                <!-- First row: name -->
+                                <MudText Style="font-size:14px; font-weight:600; line-height:1.2; color:black;">
+                                    @fav.Name
+                                </MudText>
+
+                                <!-- Second row: price / meta -->
+                                <div style="font-size:12px; display:flex; gap:4px; align-items:center; color:gray;">
+                                    <MudText Typo="Typo.caption" 
+                                             Style="font-weight:700;"
+                                             Color="@(GetRetailPriceDisplay(fav) > 0 ? (HasTaxRule?.Invoke(fav) == true ? Color.Error : Color.Success) : Color.Default)">
+                                        @GetRetailPriceDisplay(fav).ToString("#,##0.00")
+                                    </MudText>
+                                    <span style="opacity:0.4;">•</span>
+                                    <span>@fav.CategoryName</span>
+                                </div>
+                            </div>
+                        </MudButton>
+                    </MudItem>
+                }
+            </MudGrid>
+        </div>
+
+    </MudTabPanel>
+</MudTabs>
+
+@code {
+    [Parameter] public List<CategoriesModel> Categories { get; set; } = new();
+    [Parameter] public List<ItemsModel> SelectedItems { get; set; } = new();
+    [Parameter] public List<ItemsModel> FavItemsData { get; set; } = new();
+    [Parameter] public List<ItemsModel> RecentItemsData { get; set; } = new();
+    [Parameter] public int MaxItems { get; set; } = 12;
+    [Parameter] public ItemsModel ClickedItem { get; set; } = new();
+    [Parameter] public ItemsModel SelectedFavItem { get; set; } = new();
+    [Parameter] public ItemsModel SelectedRecentItem { get; set; } = new();
+    [Parameter] public EventCallback<CategoriesModel> OnCategorySelected { get; set; }
+    [Parameter] public EventCallback<string> OnItemSelected { get; set; }
+    [Parameter] public CategoriesModel ActiveCategory { get; set; }
+    [Parameter] public string InvoiceType { get; set; }
+    [Parameter] public Func<ItemsModel, double> GetDisplayPrice { get; set; }
+    [Parameter] public Func<ItemsModel, int, Task<double>> GetRetailPrice { get; set; }
+    [Parameter] public Func<ItemsModel, bool> HasTaxRule { get; set; }
+
+    // New property for category search
+    private string _categorySearch = string.Empty;
+
+    // Computed property for filtered categories
+    private IEnumerable<CategoriesModel> FilteredCategories
+    {
+        get
+        {
+            // Create a synthetic "All Categories" item
+            var allItem = new CategoriesModel
+            {
+                Id = 0, // special Id to identify "All"
+                Name = "All Categories",
+                ItemCount = Categories.Sum(c => c.ItemCount)
+            };
+
+            // Filtered real categories
+            var filtered = string.IsNullOrWhiteSpace(_categorySearch)
+                ? Categories
+                : Categories.Where(c => c.Name != null && c.Name.Contains(_categorySearch, StringComparison.OrdinalIgnoreCase));
+
+            // Return "All Categories" first, then filtered list
+            return new[] { allItem }.Concat(filtered);
+        }
+    }
+
+
+    // Flag to track if component is initialized
+    private bool _isInitialized = false;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _isInitialized = true;
+    }
+
+    private async Task HandleCategoryClick(CategoriesModel category)
+    {
+        if (!_isInitialized || !OnCategorySelected.HasDelegate) return;
+
+        try
+        {
+            await OnCategorySelected.InvokeAsync(category);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error handling category click: {ex.Message}");
+        }
+    }
+
+    private async Task HandleItemClick(string itemId)
+    {
+        if (!_isInitialized || !OnItemSelected.HasDelegate) return;
+
+        try
+        {
+            await OnItemSelected.InvokeAsync(itemId);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error handling item click: {ex.Message}");
+        }
+    }
+    
+    private double GetRetailPriceDisplay(ItemsModel item)
+    {
+        if (item == null) return 0;
+        
+        // Always use RetailPrice since it's initialized in LoadAllItemsData
+        // For purchase: RetailPrice = CostPrice
+        // For sale: RetailPrice = BasePrice - DefaultDiscount (tax added when party selected)
+        // Even if RetailPrice is 0 or negative, use it (it's the calculated value)
+        return item.RetailPrice;
+    }
+}
+
+
+<style>
+    /* ===============================
+       LIST ROW (CONTAINER)
+    ================================ */
+    .item-list-row {
+        padding: 4px 6px; /* tighter */
+        border-radius: 8px;
+        border: 1px solid var(--mud-palette-divider);
+        cursor: pointer;
+        transition: background 0.1s ease;
+    }
+
+        .item-list-row:hover {
+            background: var(--mud-palette-background-grey);
+        }
+
+    /* ===============================
+       ROW LAYOUT
+    ================================ */
+    .item-row {
+        display: grid;
+        grid-template-columns: 44px 1fr; /* smaller image column */
+        gap: 6px;
+        align-items: flex-start;
+    }
+
+    /* ===============================
+       IMAGE
+    ================================ */
+    .item-img {
+        display: flex;
+        justify-content: center;
+        padding-top: 1px;
+    }
+
+    /* ===============================
+       TEXT CONTAINER
+    ================================ */
+    .item-content {
+        display: flex;
+        flex-direction: column;
+        gap: 2px; /* tighter vertical spacing */
+    }
+
+    /* ===============================
+       NAME (SMALL, FULLY VISIBLE)
+    ================================ */
+    .item-name {
+        font-size: 14px; /* ✅ was too big/small before */
+        font-weight: 600;
+        line-height: 1.25;
+        color: var(--mud-palette-text-primary);
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    /* ===============================
+       META ROW
+    ================================ */
+    .item-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        font-size: 12px; /* ✅ readable, compact */
+        color: var(--mud-palette-text-secondary);
+    }
+
+    /* ===============================
+       PRICE
+    ================================ */
+    .item-price {
+        font-size: 12px; /* match second row */
+        font-weight: 700;
+        color: var(--mud-palette-primary);
+    }
+
+    /* Separator */
+    .item-dot {
+        opacity: 0.4;
+    }
+
+</style>

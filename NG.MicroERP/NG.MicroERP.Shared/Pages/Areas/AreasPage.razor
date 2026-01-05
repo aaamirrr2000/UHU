@@ -9,127 +9,162 @@
 
 <Loading IsLoading="@LoadingPanel" />
 
-<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
-
-    <div class="text-end" style="margin-top:10px;">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <!-- Action Buttons Header -->
+    <div class="d-flex justify-content-end align-items-center mb-4 gap-2">
         @if (Action != "VIEW")
         {
-            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
-                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+            <MudButton OnClick="Save" 
+                       Color="Color.Success" 
+                       Variant="Variant.Filled"
+                       StartIcon="@Icons.Material.Filled.Save"
+                       Size="Size.Medium">
                 @(Action == "INSERT" ? "Save" : "Update")
             </MudButton>
 
             @if (Action == "UPDATE")
             {
-                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
-                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                <MudButton Color="Color.Error" 
+                           OnClick="Delete" 
+                           Variant="Variant.Filled"
+                           StartIcon="@Icons.Material.Filled.Delete"
+                           Size="Size.Medium">
                     Delete
                 </MudButton>
             }
         }
     </div>
 
-    <br />
-
-    <MudExpansionPanels MultiExpansion="true">
-        <MudExpansionPanel Text="Basic Details" Expanded="true" Class="mb-2">
-            <TitleContent>
-                <div class="d-flex align-items-center p-1 rounded" style="gap: 8px;">
-                    <i class="fas fa-map-marker-alt"
-                       style="display:inline-block; width:32px; height:32px; font-size:16px; line-height:32px; text-align:center; border-radius:4%; color: #667eea;">
-                    </i>
+    <MudGrid>
+        <!-- Basic Details Card -->
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px;">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.LocationOn" 
+                             Size="Size.Large" 
+                             Color="Color.Primary" 
+                             Class="me-3" />
                     <div>
-                        <MudText Typo="Typo.h6" Class="fw-bold">@(string.IsNullOrWhiteSpace(record.AreaName) ? "NO NAME" : record.AreaName)</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted" Style="font-size: 0.75rem;">Geographical area information</MudText>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Basic Details</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Area information and settings</MudText>
                     </div>
                 </div>
-                <div style="height: 2px; background: #667eea; border-radius: 2px; margin: 4px 0;"></div>
-            </TitleContent>
+                <MudDivider Class="mb-4" />
 
-            <ChildContent>
-                <div class="row mt-2">
-                    <div class="col-12 col-md-8">
-                        <div class="row">
-                            <div class="col-12 mb-2">
-                                <MudTextField id="AreaName"
-                                              @bind-Value="record.AreaName"
-                                              Label="Area Name"
-                                              ReadOnly="@isReadOnly"
-                                              Variant="Variant.Outlined"
-                                              FullWidth="true"
-                                              Margin="Margin.Dense">
-                                </MudTextField>
-                                <ValidationMessage For="@(() => record.AreaName)" />
-                            </div>
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Area Name"
+                                      @bind-Value="record.AreaName"
+                                      Placeholder="Enter area name"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      Required="true"
+                                      FullWidth="true"
+                                      Class="mb-3" />
+                        <ValidationMessage For="@(() => record.AreaName)" />
+                    </MudItem>
 
-                            <div class="col-12 col-md-6 mb-2">
-                                <MudSelect T="string"
-                                           @bind-Value="record.AreaType"
-                                           Label="Type"
-                                           Variant="Variant.Outlined"
-                                           Clearable="true"
-                                           FullWidth="true"
-                                           Margin="Margin.Dense">
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="string"
+                                   Label="Area Type"
+                                   @bind-Value="record.AreaType"
+                                   Placeholder="Select area type"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   ReadOnly="@isReadOnly"
+                                   FullWidth="true"
+                                   Class="mb-3">
+                            @if (Are != null && Are.Any())
+                            {
+                                if (string.IsNullOrWhiteSpace(record.AreaType))
+                                {
+                                    record.AreaType = Are.First().ListValue;
+                                }
+                                foreach (var i in Are)
+                                {
+                                    <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                    </MudItem>
 
-                                    @if (Are != null && Are.Any())
-                                    {
-                                        if (string.IsNullOrWhiteSpace(record.AreaType))
-                                        {
-                                            record.AreaType = Are.First().ListValue;
-                                        }
+                    <MudItem xs="12" md="6">
+                        @if (isReadOnly)
+                        {
+                            <MudTextField Label="Parent Area"
+                                          Value="@(Par?.FirstOrDefault(p => p.Id == record.ParentId)?.AreaName ?? "")"
+                                          ReadOnly="true"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="true"
+                                          Class="mb-3" />
+                        }
+                        else
+                        {
+                            <AutoComplete TItem="AreasModel"
+                                          DataList="@Par"
+                                          DisplayProperty="@(p => p.AreaName)"
+                                          IdProperty="@(p => p.Id)"
+                                          @bind-SelectedId="record.ParentId"
+                                          Variant="Variant.Outlined"
+                                          Label="Parent Area"
+                                          FullWidth="true"
+                                          Class="mb-3" />
+                        }
+                    </MudItem>
 
-                                        foreach (var i in Are)
-                                        {
-                                            <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
-                                        }
-                                    }
-                                </MudSelect>
-                                <ValidationMessage For="@(() => record.AreaType)" />
-                            </div>
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="int"
+                                   Label="Activation Status"
+                                   @bind-Value="record.IsActive"
+                                   Placeholder="Select status"
+                                   Variant="Variant.Outlined"
+                                   Clearable="false"
+                                   ReadOnly="@isReadOnly"
+                                   Required="true"
+                                   FullWidth="true"
+                                   Class="mb-3">
+                            @if (record.IsActive != 0 && record.IsActive != 1)
+                            {
+                                record.IsActive = 1;
+                            }
+                            <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                            <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.IsActive)" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
 
-                            <div class="col-12 col-md-6 mb-2">
-                                <MudSelect T="int"
-                                           @bind-Value="record.IsActive"
-                                           Label="Status"
-                                           Variant="Variant.Outlined"
-                                           Clearable="true"
-                                           FullWidth="true"
-                                           Margin="Margin.Dense">
+<style>
+    .mud-paper {
+        transition: box-shadow 0.3s ease;
+    }
 
-                                    @if (record.IsActive != 0 && record.IsActive != 1)
-                                    {
-                                        record.IsActive = 1;
-                                    }
-
-                                    <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
-                                    <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
-                                </MudSelect>
-                                <ValidationMessage For="@(() => record.IsActive)" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </ChildContent>
-        </MudExpansionPanel>
-    </MudExpansionPanels>
-</div>
+    .mud-paper:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
 
 @code
 {
     AreasModel record = new();
     List<OrganizationsModel> Org = new();
     List<TypeCodeModel> Are = null!;
+    List<AreasModel> Par = new();
 
-    [Parameter] public string? Action { get; set; } = "INSERT";
+    [Parameter] public string Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
     [Parameter] public EventCallback OnSaved { get; set; }
 
     bool isReadOnly = true;
     private bool LoadingPanel { get; set; } = false;
-    private MyDrawer _drawer = new();
 
     protected override async Task OnInitializedAsync()
     {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "AreasDashboard");
         await GetAll();
     }
 
@@ -142,6 +177,7 @@
     {
         LoadingPanel = true;
         Are = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/AREA TYPE", true) ?? new List<TypeCodeModel>();
+        Par = await Functions.GetAsync<List<AreasModel>>($"Areas/Search", true) ?? new List<AreasModel>();
 
         if (Action == "INSERT")
         {
@@ -149,12 +185,12 @@
             record.IsActive = 1;
             isReadOnly = false;
         }
-        else if (Action != "UPDATE")
+        else if (Action == "UPDATE")
         {
             await Get(CurrentRecord);
             isReadOnly = false;
         }
-        else if (Action != "VIEW")
+        else if (Action == "VIEW")
         {
             await Get(CurrentRecord);
             isReadOnly = true;
@@ -170,6 +206,16 @@
         LoadingPanel = false;
     }
 
+    protected void GetDefaultValues()
+    {
+        if (Org != null && Org.Any() && record.OrganizationId == 0)
+            record.OrganizationId = Org.First().Id;
+        if (Par != null && Par.Any() && record.ParentId == 0)
+            record.ParentId = Par.First().Id;
+
+        StateHasChanged();
+    }
+
     protected async Task Clear()
     {
         Action = "INSERT";
@@ -183,14 +229,6 @@
         await Get(id);
         Action = "UPDATE";
         isReadOnly = false;
-    }
-
-    protected void GetDefaultValues()
-    {
-        if (Org != null && Org.Any() && record.OrganizationId == 0)
-            record.OrganizationId = Org.First().Id;
-
-        StateHasChanged();
     }
 
     protected async Task Delete()
@@ -217,11 +255,11 @@
             record.UpdatedOn = DateTime.Now;
             record.UpdatedFrom = Globals.ClientInfo;
 
-            string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
+            string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
             var result = await Functions.PostAsync<AreasModel>($"Areas/{url}", record, true);
             if (result.Success == false)
             {
-                SnackbarService.Add($"Record Not Saved", Severity.Error);
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
             }
             else
             {
@@ -237,7 +275,7 @@
         }
         catch (Exception ex)
         {
-            Log.Warning($"Error: {ex.Message}");        
+            SnackbarService.Add($"ERROR: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -245,11 +283,3 @@
         }
     }
 }
-
-<style>
-    .professional-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 16px;
-    }
-</style>

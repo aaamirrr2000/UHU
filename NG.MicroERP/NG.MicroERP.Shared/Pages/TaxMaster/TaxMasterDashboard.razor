@@ -9,14 +9,55 @@
 
 <Loading IsLoading="@LoadingPanel" />
 
-<div class="row" style="margin: 2px; height: 90vh; display: flex;">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <div class="dashboard-header mb-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" Class="me-2" Style="color: white;" />
+                    Tax Master Management
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">Configure tax rates and settings</MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+                <MudTextField @bind-Value="searchString"
+                            @bind-Value:after="FilterData"
+                            Placeholder="Search taxes..."
+                            Adornment="Adornment.Start"
+                            AdornmentIcon="@Icons.Material.Filled.Search"
+                            IconSize="Size.Small"
+                            Variant="Variant.Outlined"
+                            Immediate="true"
+                            Margin="Margin.Dense"
+                            Class="dashboard-search-field"
+                            Style="background: rgba(255,255,255,0.95); width: 280px;" />
+                <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Success" 
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => Clear())">
+                    New
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Info"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => Refresh())">
+                    Refresh
+                </MudButton>
+            </div>
+        </div>
+    </div>
+
     <MyDrawer @ref="_drawer" Title="TaxMaster" FaIcon="fas fa-address-book">
         <HeaderContent>
         </HeaderContent>
         <ChildContent>
             <EditForm Model="record" OnSubmit="Save">
                 <MudForm>
-                    <TaxMasterPage Action="@Action" CurrentRecord="record.Id" OnSaved="ChildSaved"/>
+                    <TaxMasterPage Action="@Action" CurrentRecord="record.Id" OnSaved="ChildSaved" />
                 </MudForm>
             </EditForm>
         </ChildContent>
@@ -30,58 +71,11 @@
     }
     else
     {
-        <div class="row">
-            <MudDataGrid T="TaxMasterModel"
-                         MultiSelection="false"
-                         Items="@data"
-                         SortMode="SortMode.Multiple"
-                         Filterable="true"
-                         Hideable="true"
-                         RowsPerPage="10"
-                         Dense="true"
-                         Striped="true"
-                         Class="professional-grid elevation-8">
-
-                <ToolBarContent>
-                    <div class="grid-toolbar-wrapper">
-                        <div class="grid-toolbar">
-                            <div class="toolbar-left">
-                                <MudIcon Icon="@Icons.Material.Filled.Receipt" Class="toolbar-icon" />
-                                <MudText Typo="Typo.h6" Class="toolbar-title">
-                                    Tax Master Management
-                                </MudText>
-                            </div>
-
-                            <div class="toolbar-right">
-                                @if (AccessLevel == 1)
-                                {
-                                    <MudButton StartIcon="@Icons.Material.TwoTone.Add"
-                                               Size="MudBlazor.Size.Small"
-                                               Variant="Variant.Filled"
-                                               Color="Color.Success"
-                                               Class="action-btn new-btn"
-                                               OnClick="@(() => Clear())">
-                                        New Tax
-                                    </MudButton>
-                                }
-
-                                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh"
-                                           Size="MudBlazor.Size.Small"
-                                           Variant="Variant.Filled"
-                                           Color="Color.Info"
-                                           Class="action-btn refresh-btn"
-                                           OnClick="@(() => Refresh())">
-                                    Refresh
-                                </MudButton>
-                            </div>
-                        </div>
-                    </div>
-                </ToolBarContent>
+        <MudPaper Elevation="3" Style="border-radius: 12px; overflow: hidden;">
+            <MudDataGrid T="TaxMasterModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
 
                 <Columns>
-                    <TemplateColumn Title="Actions"
-                                    CellStyle="width: 80px; min-width: 80px;"
-                                    HeaderClass="grid-header">
+                    <TemplateColumn Title="Actions" CellStyle="width: 80px; min-width: 80px;" HeaderClass="grid-header">
                         <CellTemplate Context="row">
                             <div class="actions-cell">
                                 <MudMenu Icon="@Icons.Material.Filled.MoreVert"
@@ -93,7 +87,7 @@
                                         <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
                                         <span>View Details</span>
                                     </MudMenuItem>
-                                    @if (AccessLevel == 1)
+                                    @if (Globals.AccessLevel == 1)
                                     {
                                         <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
                                                      Class="menu-item edit-item">
@@ -112,63 +106,123 @@
                         </CellTemplate>
                     </TemplateColumn>
 
-                    <PropertyColumn Property="x => x.TaxType"
-                                    Title="Tax Type"
-                                    Sortable="true"
-                                    Filterable="true"
+                    <PropertyColumn Property="x => x.AccountId" Title="Account Id" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
+                    <PropertyColumn Property="x => x.TaxName" Title="Tax Name" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.TaxType" Title="Tax Type" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.TaxBaseType" Title="Tax Base Type" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Rate" Title="Rate" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
+                    <PropertyColumn Property="x => x.Description" Title="Description" Sortable="true" Filterable="true" />
+                    <TemplateColumn Title="IsActive"
+                                    CellStyle="width: 70px; min-width: 70px;"
                                     HeaderClass="grid-header"
-                                    CellClass="grid-cell" />
+                                    CellClass="grid-cell">
+                        <CellTemplate Context="row">
+                            @if (row.Item.IsActive == 1)
+                            {
+                                <MudChip Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">Yes</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">No</MudChip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
 
-                    <PropertyColumn Property="x => x.TaxName"
-                                    Title="Name/Label"
-                                    Sortable="true"
-                                    Filterable="true"
-                                    HeaderClass="grid-header"
-                                    CellClass="grid-cell" />
 
-                    <PropertyColumn Property="x => x.TaxRate"
-                                    Title="Tax Rate %"
-                                    Sortable="true"
-                                    Filterable="true"
-                                    Format="#,##0.00"
-                                    CellStyle="text-align: right;"
-                                    HeaderClass="grid-header"
-                                    CellClass="grid-cell" />
                 </Columns>
 
                 <PagerContent>
                     <div class="pager-container">
-                        <MudDataGridPager T="TaxMasterModel" Class="grid-pager" />
+                        <MudDataGridPager T="TaxMasterModel" />
                     </div>
                 </PagerContent>
-
             </MudDataGrid>
-        </div>
+        </MudPaper>
     }
-</div>
+</MudContainer>
+
+<style>
+    .dashboard-header {
+        padding: 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 24px;
+    }
+
+    .dashboard-header .mud-typography {
+        color: white !important;
+    }
+
+    .dashboard-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    .dashboard-search-field .mud-input-root {
+        color: var(--mud-palette-text-primary) !important;
+    }
+
+    .dashboard-search-field .mud-input-root input {
+        color: var(--mud-palette-text-primary) !important;
+    }
+
+    .dashboard-search-field .mud-input-root::before {
+        border-color: rgba(0,0,0,0.2) !important;
+    }
+
+    .dashboard-search-field .mud-input-root:hover::before {
+        border-color: var(--mud-palette-primary) !important;
+    }
+
+    .dashboard-search-field .mud-input-root::after {
+        border-color: var(--mud-palette-primary) !important;
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .dashboard-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+
+    .mud-theme-dark .dashboard-search-field {
+        background: rgba(255,255,255,0.1) !important;
+    }
+
+    .mud-theme-dark .dashboard-search-field .mud-input-root {
+        color: white !important;
+    }
+
+    .mud-theme-dark .dashboard-search-field .mud-input-root input {
+        color: white !important;
+    }
+
+    .mud-theme-dark .dashboard-search-field .mud-input-root::placeholder {
+        color: rgba(255,255,255,0.7) !important;
+    }
+</style>
 
 @code
 {
-    static List<TaxMasterModel> data = new();
-    static TaxMasterModel record = new();
+    List<TaxMasterModel> AllData = new();
+    List<TaxMasterModel> data = new();
+    TaxMasterModel record = new();
 
-    public string? Action { get; set; } = "INSERT";
-    public int AccessLevel { get; set; } = 0;
+    public string Action { get; set; } = "INSERT";
+    private string searchString = "";
 
-    bool isReadOnly = true;
     private bool LoadingPanel { get; set; } = false;
     private MyDrawer _drawer = new();
 
     protected override async Task OnInitializedAsync()
     {
-        AccessLevel = Globals.PageAccess(NavManager, "TaxMasterDashboard");
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "TaxMasterDashboard");
         await GetAll();
     }
 
     protected async Task GetAll()
     {
         LoadingPanel = true;
-        data = await Functions.GetAsync<List<TaxMasterModel>>($"TaxMaster/Search", true) ?? new List<TaxMasterModel>();
+        AllData = await Functions.GetAsync<List<TaxMasterModel>>($"TaxMaster/Search", true) ?? new List<TaxMasterModel>();
+        data = AllData;
         LoadingPanel = false;
     }
 
@@ -179,25 +233,43 @@
         LoadingPanel = false;
     }
 
+    private void FilterData()
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+        {
+            data = AllData.ToList();
+        }
+        else
+        {
+            var search = searchString.ToLower();
+            data = AllData.Where(x =>
+                (x.TaxName.ToString()?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.TaxType.ToString()?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.TaxBaseType.ToString()?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.Description?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
+            ).ToList();
+        }
+
+        StateHasChanged();
+    }
+
     protected async Task Clear()
     {
         Action = "INSERT";
         record = new TaxMasterModel();
         record.IsActive = 1;
-        isReadOnly = false;
         await _drawer.OpenDrawerAsync();
     }
 
     protected async Task Refresh()
     {
-        data = await Functions.GetAsync<List<TaxMasterModel>>($"TaxMaster/Search", true) ?? new List<TaxMasterModel>();
+        await GetAll();
     }
 
     protected async Task View(int id)
     {
         await Get(id);
         Action = "VIEW";
-        isReadOnly = true;
         await _drawer.OpenDrawerAsync();
     }
 
@@ -205,7 +277,6 @@
     {
         await Get(id);
         Action = "UPDATE";
-        isReadOnly = false;
         await _drawer.OpenDrawerAsync();
     }
 
@@ -222,31 +293,38 @@
 
     protected async Task Save()
     {
-        LoadingPanel = true;
-
-        record.OrganizationId = Globals.User.OrganizationId;
-        record.CreatedBy = Globals.User.Id;
-        record.CreatedOn = DateTime.Now;
-        record.CreatedFrom = Globals.ClientInfo;
-        record.UpdatedBy = Globals.User.Id;
-        record.UpdatedOn = DateTime.Now;
-        record.UpdatedFrom = Globals.ClientInfo;
-
-        var result = await Functions.PostAsync<TaxMasterModel>($"TaxMaster/{Action}", record, true);
-        if (result.Success == false)
+        try
         {
-            SnackbarService.Add($"Record Not Deleted", Severity.Error);
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            var result = await Functions.PostAsync<TaxMasterModel>($"TaxMaster/{Action}", record, true);
+            if (result.Success == true)
+            {
+                SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
+                await GetAll();
+                if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) await Edit(result.Result!.Id);
+            }
+            else
+            {
+                SnackbarService.Add($"{result.Message}", Severity.Error);
+                record = new();
+            }
         }
-        else
+        catch (Exception ex)
         {
-            SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
-            if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) await Edit(result.Result!.Id);
+            SnackbarService.Add($"ERROR: {ex.Message}", Severity.Error);
         }
-
-        data = await Functions.GetAsync<List<TaxMasterModel>>($"TaxMaster/Search", true) ?? new List<TaxMasterModel>();
-        LoadingPanel = false;
-        await _drawer.CloseDrawerAsync();
-
+        finally
+        {
+            LoadingPanel = false;
+            await _drawer.CloseDrawerAsync();
+        }
     }
 
     private async Task ChildSaved()
@@ -255,5 +333,6 @@
         await _drawer.CloseDrawerAsync();
         StateHasChanged();
     }
+
 }
 

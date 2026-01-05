@@ -134,7 +134,53 @@ public class Functions
             }
             else
             {
-                return (false, default, $"HTTP Error: {response.StatusCode} - {responseContent}");
+                // Try to extract meaningful error message from response
+                string errorMessage = "Request failed";
+                
+                if (!string.IsNullOrWhiteSpace(responseContent))
+                {
+                    try
+                    {
+                        // Try to parse as JSON object (ProblemDetails or custom error format)
+                        var errorObj = JsonConvert.DeserializeObject<dynamic>(responseContent);
+                        if (errorObj != null)
+                        {
+                            // Check for various error message fields (in order of preference)
+                            if (errorObj.message != null)
+                                errorMessage = errorObj.message.ToString();
+                            else if (errorObj.Message != null)
+                                errorMessage = errorObj.Message.ToString();
+                            else if (errorObj.error != null)
+                                errorMessage = errorObj.error.ToString();
+                            else if (errorObj.Error != null)
+                                errorMessage = errorObj.Error.ToString();
+                            else if (errorObj.title != null)
+                                errorMessage = errorObj.title.ToString();
+                            else if (errorObj.detail != null)
+                                errorMessage = errorObj.detail.ToString();
+                            else if (errorObj.Detail != null)
+                                errorMessage = errorObj.Detail.ToString();
+                        }
+                        
+                        // If it's a plain JSON string, use it directly
+                        if (errorMessage == "Request failed" && responseContent.StartsWith("\"") && responseContent.EndsWith("\""))
+                        {
+                            errorMessage = JsonConvert.DeserializeObject<string>(responseContent) ?? responseContent;
+                        }
+                        // If it's not JSON, use the raw content (might be a plain string)
+                        else if (errorMessage == "Request failed" && !responseContent.TrimStart().StartsWith("{") && !responseContent.TrimStart().StartsWith("["))
+                        {
+                            errorMessage = responseContent.Trim('"');
+                        }
+                    }
+                    catch
+                    {
+                        // If parsing fails, use raw content
+                        errorMessage = responseContent.Trim('"');
+                    }
+                }
+                
+                return (false, default, errorMessage);
             }
         }
         catch (Exception ex)

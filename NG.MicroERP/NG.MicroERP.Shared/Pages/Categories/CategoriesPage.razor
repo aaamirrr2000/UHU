@@ -9,97 +9,81 @@
 
 <Loading IsLoading="@LoadingPanel" />
 
-<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
-
-    <div class="text-end" style="margin-top:10px;">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <!-- Action Buttons Header -->
+    <div class="d-flex justify-content-end align-items-center mb-4 gap-2">
         @if (Action != "VIEW")
         {
-            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
-                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+            <MudButton OnClick="Save" 
+                       Color="Color.Success" 
+                       Variant="Variant.Filled"
+                       StartIcon="@Icons.Material.Filled.Save"
+                       Size="Size.Medium">
                 @(Action == "INSERT" ? "Save" : "Update")
             </MudButton>
 
             @if (Action == "UPDATE")
             {
-                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
-                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                <MudButton Color="Color.Error" 
+                           OnClick="Delete" 
+                           Variant="Variant.Filled"
+                           StartIcon="@Icons.Material.Filled.Delete"
+                           Size="Size.Medium">
                     Delete
                 </MudButton>
             }
         }
     </div>
 
-    <br />
-
-    <MudExpansionPanels MultiExpansion="true">
-
-        <!-- Basic Information Panel -->
-        <MudExpansionPanel Text="Basic Information" Expanded="true" Style="margin-bottom:10px;">
-            <TitleContent>
-                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
-                    <i class="fa fa-info-circle"
-                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
-                    </i>
-                    <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">@(string.IsNullOrWhiteSpace(record.Name) ? "NO NAME" : record.Name)</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted">Category basic information</MudText>
+    <MudGrid>
+        <!-- Basic Information Card -->
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px;">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Category" 
+                             Size="Size.Large" 
+                             Color="Color.Info" 
+                             Class="me-3" />
+                    <div>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Basic Information</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Category identification and details</MudText>
                     </div>
                 </div>
-                <hr style="height: 6px; border: none; background: #667eea; border-radius: 10px;" />
-            </TitleContent>
+                <MudDivider Class="mb-4" />
 
-            <ChildContent>
-                <div class="row" style="width:100%; display: flex;">
-                    <!-- Identification Group -->
-                    <div class="col-12 mb-3">
-                        <MudDivider Class="my-3">
-                            <MudText Typo="Typo.subtitle2" Class="text-muted">Identification</MudText>
-                        </MudDivider>
-                    </div>
-
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Code</label>
-                        <MudTextField id="Code"
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Code"
                                       @bind-Value="record.Code"
-                                      placeholder="Code"
+                                      Placeholder="Auto-generated"
                                       ReadOnly="true"
                                       Variant="Variant.Outlined"
                                       FullWidth="true"
-                                      Class="flex-grow-1"></MudTextField>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.Code)" />
-                        </div>
-                    </div>
+                                      Class="mb-3" />
+                        <ValidationMessage For="@(() => record.Code)" />
+                    </MudItem>
 
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Name</label>
-                        <MudTextField id="Name"
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Name"
                                       @bind-Value="record.Name"
-                                      placeholder="Name"
+                                      Placeholder="Enter category name"
                                       ReadOnly="@isReadOnly"
                                       Variant="Variant.Outlined"
                                       FullWidth="true"
-                                      Class="flex-grow-1"></MudTextField>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.Name)" />
-                        </div>
-                    </div>
+                                      Class="mb-3" />
+                        <ValidationMessage For="@(() => record.Name)" />
+                    </MudItem>
 
-                    <!-- Category Details Group -->
-                    <div class="col-12 mb-3 mt-2">
-                        <MudDivider Class="my-3">
-                            <MudText Typo="Typo.subtitle2" Class="text-muted">Category Details</MudText>
-                        </MudDivider>
-                    </div>
-
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Parent Category</label>
-                        <MudSelect @bind-Value="record.ParentId"
-                                   Placeholder="Parent Category"
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="int"
+                                   Label="Parent Category"
+                                   @bind-Value="record.ParentId"
+                                   Placeholder="Select parent category"
                                    Variant="Variant.Outlined"
                                    Clearable="true"
+                                   ReadOnly="@isReadOnly"
                                    FullWidth="true"
-                                   Class="flex-grow-1">
+                                   Class="mb-3">
                             @if (Par != null && Par.Any())
                             {
                                 foreach (var i in Par)
@@ -108,20 +92,19 @@
                                 }
                             }
                         </MudSelect>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.ParentId)" />
-                        </div>
-                    </div>
+                        <ValidationMessage For="@(() => record.ParentId)" />
+                    </MudItem>
 
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Sub Type</label>
+                    <MudItem xs="12" md="6">
                         <MudSelect T="string"
+                                   Label="Category Type"
                                    @bind-Value="record.CategoryType"
-                                   Placeholder="Category Type"
+                                   Placeholder="Select category type"
                                    Variant="Variant.Outlined"
                                    Clearable="true"
+                                   ReadOnly="@isReadOnly"
                                    FullWidth="true"
-                                   Class="flex-grow-1">
+                                   Class="mb-3">
                             @if (Cat != null && Cat.Any())
                             {
                                 if (string.IsNullOrWhiteSpace(record.CategoryType))
@@ -134,27 +117,18 @@
                                 }
                             }
                         </MudSelect>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.CategoryType)" />
-                        </div>
-                    </div>
+                        <ValidationMessage For="@(() => record.CategoryType)" />
+                    </MudItem>
 
-                    <!-- Status Group -->
-                    <div class="col-12 mb-3 mt-2">
-                        <MudDivider Class="my-3">
-                            <MudText Typo="Typo.subtitle2" Class="text-muted">Status</MudText>
-                        </MudDivider>
-                    </div>
-
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Active</label>
+                    <MudItem xs="12" md="6">
                         <MudSelect T="int"
+                                   Label="Active Status"
                                    @bind-Value="record.IsActive"
-                                   Placeholder="Active"
+                                   Placeholder="Select status"
                                    Variant="Variant.Outlined"
-                                   Clearable="true"
-                                   FullWidth="true"
-                                   Class="flex-grow-1">
+                                   Clearable="false"
+                                   ReadOnly="@isReadOnly"
+                                   FullWidth="true">
                             @if (record.IsActive != 0 && record.IsActive != 1)
                             {
                                 record.IsActive = 1;
@@ -162,18 +136,23 @@
                             <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
                             <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
                         </MudSelect>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.IsActive)" />
-                        </div>
-                    </div>
-                </div>
-            </ChildContent>
-        </MudExpansionPanel>
+                        <ValidationMessage For="@(() => record.IsActive)" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
 
-    </MudExpansionPanels>
+<style>
+    .mud-paper {
+        transition: box-shadow 0.3s ease;
+    }
 
-</div>
-
+    .mud-paper:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
 
 @code
 {
@@ -282,21 +261,15 @@
                 {
                     await Clear();
                 }
-
             }
         }
         catch (Exception ex)
         {
-            Log.Warning($"Error: {ex.Message}");
+            SnackbarService.Add($"Error: {ex.Message}", Severity.Error);
         }
         finally
         {
             LoadingPanel = false;
-
-
         }
-
-
     }
 }
-

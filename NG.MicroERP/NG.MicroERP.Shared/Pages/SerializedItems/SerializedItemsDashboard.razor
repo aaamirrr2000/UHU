@@ -1,0 +1,384 @@
+@page "/SerializedItemsDashboard"
+@using NG.MicroERP.Shared.Models
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <div class="serialized-items-header mb-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.QrCode" Class="me-2" Style="color: white;" />
+                    Serialized Items Management
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">Track individual items by serial numbers</MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+                <MudTextField @bind-Value="searchString"
+                            @bind-Value:after="FilterData"
+                            Placeholder="Search serialized items..."
+                            Adornment="Adornment.Start"
+                            AdornmentIcon="@Icons.Material.Filled.Search"
+                            IconSize="Size.Small"
+                            Variant="Variant.Outlined"
+                            Immediate="@true"
+                            Margin="Margin.Dense"
+                            Class="serialized-items-search-field"
+                            Style="background: rgba(255,255,255,0.95); width: 280px;" />
+                @if (Globals.AccessLevel == 1)
+                {
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
+                               Size="Size.Small" 
+                               Variant="Variant.Filled" 
+                               Color="Color.Success" 
+                               Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                               OnClick="@(() => Clear())">
+                        New Serialized Item
+                    </MudButton>
+                }
+                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Info"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => Refresh())">
+                    Refresh
+                </MudButton>
+            </div>
+        </div>
+    </div>
+
+    <MyDrawer @ref="_drawer" Title="Serialized Item" FaIcon="fas fa-barcode">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <SerializedItemPage Action="@Action" CurrentRecord="record.Id" OnSaved="ChildSaved"/>
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    @if (data == null)
+    {
+        <SimpleLoading />
+    }
+    else
+    {
+        <MudPaper Elevation="3" Style="border-radius: 12px; overflow: hidden;">
+            <MudDataGrid T="SerializedItemModel"
+                         MultiSelection="false"
+                         Items="@data"
+                         SortMode="SortMode.Multiple"
+                         Filterable="true"
+                         Hideable="true"
+                         RowsPerPage="10"
+                         Dense="@true">
+
+                <Columns>
+                    <TemplateColumn Title="Actions"
+                                    CellStyle="width: 80px; min-width: 80px;"
+                                    HeaderClass="grid-header">
+                        <CellTemplate Context="row">
+                            <div class="actions-cell">
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                         Color="Color.Primary"
+                                         Dense="@true"
+                                         Class="actions-menu">
+                                    <MudMenuItem OnClick="@(() => View(row.Item.Id))"
+                                                 Class="menu-item view-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
+                                        <span>View</span>
+                                    </MudMenuItem>
+                                    @if (Globals.AccessLevel == 1)
+                                    {
+                                        <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
+                                                     Class="menu-item edit-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
+                                            <span>Edit</span>
+                                        </MudMenuItem>
+                                    
+                                        <MudMenuItem OnClick="@(() => Delete(row.Item.Id))"
+                                        Color="Color.Error"
+                                        Class="menu-item delete-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
+                                            <span>Delete</span>
+                                        </MudMenuItem>
+                                    }
+                                </MudMenu>
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="@(x => x.SerialNumber)" Title="Serial Number" Sortable="true" />
+                    <PropertyColumn Property="@(x => x.ItemName)" Title="Item" Sortable="true" />
+                    <PropertyColumn Property="@(x => x.LocationName)" Title="Location" Sortable="true" />
+                    <PropertyColumn Property="@(x => x.Status)" Title="Status" Sortable="true">
+                        <CellTemplate Context="row">
+                            <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(row.Item.Status)">
+                                @row.Item.Status
+                            </MudChip>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="@(x => x.PurchasePrice)" Title="Purchase Price" Format="C" Sortable="true" />
+                    <PropertyColumn Property="@(x => x.SalePrice)" Title="Sale Price" Format="C" Sortable="true" />
+                    <PropertyColumn Property="@(x => x.PartyName)" Title="Party" Sortable="true" />
+                    <PropertyColumn Property="@(x => x.PurchaseDate)" Title="Purchase Date" Format="yyyy-MM-dd" Sortable="true" />
+                    <PropertyColumn Property="@(x => x.SaleDate)" Title="Sale Date" Format="yyyy-MM-dd" Sortable="true" />
+                </Columns>
+
+                <PagerContent>
+                    <div class="pager-container">
+                        <MudDataGridPager T="SerializedItemModel" />
+                    </div>
+                </PagerContent>
+            </MudDataGrid>
+        </MudPaper>
+    }
+</MudContainer>
+
+<style>
+    .serialized-items-header {
+        padding: 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 24px;
+    }
+
+    .serialized-items-header .mud-typography {
+        color: white !important;
+    }
+
+    .serialized-items-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    .serialized-items-search-field .mud-input-root {
+        color: var(--mud-palette-text-primary) !important;
+        border-radius: 28px !important;
+        overflow: hidden !important;
+    }
+
+    .serialized-items-search-field .mud-input-root input {
+        color: var(--mud-palette-text-primary) !important;
+        border-radius: 28px !important;
+        padding-left: 48px !important;
+    }
+
+    .serialized-items-search-field .mud-input-root::before {
+        border-color: rgba(0,0,0,0.2) !important;
+        border-radius: 28px !important;
+    }
+
+    .serialized-items-search-field .mud-input-root:hover::before {
+        border-color: var(--mud-palette-primary) !important;
+    }
+
+    .serialized-items-search-field .mud-input-root::after {
+        border-color: var(--mud-palette-primary) !important;
+        border-radius: 28px !important;
+    }
+
+    .serialized-items-search-field .mud-input-adornment {
+        border-radius: 28px 0 0 28px !important;
+        position: absolute !important;
+        left: 8px !important;
+        z-index: 1 !important;
+    }
+
+    .serialized-items-search-field .mud-input-adornment-start {
+        border-radius: 28px 0 0 28px !important;
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .serialized-items-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+
+    .mud-theme-dark .serialized-items-search-field {
+        background: rgba(255,255,255,0.1) !important;
+    }
+
+    .mud-theme-dark .serialized-items-search-field .mud-input-root {
+        color: white !important;
+    }
+
+    .mud-theme-dark .serialized-items-search-field .mud-input-root input {
+        color: white !important;
+    }
+
+    .mud-theme-dark .serialized-items-search-field .mud-input-root::placeholder {
+        color: rgba(255,255,255,0.7) !important;
+    }
+</style>
+
+@code {
+    private MyDrawer? _drawer;
+    private List<SerializedItemModel> AllData = new();
+    private List<SerializedItemModel> data = new();
+    private SerializedItemModel record = new();
+    private string Action = "INSERT";
+    private bool LoadingPanel = false;
+    private string searchString = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "SerializedItemsDashboard");
+        await GetAll();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        var result = await Functions.GetAsync<List<SerializedItemModel>>($"SerializedItems/Search/OrganizationId={Globals.User.OrganizationId} AND IsSoftDeleted=0", true);
+        AllData = result ?? new List<SerializedItemModel>();
+        data = AllData;
+        LoadingPanel = false;
+        StateHasChanged();
+    }
+
+    private void FilterData()
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+        {
+            data = AllData.ToList();
+        }
+        else
+        {
+            var search = searchString.ToLower();
+            data = AllData.Where(x =>
+                (x.SerialNumber?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.ItemName?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.LocationName?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.Status?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.PartyName?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
+            ).ToList();
+        }
+
+        StateHasChanged();
+    }
+
+    protected void Clear()
+    {
+        Action = "INSERT";
+        record = new SerializedItemModel();
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.Status = "AVAILABLE";
+        _drawer?.OpenDrawerAsync();
+        StateHasChanged();
+    }
+
+    protected async Task Edit(int id)
+    {
+        Action = "UPDATE";
+        LoadingPanel = true;
+        record = await Functions.GetAsync<SerializedItemModel>($"SerializedItems/Get/{id}", true) ?? new SerializedItemModel();
+        LoadingPanel = false;
+        _drawer?.OpenDrawerAsync();
+        StateHasChanged();
+    }
+
+    protected async Task View(int id)
+    {
+        Action = "VIEW";
+        LoadingPanel = true;
+        record = await Functions.GetAsync<SerializedItemModel>($"SerializedItems/Get/{id}", true) ?? new SerializedItemModel();
+        LoadingPanel = false;
+        _drawer?.OpenDrawerAsync();
+        StateHasChanged();
+    }
+
+    protected async Task Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete this record?");
+        if (res == false)
+            return;
+
+        LoadingPanel = true;
+        record = await Functions.GetAsync<SerializedItemModel>($"SerializedItems/Get/{id}", true) ?? new SerializedItemModel();
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedFrom = Globals.ClientInfo;
+        record.IsSoftDeleted = 1;
+
+        var result = await Functions.PostAsync<SerializedItemModel>($"SerializedItems/SoftDelete", record, true);
+        LoadingPanel = false;
+
+        if (result.Success == false)
+        {
+            SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+        }
+        else
+        {
+            SnackbarService.Add("Record Deleted Successfully", Severity.Success);
+            await GetAll();
+        }
+    }
+
+    protected async Task Refresh()
+    {
+        await GetAll();
+    }
+
+    protected async Task Save()
+    {
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedFrom = Globals.ClientInfo;
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = Globals.ClientInfo;
+
+        LoadingPanel = true;
+        var result = await Functions.PostAsync<SerializedItemModel>($"SerializedItems/{Action}", record, true);
+        LoadingPanel = false;
+
+        if (result.Success == false || result.Result == null)
+        {
+            SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+        }
+        else
+        {
+            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+            await GetAll();
+            if (_drawer != null)
+            {
+                await _drawer.CloseDrawerAsync();
+            }
+        }
+    }
+
+    private async Task ChildSaved()
+    {
+        await GetAll();
+        if (_drawer != null)
+        {
+            await _drawer.CloseDrawerAsync();
+        }
+        StateHasChanged();
+    }
+
+    private Color GetStatusColor(string? status)
+    {
+        return status?.ToUpper() switch
+        {
+            "AVAILABLE" => Color.Success,
+            "RESERVED" => Color.Warning,
+            "SOLD" => Color.Info,
+            "DAMAGED" => Color.Error,
+            "RETURNED" => Color.Secondary,
+            _ => Color.Default
+        };
+    }
+}

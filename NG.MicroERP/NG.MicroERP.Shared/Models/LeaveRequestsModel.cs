@@ -31,7 +31,7 @@ public class LeaveRequestsModel
     public int IsActive { get; set; }
 
     public int CreatedBy { get; set; }
-    public DateTime? CreatedOn { get; set; }
+    public DateTime CreatedOn { get; set; }
     public string? CreatedFrom { get; set; }
 
     public int? UpdatedBy { get; set; }

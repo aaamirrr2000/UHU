@@ -241,10 +241,9 @@
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
                         <label class="form-label fw-bold mb-1">Expiry</label>
-                        <MudDatePicker @bind-Value="record.Expiry"
-                                       Format="yyyy-MM-dd"
+                        <MudDatePicker @bind-Date="record.Expiry"
+                                       DateFormat="yyyy-MM-dd"
                                        placeholder="Expiry"
-                                       ReadOnly="true"
                                        Variant="Variant.Outlined"
                                        Class="flex-grow-1"></MudDatePicker>
                         <div class="validation-container" style="min-height: 22px;">
@@ -435,6 +434,7 @@
         timeZones = new List<TimeZoneInfo>(TimeZoneInfo.GetSystemTimeZones());
         Industry = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/ListName/INDUSTRY", true) ?? new List<TypeCodeModel>();
 
+      
         if (Action == "INSERT")
         {
             record = new OrganizationsModel();

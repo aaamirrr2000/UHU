@@ -7,7 +7,6 @@
     Name                VARCHAR(100)    NOT NULL,
     
     PartyType           VARCHAR(100)    NULL,
-    PartyTypeCode       VARCHAR(100)    NULL,
     ParentId            INT             NULL,
     
     CustomerRating      DECIMAL(5,2)    NULL,
@@ -18,10 +17,12 @@
     CreditLimit         DECIMAL(18,4)   NULL,
     PaymentTermsId      INT             NULL,
     AccountId           INT             NULL,
-    
-    TaxCategory         VARCHAR(50)     NULL,
-    TaxNumber           VARCHAR(50)     NULL,
+
     NTN                 VARCHAR(50)     NULL,
+    STN                 VARCHAR(50)     NULL,
+
+    IsRegistered        INT NULL,                    -- 1=Registered, 0=Unregistered, NULL=All
+    IsFiler             INT NULL,                    -- 1=Filer, 0=Non-Filer, NULL=All
     
     Address             VARCHAR(255)    NULL,
     CityId              INT             NULL,
@@ -51,13 +52,12 @@
     FOREIGN KEY (AccountId)         REFERENCES ChartOfAccounts(Id),
     FOREIGN KEY (CityId)            REFERENCES Areas(Id),
     FOREIGN KEY (SalesPersonId)     REFERENCES Employees(Id),
-    FOREIGN KEY (ParentId)          REFERENCES Parties(Id),
     FOREIGN KEY (CreatedBy)         REFERENCES Users(Id),
     FOREIGN KEY (UpdatedBy)         REFERENCES Users(Id),
     FOREIGN KEY (ApprovedBy)        REFERENCES Users(Id),
     FOREIGN KEY (PaymentTermsId)    REFERENCES PaymentTerms(Id),
     
-    CHECK (PartyType IN ('CUSTOMER', 'SUPPLIER'))
+    CHECK (PartyType IN ('CUSTOMER', 'SUPPLIER', 'BANK'))
 );
 
 INSERT INTO Parties (
@@ -165,3 +165,19 @@ INSERT INTO Parties (
 ('000093', 'AL-HAMAD AGENCY, HAYDERABAD (260-4)', 'SUPPLIER', 5.00, 'A', '2019-10-18', 15, NULL),
 ('000094', 'JANJUA TRADING CORPORATIO.R/P. (260-3)', 'CUSTOMER', 5.00, NULL, '2019-10-18', 13, NULL),
 ('000095', 'NAZAR and CO. Multan (260-2)', 'CUSTOMER', 5.00, NULL, '2019-10-18', 13, NULL);
+
+UPDATE Parties
+SET
+    -- First decide registration randomly
+    IsRegistered = CASE 
+                       WHEN ABS(CHECKSUM(NEWID())) % 2 = 0 THEN 1
+                       ELSE 0
+                   END,
+
+    -- Filer can ONLY be 1 if Registered = 1
+    IsFiler = CASE
+                  WHEN ABS(CHECKSUM(NEWID())) % 2 = 0 
+                       AND IsRegistered = 1 THEN 1
+                  ELSE 0
+              END
+WHERE PartyType = 'CUSTOMER';

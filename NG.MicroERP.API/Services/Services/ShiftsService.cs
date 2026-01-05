@@ -136,7 +136,7 @@ public class ShiftsService : IShiftsService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
     }
 
@@ -173,7 +173,7 @@ public class ShiftsService : IShiftsService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
 
     }

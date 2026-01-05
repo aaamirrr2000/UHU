@@ -1,0 +1,136 @@
+﻿@inject Functions Functions 
+@inject Globals Globals
+
+<MudPaper Class="pa-3" Elevation="2" Style="max-height: 70vh; overflow-y: auto;">
+    <MudGrid Spacing="2">
+        <!-- Header -->
+        <MudItem xs="12">
+            <div class="d-flex justify-space-between align-center">
+                <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1976d2;">Tax Calculation</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text">
+                    @Item?.Name
+                </MudChip>
+            </div>
+        </MudItem>
+
+        @if (Party != null && Item != null)
+        {
+            <!-- Compact Info Cards -->
+            <MudItem xs="12" sm="6">
+                <MudCard Elevation="1" Class="pa-2" Style="background: #f5f5f5;">
+                    <MudText Typo="Typo.caption" Style="color: #666;">Customer</MudText>
+                    <MudText Typo="Typo.body2" Style="font-weight: 600;">@Party.Name</MudText>
+                    <MudText Typo="Typo.caption" Style="font-size: 0.7rem; color: #999;">
+                        Reg: @(Party.IsRegistered == 1 ? "Yes" : "No") | Filer: @(Party.IsFiler == 1 ? "Yes" : "No")
+                    </MudText>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudCard Elevation="1" Class="pa-2" Style="background: #f5f5f5;">
+                    <MudText Typo="Typo.caption" Style="color: #666;">Item Details</MudText>
+                    <MudText Typo="Typo.body2" Style="font-weight: 600;">@Item.BasePrice.ToString("N2") per unit</MudText>
+                    @if (Quantity > 0)
+                    {
+                        <MudText Typo="Typo.caption" Style="font-size: 0.7rem; color: #999;">
+                            Qty: @Quantity.ToString("N2") | Subtotal: @((Item.BasePrice * Quantity).ToString("N2"))
+                        </MudText>
+                    }
+                </MudCard>
+            </MudItem>
+
+            <!-- Compact Tax Table -->
+            <MudItem xs="12">
+                <MudTable Items="Taxes" Dense="true" Hover="true" Bordered="true" Striped="true" Style="font-size: 0.85rem;">
+                    <HeaderContent>
+                        <MudTh Style="width: 30%;">Tax Name</MudTh>
+                        <MudTh Align="Align.Right" Style="width: 15%;">Rate %</MudTh>
+                        <MudTh Align="Align.Right" Style="width: 15%;">Taxable</MudTh>
+                        <MudTh Align="Align.Right" Style="width: 15%;">Tax/Unit</MudTh>
+                        @if (Quantity > 0)
+                        {
+                            <MudTh Align="Align.Right" Style="width: 15%;">Tax Total</MudTh>
+                        }
+                        <MudTh Align="Align.Right" Style="width: 10%;">Final</MudTh>
+                    </HeaderContent>
+
+                    <RowTemplate>
+                        <MudTd Style="font-weight: 500;">@context.TaxName</MudTd>
+                        <MudTd Align="Align.Right">@context.Percentage.ToString("N2")</MudTd>
+                        <MudTd Align="Align.Right">@context.TaxableAmount.ToString("N2")</MudTd>
+                        <MudTd Align="Align.Right">@context.TaxAmount.ToString("N2")</MudTd>
+                        @if (Quantity > 0)
+                        {
+                            <MudTd Align="Align.Right" Style="font-weight: 600; color: #1976d2;">
+                                @((context.TaxAmount * Quantity).ToString("N2"))
+                            </MudTd>
+                        }
+                        <MudTd Align="Align.Right">@context.FinalPrice.ToString("N2")</MudTd>
+                    </RowTemplate>
+
+                    <FooterContent>
+                        <MudTd colspan="@(Quantity > 0 ? "4" : "3")" Style="font-weight: 700; background: #e3f2fd;">
+                            <MudText Typo="Typo.body2" Style="font-weight: 700;">TOTAL TAX</MudText>
+                        </MudTd>
+                        <MudTd Align="Align.Right" Style="font-weight: 700; background: #e3f2fd;">
+                            <MudText Typo="Typo.body2" Style="font-weight: 700;">@Taxes.Sum(x => x.TaxAmount).ToString("N2")</MudText>
+                        </MudTd>
+                        @if (Quantity > 0)
+                        {
+                            <MudTd Align="Align.Right" Style="font-weight: 700; background: #e3f2fd; color: #1976d2;">
+                                <MudText Typo="Typo.body2" Style="font-weight: 700;">@(Taxes.Sum(x => x.TaxAmount * Quantity).ToString("N2"))</MudText>
+                            </MudTd>
+                        }
+                        <MudTd Style="background: #e3f2fd;"></MudTd>
+                    </FooterContent>
+                </MudTable>
+            </MudItem>
+        }
+        else
+        {
+            <MudItem xs="12">
+                <div class="d-flex justify-center pa-4">
+                    <MudProgressCircular Indeterminate Size="Size.Small" />
+                </div>
+            </MudItem>
+        }
+    </MudGrid>
+</MudPaper>
+
+@code {
+
+    [Parameter] public int ItemId { get; set; }
+    [Parameter] public int PartyId { get; set; }
+    [Parameter] public double Quantity { get; set; } = 0;
+
+    PartiesModel Party;
+    ItemsModel Item;
+    List<ItemPartyTaxCalculationModel> Taxes = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        if (ItemId > 0 && PartyId > 0)
+        {
+            Party = await Functions.GetAsync<PartiesModel>($"Parties/Get/{PartyId}", true);
+            Item = await Functions.GetAsync<ItemsModel>($"Items/Get/{ItemId}", true);
+
+            if (Item != null)
+                await LoadTaxes();
+        }
+    }
+
+    private async Task LoadTaxes()
+    {
+        Taxes = await Functions.GetAsync<List<ItemPartyTaxCalculationModel>>($"TaxCalculation/Search/ItemId={ItemId} and PartyId={PartyId}", true) ?? new List<ItemPartyTaxCalculationModel>();
+    }
+}

@@ -1,0 +1,369 @@
+﻿@using System.Text.Json
+
+<MudDialog @bind-Visible="Visible" Options="_dialogOptions" Class="item-detail-dialog">
+    <TitleContent>
+        <MudGrid Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudItem xs="10">
+                <MudText Typo="Typo.h6" Class="dialog-title">
+                    <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
+                    Item Details
+                </MudText>
+            </MudItem>
+          @*   <MudItem xs="2" Class="text-end">
+                <MudIconButton Icon="@Icons.Material.Filled.Close" 
+                               OnClick="@(() => Visible = false)"
+                               Color="Color.Inherit"
+                               Class="close-button" />
+            </MudItem> *@
+        </MudGrid>
+    </TitleContent>
+
+    <DialogContent>
+        <MudGrid Class="w-100" Justify="Justify.Center" AlignItems="AlignItems.Start">
+            <MudItem xs="12">
+                <MudPaper Elevation="2" Class="pa-6 item-detail-card" Style="border-radius: 12px;">
+                    
+                    <!-- Main Item Row: Name, Qty, Rate -->
+                    <div class="item-main-row d-flex align-items-center mb-4">
+                        
+                        <!-- Left: Item Image -->
+                        <div class="item-image-container mr-4">
+                            @if (!string.IsNullOrWhiteSpace(SelectedItem.Pic))
+                            {
+                                <AvatarDisplay Pic="@SelectedItem.Pic" Name="@SelectedItem.Name" Size="120" />
+                            }
+                            else
+                            {
+                                <div class="item-initials-avatar d-flex align-items-center justify-content-center">
+                                    @SelectedItem.Name!.Substring(0, Math.Min(2, SelectedItem.Name.Length)).ToUpper()
+                                </div>
+                            }
+                        </div>
+                        
+                        <!-- Center: Item Name with Description -->
+                        <div class="item-info-section flex-grow-1">
+
+                            <MudText Align="Align.Start" Color="Color.Primary"><b>@SelectedItem.Name</b> </MudText>
+                            @if (!string.IsNullOrWhiteSpace(SelectedItem.Description))
+                            {
+                                <MudText Typo="Typo.body2" Class="item-description text-muted">
+                                    @SelectedItem.Description
+                                </MudText>
+                            }
+                        </div>
+                        
+                        <!-- Right: Qty and Rate -->
+                        <div class="item-actions-section d-flex align-items-center gap-4">
+                            
+                            <!-- Quantity Controls -->
+                            @if (SelectedItem.StockType == "ITEM")
+                            {
+                                <div class="quantity-controls d-flex align-items-center">
+                                    <MudButton Variant="Variant.Outlined"
+                                               Color="Color.Default"
+                                               Size="Size.Small"
+                                               OnClick="@(() => DecreaseQty(SelectedItem))"
+                                               Class="qty-button minus-button">
+                                        <MudIcon Icon="@Icons.Material.Filled.Remove" Size="Size.Small" />
+                                    </MudButton>
+                                    
+                                    <MudNumericField T="double"
+                                                     Value="SelectedItem.Qty"
+                                                     ValueChanged="OnQtyChanged"
+                                                     Variant="Variant.Outlined"
+                                                     HideSpinButtons="true"
+                                                     Class="mx-2 qty-input"
+                                                     Style="width: 80px;"
+                                                     AdornmentIcon="@Icons.Material.Filled.ShoppingCart" />
+                                    
+                                    <MudButton Variant="Variant.Outlined"
+                                               Color="Color.Default"
+                                               Size="Size.Small"
+                                               OnClick="@(() => IncreaseQty(SelectedItem))"
+                                               Class="qty-button plus-button">
+                                        <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" />
+                                    </MudButton>
+                                </div>
+                            }
+                            
+                            <!-- Unit Price -->
+                            <div class="price-section">
+                                <MudNumericField T="double"
+                                                 @bind-Value="SelectedItem.BasePrice"
+                                                 Variant="Variant.Outlined"
+                                                 HideSpinButtons="true"
+                                                 Class="unit-price fw-bold"
+                                                 Style="width: 140px;"
+                                                 Label="Unit Price"
+                                                 Format="#,##0.00"
+                                                 ToStringFormat="N2"
+                                                 AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Serving Sizes Section -->
+                    @if (SelectedItem?.ServingSizes?.Any() == true)
+                    {
+                        <MudDivider Class="my-4" />
+                        
+                        <div class="serving-sizes-section">
+                            <MudText Typo="Typo.subtitle2" Class="fw-semibold mb-3">Available Varieties</MudText>
+                           <div class="d-flex flex-wrap gap-3">
+                                @foreach (var size in SelectedItem.ServingSizes)
+                                {
+                                    <MudPaper Elevation="4"
+                                              Class="pa-2 text-center serving-card"
+                                              Style="width:90px; cursor:pointer;"
+                                              OnClick="@(() => HandleServingSizeChanged(size.Size))">
+
+                                        <!-- Image -->
+                                        <MudTooltip Text="@size.Size">
+                                            <MudImage Src="@size.Pic"
+                                                      Width="72"
+                                                      Height="64"
+                                                      Class="rounded-lg mx-auto mb-2"
+                                                      FallbackSrc="files/noimage.png" />
+                                        </MudTooltip>
+
+                                        <!-- Size Chip (Middle) -->
+                                        <MudChip T="string"
+                                                 Variant="Variant.Filled"
+                                                 Color="@(SelectedItem.ServingSize == size.Size ? Color.Primary : Color.Default)"
+                                                 Class="mx-auto my-1">
+                                            @size.Size
+                                        </MudChip>
+
+                                        <!-- Price (Bottom) -->
+                                        <MudText Typo="Typo.caption"
+                                                 Color="Color.Secondary"
+                                                 Class="mt-1">
+                                            @($"{size.Price:N2}")
+                                        </MudText>
+
+                                    </MudPaper>
+                                }
+
+                            </div>
+
+                        </div>
+                    }
+                    
+                    <!-- Add to Cart Button -->
+                    <MudDivider Class="my-4" />
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.AddShoppingCart"
+                               Class="w-100 fw-bold py-3 add-to-cart-button"
+                               OnClick="@(() => OnAddToCart.InvokeAsync(SelectedItem!))">
+                        Add to Cart - @($"${(SelectedItem.Qty * SelectedItem.BasePrice):N2}")
+                    </MudButton>
+                    
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+</MudDialog>
+
+<style>
+    .item-detail-card {
+        background-color: var(--mud-palette-surface);
+    }
+    
+    .item-main-row {
+        padding: 16px 0;
+    }
+    
+    .item-image-container {
+        flex-shrink: 0;
+    }
+    
+    .item-initials-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--mud-palette-primary) 0%, var(--mud-palette-secondary) 100%);
+        color: white;
+        font-weight: 600;
+        font-size: 32px;
+    }
+    
+    .item-name {
+        font-size: 1.75rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        color: var(--mud-palette-text-primary);
+        line-height: 1.2;
+    }
+    
+    .item-description {
+        font-size: 0.875rem;
+        color: var(--mud-palette-text-secondary);
+        max-width: 400px;
+    }
+    
+    .item-actions-section {
+        flex-shrink: 0;
+        min-width: 320px;
+    }
+    
+    .quantity-controls {
+        background-color: var(--mud-palette-grey-light);
+        border-radius: 8px;
+        padding: 4px;
+    }
+    
+    .qty-button {
+        min-width: 36px !important;
+        height: 36px !important;
+        border-radius: 6px !important;
+    }
+    
+    .qty-input {
+        font-weight: 500;
+        text-align: center;
+    }
+    
+    .unit-price {
+        font-size: 1.25rem;
+    }
+    
+    .unit-price .mud-input-outlined-border {
+        border-color: var(--mud-palette-primary) !important;
+    }
+    
+    .serving-size-chip {
+        height: 42px;
+        padding: 0 16px;
+        border-radius: 21px;
+    }
+    
+    .serving-size-chip .mud-avatar {
+        width: 24px !important;
+        height: 24px !important;
+        min-width: 24px !important;
+    }
+    
+    .size-name {
+        font-weight: 500;
+        margin-right: 4px;
+    }
+    
+    .size-price {
+        font-weight: 600;
+        color: var(--mud-palette-success);
+    }
+    
+    .add-to-cart-button {
+        font-size: 1rem;
+        letter-spacing: 0.5px;
+        border-radius: 8px;
+        text-transform: uppercase;
+    }
+    
+    .dialog-title {
+        color: var(--mud-palette-primary);
+        font-weight: 600;
+    }
+    
+    .close-button {
+        color: var(--mud-palette-text-secondary);
+    }
+    
+    /* Responsive adjustments */
+    @@media (max-width: 960px) {
+        .item-main-row {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .item-image-container {
+            margin-right: 0;
+            margin-bottom: 20px;
+        }
+        
+        .item-actions-section {
+            min-width: 100%;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .item-name {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+
+@code {
+    private bool Visible { get; set; }
+    private DialogOptions _dialogOptions = new()
+    {
+        CloseOnEscapeKey = true,
+        FullWidth = true,
+        MaxWidth = MaxWidth.Medium,
+        CloseButton = true,
+        BackdropClick = true
+    };
+
+    [Parameter] public ItemsModel SelectedItem { get; set; } = new();
+    [Parameter] public string InvoiceType { get; set; } = "SALE";
+    [Parameter] public EventCallback<ItemsModel> OnAddToCart { get; set; }
+    [Parameter] public EventCallback<double> OnQtyChanged { get; set; }
+    [Parameter] public EventCallback<(string Size, ItemsModel Item)> OnServingSizeChanged { get; set; }
+
+    private async Task IncreaseQty(ItemsModel item)
+    {
+        item.Qty++;
+        await UpdateItemPrice(item);
+        await OnQtyChanged.InvokeAsync(item.Qty);
+    }
+
+    private async Task DecreaseQty(ItemsModel item)
+    {
+        if (item.Qty > 1)
+        {
+            item.Qty--;
+            await UpdateItemPrice(item);
+            await OnQtyChanged.InvokeAsync(item.Qty);
+        }
+    }
+
+    private Task UpdateItemPrice(ItemsModel item)
+    {
+        var selectedSize = item.ServingSizes?.FirstOrDefault(s => s.Size == item.ServingSize);
+        if (selectedSize != null && double.TryParse(selectedSize.Price.ToString(), out var price))
+        {
+            item.BasePrice = price;
+        }
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleServingSizeChanged(string size)
+    {
+        // Update local item first
+        SelectedItem.ServingSize = size;
+
+        // Find the corresponding price
+        var selectedSize = SelectedItem.ServingSizes?.FirstOrDefault(s => s.Size == size);
+        if (selectedSize != null && double.TryParse(selectedSize.Price.ToString(), out var price))
+        {
+            SelectedItem.BasePrice = price;
+        }
+
+        // Call parent - still passing a tuple
+        await OnServingSizeChanged.InvokeAsync((size, SelectedItem));
+        StateHasChanged();
+    }
+
+    public async Task Open()
+    {
+        Visible = true;
+        StateHasChanged();
+    }
+
+    public async Task Close()
+    {
+        Visible = false;
+        StateHasChanged();
+    }
+}

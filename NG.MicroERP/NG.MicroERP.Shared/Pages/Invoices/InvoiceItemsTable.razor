@@ -1,0 +1,511 @@
+﻿
+@using System.Collections.ObjectModel
+@inject Globals Globals
+
+<div class="summary-cards-container">
+    <!-- Service Charges - Not applicable for purchase invoices -->
+    @if (!IsPurchaseInvoice)
+    {
+        <div class="summary-card-wrapper">
+            <MudPaper Elevation="2" Class="pa-2 mb-2 summary-card-modern" Style="border-radius: 12px; border-left: 4px solid var(--mud-palette-info); height: 100%;">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <div class="d-flex align-items-center">
+                        <MudIcon Icon="@Icons.Material.Filled.AddCircle" 
+                                 Size="Size.Small" 
+                                 Color="Color.Info" 
+                                 Class="me-1" />
+                        <MudText Typo="Typo.caption" Class="fw-bold mb-0" Style="font-size: 0.7rem;">Service Charges</MudText>
+                    </div>
+                    @if (ChargesManuallyOverridden)
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.Refresh" 
+                                      Size="Size.Small" 
+                                      Color="Color.Info" 
+                                      Variant="Variant.Text"
+                                      Class="ms-1"
+                                      Style="min-width: 24px; width: 24px; height: 24px; padding: 2px;"
+                                      Title="Reset to auto-calculate"
+                                      OnClick="OnResetCharges" />
+                    }
+                </div>
+                <MudNumericField T="decimal"
+                                 Value="Record.Invoice.ChargesAmount"
+                                 ValueChanged="OnChargesAmountChanged"
+                                 Dense="@true"
+                                 Variant="Variant.Outlined"
+                                 HideSpinButtons="@true"
+                                 InputClass="text-end amount-input-modern"
+                                 Format="#,##0.00"
+                                 FullWidth="@true"
+                                 Margin="Margin.Dense" />
+            </MudPaper>
+        </div>
+
+        <!-- Discount - Not applicable for purchase invoices -->
+        <div class="summary-card-wrapper">
+            <MudPaper Elevation="2" Class="pa-2 mb-2 summary-card-modern" Style="border-radius: 12px; border-left: 4px solid var(--mud-palette-success); height: 100%;">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <div class="d-flex align-items-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Discount" 
+                                 Size="Size.Small" 
+                                 Color="Color.Success" 
+                                 Class="me-1" />
+                        <MudText Typo="Typo.caption" Class="fw-bold mb-0" Style="font-size: 0.7rem;">Discount</MudText>
+                    </div>
+                    @if (DiscountManuallyOverridden)
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.Refresh" 
+                                      Size="Size.Small" 
+                                      Color="Color.Success" 
+                                      Variant="Variant.Text"
+                                      Class="ms-1"
+                                      Style="min-width: 24px; width: 24px; height: 24px; padding: 2px;"
+                                      Title="Reset to auto-calculate"
+                                      OnClick="OnResetDiscount" />
+                    }
+                </div>
+                <MudNumericField T="decimal"
+                                 Value="Record.Invoice.DiscountAmount"
+                                 ValueChanged="OnDiscountAmountChanged"
+                                 Dense="@true"
+                                 Variant="Variant.Outlined"
+                                 HideSpinButtons="@true"
+                                 InputClass="text-end amount-input-modern"
+                                 Format="#,##0.00"
+                                 FullWidth="@true"
+                                 Margin="Margin.Dense" />
+            </MudPaper>
+        </div>
+    }
+
+    <!-- Invoice Amount -->
+    <div class="summary-card-wrapper">
+        <MudPaper Elevation="2" Class="pa-2 mb-2 summary-card-modern" Style="border-radius: 12px; border-left: 4px solid var(--mud-palette-warning); height: 100%;">
+            <div class="d-flex align-items-center mb-1">
+                <MudIcon Icon="@Icons.Material.Filled.Receipt" 
+                         Size="Size.Small" 
+                         Color="Color.Warning" 
+                         Class="me-1" />
+                <MudText Typo="Typo.caption" Class="fw-bold mb-0" Style="font-size: 0.7rem;">Invoice Amount</MudText>
+            </div>
+            <MudText Typo="Typo.body1" Class="fw-bold text-end mb-0" Color="Color.Warning" Style="font-size: 0.9rem;">
+                @Record.Invoice.TotalInvoiceAmount.ToString("#,##0.00")
+            </MudText>
+        </MudPaper>
+    </div>
+
+    <!-- Payment -->
+    <div class="summary-card-wrapper">
+        <MudPaper Elevation="2" Class="pa-2 mb-2 summary-card-modern" Style="border-radius: 12px; border-left: 4px solid var(--mud-palette-primary); height: 100%;">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+                <div class="d-flex align-items-center">
+                    <MudIcon Icon="@Icons.Material.Filled.Payments" 
+                             Size="Size.Small" 
+                             Color="Color.Primary" 
+                             Class="me-1" />
+                    <MudText Typo="Typo.caption" Class="fw-bold mb-0" Style="font-size: 0.7rem;">Payment</MudText>
+                </div>
+                <MudIconButton Icon="@Icons.Material.Filled.Add"
+                               Size="Size.Small"
+                               Color="Color.Primary"
+                               OnClick="OnPaymentClick"
+                               Variant="Variant.Text"
+                               Style="min-width: 24px; width: 24px; height: 24px; padding: 0;" />
+            </div>
+            <MudText Typo="Typo.body1" Class="fw-bold text-end mb-0" Color="Color.Primary" Style="font-size: 0.9rem;">
+                @Record.Invoice.TotalPayments.ToString("#,##0.00")
+            </MudText>
+        </MudPaper>
+    </div>
+
+    <!-- Balance -->
+    <div class="summary-card-wrapper">
+        <MudPaper Elevation="2" Class="pa-2 mb-2 summary-card-modern" Style="border-radius: 12px; border-left: 4px solid var(--mud-palette-error); height: 100%;">
+            <div class="d-flex align-items-center mb-1">
+                <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" 
+                         Size="Size.Small" 
+                         Color="Color.Error" 
+                         Class="me-1" />
+                <MudText Typo="Typo.caption" Class="fw-bold mb-0" Style="font-size: 0.7rem;">Balance</MudText>
+            </div>
+            <MudText Typo="Typo.body1" Class="fw-bold text-end mb-0" Color="Color.Error" Style="font-size: 0.9rem;">
+                @Record.Invoice.BalanceAmount.ToString("#,##0.00")
+            </MudText>
+        </MudPaper>
+    </div>
+</div>
+
+
+<MudPaper Elevation="3" Class="mt-4" Style="border-radius: 12px; overflow: hidden;">
+    <div style="height: 70vh; overflow-y: auto;">
+        <MudTable Items="Record.InvoiceDetails"
+                  Hover="true"
+                  Dense="true"
+                  StickyHeader="true"
+                  Elevation="0"
+                  Bordered="true"
+                  Breakpoint="Breakpoint.Xs"
+                  Class="invoice-table">
+
+                <!-- HEADER -->
+                <HeaderContent>
+                    <MudTh Class="th-center" Style="width:5%;">#</MudTh>
+                    <MudTh Class="th-center" Style="width:5%;">⋮</MudTh>
+                    <MudTh Style="width:35%;">Item</MudTh>
+                    <MudTh Class="th-right" Style="width:10%;">Qty</MudTh>
+                    <MudTh Class="th-right" Style="width:12%;">Retail Price</MudTh>
+                    <MudTh Class="th-right" Style="width:10%;">Tax</MudTh>
+                    <MudTh Class="th-right" Style="width:10%;">Discount</MudTh>
+                    <MudTh Class="th-right" Style="width:13%;">Amount</MudTh>
+                </HeaderContent>
+
+                <!-- ROW -->
+                <RowTemplate Context="row">
+                    @{
+                        var serial = Record.InvoiceDetails.Count - Record.InvoiceDetails.IndexOf(row);
+                        var itemAmount = (row.Qty * row.UnitPrice) - row.DiscountAmount + row.TaxAmount;
+                        // Calculate retail price per unit (base price + tax per unit - discount per unit)
+                        var taxPerUnit = row.Qty > 0 ? row.TaxAmount / row.Qty : 0;
+                        var discountPerUnit = row.Qty > 0 ? row.DiscountAmount / row.Qty : 0;
+                        var retailPrice = row.UnitPrice + taxPerUnit - discountPerUnit;
+                        
+                        // Determine row background color class
+                        bool isNewItem = !OriginalItemIds.Contains(row.ItemId);
+                        bool isInsert = string.Equals(Action, "INSERT", StringComparison.OrdinalIgnoreCase);
+                        string rowClass = isNewItem 
+                            ? (isInsert ? "row-new-insert" : "row-new-update")
+                            : string.Empty;
+                        string rowStyle = isNewItem 
+                            ? (isInsert ? "background-color: #e8f5e9;" : "background-color: #ffebee;")
+                            : string.Empty;
+                    }
+                    
+                    <MudTd Class="@($"td-center {rowClass}")" Style="@($"{rowStyle} width:5%;")">
+                        <MudText Typo="Typo.body2" Class="grid-text">@serial</MudText>
+                    </MudTd>
+
+                    <MudTd Class="@($"td-center {rowClass}")" Style="@($"{rowStyle} width:5%;")">
+                        <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                 Size="Size.Small"
+                                 Dense="true"
+                                 Color="Color.Inherit">
+                            <MudMenuItem OnClick="@(() => OnDeleteItem.InvokeAsync(row))">
+                                <MudIcon Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Class="me-2" />
+                                Delete
+                            </MudMenuItem>
+                            @if (Math.Abs(row.TaxAmount) > 0.01)
+                            {
+                                <MudMenuItem OnClick="@(() => OnItemSelection.InvokeAsync(row))">
+                                    <MudIcon Icon="@Icons.Material.Filled.Money" Color="Color.Success" Class="me-2" />
+                                    Taxes
+                                </MudMenuItem>
+                            }
+                        </MudMenu>
+                    </MudTd>
+
+                    <MudTd Class="@rowClass" Style="@($"{rowStyle} width:35%; text-align:left;")">
+                        <MudText Typo="Typo.body2" Class="grid-text item-title" Style="text-align:left;">@row.ItemName</MudText>
+                        <MudText Typo="Typo.caption" Class="grid-text item-sub" Style="text-align:left;">@row.ServingSize</MudText>
+                    </MudTd>
+
+                    <MudTd Class="@($"td-right {rowClass}")" Style="@($"{rowStyle} width:10%;")">
+                        <MudNumericField T="double"
+                                         Dense="true"
+                                         Min="0"
+                                         HideSpinButtons="false"
+                                         Value="row.Qty"
+                                         ValueChanged="@(async q => await HandleQtyChanged(row, q))"
+                                         InputClass="numeric-input grid-text"
+                                         ToStringFormat="#,##0.00" />
+                    </MudTd>
+
+                    <MudTd Class="@($"td-right {rowClass}")" Style="@($"{rowStyle} width:12%;")">
+                        <MudText Typo="Typo.body2" Class="grid-text price-text fw-semibold" Color="Color.Primary">
+                            @row.UnitPrice.ToString("#,##0.00")
+                        </MudText>
+                    </MudTd>
+                    
+                    <MudTd Class="@($"td-right {rowClass}")" Style="@($"{rowStyle} width:10%;")">
+                        <MudText Typo="Typo.body2" Class="grid-text" Color="Color.Info">
+                            @row.TaxAmount.ToString("#,##0.00")
+                        </MudText>
+                    </MudTd>
+                    
+                    <MudTd Class="@($"td-right {rowClass}")" Style="@($"{rowStyle} width:10%;")">
+                        <MudText Typo="Typo.body2" Class="grid-text" Color="Color.Success">
+                            @row.DiscountAmount.ToString("#,##0.00")
+                        </MudText>
+                    </MudTd>
+
+                    <MudTd Class="@($"td-right fw-semibold {rowClass}")" Style="@($"{rowStyle} width:13%;")">
+                        <MudText Typo="Typo.body2" Class="grid-text" Color="@(itemAmount < 0 ? Color.Error : Color.Default)">
+                            @itemAmount.ToString("#,##0.00")
+                        </MudText>
+                    </MudTd>
+                </RowTemplate>
+
+                <!-- FOOTER -->
+                <FooterContent>
+                    <MudTd ColSpan="3" Class="footer-label">TOTAL</MudTd> <!-- covers #, ⋮, Item columns -->
+                    <MudTd Class="footer-num">@TotalQty.ToString("#,##0.00")</MudTd> <!-- Qty -->
+                    <MudTd Class="footer-num"></MudTd> <!-- Retail Price -->
+                    <MudTd Class="footer-num">@TotalTaxAmount.ToString("#,##0.00")</MudTd> <!-- Tax -->
+                    <MudTd Class="footer-num">@TotalDiscountAmount.ToString("#,##0.00")</MudTd> <!-- Discount -->
+                    <MudTd Class="footer-num">@Record.InvoiceDetails.Sum(x => (x.Qty * x.UnitPrice) - x.DiscountAmount + x.TaxAmount).ToString("#,##0.00")</MudTd> <!-- Amount -->
+                </FooterContent>
+
+
+        </MudTable>
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter] public InvoicesModel Record { get; set; } = new();
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public string InvoiceType { get; set; } = "SALE";
+    [Parameter] public HashSet<int> OriginalItemIds { get; set; } = new();
+    [Parameter] public EventCallback<InvoicesModel> OnAmountChanged { get; set; }
+    [Parameter] public EventCallback<InvoiceItemReportModel> OnDeleteItem { get; set; }
+    [Parameter] public EventCallback<InvoiceItemReportModel> OnItemSelection { get; set; }
+    [Parameter] public EventCallback<QtyChangedEventArgs> OnRowQtyChanged { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public double TotalQty { get; set; }
+    [Parameter] public double TotalDiscountAmount { get; set; }
+    [Parameter] public double TotalTaxAmount { get; set; }
+    [Parameter] public EventCallback OnTaxClick { get; set; }
+    [Parameter] public EventCallback OnPaymentClick { get; set; }
+    [Parameter] public bool ChargesManuallyOverridden { get; set; } = false;
+    [Parameter] public bool DiscountManuallyOverridden { get; set; } = false;
+    [Parameter] public EventCallback OnResetChargesClick { get; set; }
+    [Parameter] public EventCallback OnResetDiscountClick { get; set; }
+    
+    private bool IsPurchaseInvoice => !string.IsNullOrEmpty(InvoiceType) && InvoiceType.ToUpper().Contains("PURCHASE");
+
+    private async Task HandleQtyChanged(InvoiceItemReportModel row, double newQty)
+    {
+        if (OnRowQtyChanged.HasDelegate)
+        {
+            await OnRowQtyChanged.InvokeAsync(new QtyChangedEventArgs { Item = row, NewQty = newQty });
+        }
+    }
+
+    private async Task UpdateInvoiceAmounts()
+    {
+        if (OnAmountChanged.HasDelegate)
+        {
+            await OnAmountChanged.InvokeAsync(Record);
+        }
+    }
+
+    public async Task OnChargesAmountChanged(decimal value)
+    {
+        Record.Invoice.ChargesAmount = value;
+        await UpdateInvoiceAmounts();
+    }
+
+    public async Task OnDiscountAmountChanged(decimal value)
+    {
+        Record.Invoice.DiscountAmount = value;
+        await UpdateInvoiceAmounts();
+    }
+
+    private async Task OnResetCharges()
+    {
+        if (OnResetChargesClick.HasDelegate)
+        {
+            await OnResetChargesClick.InvokeAsync();
+        }
+    }
+
+    private async Task OnResetDiscount()
+    {
+        if (OnResetDiscountClick.HasDelegate)
+        {
+            await OnResetDiscountClick.InvokeAsync();
+        }
+    }
+}
+
+<style>
+    /* Standard fonts for POS */
+    .pos-card, .pos-table-card {
+        font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+        border-radius: 8px;
+        transition: transform 0.1s ease-in-out;
+    }
+
+        .pos-card:hover {
+            transform: translateY(-2px);
+        }
+
+    .card-title {
+        font-weight: 700;
+        font-size: 14px;
+        color: #1f2937;
+    }
+
+    .card-input {
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .card-icon-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+    }
+
+    .invoice-table {
+        font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .grid-text {
+        font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+    }
+
+        .invoice-table th {
+            font-weight: 600;
+            border-bottom: 1px solid var(--mud-palette-divider);
+        }
+
+    .th-center {
+        text-align: center;
+    }
+
+    .th-right {
+        text-align: right;
+    }
+
+    .td-center {
+        text-align: center;
+    }
+
+    .td-right {
+        text-align: right;
+    }
+
+    .item-title {
+        font-weight: 600;
+    }
+
+    .item-sub {
+        font-weight: 400;
+    }
+
+    .numeric-input {
+        text-align: right;
+        padding: 2px 6px;
+    }
+
+    .price-text {
+        font-weight: 500;
+    }
+
+    .invoice-table td {
+        vertical-align: middle;
+        padding: 6px 8px;
+    }
+
+    .invoice-table tr:hover {
+        background-color: #f9fafb;
+    }
+
+    /* FOOTER */
+    .invoice-table tfoot td {
+        background: #f3f4f6;
+        border-top: 2px solid #d1d5db;
+        font-weight: 600;
+    }
+
+    .footer-label {
+        text-align: right;
+        color: #111827;
+    }
+
+    .footer-num {
+        text-align: right;
+    }
+
+    .summary-card {
+        height: 100%;
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+    }
+    /* Modern Summary Cards */
+    .summary-card-modern {
+        transition: box-shadow 0.3s ease, transform 0.2s ease;
+    }
+
+    .summary-card-modern:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+        transform: translateY(-2px);
+    }
+
+    .amount-input-modern input {
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    /* Summary Cards Container - Flexbox with no wrap */
+    .summary-cards-container {
+        display: flex;
+        gap: 6px;
+        flex-wrap: nowrap;
+        width: 100%;
+        margin-bottom: 8px;
+        align-items: stretch;
+    }
+
+    .summary-card-wrapper {
+        flex: 1 1 0;
+        min-width: 0;
+        max-width: 100%;
+        display: flex;
+    }
+
+    /* Ensure cards don't shrink below minimum width */
+    .summary-card-wrapper {
+        min-width: 140px;
+    }
+
+    /* Ensure all MudPaper cards have same height */
+    .summary-card-wrapper .mud-paper {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    /* Responsive: allow wrapping on small screens */
+    @@media (max-width: 1200px) {
+        .summary-cards-container {
+            flex-wrap: wrap;
+        }
+
+        .summary-card-wrapper {
+            flex: 1 1 calc(33.33% - 4px);
+            min-width: calc(33.33% - 4px);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .summary-card-wrapper {
+            flex: 1 1 calc(50% - 3px) !important;
+            min-width: calc(50% - 3px) !important;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .summary-card-wrapper {
+            flex: 1 1 100% !important;
+            min-width: 100% !important;
+        }
+    }
+
+</style>

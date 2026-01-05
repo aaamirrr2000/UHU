@@ -61,9 +61,6 @@ public class AreasService : IAreasService
 				CreatedBy, 
 				CreatedOn, 
 				CreatedFrom, 
-				UpdatedBy, 
-				UpdatedOn, 
-				UpdatedFrom, 
 				IsSoftDeleted
 			) 
 			VALUES 
@@ -94,7 +91,7 @@ public class AreasService : IAreasService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
     }
 
@@ -129,7 +126,7 @@ public class AreasService : IAreasService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
     }
 

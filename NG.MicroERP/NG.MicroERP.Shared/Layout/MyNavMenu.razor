@@ -89,6 +89,7 @@
 
         <!-- Navigation Menu -->
         <div class="nav-menu">
+
             @foreach (var group in MenuGroupData)
             {
                 <div class="nav-group">
@@ -111,7 +112,7 @@
                     @if (IsExpanded && IsGroupExpanded(group.MenuId) || temporaryExpand)
                     {
                         <div class="nav-group-items">
-                            @if (data != null)
+                            @if (data != null && Globals.User != null)
                             {
                                 var groupItems = data.Where(x =>
                                 x.ParentId == group.MenuId &&
@@ -158,6 +159,113 @@
                     }
                 </div>
             }
+
+            <!-- Additional Menu Items (Not from Menu Table) -->
+            <div class="nav-menu-footer" style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--mud-palette-lines-default);">
+                <!-- Reports Link -->
+                @if (HasReportsAccess())
+                {
+                    <div class="nav-item @(IsReportsPageActive() ? "active" : "")"
+                         @onclick="NavigateToReports"
+                         @onmouseover="() => ShowReportsTooltip()"
+                         @onmouseout="HideTooltip">
+                        <div class="d-flex align-items-center">
+                            <div class="item-icon">
+                                <i class="fa-solid fa-chart-line"></i>
+                            </div>
+                            @if (IsExpanded || temporaryExpand)
+                            {
+                                <span class="item-title">Reports</span>
+                            }
+                        </div>
+                        <!-- Tooltip for collapsed state -->
+                        @if (!IsExpanded && showTooltip && tooltipItem == -1)
+                        {
+                            <div class="item-tooltip" style="left: 52px; top: @tooltipTop">
+                                Reports
+                            </div>
+                        }
+                    </div>
+                }
+
+                <!-- Theme Toggle -->
+                <div class="nav-item theme-toggle-item"
+                     @onmouseover="() => ShowThemeTooltip()"
+                     @onmouseout="HideTooltip">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="item-icon">
+                                <i class="@(Globals._isDarkMode ? "fa-solid fa-moon" : "fa-solid fa-sun")"></i>
+                            </div>
+                            @if (IsExpanded || temporaryExpand)
+                            {
+                                <span class="item-title">Theme</span>
+                            }
+                        </div>
+                        @if (IsExpanded || temporaryExpand)
+                        {
+                            <MudSwitch Value="@Globals._isDarkMode" 
+                                      ValueChanged="@(async (bool value) => await ToggleTheme(value))" 
+                                      Color="Color.Primary" 
+                                      Size="Size.Small" 
+                                      Class="ms-2" />
+                        }
+                    </div>
+                    <!-- Tooltip for collapsed state -->
+                    @if (!IsExpanded && showTooltip && tooltipItem == -2)
+                    {
+                        <div class="item-tooltip" style="left: 52px; top: @tooltipTop">
+                            Theme
+                        </div>
+                    }
+                </div>
+
+                <!-- Change Password -->
+                <div class="nav-item @(IsChangePasswordPageActive() ? "active" : "")"
+                     @onclick="NavigateToChangePassword"
+                     @onmouseover="() => ShowChangePasswordTooltip()"
+                     @onmouseout="HideTooltip">
+                    <div class="d-flex align-items-center">
+                        <div class="item-icon">
+                            <i class="fa-solid fa-key"></i>
+                        </div>
+                        @if (IsExpanded || temporaryExpand)
+                        {
+                            <span class="item-title">Change Password</span>
+                        }
+                    </div>
+                    <!-- Tooltip for collapsed state -->
+                    @if (!IsExpanded && showTooltip && tooltipItem == -3)
+                    {
+                        <div class="item-tooltip" style="left: 52px; top: @tooltipTop">
+                            Change Password
+                        </div>
+                    }
+                </div>
+
+                <!-- Logout -->
+                <div class="nav-item logout-item"
+                     @onclick="Logout"
+                     @onmouseover="() => ShowLogoutTooltip()"
+                     @onmouseout="HideTooltip">
+                    <div class="d-flex align-items-center">
+                        <div class="item-icon">
+                            <i class="fa-solid fa-power-off"></i>
+                        </div>
+                        @if (IsExpanded || temporaryExpand)
+                        {
+                            <span class="item-title">Logout</span>
+                        }
+                    </div>
+                    <!-- Tooltip for collapsed state -->
+                    @if (!IsExpanded && showTooltip && tooltipItem == -4)
+                    {
+                        <div class="item-tooltip" style="left: 52px; top: @tooltipTop">
+                            Logout
+                        </div>
+                    }
+                </div>
+            </div>
         </div>
     }
 </div>
@@ -322,9 +430,54 @@
 
     /* Navigation Menu */
     .nav-menu {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .nav-menu-footer {
+        margin-top: auto;
+        padding-top: 20px;
+        border-top: 1px solid var(--mud-palette-lines-default);
+    }
+
+    .theme-toggle-item {
+        padding: 8px 12px;
+    }
+
+    .logout-item {
+        color: var(--mud-palette-error);
+    }
+
+    .logout-item:hover {
+        background-color: rgba(var(--mud-palette-error-rgb), 0.1);
+    }
+
+    .nav-menu {
         flex: 1;
         overflow-y: auto;
         padding: 8px 0;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .nav-menu-footer {
+        margin-top: auto;
+        padding-top: 20px;
+        border-top: 1px solid var(--mud-palette-lines-default);
+    }
+
+    .theme-toggle-item {
+        padding: 8px 12px;
+    }
+
+    .logout-item {
+        color: var(--mud-palette-error);
+    }
+
+    .logout-item:hover {
+        background-color: rgba(var(--mud-palette-error-rgb), 0.1);
     }
 
     .no-items {
@@ -558,42 +711,90 @@
                 return;
             }
 
-            Console.WriteLine($"Loading menu for OrganizationId: {Globals.User.OrganizationId}, GroupId: {Globals.User.GroupId}");
+            // Store user reference to avoid null issues during async operations
+            var organizationId = Globals.User.OrganizationId;
+            var groupId = Globals.User.GroupId;
+
+            Console.WriteLine($"Loading menu for OrganizationId: {organizationId}, GroupId: {groupId}");
 
             // Load menu data
-            data = await Functions.GetAsync<List<GroupMenuModel>>(
-                $"Permissions/SearchGroupPermissions/{Globals.User.OrganizationId}",
+            var allMenuData = await Functions.GetAsync<List<GroupMenuModel>>(
+                $"Permissions/SearchGroupPermissions/{organizationId}",
                 true) ?? new List<GroupMenuModel>();
 
-            Console.WriteLine($"Raw data count: {data.Count}");
+            Console.WriteLine($"Raw data count: {allMenuData.Count}");
 
-            if (data.Count > 0)
+            // Store ALL menu items (including reports) in globals for access checking
+            Globals.MyPermissions = allMenuData
+                .Where(x => x.GroupId == groupId)
+                .ToList();
+
+            // Find all setup parent menu items (needed for filtering)
+            var setupParents = allMenuData
+                .Where(x =>
+                    (x.Parameter?.ToUpper() == "SETUP" || x.Parameter == "Setup") &&
+                    x.ParentId == 0)
+                .Select(x => x.MenuId)
+                .Distinct()
+                .ToList();
+
+            var setupParentIds = setupParents.ToList();
+
+            if (allMenuData.Count > 0)
             {
-                // Filter out reports and ensure correct group
-                data = data
-                    .Where(x => x.AdditionalInfo != "Report" && x.GroupId == Globals.User.GroupId)
-                    .ToList();
+                // Filter out reports and setup items (case-insensitive) for display only
+                // Exclude: reports, setup parents (by MenuId), and all setup children (by ParentId)
+                if (groupId == 1)
+                {
+                    // Admin: Filter by MenuId and ParentId, regardless of GroupId
+                    data = allMenuData
+                        .Where(x => 
+                            x.Parameter?.ToUpper() != "REPORT" && 
+                            x.Parameter != "Report" &&
+                            !setupParentIds.Contains(x.MenuId) &&
+                            !setupParentIds.Contains(x.ParentId))
+                        .GroupBy(x => x.MenuId)
+                        .Select(g => g.First())
+                        .ToList();
+                }
+                else
+                {
+                    // Non-admin: Filter by GroupId, reports, setup parents, and setup children
+                    data = allMenuData
+                        .Where(x => 
+                            x.Parameter?.ToUpper() != "REPORT" && 
+                            x.Parameter != "Report" &&
+                            !setupParentIds.Contains(x.MenuId) &&
+                            !setupParentIds.Contains(x.ParentId) &&
+                            x.GroupId == groupId)
+                        .ToList();
+                }
 
                 Console.WriteLine($"Filtered data count: {data.Count}");
 
-                // Get parent groups (MenuLevel == 0)
-                if (Globals.User.GroupId != 1)
+                // Get parent groups (MenuLevel == 0), excluding setup parents
+                if (groupId != 1)
                 {
                     MenuGroupData = data
                         .Where(parent => parent.ParentId == 0 &&
+                            !setupParentIds.Contains(parent.MenuId) &&
                             data.Any(child => child.ParentId == parent.MenuId &&
+                                child.GroupId == groupId &&
                                 (child.My_Privilege == "READ ONLY" || child.My_Privilege == "FULL ACCESS")))
                         .ToList();
                 }
                 else
                 {
-                    MenuGroupData = data.Where(x => x.ParentId == 0).ToList();
+                    // Admin: Get all parent groups except setup parents
+                    MenuGroupData = data
+                        .Where(x => 
+                            x.ParentId == 0 && 
+                            !setupParentIds.Contains(x.MenuId) &&
+                            data.Any(child => child.ParentId == x.MenuId))
+                        .ToList();
                 }
 
                 Console.WriteLine($"MenuGroupData count: {MenuGroupData.Count}");
-
-                // Store in globals
-                Globals.MyPermissions = data;
 
                 // Auto-expand first group if available
                 if (MenuGroupData.Count > 0)
@@ -741,13 +942,13 @@
     {
         try
         {
-            Console.WriteLine($"Loading option: {item.MenuCaption}, Page: {item.PageName}, Info: {item.AdditionalInfo}");
+            //Console.WriteLine($"Loading option: {item.MenuCaption}, Page: {item.PageName}, Info: {item.Parameter}");
 
             Globals.SelectedMenuItem = item.MenuCaption!;
 
             // Navigate to the page
-            var url = $"/{item.PageName}/{item.AdditionalInfo}";
-            Console.WriteLine($"Navigating to: {url}");
+            var url = $"/{item.PageName}/{item.Parameter}";
+            //Console.WriteLine($"Navigating to: {url}");
             NavManager.NavigateTo(url);
 
             // Auto-collapse on mobile after selection
@@ -759,7 +960,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error navigating: {ex.Message}");
+            //Console.WriteLine($"Error navigating: {ex.Message}");
             SnackbarService.Add($"Navigation error: {ex.Message}", Severity.Error);
         }
     }
@@ -767,6 +968,74 @@
     private bool IsActive(GroupMenuModel item)
     {
         return Globals.SelectedMenuItem == item.MenuCaption;
+    }
+
+    private bool HasReportsAccess()
+    {
+        try
+        {
+            if (Globals.User == null) return false;
+            
+            var allMenuItems = Globals.MyPermissions ?? new List<GroupMenuModel>();
+            
+            // Find report header(s) - menu items with Parameter = "REPORT"
+            var reportHeaders = allMenuItems.Where(x => 
+                (x.Parameter?.ToUpper() == "REPORT" || x.Parameter == "Report") &&
+                x.Live == 1);
+            
+            if (!reportHeaders.Any()) return false;
+            
+            var reportHeaderIds = reportHeaders.Select(h => h.MenuId).ToList();
+            
+            // Check if any menu items have ParentId matching report header MenuIds (these are the actual reports)
+            var reports = allMenuItems.Where(x => 
+                reportHeaderIds.Contains(x.ParentId) &&
+                x.Live == 1);
+            
+            if (!reports.Any()) return false;
+            
+            // Admin (GroupId 1) has access to all reports
+            if (Globals.User.GroupId == 1)
+                return true;
+            
+            // For non-admin users, check if they have access to at least one report
+            return reports.Any(x => 
+                x.GroupId == Globals.User.GroupId &&
+                (x.My_Privilege == "FULL ACCESS" || x.My_Privilege == "READ ONLY"));
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private bool IsReportsPageActive()
+    {
+        var currentUri = NavManager.Uri;
+        return currentUri.Contains("/ReportsPage", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void NavigateToReports()
+    {
+        NavManager.NavigateTo("/ReportsPage");
+        Globals.SelectedMenuItem = "Reports";
+        
+        // Auto-collapse on mobile after selection
+        if (IsMobile)
+        {
+            IsExpanded = false;
+            temporaryExpand = false;
+        }
+    }
+
+    private void ShowReportsTooltip()
+    {
+        if (!IsExpanded)
+        {
+            showTooltip = true;
+            tooltipItem = -1; // Use -1 for Reports
+            StateHasChanged();
+        }
     }
 
     private string GetToggleIcon()
@@ -794,6 +1063,99 @@
         }
 
         return string.Join(" ", classes);
+    }
+
+    private bool IsChangePasswordPageActive()
+    {
+        var currentUri = NavManager.Uri;
+        return currentUri.Contains("/ChangePasswordPage", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void NavigateToChangePassword()
+    {
+        NavManager.NavigateTo("/ChangePasswordPage");
+        Globals.SelectedMenuItem = "Change Password";
+        
+        // Auto-collapse on mobile after selection
+        if (IsMobile)
+        {
+            IsExpanded = false;
+            temporaryExpand = false;
+        }
+    }
+
+    private void ShowChangePasswordTooltip()
+    {
+        if (!IsExpanded)
+        {
+            showTooltip = true;
+            tooltipItem = -3; // Use -3 for Change Password
+            StateHasChanged();
+        }
+    }
+
+    private async Task ToggleTheme(bool isDark)
+    {
+        try
+        {
+            if (Globals.User == null)
+            {
+                SnackbarService.Add("User not found. Please log in again.", Severity.Error);
+                return;
+            }
+
+            Globals._isDarkMode = isDark;
+            int theme = isDark ? 1 : 0;
+            string themeName = isDark ? "DARK" : "LIGHT";
+
+            var result = await Functions.PostAsync<UsersModel>($"Users/SetTheme/{Globals.User.Id}/{theme}", null, true);
+            if (!result.Success)
+            {
+                SnackbarService.Add("Theme not updated.", Severity.Error);
+                Globals._isDarkMode = !isDark;
+            }
+            else
+            {
+                Globals.User.DarKLightTheme = theme;
+                SnackbarService.Add($"Theme changed to {themeName} mode", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error saving theme: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void ShowThemeTooltip()
+    {
+        if (!IsExpanded)
+        {
+            showTooltip = true;
+            tooltipItem = -2; // Use -2 for Theme
+            StateHasChanged();
+        }
+    }
+
+    private void Logout()
+    {
+        // Clear user data first
+        Globals.User = null;
+        Globals.MyPermissions = null;
+        data = new();
+        MenuGroupData = new();
+        
+        // Navigate to login page
+        NavManager.NavigateTo("/", true);
+    }
+
+    private void ShowLogoutTooltip()
+    {
+        if (!IsExpanded)
+        {
+            showTooltip = true;
+            tooltipItem = -4; // Use -4 for Logout
+            StateHasChanged();
+        }
     }
 
     public void Dispose()

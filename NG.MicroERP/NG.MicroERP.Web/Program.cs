@@ -21,10 +21,9 @@ builder.Services.AddServerSideBlazor()
 
 // Add device-specific services used by the NG.MicroERP.Shared project
 builder.Services.AddSingleton<IFormFactor, FormFactor>();
-//builder.Services.AddSingleton<FileUploadService>();
 builder.Services.AddMudServices(config =>
 {
-    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.TopRight;
+    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.TopCenter;
     config.SnackbarConfiguration.PreventDuplicates = false;
     config.SnackbarConfiguration.NewestOnTop = false;
     config.SnackbarConfiguration.ShowCloseIcon = true;
@@ -40,7 +39,6 @@ builder.Services.AddScoped<Functions>();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ClientInfoService>();
-
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.File("logs/log-.txt",

@@ -27,6 +27,10 @@ public class ChartOfAccountsModel
     public string? UpdatedFrom { get; set; } = string.Empty;
     public int IsSoftDeleted { get; set; } = 0;
 
+    public string? DisplayName =>
+        string.Format("{0} ({1}), {2}",
+            Name, Code, Type);
+
     public override string ToString()
     {
         return Name ?? string.Empty;

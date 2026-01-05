@@ -1,4 +1,5 @@
 ﻿@page "/CashBookDashboard"
+@using NG.MicroERP.Shared.Models
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
@@ -9,8 +10,68 @@
 
 <Loading IsLoading="@LoadingPanel" />
 
-<div class="row" style="margin: 2px; height: 90vh; display: flex;">
-    <MyDrawer @ref="_drawer" Title="CashBook" FaIcon="fas fa-address-book">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <div class="dashboard-header mb-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Class="me-2" Style="color: white;" />
+                    Cash Book Management
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">Manage cash transactions and entries</MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 flex-wrap">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="position: relative;">
+                        <MudDatePicker @bind-Date="startDate"
+                                       Label="Start Date"
+                                       Variant="Variant.Outlined"
+                                       Style="background: rgba(255,255,255,0.95); width: 160px;" />
+                    </div>
+                    <div style="position: relative;">
+                        <MudDatePicker @bind-Date="endDate"
+                                       Label="End Date"
+                                       Variant="Variant.Outlined"
+                                       Style="background: rgba(255,255,255,0.95); width: 160px;" />
+                    </div>
+                </div>
+                <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Success" 
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => Clear())">
+                    New
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.TwoTone.Search" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Primary"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => GetAll())">
+                    Search
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.TwoTone.Print" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Info"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => PrintSummary())">
+                    Print
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Info"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => Refresh())">
+                    Refresh
+                </MudButton>
+            </div>
+        </div>
+    </div>
+
+    <MyDrawer @ref="_drawer" Title="Cash Book" FaIcon="fas fa-address-book">
         <HeaderContent>
         </HeaderContent>
         <ChildContent>
@@ -30,7 +91,7 @@
     }
     else
     {
-        <div class="row">
+        <MudPaper Elevation="3" Style="border-radius: 12px; overflow: hidden;">
             <MudDataGrid T="CashBookModel"
                          MultiSelection="false"
                          Items="@data"
@@ -42,157 +103,6 @@
                          Striped="true"
                          Hover="true"
                          Class="professional-grid elevation-8">
-
-                   <ToolBarContent>
-        <div class="grid-toolbar-wrapper">
-            <div class="grid-toolbar" style="
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 0.75rem 1.25rem;
-                min-height: 56px;
-                width: 100%;
-            ">
-                <div class="toolbar-left" style="
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                ">
-                    <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" 
-                             style="color: white !important; font-size: 1.5rem !important; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));"/>
-                    <MudText Typo="Typo.h6" style="
-                        color: white !important;
-                        font-weight: 600 !important;
-                        font-size: 1.1rem !important;
-                        letter-spacing: 0.3px !important;
-                        text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-                        margin: 0 !important;
-                    ">
-                        CashBook Management
-                    </MudText>
-                </div>
-                
-                <div class="toolbar-right" style="
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    flex-wrap: nowrap;
-                    white-space: nowrap;
-                ">
-                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
-                              Size="MudBlazor.Size.Small" 
-                              Variant="Variant.Filled" 
-                              Color="Color.Success"
-                              style="
-                                  border-radius: 6px !important;
-                                  padding: 0.375rem 0.875rem !important;
-                                  font-weight: 500 !important;
-                                  font-size: 0.875rem !important;
-                                  text-transform: none !important;
-                                  border: none !important;
-                                  min-width: 80px;
-                                  height: 32px;
-                                  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-                                  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%) !important;
-                              "
-                              OnClick="@(() => Clear())">
-                        New
-                    </MudButton>
-
-                    <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
-                              Size="MudBlazor.Size.Small" 
-                              Variant="Variant.Filled" 
-                              Color="Color.Info"
-                              style="
-                                  border-radius: 6px !important;
-                                  padding: 0.375rem 0.875rem !important;
-                                  font-weight: 500 !important;
-                                  font-size: 0.875rem !important;
-                                  text-transform: none !important;
-                                  border: none !important;
-                                  min-width: 80px;
-                                  height: 32px;
-                                  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-                                  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%) !important;
-                              "
-                              OnClick="@(() => Refresh())">
-                        Refresh
-                    </MudButton>
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <div style="position: relative;">
-                                        <InputDate @bind-Value="startDate"
-                                                   Format="yyyy-MM-dd"
-                                                   class="styled-date-input"
-                                                   style="
-                           width: 140px;
-                           background: rgba(255, 255, 255, 0.1);
-                           border: 1px solid rgba(255, 255, 255, 0.3);
-                           border-radius: 6px;
-                           color: white;
-                           padding: 8px 12px;
-                           font-size: 0.875rem;
-                       " />
-                                        <label style="
-                position: absolute;
-                top: -8px;
-                left: 8px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                padding: 0 4px;
-                font-size: 0.75rem;
-                color: white;
-                border-radius: 2px;
-            ">Start Date</label>
-                                    </div>
-
-                                    <div style="position: relative;">
-                                        <InputDate @bind-Value="endDate"
-                                                   Format="yyyy-MM-dd"
-                                                   class="styled-date-input"
-                                                   style="
-                           width: 140px;
-                           background: rgba(255, 255, 255, 0.1);
-                           border: 1px solid rgba(255, 255, 255, 0.3);
-                           border-radius: 6px;
-                           color: white;
-                           padding: 8px 12px;
-                           font-size: 0.875rem;
-                       " />
-                                        <label style="
-                position: absolute;
-                top: -8px;
-                left: 8px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                padding: 0 4px;
-                font-size: 0.75rem;
-                color: white;
-                border-radius: 2px;
-            ">End Date</label>
-                                    </div>
-                                </div>
-
-                    <MudButton StartIcon="@Icons.Material.TwoTone.Search"
-                              Size="MudBlazor.Size.Small"
-                              Variant="Variant.Filled"
-                              Color="Color.Primary"
-                              style="
-                                  border-radius: 6px !important;
-                                  padding: 0.375rem 0.875rem !important;
-                                  font-weight: 500 !important;
-                                  font-size: 0.875rem !important;
-                                  text-transform: none !important;
-                                  border: none !important;
-                                  min-width: 80px;
-                                  height: 32px;
-                                  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-                                  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%) !important;
-                              "
-                              OnClick="@(() => GetAll())">
-                        Search
-                    </MudButton>
-                </div>
-            </div>
-        </div>
-    </ToolBarContent>
 
                 <Columns>
                     <TemplateColumn Title="Actions"
@@ -209,21 +119,51 @@
                                         <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
                                         <span>View</span>
                                     </MudMenuItem>
-                                    <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
-                                                 Class="menu-item edit-item">
-                                        <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
-                                        <span>Edit</span>
-                                    </MudMenuItem>
+                                    @if (row.Item.IsPostedToGL == 1 && !string.IsNullOrWhiteSpace(row.Item.GLEntryNo))
+                                    {
+                                        <MudMenuItem OnClick="@(() => ViewGLEntry(row.Item.GLEntryNo))"
+                                                     Class="menu-item gl-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="menu-icon" />
+                                            <span>View GL Entry: @row.Item.GLEntryNo</span>
+                                        </MudMenuItem>
+                                    }
+                                    @if (row.Item.Source == "CASH BOOK")
+                                    {
+                                        @if (row.Item.IsPostedToGL == 0)
+                                        {
+                                            <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
+                                                         Class="menu-item edit-item">
+                                                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
+                                                <span>Edit</span>
+                                            </MudMenuItem>
+                                        
+                                            <MudMenuItem OnClick="@(() => Delete(row.Item.Id))"
+                                            Color="Color.Error"
+                                            Class="menu-item delete-item">
+                                                <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
+                                                <span>Delete</span>
+                                            </MudMenuItem>
+                                            <hr />
+                                            <MudMenuItem OnClick="@(() => PostToGL(row.Item.Id))"
+                                                         Class="menu-item post-item">
+                                                <MudIcon Icon="@Icons.Material.Filled.PostAdd" Class="menu-icon" />
+                                                <span>Post to General Ledger</span>
+                                            </MudMenuItem>
+                                        }
+                                        else
+                                        {
+                                            <MudMenuItem Disabled="true"
+                                                         Class="menu-item disabled-item">
+                                                <MudIcon Icon="@Icons.Material.Filled.Lock" Class="menu-icon" />
+                                                <span>Posted to GL - Cannot Edit/Delete</span>
+                                            </MudMenuItem>
+                                        }
+                                    }
+                                    <hr />
                                     <MudMenuItem OnClick="@(() => Print(row.Item.Id))"
                                                  Class="menu-item print-item">
                                         <MudIcon Icon="@Icons.Material.Filled.Print" Class="menu-icon" />
                                         <span>Print</span>
-                                    </MudMenuItem>
-                                    <MudMenuItem OnClick="@(() => Delete(row.Item.Id))"
-                                                 Color="Color.Error"
-                                                 Class="menu-item delete-item">
-                                        <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
-                                        <span>Delete</span>
                                     </MudMenuItem>
                                 </MudMenu>
                             </div>
@@ -238,6 +178,14 @@
                                     CellClass="grid-cell"
                                     Width="80px" />
 
+                    <PropertyColumn Property="x => x.Source"
+                                    Title="Tran Source"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="200px" />
+
                     <PropertyColumn Property="x => x.TranDate"
                                     Title="Transaction Date"
                                     Sortable="true"
@@ -246,6 +194,17 @@
                                     CellClass="grid-cell"
                                     Format="dd-MMM-yyyy"
                                     Width="120px" />
+
+                    @if (Globals.User.GroupId == 1)
+                    {
+                        <PropertyColumn Property="x => x.LocationName"
+                                        Title="Location"
+                                        Sortable="true"
+                                        Filterable="true"
+                                        HeaderClass="grid-header"
+                                        CellClass="grid-cell"
+                                        Width="200px" />
+                    }
 
                     <PropertyColumn Property="x => x.Description"
                                     Title="Description"
@@ -287,6 +246,15 @@
                                     CellClass="grid-cell"
                                     Width="150px" />
 
+                    <PropertyColumn Property="x => x.Amount"
+                                    Title="Amount"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Format="#,##0.00"
+                                    Width="150px" />
+
                 </Columns>
 
                 <PagerContent>
@@ -296,18 +264,50 @@
                 </PagerContent>
 
             </MudDataGrid>
-        </div>
+        </MudPaper>
     }
-</div>
+</MudContainer>
+
+<style>
+    .dashboard-header {
+        padding: 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 24px;
+    }
+
+    .dashboard-header .mud-typography {
+        color: white !important;
+    }
+
+    .dashboard-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .dashboard-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+</style>
 
 @code
 {
-    static List<CashBookModel> data = new();
-    static CashBookModel record = new();
+    List<CashBookModel> data = new();
+    CashBookModel record = new();
 
-    public DateTime startDate { get; set; } = DateTime.Today;
-    public DateTime endDate { get; set; } = DateTime.Today;
+    public DateTime? startDate { get; set; } = DateTime.Today;
+    public DateTime? endDate { get; set; } = DateTime.Today;
 
+    // Totals
+    private Dictionary<string, decimal> sourceTotals = new();
+    private Dictionary<string, decimal> paymentMethodTotals = new();
+    private Dictionary<string, decimal> transactionTypeTotals = new();
+    private decimal totalReceipts = 0;
+    private decimal totalPayments = 0;
+    private decimal totalBankDeposits = 0;
+    private decimal openingBalance = 0;
+    private decimal closingBalance = 0;
 
     public string? Action { get; set; } = "INSERT";
 
@@ -317,36 +317,75 @@
 
     protected override async Task OnInitializedAsync()
     {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "CashBookDashboard");
         await GetAll();
+    }
+
+    // protected override async Task OnAfterRenderAsync(bool firstRender)
+    // {
+    //     if (firstRender)
+    //     {
+    //         await GetAll();
+    //     }
+    // }
+
+    protected async Task PrintSummary()
+    {
+        NavManager.NavigateTo("/CashBookSummary");
     }
 
     protected async Task GetAll()
     {
-        if (startDate > endDate)
+        try
         {
-            SnackbarService.Add("Start date must be earlier than end date.", Severity.Warning);
-            return;
+            Console.WriteLine("GetAll started");
+
+            if (startDate > endDate)
+            {
+                SnackbarService.Add("Start date must be earlier than end date.", Severity.Warning);
+                return;
+            }
+
+            var formattedStartDate = startDate.Value.ToString("yyyy-MM-dd");
+            var formattedEndDate = endDate.Value.ToString("yyyy-MM-dd");
+
+            string Criteria = string.Empty;
+            LoadingPanel = true;
+
+            // Use simple field comparisons without CAST or SQL functions
+            // Most SQL injection checkers allow simple comparisons
+            Criteria = $"TranDate >= '{formattedStartDate}' and TranDate <= '{formattedEndDate}'";
+
+            // Add location filter if needed
+            if (Globals.User.GroupId != 1)
+            {
+                Criteria += $" and LocationId = {Globals.User.LocationId}";
+            }
+
+            Console.WriteLine($"Simple Criteria: {Criteria}");
+
+            string encodedCriteria = Uri.EscapeDataString(Criteria);
+            string apiUrl = $"CashBook/Search/{encodedCriteria}";
+
+            Console.WriteLine($"Calling API: {apiUrl}");
+
+            data = await Functions.GetAsync<List<CashBookModel>>(apiUrl, true) ?? new List<CashBookModel>();
+
+            Console.WriteLine($"Data loaded. Count: {data.Count}");
         }
-
-        var formattedStartDate = startDate.ToString("yyyy-MM-dd");
-        var formattedEndDate = endDate.ToString("yyyy-MM-dd");
-
-
-        string Criteria = string.Empty;
-
-        LoadingPanel = true;
-
-        if (Globals.User.GroupId != 1)
+        catch (Exception ex)
         {
-            Criteria = $" and LocationId = {Globals.User.LocationId}";
+            Console.WriteLine($"Error: {ex.Message}");
+            SnackbarService.Add($"Error loading data: {ex.Message}", Severity.Error);
+            data = new List<CashBookModel>();
         }
-
-        Criteria = $"CAST(TranDate as DATE) >= '{formattedStartDate}' and CAST(TranDate as DATE) <= '{formattedEndDate}' {Criteria}"!;
-        data = await Functions.GetAsync<List<CashBookModel>>($"CashBook/Search/{Criteria}", true) ?? new List<CashBookModel>();
-         LoadingPanel = false;
-
-        await InvokeAsync(StateHasChanged);
+        finally
+        {
+            LoadingPanel = false;
+            await InvokeAsync(StateHasChanged);
+        }
     }
+
 
     protected async Task Get(int id)
     {
@@ -365,7 +404,8 @@
 
     protected async Task Refresh()
     {
-        data = await Functions.GetAsync<List<CashBookModel>>($"CashBook/Search", true) ?? new List<CashBookModel>();
+        //data = await Functions.GetAsync<List<CashBookModel>>($"CashBook/Search", true) ?? new List<CashBookModel>();
+        await GetAll();
     }
 
     protected async Task View(int id)
@@ -380,7 +420,8 @@
     {
         await Get(id);
         Action = "UPDATE"; 
-        isReadOnly = false;
+        // Make read-only if posted to GL
+        isReadOnly = record.IsPostedToGL == 1;
         await _drawer.OpenDrawerAsync();
     }
 
@@ -397,8 +438,13 @@
 
     protected void Print(int id)
     {
+        /*
         var url = $"/CashBookReport/{id}";
         JSRuntime.InvokeVoidAsync("open", url, "_blank");
+        */
+
+        NavManager.NavigateTo($"/CashBookReport/{id}");
+
     }
 
     protected async Task Save()
@@ -435,6 +481,43 @@
         await GetAll();
         await _drawer.CloseDrawerAsync();
         StateHasChanged();
+    }
+
+    protected async Task PostToGL(int cashBookId)
+    {
+        try
+        {
+            var res = await Functions.ShowConfirmation(dialogService, "Do you want to post this cashbook entry to General Ledger? Once posted, it cannot be edited or deleted.");
+            if (res == false)
+                return;
+
+            LoadingPanel = true;
+            var result = await Functions.PostAsync<GeneralLedgerHeaderModel>(
+                $"GeneralLedger/CreateGLFromCashBook/{cashBookId}?userId={Globals.User.Id}&clientInfo={Uri.EscapeDataString(Globals.ClientInfo)}", 
+                null, 
+                true);
+            LoadingPanel = false;
+
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+            }
+            else
+            {
+                SnackbarService.Add("Cashbook entry posted to General Ledger successfully", Severity.Success);
+                await GetAll();
+            }
+        }
+        catch (Exception ex)
+        {
+            LoadingPanel = false;
+            SnackbarService.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    protected void ViewGLEntry(string glEntryNo)
+    {
+        NavManager.NavigateTo($"/GeneralLedgerDashboard");
     }
 
 }

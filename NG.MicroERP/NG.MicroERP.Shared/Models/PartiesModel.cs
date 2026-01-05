@@ -13,7 +13,6 @@ public class PartiesModel
     public string? Code { get; set; } = string.Empty;
     public string? Name { get; set; } = string.Empty;
     public string? PartyType { get; set; } = string.Empty;
-    public string? PartyTypeCode { get; set; } = string.Empty;
     public int ParentId { get; set; } = 0;
     public string? ParentName { get; set; }
     public double CustomerRating { get; set; } = 0;
@@ -24,9 +23,10 @@ public class PartiesModel
     public int PaymentTermsId { get; set; } = 0;
     public int AccountId { get; set; } = 0;
     public string? Account { get; set; }
-    public string? TaxCategory { get; set; } = string.Empty;
-    public string? TaxNumber { get; set; } = string.Empty;
     public string? NTN { get; set; } = string.Empty;
+    public string? STN { get; set; } = string.Empty;
+    public int IsRegistered { get; set; }
+    public int IsFiler { get; set; }
     public string? Address { get; set; } = string.Empty;
     public int CityId { get; set; } = 0;
     public string? AreaName { get; set; }
@@ -40,7 +40,7 @@ public class PartiesModel
     public int IsActive { get; set; } = 0;
     public int IsApproved { get; set; } = 0;
     public int ApprovedBy { get; set; } = 0;
-    public DateTime ApprovedOn { get; set; } = DateTime.Today;
+    public DateTime? ApprovedOn { get; set; } = DateTime.Today;
     public int CreatedBy { get; set; } = 0;
     public DateTime CreatedOn { get; set; } = DateTime.Today;
     public string? CreatedFrom { get; set; } = string.Empty;
@@ -48,6 +48,8 @@ public class PartiesModel
     public DateTime UpdatedOn { get; set; } = DateTime.Today;
     public string? UpdatedFrom { get; set; } = string.Empty;
     public int IsSoftDeleted { get; set; } = 0;
+
+    public string? DisplayName => string.Format("{0} ({1})", Name, Code);
 
 }
 

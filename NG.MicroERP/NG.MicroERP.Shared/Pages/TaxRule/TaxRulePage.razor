@@ -1,0 +1,483 @@
+﻿@page "/TaxRulePage/{Action}/{CurrentRecord?}"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <!-- Action Buttons Header -->
+    <div class="d-flex justify-content-end align-items-center mb-4 gap-2">
+        @if (Action != "VIEW")
+        {
+            <MudButton OnClick="Save" 
+                       Color="Color.Success" 
+                       Variant="Variant.Filled"
+                       StartIcon="@Icons.Material.Filled.Save"
+                       Size="Size.Medium">
+                @(Action == "INSERT" ? "Save" : "Update")
+            </MudButton>
+
+            @if (Action == "UPDATE")
+            {
+                <MudButton Color="Color.Error" 
+                           OnClick="Delete" 
+                           Variant="Variant.Filled"
+                           StartIcon="@Icons.Material.Filled.Delete"
+                           Size="Size.Medium">
+                    Delete
+                </MudButton>
+            }
+        }
+    </div>
+
+    <MudGrid>
+        <!-- Basic Details Card -->
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px;">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Info" 
+                             Size="Size.Large" 
+                             Color="Color.Primary" 
+                             Class="me-3" />
+                    <div>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Basic Details</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain TaxRule</MudText>
+                    </div>
+                </div>
+                <hr style="height: 3px; border: none; background: linear-gradient(90deg, var(--mud-palette-primary) 0%, var(--mud-palette-primary-lighten) 100%); border-radius: 10px; margin: 0 0 24px 0;" />
+
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Rule Name"
+                                     T="string"
+                                     Value="@record.RuleName"
+                                     ValueChanged="@((string v) => record.RuleName = v?.ToUpper())"
+                                     Placeholder="Rule Name"
+                                     ReadOnly="@isReadOnly"
+                                     Variant="Variant.Outlined"
+                                     FullWidth="@true"
+                                     Class="mb-3" />
+                        <ValidationMessage For="@(() => record.RuleName)" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="string"
+                                   Label="Applies To"
+                                   @bind-Value="record.AppliesTo"
+                                   Placeholder="Select Invoice Type"
+                                   Variant="Variant.Outlined"
+                                   Clearable="@true"
+                                   FullWidth="@true"
+                                   ReadOnly="@isReadOnly"
+                                   Class="mb-3">
+                            <MudSelectItem Value="@("SALE")">
+                                <MudIcon Icon="@Icons.Material.Filled.Calculate" Size="Size.Small" Class="me-2" />
+                                Sales
+                            </MudSelectItem>
+                            <MudSelectItem Value="@("PURCHASE")">
+                                <MudIcon Icon="@Icons.Material.Filled.Calculate" Size="Size.Small" Class="me-2" />
+                                Purchase
+                            </MudSelectItem>
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.AppliesTo)" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="int"
+                                   Label="Is Registered"
+                                   @bind-Value="record.IsRegistered"
+                                   Placeholder="Is Registered"
+                                   Variant="Variant.Outlined"
+                                   Clearable="@true"
+                                   FullWidth="@true"
+                                   ReadOnly="@isReadOnly"
+                                   Class="mb-3">
+                            @if (record.IsRegistered != 0 && record.IsRegistered != 1)
+                            {
+                                record.IsRegistered = 1;
+                            }
+                            <MudSelectItem T="int" Value="1">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                Yes
+                            </MudSelectItem>
+                            <MudSelectItem T="int" Value="0">
+                                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" Class="me-2" />
+                                No
+                            </MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="int"
+                                   Label="Is Filer"
+                                   @bind-Value="record.IsFiler"
+                                   Placeholder="Is Filer"
+                                   Variant="Variant.Outlined"
+                                   Clearable="@true"
+                                   FullWidth="@true"
+                                   ReadOnly="@isReadOnly"
+                                   Class="mb-3">
+                            @if (record.IsFiler != 0 && record.IsFiler != 1)
+                            {
+                                record.IsFiler = 1;
+                            }
+                            <MudSelectItem T="int" Value="1">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                Yes
+                            </MudSelectItem>
+                            <MudSelectItem T="int" Value="0">
+                                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" Class="me-2" />
+                                No
+                            </MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker Label="Effective From"
+                                      @bind-Date="record.EffectiveFrom"
+                                      Variant="Variant.Outlined"
+                                      DateFormat="yyyy-MM-dd"
+                                      Placeholder="Effective From"
+                                      ReadOnly="@isReadOnly"
+                                      FullWidth="@true"
+                                      Class="mb-3" />
+                        <ValidationMessage For="@(() => record.EffectiveFrom)" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker Label="Effective To"
+                                      @bind-Date="record.EffectiveTo"
+                                      Variant="Variant.Outlined"
+                                      DateFormat="yyyy-MM-dd"
+                                      Placeholder="Effective To"
+                                      ReadOnly="@isReadOnly"
+                                      FullWidth="@true"
+                                      Class="mb-3" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="int"
+                                   Label="Activation Status"
+                                   @bind-Value="record.IsActive"
+                                   Placeholder="Is Active"
+                                   Variant="Variant.Outlined"
+                                   Clearable="@true"
+                                   FullWidth="@true"
+                                   ReadOnly="@isReadOnly"
+                                   Class="mb-3">
+                            @if (record.IsActive != 0 && record.IsActive != 1)
+                            {
+                                record.IsActive = 1;
+                            }
+                            <MudSelectItem T="int" Value="1">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                Enable
+                            </MudSelectItem>
+                            <MudSelectItem T="int" Value="0">
+                                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" Class="me-2" />
+                                Disable
+                            </MudSelectItem>
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.IsActive)" />
+                    </MudItem>
+
+                    @if (Action != "VIEW")
+                    {
+                        <MudItem xs="12">
+                            <MudButton StartIcon="@Icons.Material.Filled.Details"
+                                      Color="Color.Primary"
+                                      Variant="Variant.Text"
+                                      OnClick="Details"
+                                      Class="mb-3">
+                                Details
+                            </MudButton>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Tax Rule Details Grid Card -->
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px;">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="d-flex align-items-center">
+                        <MudIcon Icon="@Icons.Material.Filled.List" 
+                                 Size="Size.Large" 
+                                 Color="Color.Info" 
+                                 Class="me-3" />
+                        <div>
+                            <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Tax Rule Detail</MudText>
+                            <MudText Typo="Typo.caption" Class="text-muted">Manage tax rule details</MudText>
+                        </div>
+                    </div>
+                    @if (Action != "VIEW")
+                    {
+                        <MudButton StartIcon="@Icons.Material.TwoTone.Add"
+                                  Size="Size.Small"
+                                  Variant="Variant.Filled"
+                                  Color="Color.Success"
+                                  OnClick="@(() => Clear())">
+                            New
+                        </MudButton>
+                    }
+                </div>
+                <hr style="height: 3px; border: none; background: linear-gradient(90deg, var(--mud-palette-info) 0%, var(--mud-palette-info-lighten) 100%); border-radius: 10px; margin: 0 0 24px 0;" />
+
+                <MudDataGrid T="TaxRuleDetailModel" 
+                            MultiSelection="false" 
+                            Items="@data" 
+                            SortMode="SortMode.Multiple" 
+                            Filterable="true" 
+                            Hideable="true" 
+                            RowsPerPage="10" 
+                            Dense="@true">
+                    <Columns>
+                        <TemplateColumn Title="Actions" CellStyle="width: 80px; min-width: 80px;" HeaderClass="grid-header">
+                            <CellTemplate Context="row">
+                                <div class="actions-cell">
+                                    <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                             Color="Color.Primary"
+                                             Dense="@true"
+                                             Class="actions-menu">
+                                        @if (Globals.AccessLevel == 1)
+                                        {
+                                            <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
+                                                         Class="menu-item edit-item">
+                                                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
+                                                <span>Edit</span>
+                                            </MudMenuItem>
+                                            <MudMenuItem OnClick="@(() => Details_Delete(row.Item.Id))"
+                                                         Color="Color.Error"
+                                                         Class="menu-item delete-item">
+                                                <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
+                                                <span>Delete</span>
+                                            </MudMenuItem>
+                                        }
+                                    </MudMenu>
+                                </div>
+                            </CellTemplate>
+                        </TemplateColumn>
+
+                        <PropertyColumn Property="x => x.TaxRuleId" Title="Tax Rule Id" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
+                        <PropertyColumn Property="x => x.TaxId" Title="Tax Id" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
+                        <PropertyColumn Property="x => x.SequenceNo" Title="Sequence No" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
+                    </Columns>
+
+                    <PagerContent>
+                        <div class="pager-container">
+                            <MudDataGridPager T="TaxRuleDetailModel" />
+                        </div>
+                    </PagerContent>
+                </MudDataGrid>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+<MyModelDialog Width="60%" Height="60%" @ref="_dialog" Title="Tax Rule Details">
+    <HeaderContent>
+    </HeaderContent>
+
+    <ChildContent>
+        <TaxRuleDetailPage Action="@Action" CurrentRecord="record.Id" OnSaved="ChildSaved" />
+    </ChildContent>
+    
+    <FooterContent>
+    </FooterContent>
+</MyModelDialog>
+
+@code
+{
+    TaxRuleModel record = new();
+
+    public MyModelDialog? _dialog;
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    List<TaxRuleDetailModel> data = new();
+    TaxRuleDetailModel details_record = new();
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "TaxRuleDashboard");
+        await GetAll();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+
+        if (Action == "INSERT")
+        {
+            record = new TaxRuleModel();
+            record.IsActive = 1;
+            isReadOnly = false;
+        }
+        else if (Action == "UPDATE")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action == "VIEW")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<TaxRuleModel>($"TaxRule/Get/{id}", true) ?? new TaxRuleModel();
+        LoadingPanel = false;
+    }
+
+    protected void GetDefaultValues()
+    {
+        StateHasChanged();
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new TaxRuleModel();
+        record.IsActive = 1;
+        isReadOnly = false;
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Details()
+    {
+        _dialog.Visible = true;
+    }
+
+    protected async Task Save()
+    {
+        var errors = new List<string>();
+        if (string.IsNullOrWhiteSpace(record.RuleName))
+            errors.Add("• Rule Name is required");
+        if (string.IsNullOrWhiteSpace(record.AppliesTo))
+            errors.Add("• Applies To is required");
+
+        if (errors.Count > 0)
+        {
+            SnackbarService.Add($"ERROR:\n{string.Join("\n", errors)}", Severity.Error);
+            return;
+        }
+
+        try
+        {
+            LoadingPanel = true;
+
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<TaxRuleModel>($"TaxRule/{url}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+            }
+            else
+            {
+                await OnSaved.InvokeAsync();
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                    await Edit(result.Result!.Id);
+                else
+                {
+                    await Clear();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"ERROR: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    private async Task ChildSaved()
+    {
+        StateHasChanged();
+    }
+
+    protected async Task Details_Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Details_Save();
+    }
+
+    protected async Task Details_Save()
+    {
+        try
+        {
+            var result = await Functions.PostAsync<TaxRuleDetailModel>($"TaxRuleDetail/{Action}", record, true);
+            if (result.Success == true)
+            {
+                SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
+                await GetAll();
+                if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) 
+                    await Edit(result.Result!.Id);
+            }
+            else
+            {
+                SnackbarService.Add($"{result.Message}", Severity.Error);
+                details_record = new();
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"ERROR: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+}

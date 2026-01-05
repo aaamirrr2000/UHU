@@ -26,8 +26,9 @@ public static class DependencyInjection
 
         services.AddSingleton<IAreasService, AreasService>();
         services.AddSingleton<IBankService, BankService>();
-        services.AddSingleton<ICategoriesService, CategoriesService>();
         services.AddSingleton<IChartOfAccountsService, ChartOfAccountsService>();
+        services.AddSingleton<IGeneralLedgerService, GeneralLedgerService>();
+        services.AddSingleton<IPeriodCloseService, PeriodCloseService>();
         services.AddSingleton<IDailyAttendanceService, DailyAttendanceService>();
         services.AddSingleton<IDepartmentsService, DepartmentsService>();
         services.AddSingleton<IDesignationsService, DesignationsService>();
@@ -46,20 +47,32 @@ public static class DependencyInjection
         services.AddSingleton<IPartyFinancialsService, PartyFinancialsService>();
         services.AddSingleton<IPartyVehiclesService, PartyVehiclesService>();
         services.AddSingleton<IScannerDevicesService, ScannerDevicesService>();
-        services.AddSingleton<IServiceChargesService, ServiceChargesService>();
+        services.AddSingleton<IInvoiceChargesRulesService, InvoiceChargesRulesService>();
         services.AddSingleton<IShiftsService, ShiftsService>();
+
         services.AddSingleton<ITaxMasterService, TaxMasterService>();
-        services.AddSingleton<ITaxService, TaxService>();
+        services.AddSingleton<ITaxRuleService, TaxRuleService>();
+        services.AddSingleton<ITaxRuleDetailService, TaxRuleDetailService>();
+        
         services.AddSingleton<IUsersService, UsersService>();
         services.AddSingleton<ICurrenciesService, CurrenciesService>();
         services.AddSingleton<IBackupService, BackupService>();
 
-        services.AddSingleton<IPurchaseOrdersService, PurchaseOrdersService>();
-        services.AddSingleton<IPurchaseOrderDetailsService, PurchaseOrderDetailsService>();
-        services.AddSingleton<IPurchaseOrderChargesService, PurchaseOrderChargesService>();
-        
+        services.AddSingleton<IInvoiceService, InvoiceService>();
+        services.AddSingleton<IInvoiceDetailService, InvoiceDetailService>();
         services.AddSingleton<IPaymentTermsService, PaymentTermsService>();
-
+ 
+        services.AddSingleton<ICategoriesService, CategoriesService>();
+        services.AddSingleton<IItemsService, ItemsService>();
+        services.AddSingleton<IPriceListService, PriceListService>();
+        services.AddSingleton<ITaxCalculationService, TaxCalculationService>();
+        
+        // Stock Management Services
+        services.AddSingleton<IInventoryService, InventoryService>();
+        services.AddSingleton<IShipmentService, ShipmentService>();
+        services.AddSingleton<IStockMovementService, StockMovementService>();
+        services.AddSingleton<ISerializedItemService, SerializedItemService>();
+        
         services.AddScoped<Globals>();
         services.AddScoped<FileUploadService>();
     }

@@ -29,7 +29,7 @@ public class OrganizationsModel
     public string? TimeZone { get; set; } = string.Empty;
     public decimal GMT { get; set; } = 0;
     public int IsVerified { get; set; } = 0;
-    public DateTime Expiry { get; set; } = DateTime.Today;
+    public DateTime? Expiry { get; set; } = DateTime.Today;
     public int ParentId { get; set; } = 0;
     public int IsActive { get; set; } = 0;
     public int CreatedBy { get; set; } = 0;

@@ -80,24 +80,6 @@ public class PermissionsService : IPermissionsService
                 var res = await Post(obj);
                 return res.Item1;
             }
-
-
-            /*
-            IEnumerable<PermissionsModel> result = await cnn.QueryAsync<PermissionsModel>(SQLExistYN, new DynamicParameters());
-
-            if (result.FirstOrDefault() != null && Convert.ToInt32(result.FirstOrDefault()) > 0)
-            {
-                var res = await Put(obj);
-                return res.Item1;
-            }
-            else
-            {
-                var res = await Post(obj);
-                return res.Item1;
-            }
-
-            */
-
         }
         catch
         {
@@ -151,7 +133,7 @@ public class PermissionsService : IPermissionsService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
     }
 
@@ -186,7 +168,7 @@ public class PermissionsService : IPermissionsService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
 
     }

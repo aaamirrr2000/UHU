@@ -14,8 +14,10 @@ public class CashBookModel
     public string? SeqNo { get; set; } = string.Empty;
     public string? FileAttachment { get; set; } = string.Empty;
     public int LocationId { get; set; } = 0;
+    public string? LocationName { get; set; }
+    public string? Source { get; set; }
     public int PartyId { get; set; } = 0;
-    public DateTime TranDate { get; set; } = DateTime.Today;
+    public DateTime? TranDate { get; set; } = DateTime.Today;
     public string? Description { get; set; } = string.Empty;
     public double Amount { get; set; } = 0;
     public int AccountId { get; set; } = 0;
@@ -23,6 +25,9 @@ public class CashBookModel
     public string? PaymentMethod { get; set; } = string.Empty;
     public string? RefNo { get; set; } = string.Empty;
     public string? TranRef { get; set; } = string.Empty;
+    public int BaseCurrencyId { get; set; } = 0;
+    public int EnteredCurrencyId { get; set; } = 0;
+    public double ExchangeRate { get; set; } = 1.0;
     public int CreatedBy { get; set; } = 0;
     public DateTime CreatedOn { get; set; } = DateTime.Today;
     public string? CreatedFrom { get; set; } = string.Empty;
@@ -31,6 +36,12 @@ public class CashBookModel
     public string? UpdatedFrom { get; set; } = string.Empty;
     public int IsSoftDeleted { get; set; } = 0;
     public byte[]? RowVersion { get; set; } = Array.Empty<byte>();
+
+    // General Ledger Posting Fields
+    public int IsPostedToGL { get; set; } = 0;
+    public DateTime? PostedToGLDate { get; set; }
+    public int PostedToGLBy { get; set; } = 0;
+    public string? GLEntryNo { get; set; } = string.Empty;
 
 }
 

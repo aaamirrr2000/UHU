@@ -1,0 +1,851 @@
+﻿@page "/CashBookSummary"
+
+@inject Functions Functions
+@inject Globals Globals
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject IJSRuntime JSRuntime
+
+<Loading IsLoading="@isLoading" />
+
+<div class="container-fluid p-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-1">Cash Book Summary</h3>
+            <p class="text-muted mb-0">@startDate.ToString("dd MMM yyyy") to @endDate.ToString("dd MMM yyyy")</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary btn-sm" @onclick="LoadReport">
+                <i class="fas fa-sync me-1"></i> Refresh
+            </button>
+            <button class="btn btn-success btn-sm" @onclick="PrintReport">
+                <i class="fas fa-print me-1"></i> Print
+            </button>
+        </div>
+    </div>
+
+    <!-- Date Range -->
+    <div class="card mb-4">
+        <div class="card-body py-2">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label small mb-1">Start Date</label>
+                    <input type="date" class="form-control form-control-sm" @bind="startDate" @bind:format="yyyy-MM-dd" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small mb-1">End Date</label>
+                    <input type="date" class="form-control form-control-sm" @bind="endDate" @bind:format="yyyy-MM-dd" />
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button class="btn btn-primary btn-sm w-100" @onclick="LoadReport">
+                        <i class="fas fa-search me-1"></i> Load Summary
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (transactions == null)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary spinner-border-sm" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">Loading report data...</p>
+        </div>
+    }
+    else
+    {
+        <!-- Compact Summary Cards Row - Improved Layout -->
+        <div class="row mb-4 g-2">
+            <!-- Opening Balance Card -->
+            <div class="col-xl-2 col-md-4 col-6">
+                <div class="card bg-warning text-white h-100">
+                    <div class="card-body p-2 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="card-title mb-0 small">Opening Balance</h6>
+                            <i class="fas fa-door-open fa-sm"></i>
+                        </div>
+                        <div class="mt-auto">
+                            <h5 class="mb-2 fw-bold text-center">@openingBalance.ToString("N2")</h5>
+                            <div class="text-center small opacity-75 mb-2">
+                                <div>@startDate.ToString("dd MMM yyyy")</div>
+                            </div>
+                            <div class="border-top pt-2">
+                                <div class="d-flex justify-content-between align-items-center small py-1">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-money-bill-wave fa-xs me-1"></i>
+                                        <span>Cash</span>
+                                    </div>
+                                    <span>@openingBalance.ToString("N2")</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small py-1 border-top">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-credit-card fa-xs me-1"></i>
+                                        <span>Card</span>
+                                    </div>
+                                    <span>0.00</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small py-1 border-top">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-wallet fa-xs me-1"></i>
+                                        <span>Other</span>
+                                    </div>
+                                    <span>0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Receipts Card -->
+            <div class="col-xl-2 col-md-4 col-6">
+                <div class="card bg-success text-white h-100">
+                    <div class="card-body p-2 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="card-title mb-0 small">Total Receipts</h6>
+                            <i class="fas fa-download fa-sm"></i>
+                        </div>
+                        <div class="mt-auto">
+                            <h5 class="mb-2 fw-bold text-center">@totalReceipts.ToString("N2")</h5>
+                            <div class="small text-center mb-2">
+                                <div>@receiptCount trans</div>
+                            </div>
+                            <div class="border-top pt-2">
+                                @{
+                                    var receiptCash = GetPaymentMethodTotalByType("RECEIPT", "CASH");
+                                    var receiptCard = GetPaymentMethodTotalByType("RECEIPT", "CARD");
+                                    var receiptOther = GetOtherPaymentTotalByType("RECEIPT");
+                                }
+                                <div class="d-flex justify-content-between align-items-center small py-1">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-money-bill-wave fa-xs me-1"></i>
+                                        <span>Cash</span>
+                                    </div>
+                                    <span>@receiptCash.ToString("N2")</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small py-1 border-top">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-credit-card fa-xs me-1"></i>
+                                        <span>Card</span>
+                                    </div>
+                                    <span>@receiptCard.ToString("N2")</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small py-1 border-top">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-wallet fa-xs me-1"></i>
+                                        <span>Other</span>
+                                    </div>
+                                    <span>@receiptOther.ToString("N2")</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Payments Card -->
+            <div class="col-xl-2 col-md-4 col-6">
+                <div class="card bg-danger text-white h-100">
+                    <div class="card-body p-2 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="card-title mb-0 small">Total Payments</h6>
+                            <i class="fas fa-upload fa-sm"></i>
+                        </div>
+                        <div class="mt-auto">
+                            <h5 class="mb-2 fw-bold text-center">@totalPayments.ToString("N2")</h5>
+                            <div class="small text-center mb-2">
+                                <div>@paymentCount trans</div>
+                            </div>
+                            <div class="border-top pt-2">
+                                @{
+                                    var paymentCash = GetPaymentMethodTotalByType("PAYMENT", "CASH");
+                                    var paymentCard = GetPaymentMethodTotalByType("PAYMENT", "CARD");
+                                    var paymentOther = GetOtherPaymentTotalByType("PAYMENT");
+                                }
+                                <div class="d-flex justify-content-between align-items-center small py-1">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-money-bill-wave fa-xs me-1"></i>
+                                        <span>Cash</span>
+                                    </div>
+                                    <span>@paymentCash.ToString("N2")</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small py-1 border-top">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-credit-card fa-xs me-1"></i>
+                                        <span>Card</span>
+                                    </div>
+                                    <span>@paymentCard.ToString("N2")</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small py-1 border-top">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-wallet fa-xs me-1"></i>
+                                        <span>Other</span>
+                                    </div>
+                                    <span>@paymentOther.ToString("N2")</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bank Deposits Card -->
+            <div class="col-xl-2 col-md-4 col-6">
+                <div class="card bg-info text-white h-100">
+                    <div class="card-body p-2 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="card-title mb-0 small">Bank Deposits</h6>
+                            <i class="fas fa-piggy-bank fa-sm"></i>
+                        </div>
+                        <div class="mt-auto">
+                            <h5 class="mb-2 fw-bold text-center">@totalBankDeposits.ToString("N2")</h5>
+                            <div class="small text-center mb-2">
+                                <div>@bankDepositCount trans</div>
+                            </div>
+                            <div class="border-top pt-2">
+                                @{
+                                    var depositCash = GetPaymentMethodTotalByType("DEPOSIT", "CASH");
+                                    var depositCard = GetPaymentMethodTotalByType("DEPOSIT", "CARD");
+                                    var depositOther = GetOtherPaymentTotalByType("DEPOSIT");
+                                }
+                                <div class="d-flex justify-content-between align-items-center small py-1">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-money-bill-wave fa-xs me-1"></i>
+                                        <span>Cash</span>
+                                    </div>
+                                    <span>@depositCash.ToString("N2")</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small py-1 border-top">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-credit-card fa-xs me-1"></i>
+                                        <span>Card</span>
+                                    </div>
+                                    <span>@depositCard.ToString("N2")</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small py-1 border-top">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-wallet fa-xs me-1"></i>
+                                        <span>Other</span>
+                                    </div>
+                                    <span>@depositOther.ToString("N2")</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Closing Balance Card - Updated with payment method wise breakup -->
+            <div class="col-xl-2 col-md-4 col-6">
+                @{
+                    var closingClass = closingBalance >= 0 ? "bg-primary" : "bg-danger";
+                    var closingIcon = closingBalance >= 0 ? "fa-lock" : "fa-exclamation-triangle";
+                    // Calculate closing balance by payment methods
+                    var closingCash = openingBalance + receiptCash - paymentCash - depositCash;
+                    var closingCard = 0M + receiptCard - paymentCard - depositCard;
+                    var closingOther = 0M + receiptOther - paymentOther - depositOther;
+                }
+                <div class="card @closingClass text-white h-100">
+                    <div class="card-body p-2 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="card-title mb-0 small">Closing Balance</h6>
+                            <i class="fas @closingIcon fa-sm"></i>
+                        </div>
+                        <div class="mt-auto">
+                            <h5 class="mb-2 fw-bold text-center">@closingBalance.ToString("N2")</h5>
+                            <div class="text-center small mb-2">
+                                <div>@endDate.ToString("dd MMM yyyy")</div>
+                            </div>
+                            <div class="border-top pt-2">
+                                <div class="d-flex justify-content-between align-items-center small py-1">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-money-bill-wave fa-xs me-1"></i>
+                                        <span>Cash</span>
+                                    </div>
+                                    <span>@closingCash.ToString("N2")</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small py-1 border-top">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-credit-card fa-xs me-1"></i>
+                                        <span>Card</span>
+                                    </div>
+                                    <span>@closingCard.ToString("N2")</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small py-1 border-top">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-wallet fa-xs me-1"></i>
+                                        <span>Other</span>
+                                    </div>
+                                    <span>@closingOther.ToString("N2")</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cash in Hand Card - Shows the actual cash balance (Opening + Receipts - Payments - Deposits) -->
+            <div class="col-xl-2 col-md-4 col-6">
+                @{
+                    var cashInHand = openingBalance + receiptCash - paymentCash - depositCash;
+                    var cashInHandClass = cashInHand >= 0 ? "bg-success" : "bg-warning";
+                    var cashInHandIcon = cashInHand >= 0 ? "fa-hand-holding-usd" : "fa-exclamation-circle";
+                }
+                <div class="card @cashInHandClass text-white h-100">
+                    <div class="card-body p-2 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="card-title mb-0 small">Cash in Hand</h6>
+                            <i class="fas @cashInHandIcon fa-sm"></i>
+                        </div>
+                        <div class="mt-auto">
+                            <h5 class="mb-2 fw-bold text-center">@cashInHand.ToString("N2")</h5>
+                            <div class="text-center small opacity-75 mb-2">
+                                <div>Available Cash</div>
+                            </div>
+                            <div class="border-top pt-2">
+                                <div class="d-flex justify-content-between align-items-center small py-1">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-calculator fa-xs me-1"></i>
+                                        <span>Opening</span>
+                                    </div>
+                                    <span>@openingBalance.ToString("N2")</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small py-1 border-top">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-plus-circle fa-xs me-1 text-success"></i>
+                                        <span>+ Receipts</span>
+                                    </div>
+                                    <span>@receiptCash.ToString("N2")</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small py-1 border-top">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-minus-circle fa-xs me-1 text-danger"></i>
+                                        <span>- Payments</span>
+                                    </div>
+                                    <span>@paymentCash.ToString("N2")</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small py-1 border-top">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-minus-circle fa-xs me-1 text-info"></i>
+                                        <span>- Deposits</span>
+                                    </div>
+                                    <span>@depositCash.ToString("N2")</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (!transactions.Any())
+        {
+            <div class="alert alert-info py-2 mb-4">
+                <i class="fas fa-info-circle me-2"></i> No transactions found for the selected period.
+            </div>
+        }
+
+        <!-- Transaction Details - Improved Table Layout -->
+        <div class="card">
+            <div class="card-header bg-light py-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-list me-1 fa-xs text-secondary"></i>
+                        <small>Transaction Details (@transactions.Count records)</small>
+                    </h6>
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped mb-0" style="table-layout: fixed;">
+                        <thead class="table-light">
+                            <tr>
+                                <!-- Left Group: Transaction Details -->
+                                <th class="ps-2" style="width: 9%;">Date</th>
+                                @if (Globals.User.GroupId == 1)
+                                {
+                                    <th style="width: 10%;">Location</th>
+                                }
+                                <th style="width: 8%;">Type</th>
+                                <th style="width: 22%;">Description</th>
+                                <th style="width: 10%;">Source</th>
+                                <th style="width: 10%;">Location</th>
+
+                                <!-- Middle Group: Amount Categories -->
+                                <th class="text-end border-start" style="width: 8%;">Receipts</th>
+                                <th class="text-end" style="width: 8%;">Payments</th>
+                                <th class="text-end border-end" style="width: 10%;">Bank Deposit</th>
+
+                                <!-- Right Group: Running Balance & Payment Methods -->
+                                <th class="text-end border-start" style="width: 10%;">Running Balance</th>
+                                <th class="text-end" style="width: 7%;">Cash</th>
+                                <th class="text-end" style="width: 7%;">Card</th>
+                                <th class="text-end pe-2 border-end" style="width: 8%;">Other</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Opening Balance Row -->
+                            <tr class="table-warning">
+                                <td class="ps-2 fw-bold">@startDate.ToString("dd MMM yyyy")</td>
+                                <td colspan="4" class="fw-bold">Opening Balance</td>
+                                <td class="text-end fw-bold border-start"></td>
+                                <td class="text-end fw-bold"></td>
+                                <td class="text-end fw-bold border-end"></td>
+                                <td class="text-end fw-bold border-start">@openingBalance.ToString("N2")</td>
+                                <td class="text-end fw-bold">@openingBalance.ToString("N2")</td>
+                                <td class="text-end fw-bold">0.00</td>
+                                <td class="text-end pe-2 fw-bold border-end">0.00</td>
+                            </tr>
+
+                            @{
+                                decimal runningBalance = openingBalance;
+                                var sortedTransactions = transactions.OrderBy(x => x.TranDate).ThenBy(x => x.Id);
+                            }
+
+                            @foreach (var tran in sortedTransactions)
+                            {
+                                // Update running balance for each transaction
+                                runningBalance += GetTransactionAmount(tran);
+
+                                <tr>
+                                    <td class="ps-2">
+                                        @if (tran.TranDate.HasValue)
+                                        {
+                                            @tran.TranDate.Value.ToString("dd MMM yyyy")
+                                        }
+                                    </td>
+                                    @if (Globals.User.GroupId == 1)
+                                    {
+                                        <td>
+                                            @tran.LocationName
+                                        </td>
+                                    }
+                                    <td>
+                                        <span class="badge @GetTransactionTypeBadgeClass(tran.TranType)">
+                                            @tran.TranType
+                                        </span>
+                                    </td>
+                                    <td class="text-truncate" title="@tran.Description">@tran.Description</td>
+                                    <td>@tran.Source</td>
+                                    <td>@tran.LocationName</td>
+
+                                    <!-- Receipts Column -->
+                                    <td class="text-end text-success fw-bold border-start">
+                                        @if (tran.TranType?.ToUpper().Contains("RECEIPT") == true)
+                                        {
+                                            @Math.Abs((decimal)tran.Amount).ToString("N2")
+                                        }
+                                    </td>
+
+                                    <!-- Payments Column -->
+                                    <td class="text-end text-danger fw-bold">
+                                        @if (tran.TranType?.ToUpper().Contains("PAYMENT") == true)
+                                        {
+                                            @Math.Abs((decimal)tran.Amount).ToString("N2")
+                                        }
+                                    </td>
+
+                                    <!-- Bank Deposit Column -->
+                                    <td class="text-end text-info fw-bold border-end">
+                                        @if (tran.TranType?.ToUpper().Contains("DEPOSIT") == true)
+                                        {
+                                            @Math.Abs((decimal)tran.Amount).ToString("N2")
+                                        }
+                                    </td>
+
+                                    <!-- Running Balance Column -->
+                                    <td class="text-end fw-bold border-start @(runningBalance >= 0 ? "text-primary" : "text-danger")">
+                                        @runningBalance.ToString("N2")
+                                    </td>
+
+                                    <!-- Payment Method Columns -->
+                                    <td class="text-end">
+                                        @if (tran.PaymentMethod?.ToUpper().Contains("CASH") == true)
+                                        {
+                                            @Math.Abs((decimal)tran.Amount).ToString("N2")
+                                        }
+                                    </td>
+
+                                    <td class="text-end">
+                                        @if (tran.PaymentMethod?.ToUpper().Contains("CARD") == true ||
+                                                                        tran.PaymentMethod?.ToUpper().Contains("CREDIT") == true ||
+                                                                        tran.PaymentMethod?.ToUpper().Contains("DEBIT") == true)
+                                        {
+                                            @Math.Abs((decimal)tran.Amount).ToString("N2")
+                                        }
+                                    </td>
+
+                                    <td class="text-end pe-2 border-end">
+                                        @if (tran.PaymentMethod?.ToUpper().Contains("CASH") != true &&
+                                                                        tran.PaymentMethod?.ToUpper().Contains("CARD") != true &&
+                                                                        tran.PaymentMethod?.ToUpper().Contains("CREDIT") != true &&
+                                                                        tran.PaymentMethod?.ToUpper().Contains("DEBIT") != true &&
+                                                                        !string.IsNullOrEmpty(tran.PaymentMethod))
+                                        {
+                                            @Math.Abs((decimal)tran.Amount).ToString("N2")
+                                        }
+                                    </td>
+                                </tr>
+                            }
+
+                            <!-- Closing Balance Row -->
+                            <tr class="table-primary">
+                                <td class="ps-2 fw-bold">@endDate.ToString("dd MMM yyyy")</td>
+                                <td colspan="4" class="fw-bold">Closing Balance</td>
+                                <td class="text-end fw-bold text-success border-start">@totalReceipts.ToString("N2")</td>
+                                <td class="text-end fw-bold text-danger">@totalPayments.ToString("N2")</td>
+                                <td class="text-end fw-bold text-info border-end">@totalBankDeposits.ToString("N2")</td>
+                                <td class="text-end fw-bold border-start @(closingBalance >= 0 ? "text-primary" : "text-danger")">
+                                    @closingBalance.ToString("N2")
+                                </td>
+                                <td class="text-end fw-bold">@closingCash.ToString("N2")</td>
+                                <td class="text-end fw-bold">@closingCard.ToString("N2")</td>
+                                <td class="text-end pe-2 fw-bold border-end">@closingOther.ToString("N2")</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<CashBookModel> transactions = new();
+    private DateTime startDate = DateTime.Today;
+    private DateTime endDate = DateTime.Today;
+    private bool isLoading = false;
+    private bool showTransactions = true;
+
+    // Summary variables
+    private Dictionary<string, decimal> sourceTotals = new();
+    private Dictionary<string, decimal> paymentMethodTotals = new();
+    private Dictionary<string, decimal> transactionTypeTotals = new();
+    private decimal openingBalance = 0;
+    private decimal closingBalance = 0;
+    private decimal totalReceipts = 0;
+    private decimal totalPayments = 0;
+    private decimal totalBankDeposits = 0;
+    private int receiptCount = 0;
+    private int paymentCount = 0;
+    private int bankDepositCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Globals.AccessLevel = Globals.PageAccess(NavManager, "CashBookDashboard");
+            await LoadReport();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error initializing page: {ex.Message}", Severity.Error);
+            transactions = new List<CashBookModel>();
+        }
+    }
+
+    private async Task LoadReport()
+    {
+        if (startDate > endDate)
+        {
+            SnackbarService.Add("Start date must be earlier than end date.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // Load transactions for selected period
+            string criteria = $"TranDate >= '{startDate:yyyy-MM-dd}' and TranDate <= '{endDate:yyyy-MM-dd}'";
+
+            if (Globals.User.GroupId != 1)
+            {
+                criteria += $" and LocationId = {Globals.User.LocationId}";
+            }
+
+            string encodedCriteria = Uri.EscapeDataString(criteria);
+            string apiUrl = $"CashBook/Search/{encodedCriteria}";
+
+            var result = await Functions.GetAsync<List<CashBookModel>>(apiUrl, true);
+            transactions = result ?? new List<CashBookModel>();
+
+            // Calculate opening balance
+            await CalculateOpeningBalance();
+
+            // Calculate summaries
+            CalculateSummaries();
+
+            if (transactions.Any())
+            {
+                SnackbarService.Add($"Summary loaded: {transactions.Count} transactions", Severity.Success);
+            }
+            else
+            {
+                SnackbarService.Add($"No transactions found for the selected period", Severity.Info);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading summary: {ex.Message}", Severity.Error);
+            transactions = new List<CashBookModel>();
+            ResetSummaryValues();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CalculateOpeningBalance()
+    {
+        try
+        {
+            // If start date is in the future, use today's date to calculate opening balance
+            DateTime calculationDate = startDate > DateTime.Today ? DateTime.Today : startDate;
+
+            string criteria = $"TranDate < '{calculationDate:yyyy-MM-dd}'";
+
+            if (Globals.User.GroupId != 1)
+            {
+                criteria += $" and LocationId = {Globals.User.LocationId}";
+            }
+
+            string encodedCriteria = Uri.EscapeDataString(criteria);
+            string apiUrl = $"CashBook/Search/{encodedCriteria}";
+
+            var previous = await Functions.GetAsync<List<CashBookModel>>(apiUrl, true) ?? new List<CashBookModel>();
+
+            decimal previousReceipts = 0;
+            decimal previousPayments = 0;
+            decimal previousDeposits = 0;
+
+            foreach (var tran in previous)
+            {
+                if (tran.TranDate.HasValue)
+                {
+                    string type = tran.TranType?.ToUpper() ?? "";
+                    decimal amount = Math.Abs((decimal)tran.Amount);
+
+                    if (type.Contains("RECEIPT"))
+                    {
+                        previousReceipts += amount;
+                    }
+                    else if (type.Contains("PAYMENT"))
+                    {
+                        previousPayments += amount;
+                    }
+                    else if (type.Contains("DEPOSIT"))
+                    {
+                        // Only count as bank deposit if payment method is Cash
+                        if (tran.PaymentMethod?.ToUpper().Contains("CASH") == true)
+                        {
+                            previousDeposits += amount;
+                        }
+                    }
+                }
+            }
+
+            openingBalance = previousReceipts - previousPayments - previousDeposits;
+        }
+        catch
+        {
+            openingBalance = 0;
+        }
+    }
+
+    private void CalculateSummaries()
+    {
+        // Reset totals
+        sourceTotals.Clear();
+        paymentMethodTotals.Clear();
+        transactionTypeTotals.Clear();
+        totalReceipts = 0;
+        totalPayments = 0;
+        totalBankDeposits = 0;
+        receiptCount = 0;
+        paymentCount = 0;
+        bankDepositCount = 0;
+
+        foreach (var tran in transactions)
+        {
+            if (!tran.TranDate.HasValue)
+                continue;
+
+            string type = tran.TranType?.ToUpper() ?? "";
+            decimal amount = Math.Abs((decimal)tran.Amount);
+
+            // Transaction type totals
+            if (!string.IsNullOrEmpty(tran.TranType))
+            {
+                if (transactionTypeTotals.ContainsKey(tran.TranType))
+                    transactionTypeTotals[tran.TranType] += amount;
+                else
+                    transactionTypeTotals[tran.TranType] = amount;
+            }
+
+            // Source totals
+            if (!string.IsNullOrEmpty(tran.Source))
+            {
+                if (sourceTotals.ContainsKey(tran.Source))
+                    sourceTotals[tran.Source] += amount;
+                else
+                    sourceTotals[tran.Source] = amount;
+            }
+
+            // Payment method totals
+            if (!string.IsNullOrEmpty(tran.PaymentMethod))
+            {
+                if (paymentMethodTotals.ContainsKey(tran.PaymentMethod))
+                    paymentMethodTotals[tran.PaymentMethod] += amount;
+                else
+                    paymentMethodTotals[tran.PaymentMethod] = amount;
+            }
+
+            // Categorize
+            if (type.Contains("RECEIPT"))
+            {
+                totalReceipts += amount;
+                receiptCount++;
+            }
+            else if (type.Contains("PAYMENT"))
+            {
+                totalPayments += amount;
+                paymentCount++;
+            }
+            else if (type.Contains("DEPOSIT"))
+            {
+                // Only count as bank deposit if payment method is Cash
+                if (tran.PaymentMethod?.ToUpper().Contains("CASH") == true)
+                {
+                    totalBankDeposits += amount;
+                    bankDepositCount++;
+                }
+            }
+        }
+
+        // CORRECTED: Closing Balance = Opening Balance + Receipts - Payments - Bank Deposits
+        closingBalance = openingBalance + totalReceipts - totalPayments - totalBankDeposits;
+    }
+
+    private void ResetSummaryValues()
+    {
+        openingBalance = 0;
+        closingBalance = 0;
+        totalReceipts = 0;
+        totalPayments = 0;
+        totalBankDeposits = 0;
+        receiptCount = 0;
+        paymentCount = 0;
+        bankDepositCount = 0;
+        sourceTotals.Clear();
+        paymentMethodTotals.Clear();
+        transactionTypeTotals.Clear();
+    }
+
+    private string GetTransactionTypeBadgeClass(string type)
+    {
+        if (string.IsNullOrEmpty(type))
+            return "bg-secondary";
+
+        return type.ToUpper() switch
+        {
+            var t when t.Contains("RECEIPT") => "bg-success",
+            var t when t.Contains("PAYMENT") => "bg-danger",
+            var t when t.Contains("DEPOSIT") => "bg-info",
+            _ => "bg-secondary"
+        };
+    }
+
+    private decimal GetTransactionAmount(CashBookModel transaction)
+    {
+        if (!transaction.TranDate.HasValue)
+            return 0;
+
+        string type = transaction.TranType?.ToUpper() ?? "";
+
+        if (type.Contains("RECEIPT"))
+        {
+            return Math.Abs((decimal)transaction.Amount);
+        }
+        else if (type.Contains("PAYMENT"))
+        {
+            return -Math.Abs((decimal)transaction.Amount);
+        }
+        else if (type.Contains("DEPOSIT"))
+        {
+            // Bank deposits REDUCE the cash balance
+            return -Math.Abs((decimal)transaction.Amount);
+        }
+
+        return 0;
+    }
+
+    private decimal GetPaymentMethodTotal(string methodKeyword)
+    {
+        return transactions
+            .Where(t => t.PaymentMethod?.ToUpper().Contains(methodKeyword.ToUpper()) == true)
+            .Sum(t => Math.Abs((decimal)t.Amount));
+    }
+
+    private decimal GetPaymentMethodTotalByType(string transactionType, string paymentMethod)
+    {
+        return transactions
+            .Where(t => (t.TranType?.ToUpper().Contains(transactionType) == true) &&
+                       (t.PaymentMethod?.ToUpper().Contains(paymentMethod.ToUpper()) == true ||
+                        (paymentMethod.ToUpper() == "CARD" &&
+                         (t.PaymentMethod?.ToUpper().Contains("CREDIT") == true ||
+                          t.PaymentMethod?.ToUpper().Contains("DEBIT") == true))))
+            .Sum(t => Math.Abs((decimal)t.Amount));
+    }
+
+    private decimal GetOtherPaymentTotalByType(string transactionType)
+    {
+        return transactions
+            .Where(t => t.TranType?.ToUpper().Contains(transactionType) == true &&
+                       !string.IsNullOrEmpty(t.PaymentMethod) &&
+                       t.PaymentMethod.ToUpper().Contains("CASH") != true &&
+                       t.PaymentMethod.ToUpper().Contains("CARD") != true &&
+                       t.PaymentMethod.ToUpper().Contains("CREDIT") != true &&
+                       t.PaymentMethod.ToUpper().Contains("DEBIT") != true)
+            .Sum(t => Math.Abs((decimal)t.Amount));
+    }
+
+    private decimal GetCardTotal()
+    {
+        return transactions
+            .Where(t => t.PaymentMethod?.ToUpper().Contains("CARD") == true ||
+                       t.PaymentMethod?.ToUpper().Contains("CREDIT") == true ||
+                       t.PaymentMethod?.ToUpper().Contains("DEBIT") == true)
+            .Sum(t => Math.Abs((decimal)t.Amount));
+    }
+
+    private decimal GetOtherPaymentTotal()
+    {
+        return transactions
+            .Where(t => !string.IsNullOrEmpty(t.PaymentMethod) &&
+                       t.PaymentMethod.ToUpper().Contains("CASH") != true &&
+                       t.PaymentMethod.ToUpper().Contains("CARD") != true &&
+                       t.PaymentMethod.ToUpper().Contains("CREDIT") != true &&
+                       t.PaymentMethod.ToUpper().Contains("DEBIT") != true)
+            .Sum(t => Math.Abs((decimal)t.Amount));
+    }
+
+    private async void PrintReport()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("print");
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error printing: {ex.Message}", Severity.Error);
+        }
+    }
+}

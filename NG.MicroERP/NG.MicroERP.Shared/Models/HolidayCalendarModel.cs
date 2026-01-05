@@ -10,7 +10,7 @@ public class HolidayCalendarModel
 {
     public int Id { get; set; } = 0;
     public int OrganizationId { get; set; } = 0;
-    public DateTime HolidayDate { get; set; } = DateTime.Today;
+    public DateTime? HolidayDate { get; set; } = DateTime.Today;
     public string? Description { get; set; } = string.Empty;
     public int IsRecurring { get; set; } = 0;
     public int IsActive { get; set; } = 0;

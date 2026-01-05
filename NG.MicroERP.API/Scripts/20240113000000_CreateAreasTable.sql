@@ -16,8 +16,7 @@ CREATE TABLE Areas
     IsSoftDeleted   INT NOT NULL DEFAULT 0,
     CONSTRAINT FK_Areas_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
     CONSTRAINT FK_Areas_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id),
-    CONSTRAINT FK_Areas_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
-    CONSTRAINT FK_Areas_Parent FOREIGN KEY (ParentId) REFERENCES Areas(Id)
+    CONSTRAINT FK_Areas_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id)
 );
 
 -- Insert top-level country

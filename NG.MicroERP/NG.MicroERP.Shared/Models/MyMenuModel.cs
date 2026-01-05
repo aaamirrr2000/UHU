@@ -11,7 +11,7 @@ public class MyMenuModel
     public int Id { get; set; } = 0;
     public Guid Guid { get; set; }
     public string? MenuCaption { get; set; } = string.Empty;
-    public string? AdditionalInfo { get; set; } = string.Empty;
+    public string? Parameter { get; set; } = string.Empty;
     public string? Tooltip { get; set; } = string.Empty;
     public string? PageName { get; set; } = string.Empty;
     public int ParentId { get; set; } = 0;

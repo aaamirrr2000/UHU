@@ -8,7 +8,7 @@ WITH GroupMenuCTE AS
         m.Id AS MenuId,
         m.MenuCaption AS MenuCaption,
         m.Tooltip AS Tooltip,
-        m.AdditionalInfo AS AdditionalInfo,
+        m.Parameter AS Parameter,
         m.ParentId AS ParentId,
         m.PageName AS PageName,
         m.Icon AS Icon,

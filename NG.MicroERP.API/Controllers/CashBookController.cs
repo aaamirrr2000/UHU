@@ -38,7 +38,7 @@ public class CashBookController : ControllerBase
 
     }
 
-    [HttpGet("GetCashBookReport")]
+    [HttpGet("GetCashBookReport/{id}")]
     public async Task<IActionResult> GetCashBookReport(int id)
     {
         var result = await Srv.GetCashBookReport(id)!;

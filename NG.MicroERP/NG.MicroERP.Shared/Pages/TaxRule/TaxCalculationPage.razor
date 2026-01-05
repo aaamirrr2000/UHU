@@ -1,0 +1,194 @@
+﻿@page "/taxcalculation/{ItemId:int}/{PartyId:int}"
+@inject Globals Globals
+@inject Functions Functions
+
+<h3>Tax Calculation Page</h3>
+
+@if (LoadingPanel)
+{
+    <div class="loading-panel">
+        <p>Loading tax calculations...</p>
+    </div>
+}
+else if (taxCalculations?.Any() == true)
+{
+    <div class="container">
+        <!-- Summary Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Tax Calculation Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h6>Item Information</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>Item ID:</strong> @taxCalculations[0].ItemId</li>
+                                    <li><strong>Item Name:</strong> @taxCalculations[0].ItemName</li>
+                                    <li><strong>Base Price:</strong> @taxCalculations[0].BasePrice.ToString("N4")</li>
+                                    <li><strong>Taxable Amount:</strong> @taxCalculations[0].TaxableAmount.ToString("N4")</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-4">
+                                <h6>Party Information</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>Party ID:</strong> @taxCalculations[0].PartyId</li>
+                                    <li><strong>Party Name:</strong> @taxCalculations[0].PartyName</li>
+                                    <li><strong>Applies To:</strong> @(string.IsNullOrEmpty(taxCalculations[0].AppliesTo) ? "N/A" : taxCalculations[0].AppliesTo)</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-4">
+                                <h6>Organization</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>Organization ID:</strong> @taxCalculations[0].OrganizationId</li>
+                                    <li><strong>Account ID:</strong> @taxCalculations[0].AccountId</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rest of your existing UI remains the same -->
+        <!-- ... (keep all the existing UI code) ... -->
+    </div>
+}
+else if (hasLoaded && taxCalculations?.Any() == false)
+{
+    <div class="alert alert-warning">
+        <h5>No Tax Calculations Found</h5>
+        <p>No tax calculations were found for Item ID: @ItemId and Party ID: @PartyId</p>
+        <button class="btn btn-primary" @onclick="LoadData">
+            Try Again
+        </button>
+    </div>
+}
+else if (hasError)
+{
+    <div class="alert alert-danger">
+        <h5>Error Loading Data</h5>
+        <p>@errorMessage</p>
+        <button class="btn btn-primary" @onclick="LoadData">
+            Retry
+        </button>
+    </div>
+}
+else if (!autoLoadEnabled)
+{
+    <div class="text-center p-5">
+        <h4>Tax Calculation Viewer</h4>
+        <p>Enter Item ID and Party ID to view tax calculations</p>
+        <div class="form-group d-inline-block">
+            <input type="number" class="form-control mb-2" placeholder="Enter Item ID"
+                   @bind="ItemId" @bind:event="oninput" />
+            <input type="number" class="form-control mb-2" placeholder="Enter Party ID"
+                   @bind="PartyId" @bind:event="oninput" />
+            <button class="btn btn-primary btn-lg" @onclick="LoadData">
+                Load Tax Calculations
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    private Dictionary<(int ItemId, int PartyId), List<ItemPartyTaxCalculationModel>> _taxCache = new();
+    private bool LoadingPanel { get; set; } = false;
+    private List<ItemsModel> ItemsData { get; set; } = new();
+    public ItemsModel SelectedItem { get; set; } = new();
+
+    [Parameter]
+    public int ItemId { get; set; }
+
+    [Parameter]
+    public int PartyId { get; set; }
+
+    [Parameter]
+    public bool autoLoadEnabled { get; set; } = true;
+
+    private List<ItemPartyTaxCalculationModel> taxCalculations { get; set; } = new();
+    private bool hasLoaded = false;
+    private bool hasError = false;
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (autoLoadEnabled && ItemId > 0 && PartyId > 0)
+        {
+            await LoadData();
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Reload data when parameters change
+        if (autoLoadEnabled && ItemId > 0 && PartyId > 0 && hasLoaded)
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        if (ItemId <= 0 || PartyId <= 0)
+        {
+            errorMessage = "Please provide valid Item ID and Party ID";
+            hasError = true;
+            return;
+        }
+
+        LoadingPanel = true;
+        hasError = false;
+        StateHasChanged();
+
+        try
+        {
+            // Clear previous data
+            taxCalculations.Clear();
+
+            // Load item details
+            ItemsData = await Functions.GetAsync<List<ItemsModel>>($"Items/Search/a.Id={ItemId}", true)
+                ?? new List<ItemsModel>();
+            SelectedItem = ItemsData.FirstOrDefault() ?? new ItemsModel();
+
+            // Load tax calculations for this item and party
+            taxCalculations = await GetItemTaxes(ItemId, PartyId);
+
+            hasLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading data: {ex.Message}";
+            hasError = true;
+            Console.WriteLine($"Error loading data: {ex.Message}");
+        }
+        finally
+        {
+            LoadingPanel = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<List<ItemPartyTaxCalculationModel>> GetItemTaxes(int itemId, int partyId)
+    {
+        var key = (itemId, partyId);
+        if (!_taxCache.ContainsKey(key))
+        {
+            var taxes = await Functions.GetAsync<List<ItemPartyTaxCalculationModel>>(
+                $"TaxCalculation/Search/ItemId={itemId} and PartyId={partyId}", true)
+                ?? new List<ItemPartyTaxCalculationModel>();
+            _taxCache[key] = taxes;
+        }
+        return _taxCache[key];
+    }
+
+    // Public method to allow external reloading
+    public async Task ReloadData(int? itemId = null, int? partyId = null)
+    {
+        if (itemId.HasValue) ItemId = itemId.Value;
+        if (partyId.HasValue) PartyId = partyId.Value;
+        await LoadData();
+    }
+}

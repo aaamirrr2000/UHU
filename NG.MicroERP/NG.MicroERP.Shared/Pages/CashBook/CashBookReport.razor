@@ -1,5 +1,5 @@
 ﻿@page "/CashBookReport/{id:int}"
-@layout BlankLayout
+@* @layout BlankLayout *@
 @inject NavigationManager NavManager
 @inject IJSRuntime JSRuntime
 @inject Functions Functions
@@ -8,9 +8,16 @@
 @if (cashbook != null)
 {
     <div class="invoice-actions no-print text-end mb-3">
-        <button class="btn btn-primary" @onclick="PrintReport">
-            <i class="fas fa-print me-1"></i> Print
-        </button>
+        <div class="invoice-actions no-print text-end mb-3">
+            <!-- Add Back Button Here -->
+            <button class="btn btn-outline-secondary me-2" @onclick="GoBack">
+                <i class="fas fa-arrow-left me-1"></i> Back
+            </button>
+
+            <button class="btn btn-primary" @onclick="PrintReport">
+                <i class="fas fa-print me-1"></i> Print
+            </button>
+        </div>
     </div>
 
     <div class="receipt shadow p-4 bg-white rounded">
@@ -105,13 +112,19 @@
 
     protected override async Task OnInitializedAsync()
     {
-        cashbook = await Functions.GetAsync<CashBookReportModel>($"CashBook/GetCashBookReport?Id={id}", true) ?? new CashBookReportModel();
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "CashBookDashboard");
+        cashbook = await Functions.GetAsync<CashBookReportModel>($"CashBook/GetCashBookReport/{id}", true) ?? new CashBookReportModel();
         LoadingPanel = false;
     }
 
     private async Task PrintReport()
     {
         await JSRuntime.InvokeVoidAsync("printReceipt");
+    }
+
+    private void GoBack()
+    {
+        NavManager.NavigateTo("/CashBookDashboard");
     }
 }
 

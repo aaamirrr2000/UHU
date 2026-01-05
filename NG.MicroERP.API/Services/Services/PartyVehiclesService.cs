@@ -97,7 +97,7 @@ public class PartyVehiclesService : IPartyVehiclesService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
     }
 
@@ -136,7 +136,7 @@ public class PartyVehiclesService : IPartyVehiclesService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
 
     }

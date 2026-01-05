@@ -1,0 +1,728 @@
+@page "/GeneralLedgerPage/{Action}/{CurrentRecord?}"
+@using System.Collections.ObjectModel
+@using NG.MicroERP.Shared.Pages.Invoices
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 100%; overflow-y: auto;">
+
+    <div class="text-end mb-3" style="position: sticky; top: 0; background: white; z-index: 10; padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
+        @if (Action != "VIEW")
+        {
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-3 py-2 mr-2" Style="height:40px; min-width: 100px;">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                @(Action == "INSERT" ? "Save" : "Update")
+            </MudButton>
+
+            @if (Action == "UPDATE" && CurrentRecord > 0)
+            {
+                <MudButton Variant="Variant.Filled" OnClick="ShowGLPreview" Color="Color.Info" Class="px-3 py-2 mr-2" Style="height:40px; min-width: 100px;">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="mr-1" />
+                    Preview Entry
+                </MudButton>
+            }
+
+            @if (Action == "UPDATE" && record.IsPosted == 0)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-3 py-2 mr-2" Style="height:40px; min-width: 100px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                    Delete
+                </MudButton>
+            }
+        }
+    </div>
+
+    <!-- Entry Header Information -->
+    <MudCard Elevation="1" Class="mb-2" Style="padding: 8px;">
+        <MudCardContent Style="padding: 12px !important;">
+            <div class="row g-2">
+                <div class="col-12 col-md-3 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Entry No</label>
+                    <MudTextField id="EntryNo"
+                                  @bind-Value="record.EntryNo"
+                                  placeholder="Entry No"
+                                  ReadOnly="@isReadOnly"
+                                  Variant="Variant.Outlined"
+                                  Dense="@true"
+                                  FullWidth="@true" />
+                </div>
+
+                <div class="col-12 col-md-3 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Entry Date</label>
+                    <MudDatePicker @bind-Date="record.EntryDate"
+                                   @bind-Date:after="OnEntryDateChanged"
+                                   DateFormat="yyyy-MM-dd"
+                                   placeholder="Entry Date"
+                                   ReadOnly="@isReadOnly"
+                                   Variant="Variant.Outlined"
+                                   Dense="@true"
+                                   FullWidth="@true" />
+                </div>
+
+                <div class="col-12 col-md-3 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Source</label>
+                    <MudTextField Value="@(record.Source ?? "MANUAL")"
+                                  Variant="Variant.Outlined"
+                                  Dense="@true"
+                                  FullWidth="@true"
+                                  ReadOnly="@true" />
+                </div>
+
+                <div class="col-12 col-md-3 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Location</label>
+                    @if (isReadOnly)
+                    {
+                        <MudTextField Value="@(Loc.FirstOrDefault(l => l.Id == record.LocationId)?.Name ?? "")"
+                                      Variant="Variant.Outlined"
+                                      Dense="@true"
+                                      FullWidth="@true"
+                                      ReadOnly="@true" />
+                    }
+                    else
+                    {
+                        <AutoComplete TItem="LocationsModel"
+                                      DataList="@Loc"
+                                      DisplayProperty="@(p => p.Name)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="record.LocationId"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true" />
+                    }
+                </div>
+
+                <div class="col-12 col-md-3 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Reference Type</label>
+                    <MudTextField Value="@(record.ReferenceType ?? (record.Source?.ToUpper() == "MANUAL" ? "JOURNAL" : record.Source?.ToUpper() ?? "JOURNAL"))"
+                                  Variant="Variant.Outlined"
+                                  Dense="@true"
+                                  FullWidth="@true"
+                                  ReadOnly="@true" />
+                </div>
+
+                <div class="col-12 col-md-3 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Reference No</label>
+                    <MudTextField id="ReferenceNo"
+                                  @bind-Value="record.ReferenceNo"
+                                  placeholder="Reference No"
+                                  ReadOnly="@isReadOnly"
+                                  Variant="Variant.Outlined"
+                                  Dense="@true"
+                                  FullWidth="@true" />
+                </div>
+
+                <div class="col-12 col-md-3 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Party</label>
+                    @if (isReadOnly)
+                    {
+                        <MudTextField Value="@(Par.FirstOrDefault(p => p.Id == record.PartyId)?.DisplayName ?? "")"
+                                      Variant="Variant.Outlined"
+                                      Dense="@true"
+                                      FullWidth="@true"
+                                      ReadOnly="@true" />
+                    }
+                    else
+                    {
+                        <AutoComplete TItem="PartiesModel"
+                                      DataList="@Par"
+                                      DisplayProperty="@(p => p.DisplayName)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="record.PartyId"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true" />
+                    }
+                </div>
+
+                <div class="col-12 col-md-3 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Description</label>
+                    <MudTextField id="Description"
+                                  @bind-Value="record.Description"
+                                  placeholder="Description"
+                                  ReadOnly="@isReadOnly"
+                                  Variant="Variant.Outlined"
+                                  Dense="@true"
+                                  FullWidth="@true" />
+                </div>
+
+                <div class="col-12 col-md-3 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Base Currency</label>
+                    @if (isReadOnly)
+                    {
+                        <MudTextField Value="@(Currencies.FirstOrDefault(c => c.Id == record.BaseCurrencyId)?.DisplayName ?? "")"
+                                      Variant="Variant.Outlined"
+                                      Dense="@true"
+                                      FullWidth="@true"
+                                      ReadOnly="@true" />
+                    }
+                    else
+                    {
+                        <AutoComplete TItem="CurrenciesModel"
+                                      DataList="@Currencies"
+                                      DisplayProperty="@(p => p.DisplayName)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="record.BaseCurrencyId"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true" />
+                    }
+                </div>
+
+                <div class="col-12 col-md-3 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Entered Currency</label>
+                    @if (isReadOnly)
+                    {
+                        <MudTextField Value="@(Currencies.FirstOrDefault(c => c.Id == record.EnteredCurrencyId)?.DisplayName ?? "")"
+                                      Variant="Variant.Outlined"
+                                      Dense="@true"
+                                      FullWidth="@true"
+                                      ReadOnly="@true" />
+                    }
+                    else
+                    {
+                        <AutoComplete TItem="CurrenciesModel"
+                                      DataList="@Currencies"
+                                      DisplayProperty="@(p => p.DisplayName)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="record.EnteredCurrencyId"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true" />
+                    }
+                </div>
+            </div>
+        </MudCardContent>
+    </MudCard>
+
+    <!-- Account Details -->
+    <MudCard Elevation="1" Class="mb-2" Style="padding: 8px;">
+        <MudCardContent Style="padding: 12px !important;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <MudText Typo="Typo.subtitle2" Class="fw-bold">Account Details</MudText>
+                @if (!isReadOnly)
+                {
+                    <MudButton StartIcon="@Icons.Material.Filled.Add" 
+                              Variant="Variant.Filled" 
+                              Color="Color.Success" 
+                              Size="Size.Small"
+                              Dense="@true"
+                              OnClick="AddDetailLine">
+                        Add Line
+                    </MudButton>
+                }
+            </div>
+
+            <div class="d-flex align-items-center gap-2 mb-2" style="flex-wrap: wrap; font-size: 0.9rem;">
+                <MudText Typo="Typo.body2" Class="fw-bold">
+                    Debit: <span style="color: #4CAF50;">@TotalDebit.ToString("N2")</span>
+                </MudText>
+                <MudText Typo="Typo.body2" Class="fw-bold">
+                    Credit: <span style="color: #2196F3;">@TotalCredit.ToString("N2")</span>
+                </MudText>
+                @if (Math.Abs(TotalDebit - TotalCredit) < 0.01)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled">Balanced</MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">
+                        Diff: @Math.Abs(TotalDebit - TotalCredit).ToString("N2")
+                    </MudChip>
+                }
+            </div>
+
+            <div style="max-height: 350px; overflow-y: auto;">
+                <MudTable Items="@record.Details"
+                          Hover="true"
+                          Dense="@true"
+                          Bordered="true"
+                          Striped="true"
+                          StickyHeader="true">
+                    <HeaderContent>
+                        <MudTh Style="width:5%;">#</MudTh>
+                        <MudTh Style="width:5%;">⋮</MudTh>
+                        <MudTh Style="width:25%;">Account</MudTh>
+                        <MudTh Style="width:20%;">Description</MudTh>
+                        <MudTh Style="width:15%;" Class="text-end">Debit</MudTh>
+                        <MudTh Style="width:15%;" Class="text-end">Credit</MudTh>
+                        <MudTh Style="width:15%;">Party</MudTh>
+                    </HeaderContent>
+                    <RowTemplate Context="detail">
+                        @{
+                            var index = record.Details.IndexOf(detail) + 1;
+                        }
+                        <MudTd>@index</MudTd>
+                        <MudTd>
+                            @if (!isReadOnly)
+                            {
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="@true">
+                                    <MudMenuItem OnClick="@(() => RemoveDetailLine(detail))" Color="Color.Error">
+                                        <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" />
+                                        Delete
+                                    </MudMenuItem>
+                                </MudMenu>
+                            }
+                        </MudTd>
+                        <MudTd>
+                            @if (isReadOnly)
+                            {
+                                <MudTextField Value="@(Acc.FirstOrDefault(a => a.Id == detail.AccountId)?.DisplayName ?? "")"
+                                              Variant="Variant.Outlined"
+                                              FullWidth="@true"
+                                              Dense="@true"
+                                              ReadOnly="@true" />
+                            }
+                            else
+                            {
+                                <AutoComplete TItem="ChartOfAccountsModel"
+                                              DataList="@Acc"
+                                              DisplayProperty="@(p => p.DisplayName)"
+                                              IdProperty="@(p => p.Id)"
+                                              @bind-SelectedId="detail.AccountId"
+                                              Variant="Variant.Outlined"
+                                              FullWidth="@true" />
+                            }
+                        </MudTd>
+                        <MudTd>
+                            <MudTextField @bind-Value="detail.Description"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="@true"
+                                          Dense="@true"
+                                          ReadOnly="@isReadOnly" />
+                        </MudTd>
+                        <MudTd>
+                            <MudNumericField @bind-Value="detail.DebitAmount"
+                                             Format="#,##0.00"
+                                             Variant="Variant.Outlined"
+                                             FullWidth="@true"
+                                             Dense="@true"
+                                             ReadOnly="@isReadOnly"
+                                             @bind-Value:after="@(() => OnAmountChanged(detail))" />
+                        </MudTd>
+                        <MudTd>
+                            <MudNumericField @bind-Value="detail.CreditAmount"
+                                             Format="#,##0.00"
+                                             Variant="Variant.Outlined"
+                                             FullWidth="@true"
+                                             Dense="@true"
+                                             ReadOnly="@isReadOnly"
+                                             @bind-Value:after="@(() => OnAmountChanged(detail))" />
+                        </MudTd>
+                        <MudTd>
+                            @if (isReadOnly)
+                            {
+                                <MudTextField Value="@(Par.FirstOrDefault(p => p.Id == detail.PartyId)?.DisplayName ?? "")"
+                                              Variant="Variant.Outlined"
+                                              FullWidth="@true"
+                                              Dense="@true"
+                                              ReadOnly="@true" />
+                            }
+                            else
+                            {
+                                <AutoComplete TItem="PartiesModel"
+                                              DataList="@Par"
+                                              DisplayProperty="@(p => p.DisplayName)"
+                                              IdProperty="@(p => p.Id)"
+                                              @bind-SelectedId="detail.PartyId"
+                                              Variant="Variant.Outlined"
+                                              FullWidth="@true" />
+                            }
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </div>
+        </MudCardContent>
+    </MudCard>
+
+    <!-- Additional Information -->
+    <MudCard Elevation="1" Class="mb-2" Style="padding: 8px;">
+        <MudCardContent Style="padding: 12px !important;">
+            <div class="row">
+                <div class="col-12">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Notes</label>
+                    <MudTextField @bind-Value="record.Notes"
+                                  placeholder="Additional notes"
+                                  ReadOnly="@isReadOnly"
+                                  Variant="Variant.Outlined"
+                                  Dense="@true"
+                                  Lines="2"
+                                  FullWidth="@true" />
+                </div>
+            </div>
+        </MudCardContent>
+    </MudCard>
+
+</div>
+
+@code
+{
+    GeneralLedgerHeaderModel record = new();
+    List<LocationsModel> Loc = new();
+    List<PartiesModel> Par = new();
+    List<ChartOfAccountsModel> Acc = new();
+    List<CurrenciesModel> Currencies = new();
+
+    [Parameter] public string? Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private string PeriodValidationMessage { get; set; } = string.Empty;
+
+    private double TotalDebit => record.Details?.Sum(d => d.DebitAmount) ?? 0;
+    private double TotalCredit => record.Details?.Sum(d => d.CreditAmount) ?? 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Ensure Details collection is initialized
+            if (record.Details == null)
+                record.Details = new System.Collections.ObjectModel.ObservableCollection<GeneralLedgerDetailModel>();
+            
+            Globals.AccessLevel = Globals.PageAccess(NavManager, "GeneralLedgerDashboard");
+            await GetAll();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error initializing: {ex.Message}", Severity.Error);
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            GetDefaultValues();
+        }
+    }
+
+    protected async Task GetAll()
+    {
+        try
+        {
+            LoadingPanel = true;
+            Loc = await Functions.GetAsync<List<LocationsModel>>($"Locations/Search", true) ?? new List<LocationsModel>();
+            Par = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search", true) ?? new List<PartiesModel>();
+            Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search", true) ?? new List<ChartOfAccountsModel>();
+            Currencies = await Functions.GetAsync<List<CurrenciesModel>>($"Currencies/Search", true) ?? new List<CurrenciesModel>();
+
+            if (Action == "INSERT")
+            {
+                Clear();
+                GetDefaultValues();
+                isReadOnly = false;
+            }
+            else if (CurrentRecord > 0)
+            {
+                await Get(CurrentRecord);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading data: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    protected void GetDefaultValues()
+    {
+        if (Loc != null && Loc.Any() && record.LocationId == 0)
+        {
+            record.LocationId = Globals.User.LocationId;
+        }
+        if (string.IsNullOrWhiteSpace(record.Source))
+        {
+            record.Source = "MANUAL";
+        }
+
+        StateHasChanged();
+    }
+
+    protected async Task Get(int id)
+    {
+        try
+        {
+            LoadingPanel = true;
+            record = await Functions.GetAsync<GeneralLedgerHeaderModel>($"GeneralLedger/Get/{id}", true) ?? new GeneralLedgerHeaderModel();
+            if (record.Details == null)
+                record.Details = new ObservableCollection<GeneralLedgerDetailModel>();
+            if (string.IsNullOrWhiteSpace(record.Source))
+                record.Source = "MANUAL";
+            isReadOnly = Action == "VIEW";
+            await ValidatePeriodAsync();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading record: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    protected async void Clear()
+    {
+        Action = "INSERT";
+        record = new GeneralLedgerHeaderModel();
+        record.Details = new ObservableCollection<GeneralLedgerDetailModel>();
+        record.Source = "MANUAL"; // Always MANUAL for manual entries
+        record.ReferenceType = "JOURNAL"; // Auto-set to JOURNAL for manual entries
+        isReadOnly = false;
+        record.EntryDate = DateTime.Now;
+        record.LocationId = Globals.User.LocationId;
+        // Set base currency (get from organization or first base currency)
+        var baseCurrency = Currencies.FirstOrDefault(c => c.IsBaseCurrency == 1);
+        if (baseCurrency != null)
+            record.BaseCurrencyId = baseCurrency.Id;
+        AddDetailLine(); // Add one empty line
+        await ValidatePeriodAsync();
+    }
+
+    private async Task OnEntryDateChanged()
+    {
+        await ValidatePeriodAsync();
+    }
+
+    private async Task ValidatePeriodAsync()
+    {
+        PeriodValidationMessage = string.Empty;
+        
+        if (record?.EntryDate == null || record.OrganizationId == 0)
+            return;
+
+        try
+        {
+            string moduleType = "GENERALLEDGER"; // General Ledger module type
+            string dateStr = record.EntryDate.Value.ToString("yyyy-MM-dd");
+            var result = await Functions.GetAsync<PeriodCloseModel>(
+                $"PeriodClose/GetOpenPeriod/{record.OrganizationId}/{dateStr}/{moduleType}", 
+                true);
+
+            if (result == null || result.Id == 0)
+            {
+                PeriodValidationMessage = $"Period is CLOSED for {moduleType} module on {dateStr}. You cannot save transactions for this date. Please ensure the period is open before saving.";
+                SnackbarService.Add(PeriodValidationMessage, Severity.Warning);
+            }
+            else
+            {
+                PeriodValidationMessage = string.Empty;
+            }
+        }
+        catch (Exception ex)
+        {
+            PeriodValidationMessage = $"Error checking period status: {ex.Message}";
+            SnackbarService.Add(PeriodValidationMessage, Severity.Error);
+        }
+        
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected void AddDetailLine()
+    {
+        if (record.Details == null)
+            record.Details = new ObservableCollection<GeneralLedgerDetailModel>();
+        
+        record.Details.Add(new GeneralLedgerDetailModel
+        {
+            SeqNo = record.Details.Count + 1
+        });
+        StateHasChanged();
+    }
+
+    protected void RemoveDetailLine(GeneralLedgerDetailModel detail)
+    {
+        if (record.Details != null)
+        {
+            record.Details.Remove(detail);
+            // Reorder sequence numbers
+            for (int i = 0; i < record.Details.Count; i++)
+            {
+                record.Details[i].SeqNo = i + 1;
+            }
+            StateHasChanged();
+        }
+    }
+
+    protected void OnAmountChanged(GeneralLedgerDetailModel detail)
+    {
+        // Ensure only debit or credit is set, not both - both cannot have value at the same time
+        if (detail.DebitAmount > 0)
+            detail.CreditAmount = 0;
+        if (detail.CreditAmount > 0)
+            detail.DebitAmount = 0;
+        
+        record.TotalDebit = TotalDebit;
+        record.TotalCredit = TotalCredit;
+        StateHasChanged();
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        try
+        {
+            // Validate
+            if (record.Details == null || record.Details.Count == 0)
+            {
+                SnackbarService.Add("Please add at least one account line.", Severity.Warning);
+                return;
+            }
+
+            if (Math.Abs(TotalDebit - TotalCredit) > 0.01)
+            {
+                SnackbarService.Add($"Entry is not balanced. Total Debit: {TotalDebit:N2}, Total Credit: {TotalCredit:N2}", Severity.Error);
+                return;
+            }
+
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+            record.TotalDebit = TotalDebit;
+            record.TotalCredit = TotalCredit;
+            // Source is always MANUAL for manual entries (other sources come from invoices/cashbook)
+            if (string.IsNullOrWhiteSpace(record.Source) || Action == "INSERT")
+                record.Source = "MANUAL";
+
+            LoadingPanel = true;
+            var result = await Functions.PostAsync<GeneralLedgerHeaderModel>($"GeneralLedger/{Action}", record, true);
+            LoadingPanel = false;
+
+            if (result.Success == false || result.Result == null)
+            {
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+            }
+            else
+            {
+                var res = result.Result;
+                await OnSaved.InvokeAsync();
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                
+                await Get(res.Id);
+                CurrentRecord = res.Id;
+                Action = "UPDATE";
+            }
+        }
+        catch (Exception ex)
+        {
+            LoadingPanel = false;
+            SnackbarService.Add($"Error saving General Ledger Entry: {ex.Message}", Severity.Error);
+        }
+    }
+
+    protected async Task ShowGLPreview()
+    {
+        try
+        {
+            if (CurrentRecord == 0)
+            {
+                SnackbarService.Add("Please save the entry first", Severity.Warning);
+                return;
+            }
+
+            // Ensure we have the latest entry data
+            await Get(CurrentRecord);
+
+            // Get the full entry with details
+            var result = await Functions.GetAsync<GeneralLedgerHeaderModel>($"GeneralLedger/Get/{CurrentRecord}", true);
+            
+            if (result != null)
+            {
+                var parameters = new DialogParameters<InvoiceGLPreviewDialog>
+                {
+                    { x => x.PreviewData, result },
+                    { x => x.InvoiceId, CurrentRecord },
+                    { x => x.IsPostedToGL, record.IsPosted == 1 },
+                    { x => x.OnPostToGL, EventCallback.Factory.Create(this, async () => 
+                    {
+                        await PostEntry();
+                        // Refresh preview after posting
+                        await ShowGLPreview();
+                    }) }
+                };
+
+                var options = new DialogOptions()
+                {
+                    MaxWidth = MaxWidth.Large,
+                    FullWidth = true,
+                    CloseButton = true,
+                    CloseOnEscapeKey = true,
+                    BackdropClick = false
+                };
+
+                await dialogService.ShowAsync<InvoiceGLPreviewDialog>("General Ledger Entry Preview", parameters, options);
+            }
+            else
+            {
+                SnackbarService.Add("Unable to load entry details", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    protected async Task PostEntry()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(record.EntryNo))
+            {
+                SnackbarService.Add("Entry No is required", Severity.Warning);
+                return;
+            }
+
+            if (record.IsPosted == 1)
+            {
+                SnackbarService.Add("This entry is already posted", Severity.Info);
+                return;
+            }
+
+            var res = await Functions.ShowConfirmation(dialogService, "Do you want to post this entry? Once posted, it cannot be modified.");
+            if (res == false)
+                return;
+
+            LoadingPanel = true;
+            var result = await Functions.PostAsync<string>($"GeneralLedger/PostEntry", record.EntryNo, true);
+            LoadingPanel = false;
+
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+            }
+            else
+            {
+                SnackbarService.Add("Entry posted successfully", Severity.Success);
+                // Reload entry to get updated IsPosted status
+                await Get(CurrentRecord);
+            }
+        }
+        catch (Exception ex)
+        {
+            LoadingPanel = false;
+            SnackbarService.Add($"Error posting entry: {ex.Message}", Severity.Error);
+        }
+    }
+}

@@ -9,14 +9,58 @@
 
 <Loading IsLoading="@LoadingPanel" />
 
-<div class="row" style="margin: 2px; height: 90vh; display: flex;">
-    <MyDrawer @ref="_drawer" Title="Departments" FaIcon="fas fa-building" >
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <div class="dashboard-header mb-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.Business" Class="me-2" Style="color: white;" />
+                    Departments Management
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">Define organizational departments</MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+                <MudTextField @bind-Value="searchString"
+                            @bind-Value:after="FilterData"
+                            Placeholder="Search departments..."
+                            Adornment="Adornment.Start"
+                            AdornmentIcon="@Icons.Material.Filled.Search"
+                            IconSize="Size.Small"
+                            Variant="Variant.Outlined"
+                            Immediate="true"
+                            Margin="Margin.Dense"
+                            Class="dashboard-search-field"
+                            Style="background: rgba(255,255,255,0.95); width: 280px;" />
+                @if (Globals.AccessLevel == 1)
+                {
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
+                               Size="Size.Small" 
+                               Variant="Variant.Filled" 
+                               Color="Color.Success" 
+                               Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                               OnClick="@(() => Clear())">
+                        New
+                    </MudButton>
+                }
+                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Info"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => Refresh())">
+                    Refresh
+                </MudButton>
+            </div>
+        </div>
+    </div>
+
+    <MyDrawer @ref="_drawer" Title="Departments" FaIcon="fas fa-address-book">
         <HeaderContent>
         </HeaderContent>
         <ChildContent>
             <EditForm Model="record" OnSubmit="Save">
                 <MudForm>
-                    <DepartmentsPage Action="@Action" CurrentRecord="record.Id" OnSaved="ChildSaved"/>
+                    <DepartmentsPage Action="@Action" CurrentRecord="record.Id" OnSaved="ChildSaved" />
                 </MudForm>
             </EditForm>
         </ChildContent>
@@ -30,58 +74,11 @@
     }
     else
     {
-        <div class="row">
-            <MudDataGrid T="DepartmentsModel"
-                         MultiSelection="false"
-                         Items="@data"
-                         SortMode="SortMode.Multiple"
-                         Filterable="true"
-                         Hideable="true"
-                         RowsPerPage="10"
-                         Dense="true"
-                         Striped="true"
-                         Class="professional-grid elevation-8">
-
-                <ToolBarContent>
-                    <div class="grid-toolbar-wrapper">
-                        <div class="grid-toolbar">
-                            <div class="toolbar-left">
-                                <MudIcon Icon="@Icons.Material.Filled.Business" Class="toolbar-icon" />
-                                <MudText Typo="Typo.h6" Class="toolbar-title">
-                                    Departments Management
-                                </MudText>
-                            </div>
-
-                            <div class="toolbar-right">
-                                @if (AccessLevel == 1)
-                                {
-                                    <MudButton StartIcon="@Icons.Material.TwoTone.Add"
-                                               Size="MudBlazor.Size.Small"
-                                               Variant="Variant.Filled"
-                                               Color="Color.Success"
-                                               Class="action-btn new-btn"
-                                               OnClick="@(() => Clear())">
-                                        New Department
-                                    </MudButton>
-                                }
-
-                                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh"
-                                           Size="MudBlazor.Size.Small"
-                                           Variant="Variant.Filled"
-                                           Color="Color.Info"
-                                           Class="action-btn refresh-btn"
-                                           OnClick="@(() => Refresh())">
-                                    Refresh
-                                </MudButton>
-                            </div>
-                        </div>
-                    </div>
-                </ToolBarContent>
+        <MudPaper Elevation="3" Style="border-radius: 12px; overflow: hidden;">
+            <MudDataGrid T="DepartmentsModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
 
                 <Columns>
-                    <TemplateColumn Title="Actions"
-                                    CellStyle="width: 80px; min-width: 80px;"
-                                    HeaderClass="grid-header">
+                    <TemplateColumn Title="Actions" CellStyle="width: 80px; min-width: 80px;" HeaderClass="grid-header">
                         <CellTemplate Context="row">
                             <div class="actions-cell">
                                 <MudMenu Icon="@Icons.Material.Filled.MoreVert"
@@ -93,7 +90,7 @@
                                         <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
                                         <span>View Details</span>
                                     </MudMenuItem>
-                                    @if (AccessLevel == 1)
+                                    @if (Globals.AccessLevel == 1)
                                     {
                                         <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
                                                      Class="menu-item edit-item">
@@ -112,85 +109,144 @@
                         </CellTemplate>
                     </TemplateColumn>
 
-                    <PropertyColumn Property="x => x.DepartmentName"
-                                    Title="Department"
-                                    Sortable="true"
-                                    Filterable="true"
-                                    HeaderClass="grid-header"
-                                    CellClass="grid-cell" />
-
-                    <PropertyColumn Property="x => x.ParentDepartment"
-                                    Title="Parent Department"
-                                    Sortable="true"
-                                    Filterable="true"
-                                    HeaderClass="grid-header"
-                                    CellClass="grid-cell" />
-
-                    <PropertyColumn Property="x => x.Description"
-                                    Title="Description"
-                                    Sortable="true"
-                                    Filterable="true"
-                                    HeaderClass="grid-header"
-                                    CellClass="grid-cell" />
-
-                    <TemplateColumn Title="Status"
+                    <PropertyColumn Property="x => x.DepartmentName" Title="Department Name" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.ParentDepartment" Title="Parent Deparment" Sortable="true" Filterable="true" CellStyle="text-align: right;" />
+                    <PropertyColumn Property="x => x.Description" Title="Description" Sortable="true" Filterable="true" />
+                    <TemplateColumn Title="IsActive"
                                     CellStyle="width: 70px; min-width: 70px;"
                                     HeaderClass="grid-header"
                                     CellClass="grid-cell">
                         <CellTemplate Context="row">
                             @if (row.Item.IsActive == 1)
                             {
-                                <MudChip Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">Active</MudChip>
+                                <MudChip Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">Yes</MudChip>
                             }
                             else
                             {
-                                <MudChip Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">Locked</MudChip>
+                                <MudChip Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">No</MudChip>
                             }
                         </CellTemplate>
                     </TemplateColumn>
+
                 </Columns>
 
                 <PagerContent>
                     <div class="pager-container">
-                        <MudDataGridPager T="DepartmentsModel" Class="grid-pager" />
+                        <MudDataGridPager T="DepartmentsModel" />
                     </div>
                 </PagerContent>
-
             </MudDataGrid>
-        </div>
+        </MudPaper>
     }
-</div>
+</MudContainer>
+
+<style>
+    .dashboard-header {
+        padding: 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 24px;
+    }
+
+    .dashboard-header .mud-typography {
+        color: white !important;
+    }
+
+    .dashboard-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    .dashboard-search-field .mud-input-root {
+        color: var(--mud-palette-text-primary) !important;
+    }
+
+    .dashboard-search-field .mud-input-root input {
+        color: var(--mud-palette-text-primary) !important;
+    }
+
+    .dashboard-search-field .mud-input-root::before {
+        border-color: rgba(0,0,0,0.2) !important;
+    }
+
+    .dashboard-search-field .mud-input-root:hover::before {
+        border-color: var(--mud-palette-primary) !important;
+    }
+
+    .dashboard-search-field .mud-input-root::after {
+        border-color: var(--mud-palette-primary) !important;
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .dashboard-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+
+    .mud-theme-dark .dashboard-search-field {
+        background: rgba(255,255,255,0.1) !important;
+    }
+
+    .mud-theme-dark .dashboard-search-field .mud-input-root {
+        color: white !important;
+    }
+
+    .mud-theme-dark .dashboard-search-field .mud-input-root input {
+        color: white !important;
+    }
+
+    .mud-theme-dark .dashboard-search-field .mud-input-root::placeholder {
+        color: rgba(255,255,255,0.7) !important;
+    }
+</style>
 
 @code
 {
+    List<DepartmentsModel> AllData = new();
     List<DepartmentsModel> data = new();
     DepartmentsModel record = new();
 
-    public string? Action { get; set; } = "INSERT";
-
-    public int AccessLevel { get; set; } = 0;
+    public string Action { get; set; } = "INSERT";
     private bool LoadingPanel { get; set; } = false;
     private MyDrawer _drawer = new();
+    private string searchString = "";
 
     protected override async Task OnInitializedAsync()
     {
-        AccessLevel = Globals.PageAccess(NavManager, "DepartmentsDashboard");
-
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "DepartmentsDashboard");
         await GetAll();
     }
 
     protected async Task GetAll()
     {
         LoadingPanel = true;
-        data = await Functions.GetAsync<List<DepartmentsModel>>($"Departments/Search", true) ?? new List<DepartmentsModel>();
+        AllData = await Functions.GetAsync<List<DepartmentsModel>>($"Departments/Search", true) ?? new List<DepartmentsModel>();
+        data = AllData;
         LoadingPanel = false;
     }
 
     protected async Task Get(int id)
     {
         LoadingPanel = true;
-        record = await Functions.GetAsync<DepartmentsModel>($"Departments/Get/{id}", true) ?? new DepartmentsModel();
+        record = await Functions.GetAsync<DepartmentsModel>($"Departments/Get?Id={id}", true) ?? new DepartmentsModel();
         LoadingPanel = false;
+    }
+
+    private void FilterData()
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+        {
+            data = AllData.ToList();
+        }
+        else
+        {
+            var search = searchString.ToLower();
+            data = AllData.Where(x =>
+                (x.DepartmentName.ToString()?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.Description?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
+            ).ToList();
+        }
+
+        StateHasChanged();
     }
 
     protected async Task Clear()
@@ -216,7 +272,7 @@
     protected async Task Edit(int id)
     {
         await Get(id);
-        Action = "UPDATE"; 
+        Action = "UPDATE";
         await _drawer.OpenDrawerAsync();
     }
 
@@ -233,31 +289,38 @@
 
     protected async Task Save()
     {
-        LoadingPanel = true;
-         
-        record.OrganizationId = Globals.User.OrganizationId;
-        record.CreatedBy = Globals.User.Id;
-        record.CreatedOn = DateTime.Now;
-        record.CreatedFrom = Globals.ClientInfo;
-        record.UpdatedBy = Globals.User.Id;
-        record.UpdatedOn = DateTime.Now;
-        record.UpdatedFrom = Globals.ClientInfo;
+        try
+        {
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
 
-        var result = await Functions.PostAsync<DepartmentsModel>($"Departments/{Action}", record, true);
-        if (result.Success == true)
-        {
-            SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
-            if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) await Edit(result.Result!.Id);
+            var result = await Functions.PostAsync<DepartmentsModel>($"Departments/{Action}", record, true);
+            if (result.Success == true)
+            {
+                SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
+                await GetAll();
+                if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) await Edit(result.Result!.Id);
+            }
+            else
+            {
+                SnackbarService.Add($"{result.Message}", Severity.Error);
+                record = new();
+            }
         }
-        else
+        catch (Exception ex)
         {
-            SnackbarService.Add($"Record Not Deleted", Severity.Error);
+            SnackbarService.Add($"ERROR: {ex.Message}", Severity.Error);
         }
-    
-        await GetAll();
-        LoadingPanel = false;
-        await _drawer.CloseDrawerAsync();
-     
+        finally
+        {
+            LoadingPanel = false;
+            await _drawer.CloseDrawerAsync();
+        }
     }
 
     private async Task ChildSaved()
@@ -266,5 +329,6 @@
         await _drawer.CloseDrawerAsync();
         StateHasChanged();
     }
+
 }
 

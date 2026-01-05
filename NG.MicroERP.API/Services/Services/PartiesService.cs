@@ -37,7 +37,7 @@ public class PartiesService : IPartiesService
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;
 
-        SQL += " Order by Id Desc";
+        SQL += " Order by a.Id Desc";
 
         List<PartiesModel> result = (await dapper.SearchByQuery<PartiesModel>(SQL)) ?? new List<PartiesModel>();
 
@@ -70,7 +70,6 @@ public class PartiesService : IPartiesService
 				Code, 
 				Name, 
 				PartyType, 
-				PartyTypeCode, 
 				ParentId, 
 				CustomerRating, 
 				CustomerClass, 
@@ -79,9 +78,8 @@ public class PartiesService : IPartiesService
 				CreditLimit, 
 				PaymentTermsId, 
 				AccountId, 
-				TaxCategory, 
-				TaxNumber, 
-				NTN, 
+				NTN,
+				STN, 
 				Address, 
 				CityId, 
 				Latitude, 
@@ -94,16 +92,14 @@ public class PartiesService : IPartiesService
 				IsActive, 
 				CreatedBy, 
 				CreatedOn, 
-				CreatedFrom, 
-				IsSoftDeleted
+				CreatedFrom
 			) 
 			VALUES 
 			(
 				{obj.OrganizationId},
-				'{obj.Code!.ToUpper()}', 
+				'{Code}', 
 				'{obj.Name!.ToUpper()}', 
 				'{obj.PartyType!.ToUpper()}', 
-				'{obj.PartyTypeCode!.ToUpper()}', 
 				{obj.ParentId},
 				{obj.CustomerRating},
 				'{obj.CustomerClass!.ToUpper()}', 
@@ -112,9 +108,8 @@ public class PartiesService : IPartiesService
 				{obj.CreditLimit},
 				{obj.PaymentTermsId},
 				{obj.AccountId},
-				'{obj.TaxCategory!.ToUpper()}', 
-				'{obj.TaxNumber!.ToUpper()}', 
-				'{obj.NTN!.ToUpper()}', 
+				'{obj.NTN!.ToUpper()}',
+				'{obj.STN!.ToUpper()}',
 				'{obj.Address!.ToUpper()}', 
 				{obj.CityId},
 				'{obj.Latitude!.ToUpper()}', 
@@ -127,15 +122,14 @@ public class PartiesService : IPartiesService
 				{obj.IsActive},
 				{obj.CreatedBy},
 				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
-				'{obj.CreatedFrom!.ToUpper()}', 
-				{obj.IsSoftDeleted}
+				'{obj.CreatedFrom!.ToUpper()}'
 			);";
 
             var res = await dapper.Insert(SQLInsert, SQLDuplicate);
             if (res.Item1 == true)
             {
                 List<PartiesModel> Output = new List<PartiesModel>();
-                var result = await Search($"id={res.Item2}")!;
+                var result = await Search($"a.id={res.Item2}")!;
                 Output = result.Item2;
                 return (true, Output.FirstOrDefault()!, "");
             }
@@ -146,7 +140,7 @@ public class PartiesService : IPartiesService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
     }
 
@@ -160,7 +154,6 @@ public class PartiesService : IPartiesService
 					Code = '{obj.Code!.ToUpper()}', 
 					Name = '{obj.Name!.ToUpper()}', 
 					PartyType = '{obj.PartyType!.ToUpper()}', 
-					PartyTypeCode = '{obj.PartyTypeCode!.ToUpper()}', 
 					ParentId = {obj.ParentId}, 
 					CustomerRating = {obj.CustomerRating}, 
 					CustomerClass = '{obj.CustomerClass!.ToUpper()}', 
@@ -169,8 +162,6 @@ public class PartiesService : IPartiesService
 					CreditLimit = {obj.CreditLimit}, 
 					PaymentTermsId = {obj.PaymentTermsId}, 
 					AccountId = {obj.AccountId}, 
-					TaxCategory = '{obj.TaxCategory!.ToUpper()}', 
-					TaxNumber = '{obj.TaxNumber!.ToUpper()}', 
 					NTN = '{obj.NTN!.ToUpper()}', 
 					Address = '{obj.Address!.ToUpper()}', 
 					CityId = {obj.CityId}, 
@@ -184,15 +175,14 @@ public class PartiesService : IPartiesService
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
-					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
-					IsSoftDeleted = {obj.IsSoftDeleted} 
+					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}'
 				WHERE Id = {obj.Id};";
 
             var res = await dapper.Update(SQLUpdate, SQLDuplicate);
             if (res.Item1 == true)
             {
                 List<PartiesModel> Output = new List<PartiesModel>();
-                var result = await Search($"id={res.Item2}")!;
+                var result = await Search($"a.id={res.Item2}")!;
                 Output = result.Item2;
                 return (true, Output.FirstOrDefault()!, "");
             }
@@ -203,7 +193,7 @@ public class PartiesService : IPartiesService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
     }
 

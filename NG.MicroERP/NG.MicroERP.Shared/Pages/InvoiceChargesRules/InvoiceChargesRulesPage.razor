@@ -1,0 +1,331 @@
+﻿@page "/InvoiceChargesRulesPage/{Action}/{CurrentRecord?}"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+
+    <div class="text-end" style="margin-top:10px;">
+        @if (Action != "VIEW")
+        {
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                @(Action == "INSERT" ? "Save" : "Update")
+            </MudButton>
+
+            @if (Action == "UPDATE")
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                    Delete
+                </MudButton>
+            }
+        }
+    </div>
+
+    <br />
+
+    <MudExpansionPanels MultiExpansion="true">
+        <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
+
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+
+                    <i class="fa fa-info-circle"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Service Charges & Discounts</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain InvoiceChargesRules</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #4CAF50; border-radius: 10px;" />
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Account <span style='color:red;'>*</span></label>
+                        <MudAutocomplete T="ChartOfAccountsModel"
+                                         @bind-Value="SelectedAccount"
+                                         ToStringFunc="@(p => p?.Name)"
+                                         SearchFunc="@( (searchText, cancellationToken) =>
+                                                        Task.FromResult(
+                                                            string.IsNullOrWhiteSpace(searchText)
+                                                                ? Acc
+                                                                : Acc.Where(p =>
+                                                                    p.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                                                                )
+                                                        )
+                                                )"
+                                        Clearable="true"
+                                         Variant="Variant.Outlined"
+                                         Dense="true"
+                                         CoerceText="true"
+                                         CoerceValue="true"
+                                         ResetValueOnEmptyText="true"
+                                         Immediate="true"
+                                         />
+                        <ValidationMessage For="@(() => record.AccountId)" />
+                    </div>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Amount Type <span style='color:red;'>*</span></label>
+                        <MudSelect T="string"
+                                   @bind-Value="record.AmountType"
+                                   Placeholder="Percentage OR Flat"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
+
+                            <!-- Percentage Tax -->
+                            <MudSelectItem Value="@("PERCENTAGE")">
+                                <MudIcon Icon="@Icons.Material.Filled.Percent" Size="Size.Small" Class="me-2" />
+                                Percentage
+                            </MudSelectItem>
+
+                            <!-- Fixed Amount Tax -->
+                            <MudSelectItem Value="@("FLAT")">
+                                <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Size="Size.Small" Class="me-2" />
+                                Fixed Amount
+                            </MudSelectItem>
+
+                        </MudSelect>
+
+                        <ValidationMessage For="@(() => record.AmountType)" />
+                    </div>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Amount <span style='color:red;'>*</span></label>
+                        <MudNumericField @bind-Value="record.Amount" Variant="Variant.Outlined" placeholder="Amount" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
+                        <ValidationMessage For="@(() => record.Amount)" />
+                    </div>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Charge Category <span style='color:red;'>*</span></label>
+                        <MudSelect T="string"
+                                   @bind-Value="record.ChargeCategory"
+                                   Placeholder="Service OR Discount"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
+
+                            <!-- Percentage Tax -->
+                            <MudSelectItem Value=@("SERVICE")>
+                                <MudIcon Icon="@Icons.Material.Filled.BuildCircle" Size="Size.Small" Class="me-2" />
+                                Service
+                            </MudSelectItem>
+
+                            <MudSelectItem Value=@("DISCOUNT")>
+                                <MudIcon Icon="@Icons.Material.Filled.MoneyOff" Size="Size.Small" Class="me-2" />
+                                Discount
+                            </MudSelectItem>
+
+
+                        </MudSelect>
+                    	<ValidationMessage For="@(() => record.ChargeCategory)" />
+                    </div>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Effective From <span style='color:red;'>*</span></label>
+                        <MudDatePicker @bind-Date="record.EffectiveFrom" Variant="Variant.Outlined" DateFormat="yyyy-MM-dd" placeholder="Effective From" ReadOnly="@isReadOnly"></MudDatePicker>
+                        <ValidationMessage For="@(() => record.EffectiveFrom)" />
+                    </div>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Effective To</label>
+                        <MudDatePicker @bind-Date="record.EffectiveTo" Variant="Variant.Outlined" DateFormat="yyyy-MM-dd" placeholder="Effective To" ReadOnly="@isReadOnly"></MudDatePicker>
+                    </div>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Activation Status<span style='color:red;'>*</span></label>
+
+                        <MudSelect T="int"
+                                   @bind-Value="record.IsActive"
+                                   Placeholder="Is Active"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
+                            @if (record.IsActive != 0 && record.IsActive != 1)
+                            {
+                                record.IsActive = 1;
+                            }
+                            <MudSelectItem T="int" Value="1">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                Enable
+                            </MudSelectItem>
+                            <MudSelectItem T="int" Value="0">
+                                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" Class="me-2" />
+                                Disable
+                            </MudSelectItem>
+                        </MudSelect>
+
+                        <ValidationMessage For="@(() => record.IsActive)" />
+                    </div>
+
+                </div>
+            </ChildContent>
+
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+
+</div>
+
+@code
+{
+    InvoiceChargesRulesModel record = new();
+    List<ChartOfAccountsModel> Acc = new();
+    ChartOfAccountsModel SelectedAccount = new();
+    List<TypeCodeModel> Amo = null!;
+
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "InvoiceChargesRulesDashboard");
+        await GetAll();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        var safeCriteria = Uri.EscapeDataString("InterfaceType='SERVICE' or InterfaceType='DISCOUNT'"); // Encodes dangerous characters
+
+        //Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/{safeCriteria}", true) ?? new List<ChartOfAccountsModel>();
+
+        Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/InterfaceType='SERVICE' or InterfaceType='DISCOUNT'", true) ?? new List<ChartOfAccountsModel>();
+        //Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/InterfaceType='SERVICE'", true) ?? new List<ChartOfAccountsModel>();
+        Amo = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/AMO TYPE", true) ?? new List<TypeCodeModel>();
+
+        if (Action == "INSERT")
+        {
+            record = new InvoiceChargesRulesModel();
+            record.IsActive = 1;
+            isReadOnly = false;
+        }
+        else if (Action == "UPDATE")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action == "VIEW")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<InvoiceChargesRulesModel>($"InvoiceChargesRules/Get/{id}", true) ?? new InvoiceChargesRulesModel();
+        LoadingPanel = false;
+    }
+
+    protected void GetDefaultValues()
+    {
+
+        if (Acc != null && Acc.Any() && record.AccountId == 0)
+            record.AccountId = Acc.First().Id;
+
+
+        StateHasChanged();
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new InvoiceChargesRulesModel();
+        record.IsActive = 1;
+        isReadOnly = false;
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+
+        var errors = new List<string>();
+        if (string.IsNullOrWhiteSpace(record.ChargeCategory))
+
+            errors.Add("• Charge Category is required");
+
+
+        if (errors.Count > 0)
+        {
+            SnackbarService.Add($"ERROR:\n{string.Join("\n", errors)}", Severity.Error);
+            return;
+        }
+
+        try
+        {
+            LoadingPanel = true;
+            record.AccountId = SelectedAccount.Id;
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<InvoiceChargesRulesModel>($"InvoiceChargesRules/{url}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+            }
+            else
+            {
+                await OnSaved.InvokeAsync();
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                    await Edit(result.Result!.Id);
+                else
+                {
+                    await Clear();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"ERROR: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+}
+

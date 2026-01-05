@@ -2,6 +2,7 @@
 
 @using System.Text.Json
 @using NG.MicroERP.Shared.Pages.TaxRule
+@using NG.MicroERP.Shared.Models
 @inject NavigationManager NavManager
 @inject IDialogService dialogService
 @inject ISnackbar Snackbar
@@ -16,99 +17,171 @@
 <MyModelDialog Width="70%" Height="70%" @ref="_myTaxDialog" Title="Tax Calculation">
     <HeaderContent></HeaderContent>
     <ChildContent>
-        <ItemTaxPreview ItemId="SelectedItem.Id" PartyId="record.Invoice.PartyId" />
-
+        @if (SelectedItem != null && SelectedItem.Id > 0 && record?.Invoice?.PartyId > 0)
+        {
+            <ItemTaxPreview ItemId="SelectedItem.Id" PartyId="record.Invoice.PartyId" Quantity="SelectedItem.Qty" />
+        }
+        else
+        {
+            <MudText Typo="Typo.body1" Class="text-center pa-4">Please select an item to view tax details.</MudText>
+        }
     </ChildContent>
     <FooterContent></FooterContent>
 </MyModelDialog>
 
 <MudLayout>
-    <MudPaper Elevation="2" Class="px-3 py-2">
-        <MudGrid AlignItems="Center" GutterSize="GutterSize.None">
-            <MudItem xs="12">
-                <div class="toolbar-row">
+    <!-- Modern Gradient Header -->
+    <MudContainer MaxWidth="MaxWidth.False" Class="pa-2">
+        <div class="invoice-header-gradient mb-3">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                    <MudIcon Icon="@Icons.Material.Filled.Receipt" 
+                             Size="Size.Medium" 
+                             Style="color: white; font-size: 2rem;" />
+                    <div>
+                        <MudText Typo="Typo.h5" Class="mb-0 fw-bold" Style="color: white;">
+                            @InvoiceType Invoice
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mt-0" Style="color: rgba(255,255,255,0.85) !important; font-size: 0.75rem;">
+                            @(CurrentRecord.GetValueOrDefault() > 0 ? $"Invoice #{record.Invoice.Code}" : "Create new invoice")
+                        </MudText>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-1 flex-wrap" style="flex: 1; justify-content: flex-end; min-width: 0;">
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Menu"
+                               Variant="Variant.Filled"
+                               Color="Color.Info"
+                               Size="Size.Small"
+                               OnClick="OpenOptionsDrawer"
+                               Class="invoice-header-btn">
+                        More
+                    </MudButton>
+
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Add"
+                               Variant="Variant.Filled"
+                               Color="Color.Warning"
+                               Size="Size.Small"
+                               OnClick="Clear"
+                               Class="invoice-header-btn">
+                        New
+                    </MudButton>
+
+                    @if (!string.Equals(Action, "VIEW", StringComparison.OrdinalIgnoreCase) && !Disabled)
+                    {
+                        <MudButton StartIcon="@(CurrentRecord.GetValueOrDefault() != 0 ? Icons.Material.TwoTone.Edit : Icons.Material.TwoTone.Save)"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Success"
+                                   Size="Size.Small"
+                                   OnClick="Save"
+                                   Class="invoice-header-btn">
+                            @(CurrentRecord.GetValueOrDefault() != 0 ? "Update" : "Save")
+                        </MudButton>
+                    }
+
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Print"
+                               Variant="Variant.Filled"
+                               Color="Color.Secondary"
+                               Size="Size.Small"
+                               OnClick="Print"
+                               Disabled="@(CurrentRecord.GetValueOrDefault() == 0 && !_isInvoiceSaved)"
+                               Class="invoice-header-btn">
+                        Print
+                    </MudButton>
+
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Preview"
+                               Variant="Variant.Outlined"
+                               Color="Color.Info"
+                               Size="Size.Small"
+                               OnClick="ShowGLPreview"
+                               Class="invoice-header-btn"
+                               Disabled="@(record?.Invoice?.PartyId == 0 || record?.InvoiceDetails == null || !record.InvoiceDetails.Any())">
+                        View GL Entry
+                    </MudButton>
+
+                    @if (CurrentRecord.GetValueOrDefault() > 0 && record.Invoice.IsPostedToGL == 0)
+                    {
+                        <MudButton StartIcon="@Icons.Material.TwoTone.AccountBalance"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Info"
+                                   Size="Size.Small"
+                                   OnClick="PostToGL"
+                                   Class="invoice-header-btn">
+                            Post to GL
+                        </MudButton>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Invoice Details Card -->
+        <MudPaper Elevation="2" Class="pa-2 mb-2" Style="border-radius: 12px;">
+            <div class="invoice-details-row">
+                <div class="invoice-field invoice-field-type">
                     <MudSelect T="string"
+                               Label="Invoice Type"
                                @bind-Value="record.Invoice.InvoiceType"
                                Variant="Variant.Outlined"
-                               Dense="true"
-                               Disabled="@Disabled"
-                               Class="toolbar-control h-100">
+                               Dense="@true"
+                               Disabled="@(Disabled || IsInvoiceTypeAndDateLocked)"
+                               FullWidth="@true"
+                               Margin="Margin.Dense">
                         @foreach (var option in InvoiceTypeList ?? Enumerable.Empty<string>())
                         {
-                            <MudSelectItem Value="@option">@option</MudSelectItem>
+                            <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
                         }
                     </MudSelect>
+                </div>
 
+                <div class="invoice-field invoice-field-party">
                     <MudAutocomplete T="PartiesModel"
+                                     Label="Party / Customer"
                                      Value="SelectedParty"
                                      ValueChanged="OnPartyChanged"
                                      ToStringFunc="@(p => p?.DisplayName)"
                                      SearchFunc="@SearchParties"
-                                     Clearable="true"
+                                     Clearable="@true"
                                      Variant="Variant.Outlined"
-                                     Dense="true" />
-
-                    <MudDatePicker T="string"
-                                   Variant="Variant.Outlined"
-                                   Dense="true"
-                                   Placeholder="Transaction Date"
-                                   @bind-Date="record.Invoice.TranDate"
-                                   DateFormat="yyyy-MM-dd"
-                                   Class="toolbar-control barcode-width h-100" />
-
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <MudButton StartIcon="@Icons.Material.TwoTone.Menu"
-                                   Variant="Variant.Filled"
-                                   Color="Color.Info"
-                                   Size="Size.Small"
-                                   OnClick="OpenOptionsDrawer">
-                            More
-                        </MudButton>
-
-                        <MudButton StartIcon="@Icons.Material.TwoTone.Add"
-                                   Variant="Variant.Filled"
-                                   Color="Color.Warning"
-                                   Size="Size.Small"
-                                   OnClick="Clear">
-                            New
-                        </MudButton>
-
-                        @if (!string.Equals(Action, "VIEW", StringComparison.OrdinalIgnoreCase))
-                        {
-                            <MudButton StartIcon="@Icons.Material.TwoTone.Save"
-                                       Variant="Variant.Filled"
-                                       Color="Color.Success"
-                                       Size="Size.Small"
-                                       OnClick="Save">
-                                Save
-                            </MudButton>
-                        }
-
-                        @if (CurrentRecord.GetValueOrDefault() != 0)
-                        {
-                            <MudButton StartIcon="@Icons.Material.TwoTone.Print"
-                                       Variant="Variant.Filled"
-                                       Color="Color.Secondary"
-                                       Size="Size.Small"
-                                       OnClick="Print">
-                                Print
-                            </MudButton>
-                        }
-                    </div>
-
-                    <div class="seq-box">
-                        <MudText Typo="Typo.h6">@record.Invoice.Code</MudText>
-                    </div>
+                                     Dense="@true"
+                                     Disabled="@(record?.InvoiceDetails?.Count > 0)"
+                                     FullWidth="@true"
+                                     Margin="Margin.Dense" />
                 </div>
-            </MudItem>
-        </MudGrid>
-    </MudPaper>
 
-    <MudMainContent Class="p-4" Style="margin-left:0;">
-        <MudGrid>
-            <MudItem xs="12" md="7">
+                <div class="invoice-field invoice-field-date">
+                    <MudDatePicker Label="Transaction Date"
+                                   @bind-Date="record.Invoice.TranDate"
+                                   @bind-Date:after="OnTranDateChanged"
+                                   Variant="Variant.Outlined"
+                                   Dense="@true"
+                                   Placeholder="Select Date"
+                                   DateFormat="yyyy-MM-dd"
+                                   Disabled="@(Disabled || IsInvoiceTypeAndDateLocked)"
+                                   FullWidth="@true"
+                                   Margin="Margin.Dense" />
+                </div>
+
+                <div class="invoice-field invoice-field-number">
+                    <MudTextField Label="Invoice Number"
+                                  Value="@record.Invoice.Code"
+                                  ReadOnly="@true"
+                                  Variant="Variant.Outlined"
+                                  Dense="@true"
+                                  FullWidth="@true"
+                                  Margin="Margin.Dense" />
+                </div>
+            </div>
+        </MudPaper>
+    </MudContainer>
+
+
+    <MudMainContent Class="p-2" Style="margin-left:0; overflow-x: hidden;">
+        <MudGrid Spacing="2" GutterSize="GutterSize.Small">
+            <MudItem xs="12" md="7" Style="min-width: 0;">
                 <InvoiceItemsTable Record="record"
                                    Disabled="Disabled"
+                                   Action="Action"
+                                   InvoiceType="InvoiceType"
+                                   OriginalItemIds="_originalItemIds"
                                    OnDeleteItem="DeleteItem"
                                    OnItemSelection="OnItemSelection"
                                    OnRowQtyChanged="OnRowQtyChangedAsync"
@@ -118,19 +191,22 @@
                                    OnTaxClick="OpenTaxDialog"
                                    OnPaymentClick="OpenPaymentDialog"
                                    OnClose="ClosePaymentDialog"
-                                   OnAmountChanged="OnChargesDiscountChangedAsync" />
-
-
+                                   OnAmountChanged="OnChargesDiscountChangedAsync"
+                                   ChargesManuallyOverridden="_chargesManuallyOverridden"
+                                   DiscountManuallyOverridden="_discountManuallyOverridden"
+                                   OnResetChargesClick="ResetChargesToAuto"
+                                   OnResetDiscountClick="ResetDiscountToAuto" />
             </MudItem>
 
-            <MudItem xs="12" md="5">
-                <div style="display: flex; align-items: center; gap: 8px; margin: 2px; padding: 2px;">
+            <MudItem xs="12" md="5" Style="min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%;">
                     <MudTextField T="string"
-                                  Dense="true"
+                                  Dense="@true"
                                   Variant="Variant.Filled"
                                   Placeholder="Scan or Enter Barcode"
                                   @bind-Value="ClickedItem.Code"
-                                  Style="width: 180px;" />
+                                  Style="flex: 1; min-width: 0;"
+                                  @onkeypress="@(async (e) => { if (e.Key == "Enter" || e.Key == "\r") await AddItemDialogShowWithType(ClickedItem.Code, "s"); })" />
                     <MudTooltip Text="Search">
                         <MudButton StartIcon="@Icons.Material.TwoTone.Search"
                                    Size="MudBlazor.Size.Small"
@@ -155,7 +231,8 @@
                                   OnItemSelected="AddItemDialogShow"
                                   ActiveCategory="_activeCategory"
                                   InvoiceType="InvoiceType"
-                                  GetDisplayPrice="GetDisplayPrice" />
+                                  GetDisplayPrice="GetDisplayPrice"
+                                  HasTaxRule="HasTaxRule" />
             </MudItem>
         </MudGrid>
     </MudMainContent>
@@ -165,6 +242,7 @@
                           Parties="Parties"
                           SalesId="SalesId"
                           InvoiceStatus="InvoiceStatus"
+                          Accounts="Accounts"
                           Disabled="Disabled" />
 
     <InvoicePaymentDialog @ref="_paymentDialog"
@@ -190,7 +268,7 @@
 @code {
     [Parameter] public int? CurrentRecord { get; set; } = 0;
     [Parameter] public string? Action { get; set; } = "INSERT";
-    [Parameter] public string InvoiceType { get; set; } = "SALE";
+    [Parameter] public string InvoiceType { get; set; }
     [Parameter] public EventCallback OnSaved { get; set; }
 
     public List<string> InvoiceTypeList { get; set; } = new();
@@ -215,11 +293,11 @@
     private List<CategoriesModel> _categories = new();
     private CategoriesModel _activeCategory;
     private List<ChartOfAccountsModel> PaymentMethod = new();
+    private List<ChartOfAccountsModel> Accounts = new();
     private List<TypeCodeModel> InvoiceStatus = new();
 
     // Items Data
     private List<ItemsModel> ItemsData { get; set; } = new();
-    private List<ItemsModel> FilteredItems { get; set; } = new();
     private List<ItemsModel> FavItemsData = new();
     private List<ItemsModel> RecentItemsData = new();
     public int MaxItems { get; set; } = 12;
@@ -235,16 +313,21 @@
     private double TotalTaxAmount => record?.InvoiceDetails?.Sum(i => i.TaxAmount) ?? 0;
 
     public MyModelDialog? _myTaxDialog;
-
-    // Tax cache for optimization
     private Dictionary<(int ItemId, int PartyId), List<ItemPartyTaxCalculationModel>> _taxCache = new();
-
-    // Selected line tax details (populated before showing dialog so details reconcile with line)
+    private HashSet<int> _itemsWithTaxRules = new();
+    private bool _isInvoiceSaved = false;
+    private bool _hasChanges = false;
+    private InvoicesModel _originalRecord = new();
+    private HashSet<int> _originalItemIds = new();
+    private bool IsInvoiceTypeAndDateLocked => CurrentRecord.GetValueOrDefault() > 0 || _isInvoiceSaved;
     private List<ItemPartyTaxCalculationModel> SelectedItemTaxes { get; set; } = new();
     private double SelectedItemTaxTotal { get; set; } = 0;
-
-    // Temporary negative id counter for client-side invoice details (so taxes can reference details before server assigns real ids)
     private static int _tempDetailIdCounter = -1;
+    private string PeriodValidationMessage { get; set; } = string.Empty;
+    
+    // Track if charges and discounts were manually overridden
+    private bool _chargesManuallyOverridden = false;
+    private bool _discountManuallyOverridden = false;
 
     // ========== Initialization Methods ==========
     protected override async Task OnInitializedAsync()
@@ -256,11 +339,22 @@
     protected override async Task OnParametersSetAsync()
     {
         InitializeInvoice();
+        
+        // Ensure data is loaded before trying to get invoice
+        if (ItemsData == null || !ItemsData.Any())
+        {
+            await LoadAllItemsData();
+        }
+        
         if (!string.Equals(Action, "INSERT", StringComparison.OrdinalIgnoreCase) && CurrentRecord.HasValue && CurrentRecord.Value != 0)
         {
             await Get(CurrentRecord);
         }
-        SelectedParty = Parties.FirstOrDefault(p => p.Id == record.Invoice.PartyId);
+        else if (SelectedParty == null && record?.Invoice?.PartyId > 0)
+        {
+            SelectedParty = Parties.FirstOrDefault(p => p.Id == record.Invoice.PartyId);
+        }
+        
         StateHasChanged();
     }
 
@@ -310,14 +404,66 @@
     private async Task LoadAllItemsData()
     {
         ItemsData = await Functions.GetAsync<List<ItemsModel>>("Items/Search", true) ?? new List<ItemsModel>();
-        FavItemsData = await Functions.GetAsync<List<ItemsModel>>($"Items/Search/1=1/TOP {MaxItems}", true) ?? new List<ItemsModel>();
-        RecentItemsData = await Functions.GetAsync<List<ItemsModel>>($"Items/SearchRecent/TOP {MaxItems}", true) ?? new List<ItemsModel>();
+        
+        // Initialize retail prices (will be recalculated when party is selected)
+        InitializeItemRetailPrices(ItemsData);
+        
+        // Filter favorites and recent items
+        FavItemsData = ItemsData
+            .Where(i => i.IsFavorite == 1)
+            .OrderByDescending(i => i.IsFavorite)
+            .ThenByDescending(i => i.Id)
+            .Take(MaxItems)
+            .ToList();
+        
+        RecentItemsData = ItemsData
+            .OrderByDescending(i => i.Recent_Sales_Volume)
+            .ThenByDescending(i => i.IsFavorite)
+            .ThenByDescending(i => i.Id)
+            .Take(MaxItems)
+            .ToList();
+        
+        // Recalculate prices if party is selected (non-blocking)
+        int partyId = SelectedParty?.Id ?? record?.Invoice?.PartyId ?? 0;
+        if (partyId > 0 && !string.Equals(InvoiceType, "purchase", StringComparison.OrdinalIgnoreCase))
+        {
+            _ = CalculateRetailPricesForItemsAsync();
+        }
+    }
+    
+    private void InitializeItemRetailPrices(List<ItemsModel> items)
+    {
+        bool isPurchase = string.Equals(InvoiceType, "purchase", StringComparison.OrdinalIgnoreCase);
+        foreach (var item in items)
+        {
+            item.RetailPrice = isPurchase ? item.CostPrice : item.BasePrice - item.DefaultDiscount;
+        }
+    }
+    
+    private async Task CalculateRetailPricesForItemsAsync()
+    {
+        try
+        {
+            int partyId = SelectedParty?.Id ?? record?.Invoice?.PartyId ?? 0;
+            if (partyId == 0 || ItemsData == null || !ItemsData.Any()) return;
+            
+            if (string.Equals(InvoiceType, "purchase", StringComparison.OrdinalIgnoreCase))
+            {
+                InitializeItemRetailPrices(ItemsData);
+                return;
+            }
+            
+            await RecalculateItemPricesInList(ItemsData, partyId);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch { /* ignore errors in background calculation */ }
     }
 
     private async Task LoadReferenceData()
     {
         string PaymentMethods = "InterfaceType = 'PAYMENT METHOD'";
         PaymentMethod = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/{PaymentMethods}", true) ?? new List<ChartOfAccountsModel>();
+        Accounts = await Functions.GetAsync<List<ChartOfAccountsModel>>("ChartOfAccounts/Search", true) ?? new List<ChartOfAccountsModel>();
         InvoiceStatus = await Functions.GetAsync<List<TypeCodeModel>>("TypeCode/Search/INVOICE STATUS", true) ?? new List<TypeCodeModel>();
         SalesId = await Functions.GetAsync<List<EmployeesModel>>("Employees/Search", true) ?? new List<EmployeesModel>();
     }
@@ -373,7 +519,133 @@
             try
             {
                 record = await Functions.GetAsync<InvoicesModel>($"Invoice/Get?Id={id.Value}", true) ?? new InvoicesModel();
+                
+                // Ensure all collections are initialized
+                EnsureInvoiceInitialized();
+                
+                // Load payments if not loaded
+                if (record.InvoicePayments == null || record.InvoicePayments.Count == 0)
+                {
+                    record.InvoicePayments = new ObservableCollection<InvoicePaymentModel>();
+                }
+                
+                // Load charges if not loaded
+                if (record.InvoiceCharges == null || record.InvoiceCharges.Count == 0)
+                {
+                    record.InvoiceCharges = new ObservableCollection<InvoiceChargesModel>();
+                }
+                
+                // Load taxes if not loaded
+                if (record.InvoiceTaxes == null || record.InvoiceTaxes.Count == 0)
+                {
+                    record.InvoiceTaxes = new ObservableCollection<InvoiceDetailTaxesModel>();
+                }
+                
+                // Ensure ItemsData is loaded before processing
+                if (ItemsData == null || !ItemsData.Any())
+                {
+                    await LoadAllItemsData();
+                }
+                
+                // Ensure ItemsData includes all items from invoice details (for item name display)
+                if (record.InvoiceDetails != null && record.InvoiceDetails.Count > 0)
+                {
+                    var missingItemIds = record.InvoiceDetails
+                        .Where(d => d.ItemId > 0 && (ItemsData == null || !ItemsData.Any(i => i.Id == d.ItemId)))
+                        .Select(d => d.ItemId)
+                        .Distinct()
+                        .ToList();
+                    
+                    if (missingItemIds.Any())
+                    {
+                        // Load missing items (use individual calls but in parallel for better performance)
+                        var loadTasks = missingItemIds.Select(async itemId =>
+                        {
+                            try
+                            {
+                                var item = await Functions.GetAsync<ItemsModel>($"Items/Get/{itemId}", true);
+                                if (item != null && (ItemsData == null || !ItemsData.Any(i => i.Id == item.Id)))
+                                {
+                                    if (ItemsData == null) ItemsData = new List<ItemsModel>();
+                                    ItemsData.Add(item);
+                                }
+                            }
+                            catch { /* ignore individual item load errors */ }
+                        });
+                        
+                        await Task.WhenAll(loadTasks);
+                    }
+                    
+                    // Populate ItemName from ItemsData if it's missing in invoice details
+                    if (ItemsData != null && ItemsData.Any())
+                    {
+                        foreach (var detail in record.InvoiceDetails)
+                        {
+                            if (string.IsNullOrWhiteSpace(detail.ItemName) && detail.ItemId > 0)
+                            {
+                                var item = ItemsData.FirstOrDefault(i => i.Id == detail.ItemId);
+                                if (item != null && !string.IsNullOrWhiteSpace(item.Name))
+                                {
+                                    detail.ItemName = item.Name;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Set selected party
+                if (record.Invoice.PartyId > 0)
+                {
+                    SelectedParty = Parties.FirstOrDefault(p => p.Id == record.Invoice.PartyId) ?? new PartiesModel();
+                    // Set AccountId from party if available
+                    if (SelectedParty != null && SelectedParty.Id > 0 && SelectedParty.AccountId > 0)
+                    {
+                        record.Invoice.AccountId = SelectedParty.AccountId;
+                    }
+                }
+                
+                // Clear tax cache and recalculate
+                ClearTaxCache();
                 await CalculateInvoiceTotalsAsync();
+                
+                // Recalculate retail prices for items in background (non-blocking) when editing
+                if (SelectedParty?.Id > 0 && !string.Equals(InvoiceType, "purchase", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Fire and forget - don't block the UI
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await RecalculateAllItemPricesForParty(SelectedParty.Id);
+                        }
+                        catch { /* ignore errors in background */ }
+                    });
+                }
+                
+                // Check if invoice can be edited based on date
+                CheckEditPermissions();
+                
+                // Validate period for the transaction date
+                await ValidatePeriodAsync();
+                
+                // Mark as saved if invoice exists
+                if (record.Invoice.Id > 0)
+                {
+                    _isInvoiceSaved = true;
+                    CurrentRecord = record.Invoice.Id; // Ensure CurrentRecord is set
+                    await SaveOriginalRecord();
+                    
+                    // Track original item IDs to identify new items in updates
+                    _originalItemIds = new HashSet<int>(
+                        record.InvoiceDetails.Select(d => d.ItemId).Where(id => id > 0)
+                    );
+                }
+                else
+                {
+                    _isInvoiceSaved = false;
+                    CurrentRecord = 0;
+                    _originalItemIds.Clear();
+                }
             }
             catch (Exception ex)
             {
@@ -383,6 +655,35 @@
             {
                 LoadingPanel = false;
                 await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+    
+    private void CheckEditPermissions()
+    {
+        if (record?.Invoice?.TranDate == null) return;
+        
+        var invoiceDate = record.Invoice.TranDate.Value.Date;
+        var today = DateTime.Now.Date;
+        var yesterday = today.AddDays(-1);
+        
+        // Today's invoices can be edited, yesterday's and older are view-only
+        if (invoiceDate < yesterday)
+        {
+            Disabled = true;
+            Action = "VIEW";
+        }
+        else if (invoiceDate == yesterday)
+        {
+            Disabled = true;
+            Action = "VIEW";
+        }
+        else
+        {
+            // Today's invoice - allow editing if not explicitly set to VIEW
+            if (!string.Equals(Action, "VIEW", StringComparison.OrdinalIgnoreCase))
+            {
+                Disabled = false;
             }
         }
     }
@@ -413,6 +714,16 @@
             {
                 SelectedItems = await Functions.GetAsync<List<ItemsModel>>($"Items/Search/Items.CategoryId={category.Id}", true) ?? new();
             }
+            
+            // Initialize retail prices
+            InitializeItemRetailPrices(SelectedItems);
+            
+            // Recalculate with tax if party is selected
+            int partyId = SelectedParty?.Id ?? record?.Invoice?.PartyId ?? 0;
+            if (partyId > 0 && !string.Equals(InvoiceType, "purchase", StringComparison.OrdinalIgnoreCase))
+            {
+                _ = RecalculateRetailPricesForSelectedItemsAsync(partyId);
+            }
 
             StateHasChanged();
         }
@@ -420,6 +731,17 @@
         {
             ShowError($"Error loading items: {ex.Message}");
         }
+    }
+    
+    private async Task RecalculateRetailPricesForSelectedItemsAsync(int partyId)
+    {
+        try
+        {
+            if (SelectedItems == null || !SelectedItems.Any()) return;
+            await RecalculateItemPricesInList(SelectedItems, partyId);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch { /* ignore errors */ }
     }
 
     // ========== Item Management Methods ==========
@@ -525,7 +847,11 @@
         return _taxCache[key];
     }
 
-    private void ClearTaxCache() => _taxCache.Clear();
+    private void ClearTaxCache()
+    {
+        _taxCache.Clear();
+        _itemsWithTaxRules.Clear();
+    }
 
     private async Task<double> CalculateItemTax(ItemsModel item, double quantity)
     {
@@ -545,7 +871,7 @@
         return taxAmount;
     }
 
-    private async Task<double> CalculateItemTotal(ItemsModel item, double quantity, double discountAmount, double taxAmount)
+    private double CalculateItemTotal(ItemsModel item, double quantity, double discountAmount, double taxAmount)
     {
         return (item.BasePrice * quantity) - discountAmount + taxAmount;
     }
@@ -555,18 +881,26 @@
     {
         EnsureInvoiceInitialized();
         if (selectedItem == null || selectedItem.BasePrice == 0) return;
+        
+        // Prevent adding items when no party is selected
+        if (SelectedParty == null || SelectedParty.Id == 0)
+        {
+            Snackbar.Add("Please select a party before adding items", Severity.Warning);
+            return;
+        }
 
         try
         {
             double taxAmount = await CalculateItemTax(selectedItem, selectedItem.Qty);
             double discountAmount = CalculateItemDiscount(selectedItem);
-            double itemTotalAmount = await CalculateItemTotal(selectedItem, selectedItem.Qty, discountAmount, taxAmount);
+            double itemTotalAmount = CalculateItemTotal(selectedItem, selectedItem.Qty, discountAmount, taxAmount);
 
             var row = CreateInvoiceItem(selectedItem, taxAmount, discountAmount, itemTotalAmount);
             record.InvoiceDetails.Add(row);
 
             await _itemDetailsDialog.Close();
             await CalculateInvoiceTotalsAsync();
+            CheckForChanges();
             StateHasChanged();
         }
         catch (Exception ex)
@@ -607,6 +941,7 @@
             args.Item.Qty = args.NewQty;
             await UpdateInvoiceItem(args.Item);
             await CalculateInvoiceTotalsAsync();
+            CheckForChanges();
             StateHasChanged();
         }
         catch (Exception ex)
@@ -642,7 +977,7 @@
                 : item.DefaultDiscount * invoiceItem.Qty;
 
             invoiceItem.TaxAmount = await CalculateItemTax(item, invoiceItem.Qty);
-            invoiceItem.ItemTotalAmount = await CalculateItemTotal(item, invoiceItem.Qty, invoiceItem.DiscountAmount, invoiceItem.TaxAmount);
+            invoiceItem.ItemTotalAmount = CalculateItemTotal(item, invoiceItem.Qty, invoiceItem.DiscountAmount, invoiceItem.TaxAmount);
             await CalculateInvoiceTotalsAsync();
         }
     }
@@ -671,9 +1006,10 @@
         var selectedSize = item.ServingSizes?.FirstOrDefault(s => s.Size == item.ServingSize);
         if (selectedSize != null)
         {
-            item.BasePrice = Convert.ToDouble(selectedSize.Price);
+            if (double.TryParse(selectedSize.Price.ToString(), out var price))
+                item.BasePrice = price;
         }
-        CalculateInvoiceTotalsAsync();
+        _ = CalculateInvoiceTotalsAsync(); // Fire and forget
     }
 
     private async Task OnQtyChangedAsync(double val)
@@ -699,41 +1035,206 @@
         EnsureInvoiceInitialized();
         record.InvoiceDetails.Remove(item);
         await CalculateInvoiceTotalsAsync();
+        CheckForChanges();
     }
 
     // ========== Discount Methods ==========
+    private async Task ResetChargesToAuto()
+    {
+        _chargesManuallyOverridden = false;
+        await CalculateInvoiceTotalsAsync();
+        CheckForChanges();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ResetDiscountToAuto()
+    {
+        _discountManuallyOverridden = false;
+        await CalculateInvoiceTotalsAsync();
+        CheckForChanges();
+        await InvokeAsync(StateHasChanged);
+    }
+
     private async Task OnChargesDiscountChangedAsync(InvoicesModel updatedInvoice)
     {
+        // Service charges and discounts are NOT applicable for purchase invoices
+        bool isPurchase = InvoiceType.Equals("PURCHASE", StringComparison.OrdinalIgnoreCase);
+        if (isPurchase)
+        {
+            // Reset charges and discounts to 0 for purchase invoices
+            record.Invoice.ChargesAmount = 0;
+            record.Invoice.DiscountAmount = 0;
+            _chargesManuallyOverridden = false;
+            _discountManuallyOverridden = false;
+        }
+        else
+        {
+            // For sale invoices, allow charges and discounts
+            // Mark as manually overridden when user changes them
+            _chargesManuallyOverridden = true;
+            _discountManuallyOverridden = true;
+            
+            record.Invoice.ChargesAmount = updatedInvoice.Invoice.ChargesAmount;
+            record.Invoice.DiscountAmount = updatedInvoice.Invoice.DiscountAmount;
+        }
+
         foreach (var item in record.InvoiceDetails)
         {
             item.ItemTotalAmount = (item.UnitPrice * item.Qty) - item.DiscountAmount + item.TaxAmount;
         }
 
-        record.Invoice.ChargesAmount = updatedInvoice.Invoice.ChargesAmount;
-        record.Invoice.DiscountAmount = updatedInvoice.Invoice.DiscountAmount;
-
         await CalculateInvoiceTotalsAsync(true);
+        CheckForChanges();
         await InvokeAsync(StateHasChanged);
     }
 
     // ========== Party Methods ==========
-    private async Task OnPartyChanged(PartiesModel selectedParty)
+    private async Task OnPartyChanged(PartiesModel? selectedParty)
     {
         SelectedParty = selectedParty;
-        if (SelectedParty == null) return;
+        if (SelectedParty == null)
+        {
+            // If party is cleared, reset prices to base
+            await ResetAllItemPricesToBase();
+            record.Invoice.PartyId = 0;
+            record.Invoice.PartyName = string.Empty;
+            record.Invoice.PartyAddress = string.Empty;
+            record.Invoice.AccountId = 0; // Clear AccountId when party is cleared
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
 
         EnsureInvoiceInitialized();
         record.Invoice.PartyId = SelectedParty.Id;
         ClearTaxCache();
-
+        
+        // Update party info
         var party = Parties.FirstOrDefault(p => p.Id == SelectedParty.Id);
         if (party != null)
         {
             record.Invoice.PartyName = party.Name;
             record.Invoice.PartyAddress = party.Address;
+            record.Invoice.AccountId = party.AccountId; // Set AccountId from party
         }
 
+        // Recalculate retail prices for all items (ItemsData, FavItemsData, RecentItemsData, SelectedItems)
+        await RecalculateAllItemPricesForParty(SelectedParty.Id);
+
+        // Recalculate taxes for existing invoice items
         await RecalculateAllItemTaxes();
+        
+        await InvokeAsync(StateHasChanged);
+    }
+    
+    private async Task RecalculateAllItemPricesForParty(int partyId)
+    {
+        if (string.Equals(InvoiceType, "purchase", StringComparison.OrdinalIgnoreCase))
+        {
+            // For purchase, prices don't change with party
+            return;
+        }
+        
+        // Recalculate prices for ItemsData (process in background to avoid blocking)
+        // Recalculate prices for all item lists (fire and forget for background lists)
+        var backgroundLists = new[] { ItemsData, FavItemsData, RecentItemsData };
+        foreach (var itemList in backgroundLists)
+        {
+            if (itemList != null && itemList.Any())
+            {
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await RecalculateItemPricesInList(itemList, partyId);
+                    }
+                    catch { /* ignore errors */ }
+                });
+            }
+        }
+        
+        // Recalculate prices for SelectedItems (this one we wait for as it's more immediate)
+        if (SelectedItems != null && SelectedItems.Any())
+        {
+            await RecalculateItemPricesInList(SelectedItems, partyId);
+        }
+    }
+    
+    private async Task RecalculateItemPricesInList(List<ItemsModel> items, int partyId)
+    {
+        if (items == null || !items.Any() || partyId == 0) return;
+        
+        // Process in batches to avoid blocking
+        const int batchSize = 20; // Increased batch size for better performance
+        bool needsUpdate = false;
+        
+        for (int i = 0; i < items.Count; i += batchSize)
+        {
+            var batch = items.Skip(i).Take(batchSize).ToList();
+            
+            foreach (var item in batch)
+            {
+                try
+                {
+                    double basePrice = item.BasePrice;
+                    double discountPerUnit = item.DefaultDiscount;
+                    double taxPerUnit = 0;
+                    
+                    // Get taxes for this item and party
+                    var itemTaxes = await GetItemTaxes(item.Id, partyId);
+                    if (itemTaxes != null && itemTaxes.Any())
+                    {
+                        taxPerUnit = itemTaxes.Sum(t => t.TaxAmount);
+                        // Track items with tax rules
+                        _itemsWithTaxRules.Add(item.Id);
+                    }
+                    else
+                    {
+                        // Remove from tax rules set if no taxes
+                        _itemsWithTaxRules.Remove(item.Id);
+                    }
+                    
+                    // Calculate retail price: base + tax - discount
+                    double newRetailPrice = basePrice + taxPerUnit - discountPerUnit;
+                    if (Math.Abs(item.RetailPrice - newRetailPrice) > 0.01) // Only update if changed
+                    {
+                        item.RetailPrice = newRetailPrice;
+                        needsUpdate = true;
+                    }
+                }
+                catch
+                {
+                    // If tax calculation fails, use base price - discount
+                    double fallbackPrice = item.BasePrice - item.DefaultDiscount;
+                    if (Math.Abs(item.RetailPrice - fallbackPrice) > 0.01)
+                    {
+                        item.RetailPrice = fallbackPrice;
+                        needsUpdate = true;
+                    }
+                    // Remove from tax rules set on error
+                    _itemsWithTaxRules.Remove(item.Id);
+                }
+            }
+            
+            // Yield control periodically to prevent blocking
+            if (i + batchSize < items.Count)
+            {
+                await Task.Yield(); // Better than Delay for responsiveness
+            }
+        }
+        
+        // Trigger UI update only if prices changed
+        if (needsUpdate)
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+    
+    private async Task ResetAllItemPricesToBase()
+    {
+        InitializeItemRetailPrices(ItemsData);
+        InitializeItemRetailPrices(FavItemsData);
+        InitializeItemRetailPrices(RecentItemsData);
+        InitializeItemRetailPrices(SelectedItems);
         await InvokeAsync(StateHasChanged);
     }
 
@@ -769,7 +1270,9 @@
 
         record.InvoicePayments.Add(toAdd);
         InvoicePayments = new InvoicePaymentModel();
-        await CalculateInvoiceTotalsAsync(true);
+        // Payments don't affect charges/discounts, so recalculate from rules (use false)
+        await CalculateInvoiceTotalsAsync();
+        CheckForChanges();
         await InvokeAsync(StateHasChanged);
     }
 
@@ -780,7 +1283,9 @@
 
         EnsureInvoiceInitialized();
         record.InvoicePayments.Remove(payment);
-        await CalculateInvoiceTotalsAsync(true);
+        // Payments don't affect charges/discounts, so recalculate from rules (use false)
+        await CalculateInvoiceTotalsAsync();
+        CheckForChanges();
         await InvokeAsync(StateHasChanged);
     }
 
@@ -798,15 +1303,205 @@
         EnsureInvoiceInitialized();
         Disabled = false;
         ClearTaxCache();
+        _isInvoiceSaved = false;
+        _hasChanges = false;
+        _originalRecord = new InvoicesModel();
+        _originalItemIds.Clear();
+        _chargesManuallyOverridden = false;
+        _discountManuallyOverridden = false;
+        
+        // Select first party by default and update prices
+        if (Parties != null && Parties.Any())
+        {
+            SelectedParty = Parties.First();
+            record.Invoice.PartyId = SelectedParty.Id;
+            
+            // Update party info
+            record.Invoice.PartyName = SelectedParty.Name;
+            record.Invoice.PartyAddress = SelectedParty.Address;
+            
+            // Recalculate retail prices for all items with the selected party
+            await RecalculateAllItemPricesForParty(SelectedParty.Id);
+        }
+        else
+        {
+            // If no parties, reset prices to base
+            await ResetAllItemPricesToBase();
+        }
+        
         await CalculateInvoiceTotalsAsync();
+        await InvokeAsync(StateHasChanged);
+        
         var url = $"/InvoicePage/{InvoiceType}/INSERT/0";
         NavManager.NavigateTo(url);
     }
 
     private async Task Print()
     {
-        var url = $"/InvoiceReport/1/{CurrentRecord.GetValueOrDefault()}";
-        await JS.InvokeVoidAsync("open", url, "_blank");
+        try
+        {
+            var invoiceId = CurrentRecord.GetValueOrDefault();
+            
+            if (invoiceId == 0)
+            {
+                Snackbar.Add("Please save the invoice before printing", Severity.Warning);
+                return;
+            }
+            
+            if (!string.IsNullOrEmpty(Globals.Token))
+            {
+                await JS.InvokeVoidAsync("sessionStorage.setItem", "authToken", Globals.Token);
+            }
+            
+            var baseUri = NavManager.BaseUri.TrimEnd('/');
+            // Pass withTax=true as query parameter to show tax details
+            var reportUrl = $"{baseUri}/InvoiceReport/{invoiceId}?withTax=false";
+            
+            await JS.InvokeVoidAsync("open", reportUrl, "_blank");
+        }
+        catch (Exception ex)
+        {
+            ShowError($"Error printing invoice: {ex.Message}");
+        }
+    }
+
+    // ========== GL Preview Method ==========
+    private async Task ShowGLPreview()
+    {
+        try
+        {
+            EnsureInvoiceInitialized();
+            
+            if (record?.Invoice?.PartyId == 0)
+            {
+                SnackbarService.Add("Please select a party first", Severity.Warning);
+                return;
+            }
+
+            if (record?.InvoiceDetails == null || !record.InvoiceDetails.Any())
+            {
+                SnackbarService.Add("Please add items to the invoice first", Severity.Warning);
+                return;
+            }
+
+            // Recalculate totals before preview
+            await CalculateInvoiceTotalsAsync();
+
+            // Validate invoice has required data
+            if (record.Invoice.OrganizationId == 0)
+            {
+                SnackbarService.Add("Organization is required", Severity.Warning);
+                return;
+            }
+
+            LoadingPanel = true;
+            try
+            {
+                var result = await Functions.PostAsync<GeneralLedgerHeaderModel>("GeneralLedger/PreviewGLFromInvoice", record, true);
+                LoadingPanel = false;
+
+                if (result.Success && result.Result != null)
+                {
+                    var parameters = new DialogParameters<InvoiceGLPreviewDialog>
+                    {
+                        { x => x.PreviewData, result.Result },
+                        { x => x.InvoiceId, CurrentRecord.GetValueOrDefault() },
+                        { x => x.IsPostedToGL, record.Invoice.IsPostedToGL == 1 },
+                        { x => x.OnPostToGL, EventCallback.Factory.Create(this, async () => 
+                        {
+                            await PostToGL();
+                            // Refresh preview after posting
+                            await ShowGLPreview();
+                        }) }
+                    };
+
+                    var options = new DialogOptions()
+                    {
+                        MaxWidth = MaxWidth.Large,
+                        FullWidth = true,
+                        CloseButton = true,
+                        CloseOnEscapeKey = true,
+                        BackdropClick = false
+                    };
+
+                    await dialogService.ShowAsync<InvoiceGLPreviewDialog>("Accounting Entry Preview", parameters, options);
+                }
+                else
+                {
+                    // Extract error message - avoid duplication if it already contains "Unable to generate preview"
+                    string errorMsg = !string.IsNullOrWhiteSpace(result.Message) 
+                        ? result.Message 
+                        : "Unable to generate preview. Please ensure all required accounts (AR/AP, Revenue/Expense, Tax, Service Charges, Discount) are configured in Chart of Accounts.";
+                    
+                    // Remove duplication if message already starts with "Unable to generate preview"
+                    if (errorMsg.StartsWith("Unable to generate preview", StringComparison.OrdinalIgnoreCase))
+                    {
+                        SnackbarService.Add(errorMsg, Severity.Error);
+                    }
+                    else
+                    {
+                        SnackbarService.Add($"Unable to generate preview: {errorMsg}", Severity.Error);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LoadingPanel = false;
+                SnackbarService.Add($"Error generating preview: {ex.Message}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            LoadingPanel = false;
+            ShowError($"Error generating preview: {ex.Message}");
+        }
+    }
+
+    private async Task PostToGL()
+    {
+        try
+        {
+            var invoiceId = CurrentRecord.GetValueOrDefault();
+            
+            if (invoiceId == 0)
+            {
+                Snackbar.Add("Please save the invoice before posting to GL", Severity.Warning);
+                return;
+            }
+
+            if (record.Invoice.IsPostedToGL == 1)
+            {
+                Snackbar.Add("This invoice is already posted to General Ledger", Severity.Info);
+                return;
+            }
+
+            var res = await Functions.ShowConfirmation(dialogService, "Do you want to post this invoice to General Ledger? Once posted, it cannot be edited or deleted.");
+            if (res == false)
+                return;
+
+            LoadingPanel = true;
+            var result = await Functions.PostAsync<GeneralLedgerHeaderModel>(
+                $"GeneralLedger/CreateGLFromInvoice/{invoiceId}?userId={Globals.User.Id}&clientInfo={Uri.EscapeDataString(Globals.ClientInfo)}", 
+                null, 
+                true);
+            LoadingPanel = false;
+
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+            }
+            else
+            {
+                SnackbarService.Add("Invoice posted to General Ledger successfully", Severity.Success);
+                // Reload invoice to get updated IsPostedToGL status
+                await Get(invoiceId);
+            }
+        }
+        catch (Exception ex)
+        {
+            LoadingPanel = false;
+            ShowError($"Error posting to GL: {ex.Message}");
+        }
     }
 
     private async Task OpenOptionsDrawer() => await _optionsDrawer.Open();
@@ -849,6 +1544,8 @@
                 Snackbar.Add($"Tax calculation differs from line total by {diff:N2}. Showing breakdown.", Severity.Warning);
             }
 
+            // Trigger state change to ensure ItemTaxPreview receives updated parameters
+            await InvokeAsync(StateHasChanged);
             _myTaxDialog?.Show();
         }
         catch (Exception ex)
@@ -870,32 +1567,188 @@
             EnsureInvoiceInitialized();
             var actionType = CurrentRecord.GetValueOrDefault() != 0 ? "UPDATE" : "INSERT";
 
+            // Recalculate invoice totals (including charges and discounts) before save
+            await CalculateInvoiceTotalsAsync();
+            
             PrepareInvoiceForSave(actionType);
             await PopulateInvoiceTaxesBeforeSaveAsync();
 
             LoadingPanel = true;
             var result = await Functions.PostAsync<InvoiceModel>($"Invoice/{actionType}", record, true);
-            LoadingPanel = false;
-
+            LoadingPanel = false; // Hide loading panel immediately after API call
+            
             if (result.Success == false || result.Result == null)
             {
-                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+                // Check if error is related to stock availability for sale invoices
+                if (record.Invoice.InvoiceType?.ToUpper() == "SALE" && 
+                    record.Invoice.LocationId > 0 && 
+                    !record.Invoice.SkipStockValidation &&
+                    (result.Message?.Contains("Insufficient stock", StringComparison.OrdinalIgnoreCase) == true ||
+                     result.Message?.Contains("stock", StringComparison.OrdinalIgnoreCase) == true))
+                {
+                    // Ensure loading panel is hidden and UI is updated before showing confirmation
+                    LoadingPanel = false;
+                    await InvokeAsync(StateHasChanged);
+                    // Give UI time to remove loading overlay before showing dialog
+                    await Task.Delay(150);
+                    
+                    // Stock is insufficient, ask for confirmation
+                    var confirmed = await Functions.ShowConfirmation(dialogService, 
+                        $"Stock Warning:\n\n{result.Message}\n\nDo you want to proceed and save the invoice anyway?");
+                    
+                    if (confirmed)
+                    {
+                        // User confirmed, set flag to skip stock validation and retry save
+                        record.Invoice.SkipStockValidation = true;
+                        
+                        // Show loading panel immediately after confirmation
+                        LoadingPanel = true;
+                        await InvokeAsync(StateHasChanged);
+                        await Task.Delay(50); // Small delay to ensure loading panel is visible
+                        
+                        result = await Functions.PostAsync<InvoiceModel>($"Invoice/{actionType}", record, true);
+                        LoadingPanel = false;
+                        
+                        // Reset the flag after retry
+                        record.Invoice.SkipStockValidation = false;
+                        
+                        if (result.Success == false || result.Result == null)
+                        {
+                            SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+                        }
+                        else
+                        {
+                            var res = result.Result;
+                            SnackbarService.Add($"Record {actionType} Successfully", Severity.Success);
+                            
+                            // Mark as saved and reset change tracking
+                            _isInvoiceSaved = true;
+                            _hasChanges = false;
+                            await SaveOriginalRecord();
+                            
+                            await Get(res.Id);
+                            CurrentRecord = res.Id;
+                            Action = "UPDATE";
+                            
+                            // Notify parent component after successful save
+                            await OnSaved.InvokeAsync();
+                        }
+                    }
+                    else
+                    {
+                        // User cancelled, don't save
+                        return;
+                    }
+                }
+                else
+                {
+                    LoadingPanel = false;
+                    SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+                }
             }
             else
             {
+                LoadingPanel = false;
                 var res = result.Result;
-                await OnSaved.InvokeAsync();
-                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                SnackbarService.Add($"Record {actionType} Successfully", Severity.Success);
+                
+                // Mark as saved and reset change tracking
+                _isInvoiceSaved = true;
+                _hasChanges = false;
+                await SaveOriginalRecord();
+                
                 await Get(res.Id);
                 CurrentRecord = res.Id;
-                await Print();
+                Action = "UPDATE";
+                
+                // Notify parent component after successful save
+                await OnSaved.InvokeAsync();
             }
         }
         catch (Exception ex)
         {
             LoadingPanel = false;
+            record.Invoice.SkipStockValidation = false; // Reset flag on error
             ShowError($"Error saving Invoice: {ex.Message}");
         }
+    }
+    
+    private async Task SaveOriginalRecord()
+    {
+        // Deep copy the current record state for change tracking
+        _originalRecord = new InvoicesModel
+        {
+            Invoice = new InvoiceModel
+            {
+                Id = record.Invoice.Id,
+                TotalInvoiceAmount = record.Invoice.TotalInvoiceAmount,
+                TotalPayments = record.Invoice.TotalPayments,
+                BalanceAmount = record.Invoice.BalanceAmount,
+                ChargesAmount = record.Invoice.ChargesAmount,
+                DiscountAmount = record.Invoice.DiscountAmount,
+                TaxAmount = record.Invoice.TaxAmount,
+                InvoiceAmount = record.Invoice.InvoiceAmount
+            },
+            InvoiceDetails = new ObservableCollection<InvoiceItemReportModel>(
+                record.InvoiceDetails.Select(d => new InvoiceItemReportModel
+                {
+                    ItemId = d.ItemId,
+                    Qty = d.Qty,
+                    UnitPrice = d.UnitPrice,
+                    TaxAmount = d.TaxAmount,
+                    DiscountAmount = d.DiscountAmount,
+                    ItemTotalAmount = d.ItemTotalAmount
+                })
+            ),
+            InvoicePayments = new ObservableCollection<InvoicePaymentModel>(
+                record.InvoicePayments.Select(p => new InvoicePaymentModel
+                {
+                    Id = p.Id,
+                    Amount = p.Amount,
+                    PaymentMethod = p.PaymentMethod
+                })
+            )
+        };
+    }
+    
+    private void CheckForChanges()
+    {
+        if (!_isInvoiceSaved) return;
+        
+        bool hasChanges = false;
+        
+        // Check invoice totals
+        if (_originalRecord.Invoice != null && record.Invoice != null)
+        {
+            hasChanges = Math.Abs((decimal)(_originalRecord.Invoice.TotalInvoiceAmount - record.Invoice.TotalInvoiceAmount)) > 0.01m ||
+                        Math.Abs((decimal)(_originalRecord.Invoice.TotalPayments - record.Invoice.TotalPayments)) > 0.01m ||
+                        _originalRecord.InvoiceDetails.Count != record.InvoiceDetails.Count ||
+                        _originalRecord.InvoicePayments.Count != record.InvoicePayments.Count;
+        }
+        
+        // Check details
+        if (!hasChanges && _originalRecord.InvoiceDetails != null && record.InvoiceDetails != null)
+        {
+            if (_originalRecord.InvoiceDetails.Count == record.InvoiceDetails.Count)
+            {
+                for (int i = 0; i < record.InvoiceDetails.Count; i++)
+                {
+                    var orig = _originalRecord.InvoiceDetails[i];
+                    var curr = record.InvoiceDetails[i];
+                    if (orig.ItemId != curr.ItemId ||
+                        Math.Abs(orig.Qty - curr.Qty) > 0.01 ||
+                        Math.Abs(orig.UnitPrice - curr.UnitPrice) > 0.01 ||
+                        Math.Abs(orig.TaxAmount - curr.TaxAmount) > 0.01 ||
+                        Math.Abs(orig.DiscountAmount - curr.DiscountAmount) > 0.01)
+                    {
+                        hasChanges = true;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        _hasChanges = hasChanges;
     }
 
     private void PrepareInvoiceForSave(string actionType)
@@ -1014,9 +1867,25 @@
 
     private double GetDisplayPrice(ItemsModel item)
     {
-        return string.Equals(InvoiceType, "purchase", StringComparison.OrdinalIgnoreCase)
-            ? item.CostPrice
-            : item.BasePrice;
+        if (item == null) return 0;
+        // Return RetailPrice if set, otherwise fallback to base/cost price
+        return item.RetailPrice != 0 
+            ? item.RetailPrice 
+            : (string.Equals(InvoiceType, "purchase", StringComparison.OrdinalIgnoreCase) ? item.CostPrice : item.BasePrice);
+    }
+    
+    private bool HasTaxRule(ItemsModel item)
+    {
+        if (item == null) return false;
+        
+        // Purchase invoices don't have tax rules
+        if (string.Equals(InvoiceType, "purchase", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+        
+        // Check if item has tax rules by checking the tracked set
+        return _itemsWithTaxRules.Contains(item.Id);
     }
 
     private Task<IEnumerable<PartiesModel>> SearchParties(string searchText, CancellationToken cancellationToken)
@@ -1032,7 +1901,57 @@
 
     private void ShowError(string message)
     {
-        Snackbar.Add(message, Severity.Error);
+        SnackbarService.Add(message, Severity.Error);
+    }
+
+    private async Task OnTranDateChanged()
+    {
+        await ValidatePeriodAsync();
+    }
+
+    private async Task ValidatePeriodAsync()
+    {
+        PeriodValidationMessage = string.Empty;
+        
+        if (record?.Invoice?.TranDate == null || record.Invoice.OrganizationId == 0)
+        {
+            PeriodValidationMessage = string.Empty;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        try
+        {
+            // Use SALE or PURCHASE module type based on invoice type
+            string moduleType = record.Invoice.InvoiceType?.ToUpper() == "PURCHASE" ? "PURCHASE" : "SALE";
+            string dateStr = record.Invoice.TranDate.Value.ToString("yyyy-MM-dd");
+            
+            // Use GetAsync and check if we got a valid result
+            var result = await Functions.GetAsync<PeriodCloseModel>(
+                $"PeriodClose/GetOpenPeriod/{record.Invoice.OrganizationId}/{dateStr}/{moduleType}", 
+                true);
+
+            // Period is OPEN if we get a valid result with Id > 0 and Status is OPEN or OPEN_PENDING
+            // Period is CLOSED if result is null, Id is 0, or Status is CLOSE
+            if (result != null && result.Id > 0 && 
+                (result.Status?.ToUpper() == "OPEN" || result.Status?.ToUpper() == "OPEN_PENDING"))
+            {
+                // Period is open - clear any warning
+                PeriodValidationMessage = string.Empty;
+            }
+            else
+            {
+                // Period is closed - show warning
+                PeriodValidationMessage = $"⚠️ Period is CLOSED for {moduleType} module on {dateStr}. You cannot save transactions for this date. Please ensure the period is open before saving.";
+            }
+        }
+        catch (Exception ex)
+        {
+            PeriodValidationMessage = $"Error checking period status: {ex.Message}";
+            SnackbarService.Add(PeriodValidationMessage, Severity.Error);
+        }
+        
+        await InvokeAsync(StateHasChanged);
     }
 
 
@@ -1110,19 +2029,69 @@
             record.Invoice.InvoiceAmount = (decimal)record.InvoiceDetails.Sum(i => i.ItemTotalAmount);
 
             // -------- Charges & Discounts --------
-            (List<InvoiceChargesModel> chargesList, decimal serviceAmount, decimal discountAmount) = (new List<InvoiceChargesModel>(), 0, 0);
-
-            if (!isManuallyChanged)
+            // Service charges and discounts are NOT applicable for purchase invoices
+            bool isPurchase = InvoiceType.Equals("PURCHASE", StringComparison.OrdinalIgnoreCase);
+            
+            if (isPurchase)
             {
-                // Calculate from table
-                (chargesList, serviceAmount, discountAmount) = await CalculateCharges(record.Invoice.InvoiceAmount);
-
-                record.Invoice.ChargesAmount = serviceAmount;
-                record.Invoice.DiscountAmount = discountAmount;
+                // For purchase invoices: no charges or discounts
+                record.Invoice.ChargesAmount = 0;
+                record.Invoice.DiscountAmount = 0;
+                record.InvoiceCharges = new ObservableCollection<InvoiceChargesModel>();
             }
-            // else: keep manual changes already in record.Invoice.ChargesAmount / DiscountAmount
+            else
+            {
+                // For sale invoices: calculate charges and discounts
+                // Check if charges/discounts were manually overridden
+                bool shouldRecalculateCharges = !isManuallyChanged && !_chargesManuallyOverridden;
+                bool shouldRecalculateDiscount = !isManuallyChanged && !_discountManuallyOverridden;
+                
+                if (shouldRecalculateCharges && shouldRecalculateDiscount)
+                {
+                    // Both are auto-calculated: calculate from rules table and update both amounts and charges collection
+                    (List<InvoiceChargesModel> chargesList, decimal serviceAmount, decimal discountAmount) = await CalculateCharges(record.Invoice.InvoiceAmount);
 
-            record.InvoiceCharges = new ObservableCollection<InvoiceChargesModel>(chargesList);
+                    record.Invoice.ChargesAmount = serviceAmount;
+                    record.Invoice.DiscountAmount = discountAmount;
+                    record.InvoiceCharges = new ObservableCollection<InvoiceChargesModel>(chargesList);
+                    
+                    // Reset manual override flags since we're auto-calculating
+                    _chargesManuallyOverridden = false;
+                    _discountManuallyOverridden = false;
+                }
+                else
+                {
+                    // At least one is manually overridden: preserve manual values
+                    // If InvoiceCharges is null or empty, we need to calculate from rules to get the structure
+                    // but we'll adjust the AppliedAmount to match the manual amounts
+                    if (record.InvoiceCharges == null || record.InvoiceCharges.Count == 0)
+                    {
+                        // No existing charges structure, calculate from rules to get the structure
+                        (List<InvoiceChargesModel> chargesList, decimal calculatedService, decimal calculatedDiscount) = await CalculateCharges(record.Invoice.InvoiceAmount);
+                        
+                        // Adjust AppliedAmount in each charge to proportionally match manual amounts
+                        if (chargesList.Any())
+                        {
+                            foreach (var charge in chargesList)
+                            {
+                                if (charge.ChargeCategory?.ToUpper() == "SERVICE" && calculatedService > 0 && _chargesManuallyOverridden)
+                                {
+                                    // Proportionally adjust service charge to match manual amount
+                                    charge.AppliedAmount = (double)((decimal)charge.AppliedAmount * record.Invoice.ChargesAmount / calculatedService);
+                                }
+                                else if (charge.ChargeCategory?.ToUpper() == "DISCOUNT" && calculatedDiscount > 0 && _discountManuallyOverridden)
+                                {
+                                    // Proportionally adjust discount to match manual amount
+                                    charge.AppliedAmount = (double)((decimal)charge.AppliedAmount * record.Invoice.DiscountAmount / calculatedDiscount);
+                                }
+                            }
+                        }
+                        
+                        record.InvoiceCharges = new ObservableCollection<InvoiceChargesModel>(chargesList);
+                    }
+                    // else: keep existing InvoiceCharges collection (user manually changed amounts, preserve charge structure)
+                }
+            }
 
             // Total invoice amount = item totals + charges - discount
             record.Invoice.TotalInvoiceAmount = record.Invoice.InvoiceAmount
@@ -1152,34 +2121,113 @@
 }
 
 <style>
-    .toolbar-row {
+    .invoice-header-gradient {
+        padding: 12px 16px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 16px;
+    }
+
+    .invoice-header-gradient .mud-typography {
+        color: white !important;
+    }
+
+    .invoice-header-btn {
+        background: rgba(255, 255, 255, 0.2) !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        color: white !important;
+        white-space: nowrap;
+        min-width: auto;
+        padding: 6px 12px !important;
+    }
+
+    .invoice-header-btn:hover {
+        background: rgba(255, 255, 255, 0.3) !important;
+    }
+
+    .invoice-header-btn:disabled {
+        background: rgba(255, 255, 255, 0.1) !important;
+        opacity: 0.5;
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .invoice-header-gradient {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+
+    .mud-theme-dark .invoice-header-btn {
+        background: rgba(0, 0, 0, 0.2) !important;
+        border: 1px solid rgba(0, 0, 0, 0.3) !important;
+        color: white !important;
+    }
+
+    /* Invoice Details Row - Flexbox layout to prevent wrapping */
+    .invoice-details-row {
         display: flex;
-        align-items: center;
         gap: 8px;
-        height: 60px;
+        align-items: flex-start;
+        flex-wrap: nowrap;
         width: 100%;
+    }
+
+    .invoice-field {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .invoice-field-type {
+        flex: 0 0 180px;
+        max-width: 180px;
+    }
+
+    .invoice-field-party {
+        flex: 1 1 300px;
+        min-width: 200px;
+    }
+
+    .invoice-field-date {
+        flex: 0 0 160px;
+        max-width: 160px;
+    }
+
+    .invoice-field-number {
+        flex: 0 0 140px;
+        max-width: 140px;
+    }
+
+    /* Responsive: stack on small screens */
+    @@media (max-width: 960px) {
+        .invoice-details-row {
+            flex-wrap: wrap;
+        }
+
+        .invoice-field-type,
+        .invoice-field-party,
+        .invoice-field-date,
+        .invoice-field-number {
+            flex: 1 1 calc(50% - 4px);
+            max-width: none;
+        }
+    }
+
+    @@media (max-width: 600px) {
+        .invoice-field-type,
+        .invoice-field-party,
+        .invoice-field-date,
+        .invoice-field-number {
+            flex: 1 1 100%;
+        }
+    }
+
+    /* Ensure grid items don't overflow */
+    .mud-grid-item {
+        max-width: 100%;
         overflow: hidden;
     }
 
-    .toolbar-control {
-        height: 40px;
-        min-width: 150px;
-    }
-
-    .barcode-width {
-        min-width: 220px;
-    }
-
-    .toolbar-button {
-        height: 40px;
-        min-width: 110px;
-    }
-
-    .seq-box {
-        height: 40px;
-        min-width: 120px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    /* Prevent horizontal scrolling */
+    .mud-main-content {
+        overflow-x: hidden !important;
     }
 </style>

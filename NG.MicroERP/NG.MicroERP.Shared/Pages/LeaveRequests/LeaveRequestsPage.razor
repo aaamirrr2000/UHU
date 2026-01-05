@@ -115,12 +115,11 @@
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
                         <label class="form-label fw-bold mb-1">From</label>
-                        <MudDatePicker @bind-Value="record.StartDate"
-                                       Format="yyyy-MM-dd"
+                        <MudDatePicker @bind-Date="record.StartDate"
+                                       DateFormat="yyyy-MM-dd"
                                        placeholder="From"
                                        ReadOnly="@isReadOnly"
                                        Variant="Variant.Outlined"
-                                       FullWidth="true"
                                        Class="flex-grow-1"></MudDatePicker>
                         <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.StartDate)" />
@@ -129,12 +128,11 @@
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
                         <label class="form-label fw-bold mb-1">To</label>
-                        <MudDatePicker @bind-Value="record.EndDate"
-                                       Format="yyyy-MM-dd"
+                        <MudDatePicker @bind-Date="record.EndDate"
+                                       DateFormat="yyyy-MM-dd"
                                        placeholder="To"
                                        ReadOnly="@isReadOnly"
                                        Variant="Variant.Outlined"
-                                       FullWidth="true"
                                        Class="flex-grow-1"></MudDatePicker>
                         <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.EndDate)" />
@@ -249,12 +247,11 @@
 
                         <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
                             <label class="form-label fw-bold mb-1">Approved Date</label>
-                            <MudDatePicker @bind-Value="record.ApprovedDate"
-                                           Format="yyyy-MM-dd"
+                            <MudDatePicker @bind-Date="record.ApprovedDate"
+                                           DateFormat="yyyy-MM-dd"
                                            placeholder="Approved Date"
                                            ReadOnly="@isReadOnly"
                                            Variant="Variant.Outlined"
-                                           FullWidth="true"
                                            Class="flex-grow-1"></MudDatePicker>
                             <div class="validation-container" style="min-height: 22px;">
                                 <ValidationMessage For="@(() => record.ApprovedDate)" />

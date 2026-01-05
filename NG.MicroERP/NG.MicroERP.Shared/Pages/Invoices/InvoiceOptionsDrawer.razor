@@ -1,0 +1,134 @@
+﻿@using NG.MicroERP.Shared.Controls
+@inject IDialogService dialogService
+
+<MyDrawer @ref="_drawerRef" Title="Invoice Options" FaIcon="fas fa-cog">
+    <ChildContent>
+        <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
+            <!-- Party Details Card -->
+            <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px;">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.People" 
+                             Size="Size.Large" 
+                             Color="Color.Primary" 
+                             Class="me-3" />
+                    <div>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Party Details</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Customer identity & contact information</MudText>
+                    </div>
+                </div>
+                <MudDivider Class="mb-4" />
+
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Party Name"
+                                      @bind-Value="Record.Invoice.PartyName"
+                                      Disabled="Disabled"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true"
+                                      Class="mb-3" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Phone"
+                                      @bind-Value="Record.Invoice.PartyPhone"
+                                      Disabled="Disabled"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true"
+                                      Class="mb-3" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Email"
+                                      InputType="InputType.Email"
+                                      @bind-Value="Record.Invoice.PartyEmail"
+                                      Disabled="Disabled"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true"
+                                      Class="mb-3" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Address"
+                                      @bind-Value="Record.Invoice.PartyAddress"
+                                      Disabled="Disabled"
+                                      Variant="Variant.Outlined"
+                                      Lines="2"
+                                      FullWidth="@true"
+                                      Class="mb-3" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="int"
+                                   Label="Sales Person"
+                                   @bind-Value="Record.Invoice.SalesId"
+                                   Disabled="Disabled"
+                                   Variant="Variant.Outlined"
+                                   FullWidth="@true"
+                                   Class="mb-3">
+                            @if (SalesId != null && SalesId.Any())
+                            {
+                                @foreach (var employee in SalesId)
+                                {
+                                    <MudSelectItem T="int" Value="@employee.Id">@employee.Fullname</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="string"
+                                   Label="Invoice Status"
+                                   @bind-Value="Record.Invoice.Status"
+                                   Disabled="Disabled"
+                                   Variant="Variant.Outlined"
+                                   FullWidth="@true">
+                            @if (InvoiceStatus != null && InvoiceStatus.Any())
+                            {
+                                @foreach (var status in InvoiceStatus)
+                                {
+                                    <MudSelectItem T="string" Value="@status.ListValue">@status.ListValue</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Account"
+                                      Value="@(Accounts?.FirstOrDefault(a => a.Id == Record.Invoice.AccountId)?.DisplayName ?? "Not Set")"
+                                      Variant="Variant.Outlined"
+                                      ReadOnly="@true"
+                                      FullWidth="@true"
+                                      Class="mb-3"
+                                      HelperText="Account is automatically set from the selected party" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudContainer>
+    </ChildContent>
+</MyDrawer>
+
+
+@code {
+    private MyDrawer _drawerRef = new();
+
+    [Parameter] public InvoicesModel Record { get; set; } = new();
+    [Parameter] public List<PartiesModel> Parties { get; set; } = new();
+    [Parameter] public List<EmployeesModel> SalesId { get; set; } = new();
+    [Parameter] public List<TypeCodeModel> InvoiceStatus { get; set; } = new();
+    [Parameter] public List<ChartOfAccountsModel> Accounts { get; set; } = new();
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public EventCallback<int> OnPartyChanged { get; set; }
+
+
+    public async Task Open() => await _drawerRef.OpenDrawerAsync();
+}
+
+<style>
+    .mud-paper {
+        transition: box-shadow 0.3s ease;
+    }
+
+    .mud-paper:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+    }
+</style>

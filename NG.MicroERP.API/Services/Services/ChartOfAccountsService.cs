@@ -112,7 +112,7 @@ public class ChartOfAccountsService : IChartOfAccountsService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
     }
 
@@ -153,7 +153,7 @@ public class ChartOfAccountsService : IChartOfAccountsService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
 
     }

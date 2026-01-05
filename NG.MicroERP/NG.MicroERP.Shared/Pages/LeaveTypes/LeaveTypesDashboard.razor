@@ -53,7 +53,7 @@
                             </div>
 
                             <div class="toolbar-right">
-                                @if (AccessLevel == 1)
+                                @if (Globals.AccessLevel == 1)
                                 {
                                     <MudButton StartIcon="@Icons.Material.TwoTone.Add"
                                                Size="MudBlazor.Size.Small"
@@ -93,7 +93,7 @@
                                         <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
                                         <span>View Details</span>
                                     </MudMenuItem>
-                                    @if (AccessLevel == 1)
+                                    @if (Globals.AccessLevel == 1)
                                     {
                                         <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
                                                      Class="menu-item edit-item">
@@ -201,7 +201,7 @@
     LeaveTypesModel record = new();
 
     public string? Action { get; set; } = "INSERT";
-    public int AccessLevel { get; set; } = 0;
+    
     
     bool isReadOnly = true;
     private bool LoadingPanel { get; set; } = false;
@@ -209,7 +209,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        AccessLevel = Globals.PageAccess(NavManager, "LeaveTypesDashboard");
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "LeaveTypesDashboard");
         await GetAll();
     }
 

@@ -1,0 +1,474 @@
+﻿@page "/InvoiceDashboard/{InvoiceType?}"
+@using NG.MicroERP.Shared.Models
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <div class="dashboard-header mb-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.Receipt" Class="me-2" Style="color: white;" />
+                    @InvoiceType Invoice Management
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">Create and manage @InvoiceType.ToLower() invoices</MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+                <div class="dashboard-search-container">
+                    <MudTextField @bind-Value="searchString"
+                                @bind-Value:after="FilterData"
+                                Placeholder="Search invoices..."
+                                Adornment="Adornment.Start"
+                                AdornmentIcon="@Icons.Material.Filled.Search"
+                                IconSize="Size.Small"
+                                Variant="Variant.Outlined"
+                                Immediate="true"
+                                Margin="Margin.Dense"
+                                Class="dashboard-search-field"
+                                Style="background: rgba(255,255,255,0.95);" />
+                </div>
+                <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Success" 
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => Clear())">
+                    New
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Info"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => Refresh())">
+                    Refresh
+                </MudButton>
+            </div>
+        </div>
+    </div>
+
+    <MyDrawer @ref="_drawer" Title="Invoice" FaIcon="fas fa-address-book">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <InvoicePage Action="@Action" CurrentRecord="record.Id" OnSaved="ChildSaved" InvoiceType="InvoiceType" />
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    @if (data == null)
+    {
+        <SimpleLoading />
+    }
+    else
+    {
+        <MudPaper Elevation="3" Style="border-radius: 12px; overflow: hidden;">
+            <MudDataGrid T="InvoiceModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
+
+                <Columns>
+                    <TemplateColumn Title="Actions" CellStyle="width: 80px; min-width: 80px;" HeaderClass="grid-header">
+                        <CellTemplate Context="row">
+                            <div class="actions-cell">
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                         Color="Color.Primary"
+                                         Dense="true"
+                                         Class="actions-menu">
+                                    <MudMenuItem OnClick="@(async () => await View(row.Item.Id))"
+                                                 Class="menu-item view-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
+                                        <span>View Details</span>
+                                    </MudMenuItem>
+                                    @if (row.Item.IsPostedToGL == 1 && !string.IsNullOrWhiteSpace(row.Item.GLEntryNo))
+                                    {
+                                        <MudMenuItem OnClick="@(() => ViewGLEntry(row.Item.GLEntryNo))"
+                                                     Class="menu-item gl-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="menu-icon" />
+                                            <span>View GL Entry: @row.Item.GLEntryNo</span>
+                                        </MudMenuItem>
+                                    }
+                                    @if (Globals.AccessLevel == 1)
+                                    {
+                                        @if (row.Item.IsPostedToGL == 0)
+                                        {
+                                            <MudMenuItem OnClick="@(async () => await Edit(row.Item.Id))"
+                                                         Class="menu-item edit-item">
+                                                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
+                                                <span>Edit</span>
+                                            </MudMenuItem>
+                                            <MudMenuItem OnClick="@(async () => await Delete(row.Item.Id))"
+                                                         Color="Color.Error"
+                                                         Class="menu-item delete-item">
+                                                <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
+                                                <span>Delete</span>
+                                            </MudMenuItem>
+                                            <hr />
+                                            <MudMenuItem OnClick="@(async () => await PostToGL(row.Item.Id))"
+                                                         Class="menu-item post-item">
+                                                <MudIcon Icon="@Icons.Material.Filled.PostAdd" Class="menu-icon" />
+                                                <span>Post to General Ledger</span>
+                                            </MudMenuItem>
+                                        }
+                                        else
+                                        {
+                                            <MudMenuItem Disabled="true"
+                                                         Class="menu-item disabled-item">
+                                                <MudIcon Icon="@Icons.Material.Filled.Lock" Class="menu-icon" />
+                                                <span>Posted to GL - Cannot Edit/Delete</span>
+                                            </MudMenuItem>
+                                        }
+                                    }
+                                </MudMenu>
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="x => x.Code" Title="Code" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Source" Title="Source" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.PartyName" Title="Party Name" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.PartyPhone" Title="Party Phone" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.PartyEmail" Title="Party Email" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.PartyAddress" Title="Party Address" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.TranDate" Title="Tran Date" Sortable="true" Filterable="true" Format="dd-MMM-yyy" />
+                    <PropertyColumn Property="x => x.Description" Title="Description" Sortable="true" Filterable="true" />
+                    <PropertyColumn Property="x => x.Status" Title="Status" Sortable="true" Filterable="true" />
+                </Columns>
+
+                <PagerContent>
+                    <div class="pager-container">
+                        <MudDataGridPager T="InvoiceModel" />
+                    </div>
+                </PagerContent>
+            </MudDataGrid>
+        </MudPaper>
+    }
+</MudContainer>
+
+<style>
+    .dashboard-header {
+        padding: 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 24px;
+    }
+
+    .dashboard-header .mud-typography {
+        color: white !important;
+    }
+
+    .dashboard-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    .dashboard-search-container {
+        position: relative;
+        width: 280px;
+    }
+
+    .dashboard-search-field {
+        width: 100%;
+    }
+
+    .dashboard-search-field .mud-input-root {
+        color: var(--mud-palette-text-primary) !important;
+        border-radius: 28px !important;
+        overflow: hidden !important;
+    }
+
+    .dashboard-search-field .mud-input-root input {
+        color: var(--mud-palette-text-primary) !important;
+        border-radius: 28px !important;
+        padding-left: 48px !important;
+    }
+
+    .dashboard-search-field .mud-input-root::before {
+        border-color: rgba(0,0,0,0.2) !important;
+        border-radius: 28px !important;
+    }
+
+    .dashboard-search-field .mud-input-root:hover::before {
+        border-color: var(--mud-palette-primary) !important;
+    }
+
+    .dashboard-search-field .mud-input-root::after {
+        border-color: var(--mud-palette-primary) !important;
+        border-radius: 28px !important;
+    }
+
+    .dashboard-search-field .mud-input-adornment {
+        border-radius: 28px 0 0 28px !important;
+        position: absolute !important;
+        left: 8px !important;
+        z-index: 1 !important;
+    }
+
+    .dashboard-search-field .mud-input-adornment-start {
+        border-radius: 28px 0 0 28px !important;
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .dashboard-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+
+    .mud-theme-dark .dashboard-search-field {
+        background: rgba(255,255,255,0.1) !important;
+    }
+
+    .mud-theme-dark .dashboard-search-field .mud-input-root {
+        color: white !important;
+    }
+
+    .mud-theme-dark .dashboard-search-field .mud-input-root input {
+        color: white !important;
+    }
+
+    .mud-theme-dark .dashboard-search-field .mud-input-root::placeholder {
+        color: rgba(255,255,255,0.7) !important;
+    }
+</style>
+
+@code
+{
+    List<InvoiceModel> AllData = new();
+    List<InvoiceModel> data = new();
+    InvoiceModel record = new();
+    [Parameter] public string InvoiceType { get; set; } = "SALE";
+    public string Action { get; set; } = "INSERT";
+    private string searchString = "";
+
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Ensure InvoiceType is uppercase for consistency
+        if (!string.IsNullOrEmpty(InvoiceType))
+        {
+            InvoiceType = InvoiceType.ToUpper();
+        }
+        else
+        {
+            InvoiceType = "SALE"; // Default to SALE if not provided
+        }
+        
+        if (InvoiceType == "SALE")
+            Globals.AccessLevel = Globals.PageAccess(NavManager, "SaleDashboard");
+        else if (InvoiceType == "PURCHASE")
+            Globals.AccessLevel = Globals.PageAccess(NavManager, "PurchaseDashboard");
+       
+
+        await GetAll();
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        // Handle parameter changes (e.g., when navigating from Sale to Purchase)
+        if (!string.IsNullOrEmpty(InvoiceType))
+        {
+            InvoiceType = InvoiceType.ToUpper();
+        }
+        else
+        {
+            InvoiceType = "SALE";
+        }
+        
+        await GetAll();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        string ThisInvoiceType = $"InvoiceType = '{InvoiceType}'";
+        AllData = await Functions.GetAsync<List<InvoiceModel>>($"Invoice/Search/{ThisInvoiceType}", true) ?? new List<InvoiceModel>();
+        data = AllData;
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<InvoiceModel>($"Invoice/Get/{id}", true) ?? new InvoiceModel();
+        LoadingPanel = false;
+    }
+
+    private void FilterData()
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+        {
+            data = AllData.ToList();
+        }
+        else
+        {
+            var search = searchString.ToLower();
+            data = AllData.Where(x =>
+                ContainsIgnoreCase(x.Fullname, search) ||
+                ContainsIgnoreCase(x.ClientComments, search) ||
+                ContainsIgnoreCase(x.InvoiceType, search) ||
+                ContainsIgnoreCase(x.Location, search) ||
+                ContainsIgnoreCase(x.Party, search) ||
+                ContainsIgnoreCase(x.PartyAddress, search) ||
+                ContainsIgnoreCase(x.PartyEmail, search) ||
+                ContainsIgnoreCase(x.PartyPhone, search) ||
+                ContainsIgnoreCase(x.PartyName, search) ||
+                ContainsIgnoreCase(x.Code, search) ||
+                ContainsIgnoreCase(x.Source, search) ||
+                ContainsIgnoreCase(x.Status, search) ||
+                ContainsIgnoreCase(x.Description, search)
+            ).ToList();
+        }
+
+        StateHasChanged();
+    }
+
+    private static bool ContainsIgnoreCase(string? value, string search)
+    {
+        return !string.IsNullOrEmpty(value) && value.Contains(search, StringComparison.OrdinalIgnoreCase);
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new InvoiceModel();
+        // Use the current InvoiceType instead of hardcoded "SALE"
+        NavManager.NavigateTo($"/InvoicePage/{InvoiceType}/INSERT/0");
+        //await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Refresh()
+    {
+        await GetAll();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        NavManager.NavigateTo($"/InvoicePage/{InvoiceType}/VIEW/{id}");
+        //await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        // If posted to GL, make it read-only
+        if (record.IsPostedToGL == 1)
+        {
+            Action = "VIEW";
+            NavManager.NavigateTo($"/InvoicePage/{InvoiceType}/VIEW/{id}");
+        }
+        else
+        {
+            Action = "UPDATE";
+            NavManager.NavigateTo($"/InvoicePage/{InvoiceType}/UPDATE/{id}");
+        }
+    }
+
+    protected async Task Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Get(id);
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        try
+        {
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            var result = await Functions.PostAsync<InvoiceModel>($"Invoice/{Action}", record, true);
+            if (result.Success == true)
+            {
+                var message = Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == true 
+                    ? "Record Deleted Successfully" 
+                    : "Record Saved Successfully";
+                SnackbarService.Add(message, Severity.Success);
+                await GetAll();
+                if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) 
+                    await Edit(result.Result!.Id);
+            }
+            else
+            {
+                SnackbarService.Add($"{result.Message}", Severity.Error);
+                record = new();
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"ERROR: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+            await _drawer.CloseDrawerAsync();
+        }
+    }
+
+    private async Task ChildSaved()
+    {
+        await GetAll();
+        //await _drawer.CloseDrawerAsync();
+        StateHasChanged();
+    }
+
+    protected async Task PostToGL(int invoiceId)
+    {
+        try
+        {
+            var res = await Functions.ShowConfirmation(dialogService, "Do you want to post this invoice to General Ledger? Once posted, it cannot be edited or deleted.");
+            if (res == false)
+                return;
+
+            LoadingPanel = true;
+            var result = await Functions.PostAsync<GeneralLedgerHeaderModel>(
+                $"GeneralLedger/CreateGLFromInvoice/{invoiceId}?userId={Globals.User.Id}&clientInfo={Uri.EscapeDataString(Globals.ClientInfo)}", 
+                null, 
+                true);
+            LoadingPanel = false;
+
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+            }
+            else
+            {
+                SnackbarService.Add("Invoice posted to General Ledger successfully", Severity.Success);
+                await GetAll();
+            }
+        }
+        catch (Exception ex)
+        {
+            LoadingPanel = false;
+            SnackbarService.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    protected void ViewGLEntry(string glEntryNo)
+    {
+        NavManager.NavigateTo($"/GeneralLedgerDashboard");
+    }
+}
+

@@ -7,7 +7,7 @@
 @inject ISnackbar SnackbarService
 @inject Functions Functions
 @inject IJSRuntime JS
-@inject ClientInfoService ClientInfoService
+@inject ClientInfoService ClientInfo
 
 <Loading IsLoading="@LoadingPanel" />
 
@@ -50,6 +50,7 @@
     public string Username { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     private bool LoadingPanel { get; set; } = false;
+    private string clientInfoString = "Loading...";
 
     private string BackgroundImagePath = "_content/NG.MicroERP.Shared/images/default.jpg";
     private string BackgroundStyle => $"background: url('{BackgroundImagePath}') no-repeat center center; background-size: cover; background-color:#1976D2;";
@@ -60,7 +61,8 @@
         {
             var org = await Functions.GetAsync<List<OrganizationsModel>>("Organizations/Search", true) ?? new List<OrganizationsModel>();
             Globals.Organization = org.FirstOrDefault()!;
-            Globals.ClientInfo = ClientInfoService.GetDetailedClientInfo();
+            clientInfoString = ClientInfo.GetClientInfoString();
+            Globals.ClientInfo = clientInfoString;
 
             if (!string.IsNullOrEmpty(Globals.Organization.Wallpaper))
             {

@@ -60,7 +60,7 @@ public class MyMenuService : IMyMenuService
             string SQLInsert = $@"INSERT INTO Menu 
 			(
 				MenuCaption, 
-				AdditionalInfo, 
+				Parameter, 
 				Tooltip, 
 				PageName, 
 				ParentId, 
@@ -75,7 +75,7 @@ public class MyMenuService : IMyMenuService
 			VALUES 
 			(
 				'{obj.MenuCaption!.ToUpper()}', 
-				'{obj.AdditionalInfo!.ToUpper()}', 
+				'{obj.Parameter!.ToUpper()}', 
 				'{obj.Tooltip!.ToUpper()}', 
 				'{obj.PageName!.ToUpper()}', 
 				{obj.ParentId},
@@ -103,7 +103,7 @@ public class MyMenuService : IMyMenuService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
     }
 
@@ -113,7 +113,7 @@ public class MyMenuService : IMyMenuService
         {
             string SQLUpdate = $@"UPDATE Menu SET 
 					MenuCaption = '{obj.MenuCaption!.ToUpper()}', 
-					AdditionalInfo = '{obj.AdditionalInfo!.ToUpper()}', 
+					Parameter = '{obj.Parameter!.ToUpper()}', 
 					Tooltip = '{obj.Tooltip!.ToUpper()}', 
 					PageName = '{obj.PageName!.ToUpper()}', 
 					ParentId = {obj.ParentId}, 
@@ -141,7 +141,7 @@ public class MyMenuService : IMyMenuService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
 
     }

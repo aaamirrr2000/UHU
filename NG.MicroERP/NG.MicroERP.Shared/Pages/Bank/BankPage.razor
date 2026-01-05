@@ -9,110 +9,166 @@
 
 <Loading IsLoading="@LoadingPanel" />
 
-<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
-
-    <div class="text-end" style="margin-top:10px;">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <!-- Action Buttons Header -->
+    <div class="d-flex justify-content-end align-items-center mb-4 gap-2">
         @if (Action != "VIEW")
         {
-            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
-                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+            <MudButton OnClick="Save" 
+                       Color="Color.Success" 
+                       Variant="Variant.Filled"
+                       StartIcon="@Icons.Material.Filled.Save"
+                       Size="Size.Medium">
                 @(Action == "INSERT" ? "Save" : "Update")
             </MudButton>
 
             @if (Action == "UPDATE")
             {
-                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
-                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                <MudButton Color="Color.Error" 
+                           OnClick="Delete" 
+                           Variant="Variant.Filled"
+                           StartIcon="@Icons.Material.Filled.Delete"
+                           Size="Size.Medium">
                     Delete
                 </MudButton>
             }
         }
     </div>
 
-    <br />
-    <MudExpansionPanels MultiExpansion="true">
-        <MudExpansionPanel Text="Bank Details" Expanded="true" Style="margin-bottom:10px;">
-            <TitleContent>
-                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
-                    <i class="fas fa-university"
-                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
-                    </i>
-                    <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">@(string.IsNullOrWhiteSpace(record.BankName) ? "NO NAME" : record.BankName)</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted">Bank account and branch details</MudText>
+    <MudGrid>
+        <!-- Bank Details Card -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px; height: 100%;">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" 
+                             Size="Size.Large" 
+                             Color="Color.Primary" 
+                             Class="me-3" />
+                    <div>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Bank Details</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Bank and branch information</MudText>
                     </div>
                 </div>
-                <hr style="height: 6px; border: none; background: #667eea; border-radius: 10px;" />
-            </TitleContent>
+                <MudDivider Class="mb-4" />
 
-            <ChildContent>
-                <div class="row">
-                    <div class="col-12 col-md-6 mb-3">
-                        <label class="form-label fw-bold">Code</label>
-                        <MudTextField id="Code" @bind-Value="record.Code" placeholder="Code"
-                                      ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true"></MudTextField>
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudTextField Label="Code"
+                                      @bind-Value="record.Code"
+                                      Placeholder="Enter bank code"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="mb-3" />
                         <ValidationMessage For="@(() => record.Code)" />
-                    </div>
+                    </MudItem>
 
-                    <div class="col-12 col-md-6 mb-3">
-                        <label class="form-label fw-bold">Bank Name</label>
-                        <MudTextField id="BankName" @bind-Value="record.BankName" placeholder="Bank Name"
-                                      ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true"></MudTextField>
+                    <MudItem xs="12">
+                        <MudTextField Label="Bank Name"
+                                      @bind-Value="record.BankName"
+                                      Placeholder="Enter bank name"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="mb-3" />
                         <ValidationMessage For="@(() => record.BankName)" />
-                    </div>
+                    </MudItem>
 
-                    <div class="col-12 col-md-6 mb-3">
-                        <label class="form-label fw-bold">Branch Code</label>
-                        <MudTextField id="BranchCode" @bind-Value="record.BranchCode" placeholder="Branch Code"
-                                      ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true"></MudTextField>
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Branch Code"
+                                      @bind-Value="record.BranchCode"
+                                      Placeholder="Enter branch code"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="mb-3" />
                         <ValidationMessage For="@(() => record.BranchCode)" />
-                    </div>
+                    </MudItem>
 
-                    <div class="col-12 col-md-6 mb-3">
-                        <label class="form-label fw-bold">Branch Name</label>
-                        <MudTextField id="BranchName" @bind-Value="record.BranchName" placeholder="Branch Name"
-                                      ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true"></MudTextField>
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Branch Name"
+                                      @bind-Value="record.BranchName"
+                                      Placeholder="Enter branch name"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="mb-3" />
                         <ValidationMessage For="@(() => record.BranchName)" />
-                    </div>
+                    </MudItem>
 
-                    <div class="col-12 mb-3">
-                        <MudDivider Class="my-3">
-                            <MudText Typo="Typo.subtitle2" Class="text-muted">Account Information</MudText>
-                        </MudDivider>
-                    </div>
-
-                    <div class="col-12 col-md-6 mb-3">
-                        <label class="form-label fw-bold">Account Title</label>
-                        <MudTextField id="AccountTitle" @bind-Value="record.AccountTitle" placeholder="Account Title"
-                                      ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true"></MudTextField>
-                        <ValidationMessage For="@(() => record.AccountTitle)" />
-                    </div>
-
-                    <div class="col-12 col-md-6 mb-3">
-                        <label class="form-label fw-bold">Account Number</label>
-                        <MudTextField id="AccountNumber" @bind-Value="record.AccountNumber" placeholder="Account Number"
-                                      ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true"></MudTextField>
-                        <ValidationMessage For="@(() => record.AccountNumber)" />
-                    </div>
-
-                    <div class="col-12 mb-3">
-                        <label class="form-label fw-bold">IBAN</label>
-                        <MudTextField id="IBAN" @bind-Value="record.IBAN" placeholder="IBAN Number"
-                                      ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true"></MudTextField>
-                        <ValidationMessage For="@(() => record.IBAN)" />
-                    </div>
-
-                    <div class="col-12 mb-3">
-                        <label class="form-label fw-bold">Address</label>
-                        <MudTextField id="Address" @bind-Value="record.Address" placeholder="Bank Address"
-                                      ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true"></MudTextField>
+                    <MudItem xs="12">
+                        <MudTextField Label="Address"
+                                      @bind-Value="record.Address"
+                                      Placeholder="Enter bank address"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      Lines="2"
+                                      FullWidth="true" />
                         <ValidationMessage For="@(() => record.Address)" />
-                    </div>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
 
-                    <div class="col-12 col-md-6 mb-3">
-                        <label class="form-label fw-bold">City</label>
-                        <MudSelect @bind-Value="record.CityId" Placeholder="Select City"
-                                   Variant="Variant.Outlined" Clearable="true" FullWidth="true">
+        <!-- Account Information Card -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px; height: 100%;">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountCircle" 
+                             Size="Size.Large" 
+                             Color="Color.Info" 
+                             Class="me-3" />
+                    <div>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Account Information</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Bank account details</MudText>
+                    </div>
+                </div>
+                <MudDivider Class="mb-4" />
+
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudTextField Label="Account Title"
+                                      @bind-Value="record.AccountTitle"
+                                      Placeholder="Enter account title"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="mb-3" />
+                        <ValidationMessage For="@(() => record.AccountTitle)" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudTextField Label="Account Number"
+                                      @bind-Value="record.AccountNumber"
+                                      Placeholder="Enter account number"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="mb-3" />
+                        <ValidationMessage For="@(() => record.AccountNumber)" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudTextField Label="IBAN"
+                                      @bind-Value="record.IBAN"
+                                      Placeholder="Enter IBAN number"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="mb-3" />
+                        <ValidationMessage For="@(() => record.IBAN)" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="int"
+                                   Label="City"
+                                   @bind-Value="record.CityId"
+                                   Placeholder="Select city"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   ReadOnly="@isReadOnly"
+                                   FullWidth="true"
+                                   Class="mb-3">
                             @if (Cit != null && Cit.Any())
                             {
                                 foreach (var i in Cit)
@@ -122,12 +178,17 @@
                             }
                         </MudSelect>
                         <ValidationMessage For="@(() => record.CityId)" />
-                    </div>
+                    </MudItem>
 
-                    <div class="col-12 col-md-6 mb-3">
-                        <label class="form-label fw-bold">Chart of Account</label>
-                        <MudSelect @bind-Value="record.AccountId" Placeholder="Select Account"
-                                   Variant="Variant.Outlined" Clearable="true" FullWidth="true">
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="int"
+                                   Label="Chart of Account"
+                                   @bind-Value="record.AccountId"
+                                   Placeholder="Select account"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   ReadOnly="@isReadOnly"
+                                   FullWidth="true">
                             @if (Acc != null && Acc.Any())
                             {
                                 foreach (var i in Acc)
@@ -137,32 +198,76 @@
                             }
                         </MudSelect>
                         <ValidationMessage For="@(() => record.AccountId)" />
-                    </div>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
 
-                    <div class="col-12 mb-3">
-                        <MudDivider Class="my-3">
-                            <MudText Typo="Typo.subtitle2" Class="text-muted">Contact Information</MudText>
-                        </MudDivider>
+        <!-- Contact Information Card -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px; height: 100%;">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.ContactPhone" 
+                             Size="Size.Large" 
+                             Color="Color.Warning" 
+                             Class="me-3" />
+                    <div>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Contact Information</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Bank contact details</MudText>
                     </div>
+                </div>
+                <MudDivider Class="mb-4" />
 
-                    <div class="col-12 col-md-6 mb-3">
-                        <label class="form-label fw-bold">Phone</label>
-                        <MudTextField id="Phone" @bind-Value="record.Phone" placeholder="Phone Number"
-                                      ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true"></MudTextField>
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Phone"
+                                      @bind-Value="record.Phone"
+                                      Placeholder="Enter phone number"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="mb-3" />
                         <ValidationMessage For="@(() => record.Phone)" />
-                    </div>
+                    </MudItem>
 
-                    <div class="col-12 col-md-6 mb-3">
-                        <label class="form-label fw-bold">Email</label>
-                        <MudTextField id="Email" @bind-Value="record.Email" placeholder="Email Address"
-                                      ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true"></MudTextField>
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Email"
+                                      @bind-Value="record.Email"
+                                      Placeholder="Enter email address"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true" />
                         <ValidationMessage For="@(() => record.Email)" />
-                    </div>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
 
-                    <div class="col-12 col-md-6 mb-3">
-                        <label class="form-label fw-bold">Status</label>
-                        <MudSelect T="int" @bind-Value="record.IsActive" Placeholder="Select Status"
-                                   Variant="Variant.Outlined" Clearable="true" FullWidth="true">
+        <!-- Status Card -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px; height: 100%;">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.ToggleOn" 
+                             Size="Size.Large" 
+                             Color="Color.Success" 
+                             Class="me-3" />
+                    <div>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Status</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Bank activation status</MudText>
+                    </div>
+                </div>
+                <MudDivider Class="mb-4" />
+
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudSelect T="int"
+                                   Label="Active Status"
+                                   @bind-Value="record.IsActive"
+                                   Placeholder="Select status"
+                                   Variant="Variant.Outlined"
+                                   Clearable="false"
+                                   ReadOnly="@isReadOnly"
+                                   FullWidth="true">
                             @if (record.IsActive != 0 && record.IsActive != 1)
                             {
                                 record.IsActive = 1;
@@ -171,13 +276,22 @@
                             <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
                         </MudSelect>
                         <ValidationMessage For="@(() => record.IsActive)" />
-                    </div>
-                </div>
-            </ChildContent>
-        </MudExpansionPanel>
-    </MudExpansionPanels>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
 
-</div>
+<style>
+    .mud-paper {
+        transition: box-shadow 0.3s ease;
+    }
+
+    .mud-paper:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
 
 @code
 {
@@ -254,14 +368,12 @@
 
     protected void GetDefaultValues()
     {
-
         if (Org != null && Org.Any() && record.OrganizationId == 0)
             record.OrganizationId = Org.First().Id;
         if (Cit != null && Cit.Any() && record.CityId == 0)
             record.CityId = Cit.First().Id;
         if (Acc != null && Acc.Any() && record.AccountId == 0)
             record.AccountId = Acc.First().Id;
-
 
         StateHasChanged();
     }
@@ -310,14 +422,11 @@
         }
         catch (Exception ex)
         {
-            Log.Warning($"Error: {ex.Message}");
+            SnackbarService.Add($"Error: {ex.Message}", Severity.Error);
         }
         finally
         {
             LoadingPanel = false;
-
-
         }
     }
 }
-

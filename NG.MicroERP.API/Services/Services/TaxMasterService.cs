@@ -2,6 +2,7 @@
 using NG.MicroERP.API.Helper;
 using NG.MicroERP.Shared.Models;
 
+
 public interface ITaxMasterService
 {
     Task<(bool, List<TaxMasterModel>)>? Search(string Criteria = "");
@@ -19,7 +20,7 @@ public class TaxMasterService : ITaxMasterService
 
     public async Task<(bool, List<TaxMasterModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM TaxMaster Where IsSoftDeleted=0 and IsActive=1";
+        string SQL = $@"SELECT * FROM TaxMaster Where IsSoftDeleted=0";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;
@@ -46,35 +47,40 @@ public class TaxMasterService : ITaxMasterService
 
     public async Task<(bool, TaxMasterModel, string)> Post(TaxMasterModel obj)
     {
+
         try
         {
-
+            string SQLDuplicate = $@"SELECT * FROM TaxMaster WHERE UPPER(TaxName) = '{obj.TaxName!.ToUpper()}';";
             string SQLInsert = $@"INSERT INTO TaxMaster 
 			(
 				OrganizationId, 
-				TaxType, 
+				AccountId, 
 				TaxName, 
-				TaxRate, 
+				TaxType, 
+				TaxBaseType, 
+				Rate, 
+				Description, 
 				IsActive, 
 				CreatedBy, 
 				CreatedOn, 
-				CreatedFrom, 
-				IsSoftDeleted
+				CreatedFrom
 			) 
 			VALUES 
 			(
-				{obj.OrganizationId}, 
-				'{obj.TaxType!.ToUpper()}', 
+				{obj.OrganizationId},
+				{obj.AccountId},
 				'{obj.TaxName!.ToUpper()}', 
-				{obj.TaxRate},
+				'{obj.TaxType!.ToUpper()}', 
+				'{obj.TaxBaseType!.ToUpper()}', 
+				{obj.Rate},
+				{(obj.Description == null ? "null" : $"'{obj.Description.ToUpper()}'")}, 
 				{obj.IsActive},
 				{obj.CreatedBy},
 				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
-				'{obj.CreatedFrom!.ToUpper()}', 
-				{obj.IsSoftDeleted}
+				{(obj.CreatedFrom == null ? "null" : $"'{obj.CreatedFrom.ToUpper()}'")}
 			);";
 
-            var res = await dapper.Insert(SQLInsert);
+            var res = await dapper.Insert(SQLInsert, SQLDuplicate);
             if (res.Item1 == true)
             {
                 List<TaxMasterModel> Output = new List<TaxMasterModel>();
@@ -97,19 +103,22 @@ public class TaxMasterService : ITaxMasterService
     {
         try
         {
+            string SQLDuplicate = $@"SELECT * FROM TaxMaster WHERE UPPER(code) = '{obj.TaxName!.ToUpper()}' and Id != {obj.Id};";
             string SQLUpdate = $@"UPDATE TaxMaster SET 
 					OrganizationId = {obj.OrganizationId}, 
-					TaxType = '{obj.TaxType!.ToUpper()}', 
+					AccountId = {obj.AccountId}, 
 					TaxName = '{obj.TaxName!.ToUpper()}', 
-					TaxRate = {obj.TaxRate}, 
+					TaxType = '{obj.TaxType!.ToUpper()}', 
+					TaxBaseType = '{obj.TaxBaseType!.ToUpper()}', 
+					Rate = {obj.Rate}, 
+					Description = {(obj.Description == null ? "null" : $"'{obj.Description.ToUpper()}'")}, 
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
-					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
-					IsSoftDeleted = {obj.IsSoftDeleted} 
+					UpdatedFrom = {(obj.UpdatedFrom == null ? "null" : $"'{obj.UpdatedFrom.ToUpper()}'")}
 				WHERE Id = {obj.Id};";
 
-            var res = await dapper.Update(SQLUpdate);
+            var res = await dapper.Update(SQLUpdate, SQLDuplicate);
             if (res.Item1 == true)
             {
                 List<TaxMasterModel> Output = new List<TaxMasterModel>();
@@ -126,7 +135,6 @@ public class TaxMasterService : ITaxMasterService
         {
             return (true, null!, ex.Message);
         }
-
     }
 
     public async Task<(bool, string)> Delete(int id)
@@ -145,3 +153,4 @@ public class TaxMasterService : ITaxMasterService
         return await dapper.Update(SQLUpdate);
     }
 }
+

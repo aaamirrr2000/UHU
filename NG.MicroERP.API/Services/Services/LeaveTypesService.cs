@@ -95,7 +95,7 @@ public class LeaveTypesService : ILeaveTypesService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
     }
 
@@ -132,7 +132,7 @@ public class LeaveTypesService : ILeaveTypesService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
 
     }

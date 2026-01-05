@@ -28,7 +28,9 @@ public class CashBookService : ICashBookService
 
     public async Task<(bool, List<CashBookModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM Cashbook Where IsSoftDeleted=0";
+        string SQL = $@"SELECT 'CASH BOOK' as Source, a.*, b.Name as LocationName FROM Cashbook as a
+                        LEFT JOIN Locations as b on b.id=a.LocationId
+                        Where a.IsSoftDeleted=0";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;
@@ -63,9 +65,18 @@ public class CashBookService : ICashBookService
 
     public async Task<(bool, CashBookModel, string)> Post(CashBookModel obj)
     {
-
         try
         {
+            // Validate period for cashbook creation
+            if (obj.TranDate.HasValue)
+            {
+                var periodCheck = await new GeneralLedgerService().ValidatePeriod(obj.OrganizationId, obj.TranDate.Value, "CASHBOOK");
+                if (!periodCheck.Item1)
+                {
+                    return (false, null!, periodCheck.Item2);
+                }
+            }
+
             string Code = dapper.GetCode("CBP", "Cashbook", "SeqNo")!;
             string SQLDuplicate = $@"SELECT * FROM Cashbook WHERE UPPER(SeqNo) = '{obj.SeqNo!.ToUpper()}';";
             string SQLInsert = $@"INSERT INTO Cashbook 
@@ -113,7 +124,7 @@ public class CashBookService : ICashBookService
             if (res.Item1 == true)
             {
                 List<CashBookModel> Output = new List<CashBookModel>();
-                var result = await Search($"id={res.Item2}")!;
+                var result = await Search($"a.id={res.Item2}")!;
                 Output = result.Item2;
                 return (true, Output.FirstOrDefault()!, "");
             }
@@ -124,15 +135,31 @@ public class CashBookService : ICashBookService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
     }
 
     public async Task<(bool, CashBookModel, string)> Put(CashBookModel obj)
-
     {
         try
         {
+            // Check if cashbook is posted to GL - prevent updates
+            var existingCashBook = await dapper.SearchByQuery<CashBookModel>($"SELECT * FROM Cashbook WHERE Id = {obj.Id}");
+            if (existingCashBook != null && existingCashBook.Any() && existingCashBook.First().IsPostedToGL == 1)
+            {
+                return (false, null!, "Cannot update cashbook entry that is posted to General Ledger.");
+            }
+
+            // Validate period for cashbook update
+            if (obj.TranDate.HasValue)
+            {
+                var periodCheck = await new GeneralLedgerService().ValidatePeriod(obj.OrganizationId, obj.TranDate.Value, "CASHBOOK");
+                if (!periodCheck.Item1)
+                {
+                    return (false, null!, periodCheck.Item2);
+                }
+            }
+
             string SQLDuplicate = $@"SELECT * FROM Cashbook WHERE UPPER(SeqNo) = '{obj.SeqNo!.ToUpper()}' and ID != {obj.Id};";
             string SQLUpdate = $@"UPDATE Cashbook SET 
 					OrganizationId = {obj.OrganizationId}, 
@@ -158,7 +185,7 @@ public class CashBookService : ICashBookService
             if (res.Item1 == true)
             {
                 List<CashBookModel> Output = new List<CashBookModel>();
-                var result = await Search($"id={obj.Id}")!;
+                var result = await Search($"a.id={obj.Id}")!;
                 Output = result.Item2;
                 return (true, Output.FirstOrDefault()!, "");
             }
@@ -169,18 +196,30 @@ public class CashBookService : ICashBookService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
 
     }
 
     public async Task<(bool, string)> Delete(int id)
     {
+        // Check if cashbook is posted to GL - prevent deletion
+        var cashBook = await dapper.SearchByQuery<CashBookModel>($"SELECT * FROM Cashbook WHERE Id = {id}");
+        if (cashBook != null && cashBook.Any() && cashBook.First().IsPostedToGL == 1)
+        {
+            return (false, "Cannot delete cashbook entry that is posted to General Ledger.");
+        }
         return await dapper.Delete("Cashbook", id);
     }
 
     public async Task<(bool, string)> SoftDelete(CashBookModel obj)
     {
+        // Check if cashbook is posted to GL - prevent deletion
+        var cashBook = await dapper.SearchByQuery<CashBookModel>($"SELECT * FROM Cashbook WHERE Id = {obj.Id}");
+        if (cashBook != null && cashBook.Any() && cashBook.First().IsPostedToGL == 1)
+        {
+            return (false, "Cannot delete cashbook entry that is posted to General Ledger.");
+        }
         string SQLUpdate = $@"UPDATE Cashbook SET 
 					UpdatedOn = '{DateTime.UtcNow}', 
 					UpdatedBy = '{obj.UpdatedBy!}',

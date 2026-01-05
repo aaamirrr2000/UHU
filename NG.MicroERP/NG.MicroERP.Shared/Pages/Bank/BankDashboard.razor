@@ -9,7 +9,37 @@
 
 <Loading IsLoading="@LoadingPanel" />
 
-<div class="row" style="margin: 2px; height: 90vh; display: flex;">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <div class="dashboard-header mb-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="me-2" Style="color: white;" />
+                    Bank Management
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">Manage bank accounts and details</MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+                <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Success" 
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => Clear())">
+                    New
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Info"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => Refresh())">
+                    Refresh
+                </MudButton>
+            </div>
+        </div>
+    </div>
+
     <MyDrawer @ref="_drawer" Title="Bank" FaIcon="fas fa-address-book">
         <HeaderContent>
         </HeaderContent>
@@ -30,7 +60,7 @@
     }
     else
     {
-        <div class="row">
+        <MudPaper Elevation="3" Style="border-radius: 12px; overflow: hidden;">
             <MudDataGrid T="BankModel"
                          MultiSelection="false"
                          Items="@data"
@@ -42,39 +72,6 @@
                          Class="professional-grid elevation-8"
                          Striped="true"
                          Hover="true">
-
-                <ToolBarContent>
-                    <div class="grid-toolbar-wrapper">
-                        <div class="grid-toolbar">
-                            <div class="toolbar-left">
-                                <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="toolbar-icon" />
-                                <MudText Typo="Typo.h6" Class="toolbar-title">
-                                    Bank Management
-                                </MudText>
-                            </div>
-
-                            <div class="toolbar-right">
-                                <MudButton StartIcon="@Icons.Material.TwoTone.Add"
-                                           Size="MudBlazor.Size.Small"
-                                           Variant="Variant.Filled"
-                                           Color="Color.Success"
-                                           Class="action-btn new-btn"
-                                           OnClick="@(() => Clear())">
-                                    New Bank
-                                </MudButton>
-
-                                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh"
-                                           Size="MudBlazor.Size.Small"
-                                           Variant="Variant.Filled"
-                                           Color="Color.Info"
-                                           Class="action-btn refresh-btn"
-                                           OnClick="@(() => Refresh())">
-                                    Refresh
-                                </MudButton>
-                            </div>
-                        </div>
-                    </div>
-                </ToolBarContent>
 
                 <Columns>
                     <TemplateColumn Title="Actions"
@@ -209,24 +206,21 @@
                                     HeaderClass="grid-header"
                                     CellClass="grid-cell"
                                     Width="80px">
-                        <CellTemplate Context="row">
-                            <div class="d-flex align-center">
+                        <TemplateColumn Title="Status"
+                                        CellStyle="width: 70px; min-width: 70px;"
+                                        HeaderClass="grid-header"
+                                        CellClass="grid-cell">
+                            <CellTemplate Context="row">
                                 @if (row.Item.IsActive == 1)
                                 {
-                                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
-                                             Class="me-1"
-                                             Style="color: #4CAF50; font-size: 16px;" />
-                                    <span style="color: #4CAF50; font-weight: 500;">Active</span>
+                                    <MudChip Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">Active</MudChip>
                                 }
                                 else
                                 {
-                                    <MudIcon Icon="@Icons.Material.Filled.Lock"
-                                             Class="me-1"
-                                             Style="color: #f44336; font-size: 16px;" />
-                                    <span style="color: #f44336; font-weight: 500;">Locked</span>
+                                    <MudChip Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">Locked</MudChip>
                                 }
-                            </div>
-                        </CellTemplate>
+                            </CellTemplate>
+                        </TemplateColumn>
                     </TemplateColumn>
 
                 </Columns>
@@ -237,9 +231,32 @@
                     </div>
                 </PagerContent>
             </MudDataGrid>
-        </div>
+        </MudPaper>
     }
-</div>
+</MudContainer>
+
+<style>
+    .dashboard-header {
+        padding: 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 24px;
+    }
+
+    .dashboard-header .mud-typography {
+        color: white !important;
+    }
+
+    .dashboard-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .dashboard-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+</style>
 
 @code
 {

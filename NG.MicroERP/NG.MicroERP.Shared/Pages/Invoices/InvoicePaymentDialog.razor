@@ -16,125 +16,163 @@
     </TitleContent>
 
     <DialogContent>
-        <MudPaper Class="pa-4" Style="max-width: 700px; width: 100%; border: 1px solid #ccc; border-radius: 8px; min-height: 50vh;">
-            <MudGrid GutterSize="GutterSize.Small" Class="mb-4">
-                <MudItem xs="12" sm="4">
-                    <MudSelect T="int"
-                               @bind-Value="InvoicePayments.AccountId"
-                               Variant="Variant.Outlined"
-                               Clearable="true"
-                               FullWidth="true"
-                               @bind-Value:after="PaymentMethodChanged">
-                        @if (PaymentMethod != null)
-                        {
-                            @foreach (var pm in PaymentMethod)
-                            {
-                                <MudSelectItem Value="@pm.Id">@pm.Name</MudSelectItem>
-                            }
-                        }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="12" sm="4">
-                    <MudTextField T="string"
-                                  Dense="true"
-                                  @bind-Value="InvoicePayments.PaymentRef"
-                                  Variant="Variant.Outlined"
-                                  Label="Payment Reference"
-                                  Immediate="true"
-                                  Class="w-100 text-center" />
-                </MudItem>
-                <MudItem xs="12" sm="4">
-                    <MudTextField T="decimal"
-                                  Dense="true"
-                                  @bind-Value="InvoicePayments.Amount"
-                                  Variant="Variant.Outlined"
-                                  Label="Amount"
-                                  Format="#,##0.00"
-                                  InputClass="text-end"
-                                  Style="text-align:right;" />
-                </MudItem>
-            </MudGrid>
-
-            <!-- Buttons Row with Balance Label -->
-            <MudGrid Class="mb-2">
-                <MudItem xs="12">
-                    <div class="d-flex justify-content-between align-items-center" style="gap: 8px;">
-                        <div style="border:1px solid #dee2e6; border-radius:6px; padding:8px 16px;">
-                            <div style="display:flex; gap:12px; align-items:center;">
-                                <span style="font-weight:bold;">Balance:</span>
-                                <span style="color:#dc3545; font-weight:bold; font-size:1.1rem;">
-                                    @(CalculateRemainingBalance().ToString("#,##0.00"))
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-end align-items-center" style="gap: 8px;">
-                            <MudButton Variant="Variant.Filled"
-                                       Color="Color.Success"
-                                       Dense="true"
-                                       OnClick="AddPayment">
-                                Add Payment
-                            </MudButton>
-
-                            <MudButton Variant="Variant.Filled"
-                                       Color="Color.Secondary"
-                                       Dense="true"
-                                       OnClick="CloseDialogMethod">
-                                Close
-                            </MudButton>
-                        </div>
-                    </div>
-                </MudItem>
-            </MudGrid>
-
-            <MudTable T="InvoicePaymentModel"
-                      Items="@Record.InvoicePayments"
-                      Dense="true"
-                      Hover="true"
-                      Bordered="true"
-                      Striped="true">
-
-                <HeaderContent>
-                    <MudTh style="width:160px;">Actions</MudTh>
-                    <MudTh>Payment Method</MudTh>
-                    <MudTh>Payment Reference</MudTh>
-                    <MudTh class="text-end">Amount</MudTh>
-                </HeaderContent>
-
-                <RowTemplate>
-                    <MudTd>
-                        <MudButton StartIcon="@Icons.Material.TwoTone.DeleteSweep"
-                                   Size="MudBlazor.Size.Small"
-                                   Class="mx-1"
-                                   Variant="Variant.Filled"
-                                   Color="Color.Error"
-                                   OnClick="@(() => DeletePayment(context))">Remove</MudButton>
-                    </MudTd>
-                    <MudTd>@context.PaymentMethod</MudTd>
-                    <MudTd>@context.PaymentRef</MudTd>
-                    <MudTd class="text-end">@context.Amount.ToString("N2")</MudTd>
-                </RowTemplate>
-
-                <FooterContent></FooterContent>
-            </MudTable>
-
-            <div style="display:flex; justify-content:flex-end; margin-top:15px;">
-                <div style="border:1px solid #dee2e6; border-radius:6px; padding:12px 20px; min-width:250px;">
-                    <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:6px;">
-                        <span>Invoice Total</span>
-                        <span style="color:#198754;">
-                            @Record.Invoice.TotalInvoiceAmount.ToString("#,##0.00")
-                        </span>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; font-weight:bold;">
-                        <span>Total Paid</span>
-                        <span style="color:#198754;">
-                            @Record.Invoice.TotalPayments.ToString("#,##0.00")
-                        </span>
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4">
+            <!-- Payment Entry Card -->
+            <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px;">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Payment" 
+                             Size="Size.Large" 
+                             Color="Color.Primary" 
+                             Class="me-3" />
+                    <div>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Add Payment</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Enter payment details</MudText>
                     </div>
                 </div>
-            </div>
-        </MudPaper>
+                <MudDivider Class="mb-4" />
+
+                <MudGrid>
+                    <MudItem xs="12" md="4">
+                        <MudSelect T="int"
+                                   Label="Payment Method"
+                                   @bind-Value="InvoicePayments.AccountId"
+                                   Variant="Variant.Outlined"
+                                   Clearable="@true"
+                                   FullWidth="@true"
+                                   @bind-Value:after="PaymentMethodChanged"
+                                   Class="mb-3">
+                            @if (PaymentMethod != null)
+                            {
+                                @foreach (var pm in PaymentMethod)
+                                {
+                                    <MudSelectItem T="int" Value="@pm.Id">@pm.Name</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" md="4">
+                        <MudTextField Label="Payment Reference"
+                                      @bind-Value="InvoicePayments.PaymentRef"
+                                      Variant="Variant.Outlined"
+                                      Dense="@true"
+                                      FullWidth="@true"
+                                      Class="mb-3" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="4">
+                        <MudNumericField Label="Amount"
+                                         @bind-Value="InvoicePayments.Amount"
+                                         Variant="Variant.Outlined"
+                                         Dense="@true"
+                                         Format="#,##0.00"
+                                         InputClass="text-end"
+                                         FullWidth="@true"
+                                         Class="mb-3" />
+                    </MudItem>
+                </MudGrid>
+
+                <!-- Balance and Actions -->
+                <MudDivider Class="my-4" />
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <MudPaper Elevation="1" Class="pa-3" Style="border-radius: 8px; border-left: 4px solid var(--mud-palette-error);">
+                        <MudText Typo="Typo.body2" Class="fw-bold mb-1">Remaining Balance</MudText>
+                        <MudText Typo="Typo.h6" Class="fw-bold mb-0" Color="Color.Error">
+                            @(CalculateRemainingBalance().ToString("#,##0.00"))
+                        </MudText>
+                    </MudPaper>
+
+                    <div class="d-flex gap-2">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Success"
+                                   StartIcon="@Icons.Material.Filled.Add"
+                                   OnClick="AddPayment"
+                                   Size="Size.Medium">
+                            Add Payment
+                        </MudButton>
+
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Secondary"
+                                   StartIcon="@Icons.Material.Filled.Close"
+                                   OnClick="CloseDialogMethod"
+                                   Size="Size.Medium">
+                            Close
+                        </MudButton>
+                    </div>
+                </div>
+            </MudPaper>
+
+            <!-- Payments List Card -->
+            <MudPaper Elevation="2" Class="pa-4" Style="border-radius: 12px;">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.List" 
+                             Size="Size.Large" 
+                             Color="Color.Info" 
+                             Class="me-3" />
+                    <div>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Payment History</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">List of all payments</MudText>
+                    </div>
+                </div>
+                <MudDivider Class="mb-4" />
+
+                <MudTable T="InvoicePaymentModel"
+                          Items="@Record.InvoicePayments"
+                          Dense="true"
+                          Hover="true"
+                          Bordered="true"
+                          Striped="true"
+                          Elevation="0">
+
+                    <HeaderContent>
+                        <MudTh Style="width:120px;">Actions</MudTh>
+                        <MudTh>Payment Method</MudTh>
+                        <MudTh>Payment Reference</MudTh>
+                        <MudTh Class="text-end">Amount</MudTh>
+                    </HeaderContent>
+
+                    <RowTemplate>
+                        <MudTd>
+                            <MudButton StartIcon="@Icons.Material.Filled.Delete"
+                                       Size="Size.Small"
+                                       Variant="Variant.Filled"
+                                       Color="Color.Error"
+                                       OnClick="@(() => DeletePayment(context))">
+                                Remove
+                            </MudButton>
+                        </MudTd>
+                        <MudTd>@context.PaymentMethod</MudTd>
+                        <MudTd>@context.PaymentRef</MudTd>
+                        <MudTd Class="text-end fw-bold">@context.Amount.ToString("N2")</MudTd>
+                    </RowTemplate>
+
+                    <FooterContent></FooterContent>
+                </MudTable>
+
+                <!-- Summary Footer -->
+                <MudDivider Class="my-4" />
+                <MudPaper Elevation="1" Class="pa-3" Style="border-radius: 8px; background: var(--mud-palette-grey-lighteren);">
+                    <MudGrid>
+                        <MudItem xs="12" md="6">
+                            <div class="d-flex justify-content-between mb-2">
+                                <MudText Typo="Typo.body1" Class="fw-bold">Invoice Total:</MudText>
+                                <MudText Typo="Typo.body1" Class="fw-bold" Color="Color.Success">
+                                    @Record.Invoice.TotalInvoiceAmount.ToString("#,##0.00")
+                                </MudText>
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <div class="d-flex justify-content-between">
+                                <MudText Typo="Typo.body1" Class="fw-bold">Total Paid:</MudText>
+                                <MudText Typo="Typo.body1" Class="fw-bold" Color="Color.Primary">
+                                    @Record.Invoice.TotalPayments.ToString("#,##0.00")
+                                </MudText>
+                            </div>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            </MudPaper>
+        </MudContainer>
     </DialogContent>
 </MudDialog>
 
@@ -279,7 +317,7 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    public async void CloseDialog()
+    public async Task CloseDialog()
     {
         await CloseDialogMethod();
     }

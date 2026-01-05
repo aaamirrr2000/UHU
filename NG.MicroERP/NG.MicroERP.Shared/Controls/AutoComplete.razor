@@ -1,16 +1,21 @@
 ﻿@using MudBlazor
-@typeparam TItem
+@typeparam TItem where TItem : class
 
 <MudAutocomplete T="TItem"
                  Value="@_selectedItem"
                  ValueChanged="@OnValueChanged"
                  SearchFunc="@SearchItems"
                  ToStringFunc="@ItemToString"
+                 Adornment="Adornment.End"
                  Clearable="true"
+                 CoerceText="true"
+                 CoerceValue="true"
+                 ResetValueOnEmptyText="true"
                  DebounceInterval="300"
                  FullWidth="FullWidth"
                  Variant="Variant"
-                 Label="@Label"
+                 Label="@(string.IsNullOrWhiteSpace(Label) ? null : Label)"
+                 Placeholder="@Placeholder"
                  @attributes="AdditionalAttributes">
 
     <ProgressIndicatorTemplate>
@@ -19,82 +24,139 @@
 </MudAutocomplete>
 
 @code {
-    /** ============================
-     **     NEW PARAMETERS ADDED
-     ** ============================ */
-
     [Parameter] public bool FullWidth { get; set; } = true;
-
     [Parameter] public Variant Variant { get; set; } = Variant.Outlined;
-
-
-    /** ============================
-     **     EXISTING PARAMETERS
-     ** ============================ */
-
     [Parameter] public string? Label { get; set; } = "Select";
+    [Parameter] public string? Placeholder { get; set; }
 
-    // Original object binding
-    [Parameter] public TItem SelectedValue { get; set; } = default!;
-    [Parameter] public EventCallback<TItem> SelectedValueChanged { get; set; }
+    [Parameter] public TItem? SelectedValue { get; set; }
+    [Parameter] public EventCallback<TItem?> SelectedValueChanged { get; set; }
 
-    // ID binding
     [Parameter] public int SelectedId { get; set; }
     [Parameter] public EventCallback<int> SelectedIdChanged { get; set; }
     [Parameter] public Func<TItem, int>? IdProperty { get; set; }
 
-    // Data and display
-    [Parameter] public List<TItem> DataList { get; set; } = new();
+    [Parameter] public List<TItem>? DataList { get; set; }
     [Parameter] public Func<TItem, string>? DisplayProperty { get; set; }
     [Parameter] public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
+    [Parameter] public bool IncludeDefaultOption { get; set; } = false;
+    [Parameter] public string DefaultOptionText { get; set; } = "Select...";
+    [Parameter] public int DefaultOptionId { get; set; } = 0;
+    [Parameter] public string DefaultOptionDisplayName { get; set; } = "Select...";
+
     private TItem? _selectedItem;
+    private List<TItem> _combinedList = new();
+    private TItem? _defaultOption;
 
     protected override void OnParametersSet()
     {
+        PrepareDataList();
         _selectedItem = GetSelectedItem();
+    }
+
+    private void PrepareDataList()
+    {
+        _combinedList.Clear();
+        _defaultOption = null;
+
+        if (IncludeDefaultOption)
+        {
+            _defaultOption = CreateDefaultOption();
+            if (_defaultOption != null)
+                _combinedList.Add(_defaultOption);
+        }
+
+        if (DataList != null && DataList.Any())
+        {
+            _combinedList.AddRange(DataList);
+        }
+    }
+
+    private TItem? CreateDefaultOption()
+    {
+        try
+        {
+            var defaultItem = Activator.CreateInstance<TItem>();
+
+            var displayProp = typeof(TItem).GetProperty("DisplayName");
+            if (displayProp?.CanWrite == true) displayProp.SetValue(defaultItem, DefaultOptionDisplayName);
+
+            var nameProp = typeof(TItem).GetProperty("Name");
+            if (nameProp?.CanWrite == true) nameProp.SetValue(defaultItem, DefaultOptionText);
+
+            var idProp = typeof(TItem).GetProperty("Id");
+            if (idProp?.CanWrite == true) idProp.SetValue(defaultItem, DefaultOptionId);
+
+            return defaultItem;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private async Task<IEnumerable<TItem>> SearchItems(string value, CancellationToken token)
     {
         await Task.Delay(100, token);
 
-        if (string.IsNullOrEmpty(value))
-            return DataList.Take(20);
+        if (_combinedList == null || !_combinedList.Any())
+            return Enumerable.Empty<TItem>();
 
-        return DataList.Where(x =>
-            ItemToString(x)?.Contains(value, StringComparison.InvariantCultureIgnoreCase) == true
-        );
+        if (string.IsNullOrEmpty(value))
+        {
+            if (IncludeDefaultOption && _defaultOption != null)
+                return new List<TItem> { _defaultOption }.Concat(_combinedList.Where(x => IdProperty?.Invoke(x) != DefaultOptionId).Take(19));
+
+            return _combinedList.Take(20);
+        }
+
+        return _combinedList.Where(x =>
+        {
+            var text = ItemToString(x);
+            return !string.IsNullOrEmpty(text) && text.Contains(value, StringComparison.InvariantCultureIgnoreCase);
+        });
     }
 
-    private string ItemToString(TItem item)
+    private string ItemToString(TItem? item)
     {
         if (item == null) return string.Empty;
-        return DisplayProperty?.Invoke(item) ?? item?.ToString() ?? string.Empty;
+        if (IncludeDefaultOption && _defaultOption != null && IdProperty != null && IdProperty(item) == DefaultOptionId)
+            return DefaultOptionText;
+        return DisplayProperty?.Invoke(item) ?? item.ToString() ?? string.Empty;
     }
 
-    private async Task OnValueChanged(TItem newValue)
+    private async Task OnValueChanged(TItem? newValue)
     {
         _selectedItem = newValue;
 
         if (IdProperty != null)
         {
-            var newId = newValue != null ? IdProperty(newValue) : 0;
+            int newId = 0;
+            if (IncludeDefaultOption && _defaultOption != null && newValue != null && IdProperty(newValue) == DefaultOptionId)
+            {
+                newId = DefaultOptionId;
+            }
+            else if (newValue != null)
+            {
+                newId = IdProperty(newValue);
+            }
+
             await SelectedIdChanged.InvokeAsync(newId);
         }
-        else
-        {
-            SelectedValue = newValue;
-            await SelectedValueChanged.InvokeAsync(newValue);
-        }
+
+        await SelectedValueChanged.InvokeAsync(newValue);
     }
 
     private TItem? GetSelectedItem()
     {
-        if (IdProperty != null && SelectedId > 0 && DataList?.Any() == true)
-        {
-            return DataList.FirstOrDefault(x => IdProperty(x) == SelectedId);
-        }
+        if (IncludeDefaultOption && SelectedId == DefaultOptionId && _defaultOption != null)
+            return _defaultOption;
+
+        if (SelectedId == 0) return null;
+
+        if (IdProperty != null && SelectedId > 0 && _combinedList.Any())
+            return _combinedList.FirstOrDefault(x => IdProperty(x) == SelectedId);
 
         return SelectedValue;
     }

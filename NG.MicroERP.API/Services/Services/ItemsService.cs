@@ -44,27 +44,26 @@ public class ItemsService : IItemsService
                     Items.MinQty,
                     Items.MaxQty,
                     Items.ReorderQty,
-                    Items.Discount,
-                    Items.Tax,
+                    Items.DefaultDiscount,
                     Items.CostPrice,
-                    Items.RetailPrice,
-                    Items.CategoriesId,
+                    Items.BasePrice,
+                    Items.CategoryId,
                     Categories.Code AS CategoryCode,
                     Categories.Name AS CategoryName,
                     Items.StockType,
                     Items.Unit,
+                    Items.TaxRuleId,
                     Items.ServingSize,
-                    Items.IsFavItem,
+                    Items.IsFavorite,
                     Items.IsActive,
                     Items.CreatedBy,
                     Items.CreatedOn,
                     Items.CreatedFrom,
                     Items.UpdatedBy,
                     Items.UpdatedOn,
-                    Items.UpdatedFrom,
-                    Items.IsInventoryItem
+                    Items.UpdatedFrom
                 FROM Items
-                LEFT JOIN Categories ON Categories.Id = Items.CategoriesId
+                LEFT JOIN Categories ON Categories.Id = Items.CategoryId
                 WHERE Items.IsSoftDeleted = 0 {SQL}
                 GROUP BY
                     Items.Id,
@@ -77,29 +76,28 @@ public class ItemsService : IItemsService
                     Items.MinQty,
                     Items.MaxQty,
                     Items.ReorderQty,
-                    Items.Discount,
-                    Items.Tax,
+                    Items.DefaultDiscount,
                     Items.CostPrice,
-                    Items.RetailPrice,
-                    Items.CategoriesId,
+                    Items.BasePrice,
+                    Items.CategoryId,
                     Categories.Code,
                     Categories.Name,
                     Items.StockType,
                     Items.Unit,
+                    Items.TaxRuleId,
                     Items.ServingSize,
-                    Items.IsFavItem,
+                    Items.IsFavorite,
                     Items.IsActive,
                     Items.CreatedBy,
                     Items.CreatedOn,
                     Items.CreatedFrom,
                     Items.UpdatedBy,
                     Items.UpdatedOn,
-                    Items.UpdatedFrom,
-                    Items.IsInventoryItem
+                    Items.UpdatedFrom
             ";
 
 
-        SQL += " Order by Items.IsFavItem desc, Items.Name";
+        SQL += " Order by Items.IsFavorite desc, Items.Name";
 
         List<ItemsModel> result = (await dapper.SearchByQuery<ItemsModel>(SQL)) ?? new List<ItemsModel>();
 
@@ -123,28 +121,28 @@ public class ItemsService : IItemsService
                           Items.MinQty,
                           Items.MaxQty,
                           Items.ReorderQty,
-                          Items.Discount,
+                          Items.DefaultDiscount,
                           Items.CostPrice,
-                          Items.RetailPrice,
-                          Items.CategoriesId,
+                          Items.BasePrice,
+                          Items.CategoryId,
                           Categories.Code as CategoryCode,
                           Categories.Name as CategoryName,
                           Items.StockType,
                           Items.SaleType,
                           Items.Unit,
+                          Items.TaxRuleId,
                           Items.ServingSize,
-                          Items.IsFavItem,
+                          Items.IsFavorite,
                           Items.IsActive,
                           Items.CreatedBy,
                           Items.CreatedOn,
                           Items.CreatedFrom,
                           Items.UpdatedBy,
                           Items.UpdatedOn,
-                          Items.UpdatedFrom,
-                          Items.IsInventoryItem,
+                          Items.UpdatedFrom
                           ISNULL(Itm.Quantity, 0) as Quantity
                     FROM Items
-                    LEFT JOIN Categories ON Categories.Id = Items.CategoriesId
+                    LEFT JOIN Categories ON Categories.Id = Items.CategoryId
                     LEFT JOIN (
                         SELECT ItemId, SUM(qty) as Quantity 
                         FROM BillDetail 
@@ -180,58 +178,56 @@ public class ItemsService : IItemsService
         {
             string Code = dapper.GetCode("", "Items", "Code", 12)!;
             string SQLDuplicate = $@"SELECT * FROM Items WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
-            string SQLInsert = $@"INSERT INTO Items 
-			(
-				OrganizationId, 
-				Pic, 
-				Code, 
-				HsCode, 
-				Name, 
-				Description, 
-				MinQty, 
-				MaxQty, 
-				ReorderQty, 
-				Discount, 
-				Tax, 
-				CostPrice, 
-				RetailPrice, 
-				CategoriesId, 
-				StockType, 
-				Unit, 
-				IsInventoryItem, 
-				IsFavItem, 
-				IsActive, 
-				CreatedBy, 
-				CreatedOn, 
-				CreatedFrom, 
-				IsSoftDeleted
-			) 
-			VALUES 
-			(
-				{obj.OrganizationId},
-				'{obj.Pic!.ToUpper()}', 
-				'{Code}', 
-				'{obj.HsCode!.ToUpper()}', 
-				'{obj.Name!.ToUpper()}', 
-				'{obj.Description!.ToUpper()}', 
-				{obj.MinQty},
-				{obj.MaxQty},
-				{obj.ReorderQty},
-				{obj.Discount},
-				{obj.Tax},
-				{obj.CostPrice},
-				{obj.RetailPrice},
-				{obj.CategoriesId},
-				'{obj.StockType!.ToUpper()}', 
-				'{obj.Unit!.ToUpper()}', 
-				{obj.IsInventoryItem},
-				{obj.IsFavItem},
-				{obj.IsActive},
-				{obj.CreatedBy},
-				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
-				'{obj.CreatedFrom!.ToUpper()}', 
-				{obj.IsSoftDeleted}
-			);";
+            string SQLInsert = $@"
+                                INSERT INTO Items 
+                                (
+                                    OrganizationId, 
+                                    Pic, 
+                                    Code, 
+                                    HsCode, 
+                                    Name, 
+                                    Description, 
+                                    MinQty, 
+                                    MaxQty, 
+                                    ReorderQty, 
+                                    DefaultDiscount, 
+                                    CostPrice, 
+                                    BasePrice, 
+                                    CategoryId, 
+                                    StockType, 
+                                    Unit, 
+                                    TaxRuleId,
+                                    IsFavorite, 
+                                    IsActive, 
+                                    CreatedBy, 
+                                    CreatedOn, 
+                                    CreatedFrom
+                                ) 
+                                VALUES 
+                                (
+                                    {obj.OrganizationId},
+                                    '{obj.Pic?.ToUpper() ?? "null"}', 
+                                    '{Code?.ToUpper() ?? "null"}', 
+                                    '{obj.HsCode?.ToUpper() ?? "null"}', 
+                                    '{obj.Name?.ToUpper() ?? "null"}', 
+                                    '{obj.Description?.ToUpper() ?? "null"}', 
+                                    {obj.MinQty},
+                                    {obj.MaxQty},
+                                    {obj.ReorderQty},
+                                    {obj.DefaultDiscount},
+                                    {obj.CostPrice},
+                                    {obj.BasePrice},
+                                    {obj.CategoryId},
+                                    '{obj.StockType?.ToUpper() ?? "null"}', 
+                                    '{obj.Unit?.ToUpper() ?? "null"}', 
+                                    {obj.TaxRuleId},
+                                    {obj.IsFavorite},
+                                    {obj.IsActive},
+                                    {obj.CreatedBy},
+                                    '{DateTime.Now:yyyy-MM-dd HH:mm:ss}',
+                                    '{obj.CreatedFrom?.ToUpper() ?? "null"}'
+                                );";
+
 
             var res = await dapper.Insert(SQLInsert, SQLDuplicate);
             if (res.Item1 == true)
@@ -248,7 +244,7 @@ public class ItemsService : IItemsService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
     }
 
@@ -257,32 +253,32 @@ public class ItemsService : IItemsService
         try
         {
             string SQLDuplicate = $@"SELECT * FROM Items WHERE UPPER(code) = '{obj.Code!.ToUpper()}' and ID != {obj.Id};";
-            string SQLUpdate = $@"UPDATE Items SET 
-					OrganizationId = {obj.OrganizationId}, 
-					Pic = '{obj.Pic!.ToUpper()}', 
-					Code = '{obj.Code!.ToUpper()}', 
-					HsCode = '{obj.HsCode!.ToUpper()}', 
-					Name = '{obj.Name!.ToUpper()}', 
-					Description = '{obj.Description!.ToUpper()}', 
-					MinQty = {obj.MinQty}, 
-					MaxQty = {obj.MaxQty}, 
-					ReorderQty = {obj.ReorderQty}, 
-					Discount = {obj.Discount}, 
-					Tax = {obj.Tax}, 
-					CostPrice = {obj.CostPrice}, 
-					RetailPrice = {obj.RetailPrice}, 
-					CategoriesId = {obj.CategoriesId}, 
-					StockType = '{obj.StockType!.ToUpper()}', 
-					Unit = '{obj.Unit!.ToUpper()}', 
-					ServingSize = '{obj.ServingSize!.ToUpper()}', 
-					IsInventoryItem = {obj.IsInventoryItem}, 
-					IsFavItem = {obj.IsFavItem}, 
-					IsActive = {obj.IsActive}, 
-					UpdatedBy = {obj.UpdatedBy}, 
-					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
-					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
-					IsSoftDeleted = {obj.IsSoftDeleted} 
-				WHERE Id = {obj.Id};";
+            string SQLUpdate = $@"
+                    UPDATE Items SET 
+                        OrganizationId = {obj.OrganizationId}, 
+                        Pic = '{obj.Pic?.ToUpper() ?? "null"}', 
+                        Code = '{obj.Code?.ToUpper() ?? "null"}', 
+                        HsCode = '{obj.HsCode ?? "null"}', 
+                        Name = '{obj.Name?.ToUpper() ?? "null"}', 
+                        Description = '{obj.Description?.ToUpper() ?? "null"}', 
+                        MinQty = {obj.MinQty}, 
+                        MaxQty = {obj.MaxQty}, 
+                        ReorderQty = {obj.ReorderQty}, 
+                        DefaultDiscount = {obj.DefaultDiscount}, 
+                        CostPrice = {obj.CostPrice}, 
+                        BasePrice = {obj.BasePrice}, 
+                        CategoryId = {obj.CategoryId}, 
+                        StockType = '{obj.StockType?.ToUpper() ?? "null"}', 
+                        Unit = '{obj.Unit?.ToUpper() ?? "null"}',
+                        TaxRuleId = {obj.TaxRuleId}, 
+                        ServingSize = '{obj.ServingSize?.ToUpper() ?? "null"}',
+                        IsFavorite = {obj.IsFavorite}, 
+                        IsActive = {obj.IsActive}, 
+                        UpdatedBy = {obj.UpdatedBy}, 
+                        UpdatedOn = '{DateTime.Now:yyyy-MM-dd HH:mm:ss}', 
+                        UpdatedFrom = '{obj.UpdatedFrom?.ToUpper() ?? "null"}'
+                    WHERE Id = {obj.Id};";
+
 
             var res = await dapper.Update(SQLUpdate, SQLDuplicate);
             if (res.Item1 == true)
@@ -299,7 +295,7 @@ public class ItemsService : IItemsService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
     }
 
@@ -330,7 +326,7 @@ public class ItemsService : IItemsService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
 
     }

@@ -41,7 +41,9 @@ public class Globals
     public string? ClientInfo { get; set; }
     public string? SelectedMenuItem { get; set; }
     public bool IsSidebarExpanded { get; set; } = true;
+    
     public event Action? OnSidebarToggle;
+    public int AccessLevel { get; set; } = 0;
 
     public Globals()
     {
@@ -66,7 +68,7 @@ public class Globals
         byte[] keyBytes = Encoding.UTF8.GetBytes(key);
         using Aes aes = Aes.Create();
         aes.Key = keyBytes;
-        aes.IV = new byte[16]; // Zero IV (not recommended for production, use a random IV instead)
+        aes.IV = new byte[16];
 
         using MemoryStream memoryStream = new();
         using CryptoStream cryptoStream = new(memoryStream, aes.CreateEncryptor(), CryptoStreamMode.Write);
@@ -96,6 +98,10 @@ public class Globals
     {
         try
         {
+            // 👑 Admin (GroupId = 1) always has full access
+            if (User.GroupId == 1)
+                return 1;
+
             // 🧭 Validate navigation manager and input
             if (navManager == null || string.IsNullOrWhiteSpace(pageName))
             {
@@ -110,10 +116,6 @@ public class Globals
                 navManager.NavigateTo("/", true);
                 return -1;
             }
-
-            // 👑 Admin (GroupId = 1) always has full access
-            if (User.GroupId == 1)
-                return 1;
 
             // 🗂 Validate permissions
             if (MyPermissions == null || !MyPermissions.Any())
@@ -172,4 +174,22 @@ public class Globals
         return result;
     }
 
+    public InvoicesModel InvoiceGridTotals(InvoicesModel Invoice)
+    {
+        //Invoice Detail Total
+        double TotalInvoiceAmount = 0;
+        foreach (var i in Invoice.InvoiceDetails)
+        {
+            TotalInvoiceAmount += (i.Qty * i.UnitPrice) + i.TaxAmount - i.DiscountAmount;
+        }
+
+        //Payments Total
+        decimal TotalPaymentsAmount = 0;
+        foreach (var i in Invoice.InvoicePayments)
+        {
+            TotalPaymentsAmount += i.Amount;
+        }
+
+        return Invoice;
+    }
 }

@@ -7,11 +7,16 @@
 
 <PageTitle>System Backup</PageTitle>
 
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-12">
-            <h2>System Backup</h2>
-            <p class="text-muted">Create a complete backup of your database and images folder</p>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <div class="dashboard-header mb-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.Backup" Class="me-2" Style="color: white;" />
+                    System Backup
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">Create a complete backup of your database and images folder</MudText>
+            </div>
         </div>
     </div>
 
@@ -172,7 +177,30 @@
             </div>
         </div>
     }
-</div>
+</MudContainer>
+
+<style>
+    .dashboard-header {
+        padding: 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 24px;
+    }
+
+    .dashboard-header .mud-typography {
+        color: white !important;
+    }
+
+    .dashboard-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .dashboard-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+</style>
 
 @code {
     private bool isBackupInProgress = false;

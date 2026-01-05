@@ -9,142 +9,130 @@
 
 <Loading IsLoading="@LoadingPanel" />
 
-<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
-
-    <div class="text-end" style="margin-top:10px;">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <!-- Action Buttons Header -->
+    <div class="d-flex justify-content-end align-items-center mb-4 gap-2">
         @if (Action != "VIEW")
         {
-            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
-                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+            <MudButton OnClick="Save" 
+                       Color="Color.Success" 
+                       Variant="Variant.Filled"
+                       StartIcon="@Icons.Material.Filled.Save"
+                       Size="Size.Medium">
                 @(Action == "INSERT" ? "Save" : "Update")
             </MudButton>
 
             @if (Action == "UPDATE")
             {
-                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
-                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                <MudButton Color="Color.Error" 
+                           OnClick="Delete" 
+                           Variant="Variant.Filled"
+                           StartIcon="@Icons.Material.Filled.Delete"
+                           Size="Size.Medium">
                     Delete
                 </MudButton>
             }
         }
     </div>
 
-    <br />
-
-    <MudExpansionPanels MultiExpansion="true">
-        <MudExpansionPanel Text="Basic Details" Expanded="true" Style="margin-bottom:10px;">
-            <TitleContent>
-                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
-                    <i class="fa fa-info-circle"
-                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
-                    </i>
-                    <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">@(string.IsNullOrWhiteSpace(record.DepartmentName) ? "NO NAME" : record.DepartmentName)</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Departments</MudText>
+    <MudGrid>
+        <!-- Basic Details Card -->
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px;">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Business" 
+                             Size="Size.Large" 
+                             Color="Color.Primary" 
+                             Class="me-3" />
+                    <div>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Basic Details</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Department information and settings</MudText>
                     </div>
                 </div>
-                <hr style="height: 6px; border: none; background: #667eea; border-radius: 10px;" />
-            </TitleContent>
+                <MudDivider Class="mb-4" />
 
-            <ChildContent>
-                <div class="row" style="width:100%; display: flex;">
-                    <!-- Department Information Group -->
-                    <div class="col-12 mb-3">
-                        <MudDivider Class="my-3">
-                            <MudText Typo="Typo.subtitle2" Class="text-muted">Department Information</MudText>
-                        </MudDivider>
-                    </div>
-
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Name</label>
-                        <MudTextField id="DepartmentName"
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Department Name"
                                       @bind-Value="record.DepartmentName"
-                                      placeholder="Name"
+                                      Placeholder="Enter department name"
                                       ReadOnly="@isReadOnly"
                                       Variant="Variant.Outlined"
+                                      Required="true"
                                       FullWidth="true"
-                                      Class="flex-grow-1"></MudTextField>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.DepartmentName)" />
-                        </div>
-                    </div>
+                                      Class="mb-3" />
+                        <ValidationMessage For="@(() => record.DepartmentName)" />
+                    </MudItem>
 
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Parent Deptt</label>
-                        <div class="flex-grow-1">
+                    <MudItem xs="12" md="6">
+                        @if (isReadOnly)
+                        {
+                            <MudTextField Label="Parent Department"
+                                          Value="@(Par?.FirstOrDefault(p => p.Id == record.ParentId)?.DepartmentName ?? "")"
+                                          ReadOnly="true"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="true"
+                                          Class="mb-3" />
+                        }
+                        else
+                        {
                             <AutoComplete TItem="DepartmentsModel"
                                           DataList="@Par"
                                           DisplayProperty="@(p => p.DepartmentName)"
                                           IdProperty="@(p => p.Id)"
                                           @bind-SelectedId="record.ParentId"
                                           Variant="Variant.Outlined"
-                                          FullWidth="true" />
-                        </div>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.ParentId)" />
-                        </div>
-                    </div>
+                                          Label="Parent Department"
+                                          FullWidth="true"
+                                          Class="mb-3" />
+                        }
+                    </MudItem>
 
-                    <!-- Description Group -->
-                    <div class="col-12 mb-3 mt-2">
-                        <MudDivider Class="my-3">
-                            <MudText Typo="Typo.subtitle2" Class="text-muted">Description</MudText>
-                        </MudDivider>
-                    </div>
-
-                    <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Description</label>
-                        <MudTextField id="Description"
+                    <MudItem xs="12">
+                        <MudTextField Label="Description"
                                       @bind-Value="record.Description"
-                                      placeholder="Description"
+                                      Placeholder="Enter description"
                                       ReadOnly="@isReadOnly"
                                       Variant="Variant.Outlined"
+                                      Lines="3"
                                       FullWidth="true"
-                                      Class="flex-grow-1"></MudTextField>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.Description)" />
-                        </div>
-                    </div>
+                                      Class="mb-3" />
+                    </MudItem>
 
-                    <!-- Status Group -->
-                    <div class="col-12 mb-3 mt-2">
-                        <MudDivider Class="my-3">
-                            <MudText Typo="Typo.subtitle2" Class="text-muted">Status</MudText>
-                        </MudDivider>
-                    </div>
-
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Active</label>
+                    <MudItem xs="12" md="6">
                         <MudSelect T="int"
+                                   Label="Activation Status"
                                    @bind-Value="record.IsActive"
-                                   Placeholder="Active"
+                                   Placeholder="Select status"
                                    Variant="Variant.Outlined"
-                                   Clearable="true"
-                                   FullWidth="true"
-                                   Class="flex-grow-1">
+                                   Clearable="false"
+                                   ReadOnly="@isReadOnly"
+                                   Required="true"
+                                   FullWidth="true">
                             @if (record.IsActive != 0 && record.IsActive != 1)
                             {
                                 record.IsActive = 1;
                             }
-                            <MudSelectItem T="int" Value="1">
-                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
-                                Enable
-                            </MudSelectItem>
-                            <MudSelectItem T="int" Value="0">
-                                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" Class="me-2" />
-                                Disable
-                            </MudSelectItem>
+                            <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                            <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
                         </MudSelect>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.IsActive)" />
-                        </div>
-                    </div>
-                </div>
-            </ChildContent>
-        </MudExpansionPanel>
-    </MudExpansionPanels>
+                        <ValidationMessage For="@(() => record.IsActive)" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
 
-</div>
+<style>
+    .mud-paper {
+        transition: box-shadow 0.3s ease;
+    }
+
+    .mud-paper:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
 
 @code
 {
@@ -152,16 +140,16 @@
     List<OrganizationsModel> Org = new();
     List<DepartmentsModel> Par = new();
 
-    [Parameter] public string? Action { get; set; } = "INSERT";
+    [Parameter] public string Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
     [Parameter] public EventCallback OnSaved { get; set; }
 
     bool isReadOnly = true;
     private bool LoadingPanel { get; set; } = false;
-    private MyDrawer _drawer = new();
 
     protected override async Task OnInitializedAsync()
     {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "DepartmentsDashboard");
         await GetAll();
     }
 
@@ -204,12 +192,10 @@
 
     protected void GetDefaultValues()
     {
-
         if (Org != null && Org.Any() && record.OrganizationId == 0)
             record.OrganizationId = Org.First().Id;
         if (Par != null && Par.Any() && record.ParentId == 0)
             record.ParentId = Par.First().Id;
-
 
         StateHasChanged();
     }
@@ -253,11 +239,11 @@
             record.UpdatedOn = DateTime.Now;
             record.UpdatedFrom = Globals.ClientInfo;
 
-            string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
+            string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
             var result = await Functions.PostAsync<DepartmentsModel>($"Departments/{url}", record, true);
             if (result.Success == false)
             {
-                SnackbarService.Add($"Record Not Saved", Severity.Error);
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
             }
             else
             {
@@ -269,19 +255,15 @@
                 {
                     await Clear();
                 }
-
             }
         }
         catch (Exception ex)
         {
-            Log.Warning($"Error: {ex.Message}");
+            SnackbarService.Add($"ERROR: {ex.Message}", Severity.Error);
         }
         finally
         {
             LoadingPanel = false;
-
-
         }
     }
 }
-

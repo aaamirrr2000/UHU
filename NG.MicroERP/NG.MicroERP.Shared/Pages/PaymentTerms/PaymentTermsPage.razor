@@ -9,138 +9,132 @@
 
 <Loading IsLoading="@LoadingPanel" />
 
-<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
-
-    <div class="d-flex justify-content-end flex-wrap gap-2">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <!-- Action Buttons Header -->
+    <div class="d-flex justify-content-end align-items-center mb-4 gap-2">
         @if (Action != "VIEW")
         {
-            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
-                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+            <MudButton OnClick="Save" 
+                       Color="Color.Success" 
+                       Variant="Variant.Filled"
+                       StartIcon="@Icons.Material.Filled.Save"
+                       Size="Size.Medium">
                 @(Action == "INSERT" ? "Save" : "Update")
             </MudButton>
 
             @if (Action == "UPDATE")
             {
-                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
-                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                <MudButton Color="Color.Error" 
+                           OnClick="Delete" 
+                           Variant="Variant.Filled"
+                           StartIcon="@Icons.Material.Filled.Delete"
+                           Size="Size.Medium">
                     Delete
                 </MudButton>
             }
         }
     </div>
 
-    <br />
-
-    <MudExpansionPanels MultiExpansion="true">
-
-        <!-- Payment Term Information Panel -->
-        <MudExpansionPanel Text="Payment Term Information" Expanded="true" Style="margin-bottom:10px;">
-            <TitleContent>
-                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
-                    <i class="fa fa-file-invoice-dollar"
-                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
-                    </i>
-                    <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">Payment Terms</MudText>
+    <MudGrid>
+        <!-- Payment Term Information Card -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px; height: 100%;">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Receipt" 
+                             Size="Size.Large" 
+                             Color="Color.Primary" 
+                             Class="me-3" />
+                    <div>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Payment Term Information</MudText>
                         <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Payment Terms</MudText>
                     </div>
                 </div>
-                <hr style="height: 6px; border: none; background: #4CAF50; border-radius: 10px;" />
-            </TitleContent>
+                <hr style="height: 3px; border: none; background: linear-gradient(90deg, var(--mud-palette-primary) 0%, var(--mud-palette-primary-lighten) 100%); border-radius: 10px; margin: 0 0 24px 0;" />
 
-            <ChildContent>
-                <div class="row" style="width:100%; display: flex;">
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Code</label>
-                        <MudTextField id="Code"
-                                      @bind-Value="record.Code"
-                                      placeholder="Code"
-                                      ReadOnly="@isReadOnly"
-                                      Variant="Variant.Outlined"
-                                      FullWidth="true"
-                                      Class="flex-grow-1"></MudTextField>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.Code)" />
-                        </div>
-                    </div>
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudTextField Label="Code"
+                                     @bind-Value="record.Code"
+                                     Placeholder="Code"
+                                     ReadOnly="@isReadOnly"
+                                     Variant="Variant.Outlined"
+                                     FullWidth="@true"
+                                     Class="mb-3" />
+                        <ValidationMessage For="@(() => record.Code)" />
+                    </MudItem>
 
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Description</label>
-                        <MudTextField id="Description"
-                                      @bind-Value="record.Description"
-                                      placeholder="Description"
-                                      ReadOnly="@isReadOnly"
-                                      Variant="Variant.Outlined"
-                                      FullWidth="true"
-                                      Class="flex-grow-1"></MudTextField>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.Description)" />
-                        </div>
-                    </div>
-                </div>
-            </ChildContent>
-        </MudExpansionPanel>
+                    <MudItem xs="12">
+                        <MudTextField Label="Description"
+                                     @bind-Value="record.Description"
+                                     Placeholder="Description"
+                                     ReadOnly="@isReadOnly"
+                                     Variant="Variant.Outlined"
+                                     FullWidth="@true"
+                                     Class="mb-3" />
+                        <ValidationMessage For="@(() => record.Description)" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
 
-        <!-- Payment Settings Panel -->
-        <MudExpansionPanel Text="Payment Settings" Style="margin-bottom:10px;">
-            <TitleContent>
-                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
-                    <i class="fa fa-calendar-day"
-                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
-                    </i>
-                    <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">Payment Settings</MudText>
+        <!-- Payment Settings Card -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px; height: 100%;">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.CalendarToday" 
+                             Size="Size.Large" 
+                             Color="Color.Info" 
+                             Class="me-3" />
+                    <div>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Payment Settings</MudText>
                         <MudText Typo="Typo.caption" Class="text-muted">Payment terms and due days configuration</MudText>
                     </div>
                 </div>
-                <hr style="height: 6px; border: none; background: #2196F3; border-radius: 10px;" />
-            </TitleContent>
+                <hr style="height: 3px; border: none; background: linear-gradient(90deg, var(--mud-palette-info) 0%, var(--mud-palette-info-lighten) 100%); border-radius: 10px; margin: 0 0 24px 0;" />
 
-            <ChildContent>
-                <div class="row" style="width:100%; display: flex;">
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Days Due</label>
-                        <MudNumericField @bind-Value="record.DaysDue"
-                                         placeholder="Days Due"
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudNumericField T="int"
+                                         Label="Days Due"
+                                         @bind-Value="record.DaysDue"
+                                         Placeholder="Days Due"
                                          ReadOnly="@isReadOnly"
                                          Format="#,##0.00"
                                          Variant="Variant.Outlined"
-                                         FullWidth="true"
-                                         Class="flex-grow-1"></MudNumericField>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.DaysDue)" />
-                        </div>
-                    </div>
-                </div>
-            </ChildContent>
-        </MudExpansionPanel>
+                                         FullWidth="@true"
+                                         Class="mb-3" />
+                        <ValidationMessage For="@(() => record.DaysDue)" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
 
-        <!-- Default & Status Settings Panel -->
-        <MudExpansionPanel Text="Default & Status Settings" Style="margin-bottom:10px;">
-            <TitleContent>
-                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
-                    <i class="fa fa-sliders-h"
-                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
-                    </i>
-                    <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">Default & Status Settings</MudText>
+        <!-- Default & Status Settings Card -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px; height: 100%;">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Settings" 
+                             Size="Size.Large" 
+                             Color="Color.Warning" 
+                             Class="me-3" />
+                    <div>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Default & Status Settings</MudText>
                         <MudText Typo="Typo.caption" Class="text-muted">Default and activation status</MudText>
                     </div>
                 </div>
-                <hr style="height: 6px; border: none; background: #FF9800; border-radius: 10px;" />
-            </TitleContent>
+                <hr style="height: 3px; border: none; background: linear-gradient(90deg, var(--mud-palette-warning) 0%, var(--mud-palette-warning-lighten) 100%); border-radius: 10px; margin: 0 0 24px 0;" />
 
-            <ChildContent>
-                <div class="row" style="width:100%; display: flex;">
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">IsDefault</label>
+                <MudGrid>
+                    <MudItem xs="12" md="6">
                         <MudSelect T="int"
+                                   Label="IsDefault"
                                    @bind-Value="record.IsDefault"
                                    Placeholder="Default"
                                    Variant="Variant.Outlined"
-                                   Clearable="true"
-                                   FullWidth="true"
-                                   Class="flex-grow-1">
+                                   Clearable="@true"
+                                   FullWidth="@true"
+                                   ReadOnly="@isReadOnly"
+                                   Class="mb-3">
                             @if (record.IsDefault != 0 && record.IsDefault != 1)
                             {
                                 record.IsDefault = 1;
@@ -154,20 +148,19 @@
                                 Disable
                             </MudSelectItem>
                         </MudSelect>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.IsDefault)" />
-                        </div>
-                    </div>
+                        <ValidationMessage For="@(() => record.IsDefault)" />
+                    </MudItem>
 
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">IsActive</label>
+                    <MudItem xs="12" md="6">
                         <MudSelect T="int"
+                                   Label="IsActive"
                                    @bind-Value="record.IsActive"
                                    Placeholder="Active"
                                    Variant="Variant.Outlined"
-                                   Clearable="true"
-                                   FullWidth="true"
-                                   Class="flex-grow-1">
+                                   Clearable="@true"
+                                   FullWidth="@true"
+                                   ReadOnly="@isReadOnly"
+                                   Class="mb-3">
                             @if (record.IsActive != 0 && record.IsActive != 1)
                             {
                                 record.IsActive = 1;
@@ -181,16 +174,13 @@
                                 Disable
                             </MudSelectItem>
                         </MudSelect>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.IsActive)" />
-                        </div>
-                    </div>
-                </div>
-            </ChildContent>
-        </MudExpansionPanel>
-
-    </MudExpansionPanels>
-</div>
+                        <ValidationMessage For="@(() => record.IsActive)" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
 
 @code
 {
@@ -216,8 +206,6 @@
     protected async Task GetAll()
     {
         LoadingPanel = true;
-
-
 
         if (Action == "INSERT")
         {
@@ -248,9 +236,6 @@
 
     protected void GetDefaultValues()
     {
-
-
-
         StateHasChanged();
     }
 
@@ -307,8 +292,6 @@
                     await Clear();
                 }
             }
-
-
         }
         catch (Exception ex)
         {
@@ -320,4 +303,3 @@
         }
     }
 }
-

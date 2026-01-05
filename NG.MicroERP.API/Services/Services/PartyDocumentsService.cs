@@ -97,7 +97,7 @@ public class PartyDocumentsService : IPartyDocumentsService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
     }
 
@@ -135,7 +135,7 @@ public class PartyDocumentsService : IPartyDocumentsService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
     }
 

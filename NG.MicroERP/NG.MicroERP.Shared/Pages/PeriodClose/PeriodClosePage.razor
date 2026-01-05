@@ -1,0 +1,247 @@
+@page "/PeriodClosePage/{Action}/{CurrentRecord?}"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 100%; overflow-y: auto;">
+
+    <div class="text-end mb-3" style="position: sticky; top: 0; background: white; z-index: 10; padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
+        @if (Action != "VIEW")
+        {
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-3 py-2 mr-2" Style="height:40px; min-width: 100px;">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                @(Action == "INSERT" ? "Save" : "Update")
+            </MudButton>
+
+            @if (Action == "UPDATE")
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-3 py-2 mr-2" Style="height:40px; min-width: 100px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                    Delete
+                </MudButton>
+            }
+        }
+    </div>
+
+    <!-- Period Information -->
+    <MudCard Elevation="1" Class="mb-2" Style="padding: 8px;">
+        <MudCardContent Style="padding: 12px !important;">
+            <div class="row g-2">
+                <div class="col-12 col-md-6 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Period Name</label>
+                    <MudTextField id="PeriodName"
+                                  @bind-Value="record.PeriodName"
+                                  placeholder="e.g., 2024-01 or Jan-2024"
+                                  ReadOnly="@isReadOnly"
+                                  Variant="Variant.Outlined"
+                                  Dense="@true"
+                                  FullWidth="@true" />
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Start Date</label>
+                    <MudDatePicker @bind-Date="record.StartDate"
+                                   DateFormat="yyyy-MM-dd"
+                                   placeholder="Start Date"
+                                   ReadOnly="@isReadOnly"
+                                   Variant="Variant.Outlined"
+                                   Dense="@true"
+                                   FullWidth="@true" />
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">End Date</label>
+                    <MudDatePicker @bind-Date="record.EndDate"
+                                   DateFormat="yyyy-MM-dd"
+                                   placeholder="End Date"
+                                   ReadOnly="@isReadOnly"
+                                   Variant="Variant.Outlined"
+                                   Dense="@true"
+                                   FullWidth="@true" />
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Module Type</label>
+                    <MudSelect T="string"
+                               @bind-Value="record.ModuleType"
+                               Placeholder="Module Type"
+                               Variant="Variant.Outlined"
+                               Dense="@true"
+                               Clearable="@false"
+                               FullWidth="@true"
+                               ReadOnly="@isReadOnly">
+                        <MudSelectItem T="string" Value=@("ALL")>All Modules</MudSelectItem>
+                        <MudSelectItem T="string" Value=@("STOCK")>Stock</MudSelectItem>
+                        <MudSelectItem T="string" Value=@("SALE")>Sale Invoice</MudSelectItem>
+                        <MudSelectItem T="string" Value=@("PURCHASE")>Purchase Invoice</MudSelectItem>
+                        <MudSelectItem T="string" Value=@("CASHBOOK")>Cashbook</MudSelectItem>
+                        <MudSelectItem T="string" Value=@("GENERALLEDGER")>General Ledger</MudSelectItem>
+                    </MudSelect>
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Status</label>
+                    <MudSelect T="string"
+                               @bind-Value="record.Status"
+                               Placeholder="Status"
+                               Variant="Variant.Outlined"
+                               Dense="@true"
+                               Clearable="@false"
+                               FullWidth="@true"
+                               ReadOnly="@isReadOnly">
+                        <MudSelectItem T="string" Value=@("OPEN")>Open</MudSelectItem>
+                        <MudSelectItem T="string" Value=@("OPEN_PENDING")>Open Pending</MudSelectItem>
+                        <MudSelectItem T="string" Value=@("CLOSE")>Close</MudSelectItem>
+                    </MudSelect>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Notes</label>
+                    <MudTextField @bind-Value="record.Notes"
+                                  placeholder="Additional notes"
+                                  ReadOnly="@isReadOnly"
+                                  Variant="Variant.Outlined"
+                                  Dense="@true"
+                                  Lines="2"
+                                  FullWidth="@true" />
+                </div>
+            </div>
+        </MudCardContent>
+    </MudCard>
+
+</div>
+
+@code
+{
+    PeriodCloseModel record = new();
+
+    [Parameter] public string? Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Globals.AccessLevel = Globals.PageAccess(NavManager, "PeriodCloseDashboard");
+            await GetAll();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error initializing: {ex.Message}", Severity.Error);
+        }
+    }
+
+    protected async Task GetAll()
+    {
+        try
+        {
+            LoadingPanel = true;
+
+            if (Action == "INSERT")
+            {
+                Clear();
+                isReadOnly = false;
+            }
+            else if (CurrentRecord > 0)
+            {
+                await Get(CurrentRecord);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading data: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    protected async Task Get(int id)
+    {
+        try
+        {
+            LoadingPanel = true;
+            record = await Functions.GetAsync<PeriodCloseModel>($"PeriodClose/Get/{id}", true) ?? new PeriodCloseModel();
+            isReadOnly = Action == "VIEW";
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading record: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    protected void Clear()
+    {
+        Action = "INSERT";
+        record = new PeriodCloseModel();
+        record.ModuleType = "ALL";
+        record.Status = "OPEN";
+        record.StartDate = DateTime.Today;
+        record.EndDate = DateTime.Today.AddMonths(1).AddDays(-1);
+        isReadOnly = false;
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        try
+        {
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            LoadingPanel = true;
+            var result = await Functions.PostAsync<PeriodCloseModel>($"PeriodClose/{Action}", record, true);
+            LoadingPanel = false;
+
+            if (result.Success == false || result.Result == null)
+            {
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+            }
+            else
+            {
+                var res = result.Result;
+                await OnSaved.InvokeAsync();
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                
+                await Get(res.Id);
+                CurrentRecord = res.Id;
+                Action = "UPDATE";
+            }
+        }
+        catch (Exception ex)
+        {
+            LoadingPanel = false;
+            SnackbarService.Add($"Error saving Period Close: {ex.Message}", Severity.Error);
+        }
+    }
+}
+

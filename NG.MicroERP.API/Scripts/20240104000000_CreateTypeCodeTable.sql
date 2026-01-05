@@ -16,6 +16,7 @@ INSERT INTO TypeCode (ListName, ListValue, ParentId, SeqNo) VALUES
 ('LOCATION TYPE', 'OTHERS', 0, 1),
 ('PARTY TYPE', 'CUSTOMER', 0, 1),
 ('PARTY TYPE', 'SUPPLIER', 0, 1),
+('PARTY TYPE', 'BANK', 0, 1),
 ('PAYMENT METHOD', 'CASH', 0, 100),
 ('PAYMENT METHOD', 'CREDIT CARD', 0, 101),
 ('PAYMENT METHOD', 'WALLET', 0, 102),
@@ -148,4 +149,8 @@ INSERT INTO TypeCode (ListName, ListValue, ParentId, SeqNo) VALUES
 ('AREA TYPE', 'CITY', 0, 1),
 ('AREA TYPE', 'PROVINCE', 0, 1),
 ('AREA TYPE', 'REGION', 0, 1),
-('AREA TYPE', 'PAKISTAN', 0, 1);
+('AREA TYPE', 'PAKISTAN', 0, 1),
+('PARTY CLASS', 'CLASS A', 0, 1),
+('PARTY CLASS', 'CLASS B', 0, 1),
+('PARTY CLASS', 'CLASS C', 0, 1),
+('PARTY CLASS', 'CLASS D', 0, 1);

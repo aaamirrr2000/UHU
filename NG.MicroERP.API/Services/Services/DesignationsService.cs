@@ -101,7 +101,7 @@ public class DesignationsService : IDesignationsService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
     }
 
@@ -138,7 +138,7 @@ public class DesignationsService : IDesignationsService
         }
         catch (Exception ex)
         {
-            return (true, null!, ex.Message);
+            return (false, null!, ex.Message);
         }
 
     }

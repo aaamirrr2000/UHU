@@ -1,5 +1,7 @@
 ﻿@page "/CashBookPage/{Action}/{CurrentRecord?}"
 
+@using NG.MicroERP.Shared.Models
+@using NG.MicroERP.Shared.Pages.Invoices
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
 @inject NavigationManager NavManager
@@ -19,13 +21,16 @@
                 <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
                 @(Action == "INSERT" ? "Save" : "Update")
             </MudButton>
-            
-            <MudButton Variant="Variant.Filled" OnClick="Print" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
-                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
-                Print
-            </MudButton>
 
-            @if (Action == "UPDATE")
+            @if (Action == "UPDATE" && CurrentRecord > 0)
+            {
+                <MudButton Variant="Variant.Filled" OnClick="ShowGLPreview" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="mr-1" />
+                    View GL Entry
+                </MudButton>
+            }
+
+            @if (Action == "UPDATE" && record.IsPostedToGL == 0)
             {
                 <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
                     <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
@@ -88,7 +93,7 @@
                         <MudTextField id="SeqNo"
                                       @bind-Value="record.SeqNo"
                                       placeholder="Transaction #"
-                                      ReadOnly="true"
+                                      ReadOnly="@isReadOnly"
                                       Variant="Variant.Outlined"
                                       FullWidth="true"
                                       Class="flex-grow-1"></MudTextField>
@@ -99,8 +104,9 @@
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
                         <label class="form-label fw-bold mb-1">Transaction Date</label>
-                        <MudDatePicker @bind-Value="record.TranDate"
-                                       Format="yyyy-MM-dd"
+                        <MudDatePicker @bind-Date="record.TranDate"
+                                       @bind-Date:after="OnTranDateChanged"
+                                       DateFormat="yyyy-MM-dd"
                                        placeholder="Transaction Date"
                                        ReadOnly="@isReadOnly"
                                        Variant="Variant.Outlined"
@@ -138,46 +144,16 @@
                         </div>
                     </div>
                 </div>
-            </ChildContent>
-        </MudExpansionPanel>
-
-        <!-- Party & Location Panel -->
-        <MudExpansionPanel Text="Party & Location" Style="margin-bottom:10px;">
-            <TitleContent>
-                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
-                    <i class="fa fa-users"
-                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
-                    </i>
-                    <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">Party & Location</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted">Associated parties and locations</MudText>
-                    </div>
-                </div>
-                <hr style="height: 6px; border: none; background: #2196F3; border-radius: 10px;" />
-            </TitleContent>
-
-            <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
                         <label class="form-label fw-bold mb-1">Location</label>
-                        <MudSelect @bind-Value="record.LocationId"
-                                   Placeholder="Location"
-                                   Variant="Variant.Outlined"
-                                   Clearable="true"
-                                   FullWidth="true"
-                                   Class="flex-grow-1">
-                            @if (Loc != null && Loc.Any())
-                            {
-                                if (record.LocationId == 0)
-                                {
-                                    record.LocationId = Loc.First().Id;
-                                }
-                                foreach (var i in Loc)
-                                {
-                                    <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
-                                }
-                            }
-                        </MudSelect>
+                         <AutoComplete TItem="LocationsModel"
+                                      DataList="@Loc"
+                                      DisplayProperty="@(p => p.Name)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="record.LocationId"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true" />
                         <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.LocationId)" />
                         </div>
@@ -185,21 +161,13 @@
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
                         <label class="form-label fw-bold mb-1">Party</label>
-                        <MudSelect @bind-Value="record.PartyId"
-                                   @key="record.PartyId"
-                                   Placeholder="@filterParties.Replace("'", "").Replace("partytype=", "")"
-                                   Variant="Variant.Outlined"
-                                   Clearable="true"
-                                   FullWidth="true"
-                                   Class="flex-grow-1">
-                            @if (Par != null && Par.Any())
-                            {
-                                foreach (var i in Par)
-                                {
-                                    <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
-                                }
-                            }
-                        </MudSelect>
+                        <AutoComplete TItem="PartiesModel"
+                                      DataList="@Par"
+                                      DisplayProperty="@(p => p.DisplayName)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="record.PartyId"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true" />
                         <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.PartyId)" />
                         </div>
@@ -273,25 +241,6 @@
                         </div>
                     </div>
                 </div>
-            </ChildContent>
-        </MudExpansionPanel>
-
-        <!-- References Panel -->
-        <MudExpansionPanel Text="References" Style="margin-bottom:10px;">
-            <TitleContent>
-                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
-                    <i class="fa fa-link"
-                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
-                    </i>
-                    <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">References</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted">External references and tracking</MudText>
-                    </div>
-                </div>
-                <hr style="height: 6px; border: none; background: #9C27B0; border-radius: 10px;" />
-            </TitleContent>
-
-            <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
                         <label class="form-label fw-bold mb-1">Reference #</label>
@@ -325,41 +274,24 @@
         </MudExpansionPanel>
 
         <!-- Attachments Panel -->
-        <MudExpansionPanel Text="Attachments" Style="margin-bottom:10px;">
-            <TitleContent>
-                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
-                    <i class="fa fa-paperclip"
-                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
-                    </i>
-                    <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">Attachments</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted">Supporting documents and files</MudText>
-                    </div>
+        
+        <div class="row" style="width:100%; display: flex;">
+            <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
+                <div class="mt-2 flex-grow-1">
+                    <InputFile class="form-control" OnChange="OnFileInputChanged" />
+                    <a href=@record.FileAttachment download class="btn btn-link" style="font-size: 12px;">
+                        @record.FileAttachment
+                    </a>
                 </div>
-                <hr style="height: 6px; border: none; background: #F44336; border-radius: 10px;" />
-            </TitleContent>
-
-            <ChildContent>
-                <div class="row" style="width:100%; display: flex;">
-                    <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
-                        <div class="mt-2 flex-grow-1">
-                            <InputFile class="form-control" OnChange="OnFileInputChanged" />
-                            <a href=@record.FileAttachment download class="btn btn-link" style="font-size: 12px;">
-                                @record.FileAttachment
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </ChildContent>
-        </MudExpansionPanel>
-
+            </div>
+        </div>
     </MudExpansionPanels>
 
 </div>
 
 @code
 {
-    static CashBookModel record = new();
+    CashBookModel record = new();
     List<LocationsModel> Loc = new();
     List<PartiesModel> Par = new();
     List<ChartOfAccountsModel> Acc = new();
@@ -378,9 +310,11 @@
     bool isReadOnly = true;
     private bool LoadingPanel { get; set; } = false;
     private MyDrawer _drawer = new();
+    private string PeriodValidationMessage { get; set; } = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "CashBookDashboard");
         await GetAll();
     }
 
@@ -395,7 +329,7 @@
         Loc = await Functions.GetAsync<List<LocationsModel>>($"Locations/Search", true) ?? new List<LocationsModel>();
         Tra = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/CASHBOOK TRAN TYPE", true) ?? new List<TypeCodeModel>();
         pm = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PAYMENT METHOD", true) ?? new List<TypeCodeModel>();
-
+        Par = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search", true) ?? new List<PartiesModel>();
 
         if (Action == "INSERT")
         {
@@ -434,6 +368,7 @@
         LoadingPanel = true;
         record = await Functions.GetAsync<CashBookModel>($"CashBook/Get/{id}", true) ?? new CashBookModel();
         await OnTransactionTypeChanged();
+        await ValidatePeriodAsync();
         LoadingPanel = false;
     }
 
@@ -484,7 +419,7 @@
             var result = await Functions.PostAsync<CashBookModel>($"CashBook/{url}", record, true);
             if (result.Success == false)
             {
-                SnackbarService.Add($"Record Not Saved", Severity.Error);
+                SnackbarService.Add($"ERROR: {result.Message ?? "Record Not Saved"}", Severity.Error);
             }
             else
             {
@@ -505,11 +440,7 @@
         finally
         {
             LoadingPanel = false;
-
-
         }
-
-
     }
 
     protected void Print()
@@ -548,17 +479,17 @@
         {
             case "RECEIPT":
                 filterCOA = "InterfaceType='Revenue'";
-                filterParties = "partytype='Customer'";
+                filterParties = "a.partytype='Customer'";
                 break;
 
             case "PAYMENT":
                 filterCOA = "InterfaceType='Expense'";
-                filterParties = "partytype='Supplier'";
+                filterParties = "a.partytype='Supplier'";
                 break;
 
             default:
                 filterCOA = "InterfaceType='Bank'";
-                filterParties = "partytype='Bank'";
+                filterParties = "a.partytype='Bank'";
                 break;
         }
 
@@ -566,6 +497,156 @@
         Par = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search/{filterParties.ToUpper()}", true) ?? new List<PartiesModel>();
 
         LoadingPanel = false;
+    }
+
+    protected async Task ShowGLPreview()
+    {
+        try
+        {
+            if (CurrentRecord == 0)
+            {
+                SnackbarService.Add("Please save the cashbook entry first", Severity.Warning);
+                return;
+            }
+
+            // Ensure we have the latest cashbook data
+            await Get(CurrentRecord);
+
+            LoadingPanel = true;
+            try
+            {
+                var result = await Functions.PostAsync<GeneralLedgerHeaderModel>("GeneralLedger/PreviewGLFromCashBook", record, true);
+                LoadingPanel = false;
+
+                if (result.Success && result.Result != null)
+                {
+                    var parameters = new DialogParameters<InvoiceGLPreviewDialog>
+                    {
+                        { x => x.PreviewData, result.Result },
+                        { x => x.InvoiceId, CurrentRecord },
+                        { x => x.IsPostedToGL, record.IsPostedToGL == 1 },
+                        { x => x.OnPostToGL, EventCallback.Factory.Create(this, async () => 
+                        {
+                            await PostToGL();
+                            // Refresh preview after posting
+                            await ShowGLPreview();
+                        }) }
+                    };
+
+                    var options = new DialogOptions()
+                    {
+                        MaxWidth = MaxWidth.Large,
+                        FullWidth = true,
+                        CloseButton = true,
+                        CloseOnEscapeKey = true,
+                        BackdropClick = false
+                    };
+
+                    await dialogService.ShowAsync<InvoiceGLPreviewDialog>("Accounting Entry Preview", parameters, options);
+                }
+                else
+                {
+                    string errorMsg = !string.IsNullOrWhiteSpace(result.Message) 
+                        ? result.Message 
+                        : "Unable to generate preview. Please ensure all required accounts are configured in Chart of Accounts.";
+                    SnackbarService.Add(errorMsg, Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                LoadingPanel = false;
+                SnackbarService.Add($"Error generating preview: {ex.Message}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            LoadingPanel = false;
+            SnackbarService.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    protected async Task PostToGL()
+    {
+        try
+        {
+            if (CurrentRecord == 0)
+            {
+                SnackbarService.Add("Please save the cashbook entry before posting to GL", Severity.Warning);
+                return;
+            }
+
+            if (record.IsPostedToGL == 1)
+            {
+                SnackbarService.Add("This cashbook entry is already posted to General Ledger", Severity.Info);
+                return;
+            }
+
+            var res = await Functions.ShowConfirmation(dialogService, "Do you want to post this cashbook entry to General Ledger? Once posted, it cannot be edited or deleted.");
+            if (res == false)
+                return;
+
+            LoadingPanel = true;
+            var result = await Functions.PostAsync<GeneralLedgerHeaderModel>(
+                $"GeneralLedger/CreateGLFromCashBook/{CurrentRecord}?userId={Globals.User.Id}&clientInfo={Uri.EscapeDataString(Globals.ClientInfo)}", 
+                null, 
+                true);
+            LoadingPanel = false;
+
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+            }
+            else
+            {
+                SnackbarService.Add("Cashbook entry posted to General Ledger successfully", Severity.Success);
+                // Reload cashbook to get updated IsPostedToGL status
+                await Get(CurrentRecord);
+            }
+        }
+        catch (Exception ex)
+        {
+            LoadingPanel = false;
+            SnackbarService.Add($"Error posting to GL: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnTranDateChanged()
+    {
+        await ValidatePeriodAsync();
+    }
+
+    private async Task ValidatePeriodAsync()
+    {
+        PeriodValidationMessage = string.Empty;
+        
+        if (record?.TranDate == null || record.OrganizationId == 0)
+            return;
+
+        try
+        {
+            string moduleType = "CASHBOOK"; // CashBook module type
+            string dateStr = record.TranDate.Value.ToString("yyyy-MM-dd");
+            var result = await Functions.GetAsync<PeriodCloseModel>(
+                $"PeriodClose/GetOpenPeriod/{record.OrganizationId}/{dateStr}/{moduleType}", 
+                true);
+
+            if (result == null || result.Id == 0)
+            {
+                PeriodValidationMessage = $"Period is CLOSED for {moduleType} module on {dateStr}. You cannot save transactions for this date. Please ensure the period is open before saving.";
+                SnackbarService.Add(PeriodValidationMessage, Severity.Warning);
+            }
+            else
+            {
+                PeriodValidationMessage = string.Empty;
+            }
+        }
+        catch (Exception ex)
+        {
+            PeriodValidationMessage = $"Error checking period status: {ex.Message}";
+            SnackbarService.Add(PeriodValidationMessage, Severity.Error);
+        }
+        
+        await InvokeAsync(StateHasChanged);
     }
 
 }

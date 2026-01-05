@@ -1,0 +1,685 @@
+﻿@page "/InvoiceReport/{id:int}"
+@page "/InvoiceReport/{ServingSize:int}/{id:int}"
+@using System.Linq
+@using System.Collections.ObjectModel
+@using Microsoft.AspNetCore.WebUtilities
+@using NG.MicroERP.Shared.Models
+@inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime
+@layout BlankLayout
+@inject Globals Globals
+@inject Functions Functions
+
+@if (isLoading)
+{
+    <div class="text-center pa-4">
+        <p>Loading invoice data...</p>
+    </div>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="text-center pa-4">
+        <p style="color: red;">@errorMessage</p>
+        <p>Invoice ID: @id</p>
+    </div>
+}
+else if (ReportData?.Invoice != null)
+{
+    <div class="invoice-actions no-print">
+        <button class="btn btn-primary" @onclick="PrintReport">Print</button>
+    </div>
+
+    <div class="invoice-container">
+        <!-- Header -->
+        <div class="invoice-header text-center">
+            <div class="row">
+                <div class="col-md-2">
+                    <img src="@Globals.Organization.Logo" class="company-logo" style="width: 60px; height:60px;" />
+                </div>
+                <div class="col-md-8">
+                    <h1 style="font-size:18px;">@Globals.Organization.Name</h1>
+                    <h3 style="font-size:14px;">@Globals.Organization.Description</h3>
+                </div>
+            </div>
+            <div class="row">
+                    <h2>@(ReportData.Invoice.InvoiceType == "QUOTATION" ? "Q U O T A T I O N" : ReportData.Invoice.InvoiceType)</h2>
+            </div>
+        </div>
+
+        <!-- Customer Info -->
+        <div class="row mt-4">
+            <div class="col-sm-6">
+                <p><strong>Invoice No:</strong> @ReportData.Invoice.SeqNo</p>
+                <p><strong>Invoice Type:</strong> @ReportData.Invoice.InvoiceType</p>
+                <p><strong>Date:</strong> @ReportData.Invoice.TranDate.ToString("dd-MMM-yyyy hh:mm:ss tt")</p>
+                <p><strong>Location:</strong> @ReportData.Invoice.LocationName</p>
+            </div>
+            <div class="col-sm-6">
+                <p><strong>Party:</strong> @ReportData.Invoice.PartyName</p>
+                <p><strong>Phone:</strong> @ReportData.Invoice.PartyPhone</p>
+                <p><strong>Email:</strong> @ReportData.Invoice.PartyEmail</p>
+            </div>
+            <p><strong>Address:</strong> @ReportData.Invoice.PartyAddress</p>
+        </div>
+
+        <!-- Items Table - Full Width -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <table class="table table-bordered invoice-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th class="text-left">Sr.</th>
+                            <th class="text-left">Item</th>
+                            <th class="text-left">Feature</th>
+                            <th>Quantity</th>
+                            <th>Unit Price</th>
+                            <th>Discount</th>
+                            <th>Tax</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int serial = 1;
+                        }
+
+                        @{
+                            var invoiceType = ReportData?.Invoice?.InvoiceType ?? string.Empty;
+                            var isPurchase = !string.IsNullOrEmpty(invoiceType) && invoiceType.ToUpper().Contains("PURCHASE");
+                        }
+                        @foreach (var item in ReportData.Details)
+                        {
+                            // Use recalculated tax amount (matches InvoicePage calculation)
+                            var itemTaxAmount = GetItemTaxAmount(item.InvoiceDetailId, item.ItemId, item.Qty);
+                            
+                            // For purchase invoices, discount should be 0 (same as InvoicePage)
+                            // The discount from database should already be 0 for purchase, but ensure it's correct
+                            double itemDiscount = isPurchase ? 0 : item.DiscountAmount;
+                            
+                            // ItemTotalAmount = (Qty * UnitPrice) + TaxAmount - DiscountAmount (same as InvoicePage)
+                            var calculatedItemTotal = (item.Qty * item.UnitPrice) + itemTaxAmount - itemDiscount;
+                            
+                            <tr class="table-row-hover">
+                                <td class="text-left">@serial</td>
+                                <td class="text-left">@item.ItemName.ToUpper() @item.StockCondition.ToUpper()</td>
+                                <td class="text-left">@item.ServingSize</td>
+                                <td class="text-right">@item.Qty.ToString("N2")</td>
+                                <td class="text-right">@item.UnitPrice.ToString("N2")</td>
+                                <td class="text-right">@itemDiscount.ToString("N2")</td>
+                                <td class="text-right">@itemTaxAmount.ToString("N2")</td>
+                                <td class="text-right">@calculatedItemTotal.ToString("N2")</td>
+                            </tr>
+                            
+                            @if (WithTax)
+                            {
+                                // Use recalculated tax details (matches InvoicePage logic)
+                                if (_recalculatedTaxDetails.ContainsKey(item.InvoiceDetailId))
+                                {
+                                    var itemTaxesList = _recalculatedTaxDetails[item.InvoiceDetailId];
+                                    var taxInvoiceType = ReportData?.Invoice?.InvoiceType ?? string.Empty;
+                                    var isReturn = !string.IsNullOrEmpty(taxInvoiceType) && taxInvoiceType.ToUpper().Contains("RETURN");
+                                    
+                                    if (itemTaxesList != null && itemTaxesList.Count > 0)
+                                    {
+                                        // Calculate tax details for display (per tax * quantity, negated if RETURN)
+                                        var taxDetailsList = itemTaxesList.Select(tax =>
+                                        {
+                                            double lineTax = tax.TaxAmount * item.Qty;
+                                            if (isReturn)
+                                                lineTax = -lineTax;
+                                            
+                                            var rateDisplay = tax.Percentage != 0 ? $"{tax.Percentage.ToString("N2")}%" : "";
+                                            return string.IsNullOrEmpty(rateDisplay)
+                                                ? $"{tax.TaxName} = {lineTax.ToString("N2")}"
+                                                : $"{tax.TaxName} ({rateDisplay}) = {lineTax.ToString("N2")}";
+                                        }).Where(t => !string.IsNullOrEmpty(t)).ToList();
+                                        
+                                        if (taxDetailsList != null && taxDetailsList.Count > 0)
+                                        {
+                                            var taxDetails = string.Join(", ", taxDetailsList);
+                                            
+                                            <tr class="item-tax-row">
+                                                <td colspan="8" class="text-left item-tax-cell">
+                                                    <em>@taxDetails</em>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                }
+                                // Fallback to stored taxes if recalculated not available
+                                else if (ReportData.Taxes != null)
+                                {
+                                    var itemTaxesList = ReportData.Taxes
+                                        .Where(t => t.InvoiceDetailId == item.InvoiceDetailId && t.TaxAmount != 0)
+                                        .ToList();
+                                    
+                                    if (itemTaxesList != null && itemTaxesList.Count > 0)
+                                    {
+                                        // Group by TaxName and TaxRate to avoid duplicates
+                                        var groupedTaxes = GetGroupedTaxes(itemTaxesList);
+                                        
+                                        // Filter out taxes with zero amount after grouping
+                                        groupedTaxes = groupedTaxes.Where(t => t.TaxAmount != 0).ToList();
+                                        
+                                        if (groupedTaxes != null && groupedTaxes.Count > 0)
+                                        {
+                                            var taxDetails = string.Join(", ", groupedTaxes.Select(t => 
+                                                {
+                                                    var rateDisplay = t.TaxRate != 0 ? $"{t.TaxRate.ToString("N2")}%" : "";
+                                                    return string.IsNullOrEmpty(rateDisplay) 
+                                                        ? $"{t.TaxName} = {t.TaxAmount.ToString("N2")}"
+                                                        : $"{t.TaxName} ({rateDisplay}) = {t.TaxAmount.ToString("N2")}";
+                                                }));
+                                            
+                                            <tr class="item-tax-row">
+                                                <td colspan="8" class="text-left item-tax-cell">
+                                                    <em>@taxDetails</em>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                }
+                            }
+
+                            serial++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Summary and Payment Section -->
+        <div class="row mt-4">
+            <!-- Summary Table - Right Side -->
+            <div class="col-md-6 offset-md-6">
+                <div class="invoice-summary">
+                    @{
+                        // Get invoice type once for the summary section
+                        var summaryInvoiceType = ReportData?.Invoice?.InvoiceType ?? string.Empty;
+                        var isPurchaseInvoice = !string.IsNullOrEmpty(summaryInvoiceType) && summaryInvoiceType.ToUpper().Contains("PURCHASE");
+                        
+                        // Use stored values from database to match interface exactly
+                        // The interface calculates:
+                        // - InvoiceAmount = sum of item totals (subtotal)
+                        // - TotalInvoiceAmount = InvoiceAmount + ChargesAmount - DiscountAmount
+                        // - BalanceAmount = TotalInvoiceAmount - TotalPayments
+                        // The report view has:
+                        // - SubTotalAmount = sum of item totals
+                        // - InvoiceAmount = SubTotalAmount + TotalChargeAmount - DiscountAmount (this is TotalInvoiceAmount in view)
+                        // - BalanceAmount = InvoiceAmount - TotalPaidAmount
+                        // To match interface, we need to recalculate:
+                        var calculatedSubTotal = (double)ReportData.Invoice.SubTotalAmount;
+                        // For sale invoices: TotalInvoiceAmount = SubTotal + Charges - Discount
+                        // For purchase invoices: TotalInvoiceAmount = SubTotal (no charges/discount)
+                        var calculatedTotal = isPurchaseInvoice 
+                            ? calculatedSubTotal 
+                            : calculatedSubTotal + (double)ReportData.Invoice.TotalChargeAmount - (double)ReportData.Invoice.DiscountAmount;
+                        // Balance = TotalInvoiceAmount - TotalPaidAmount (match interface calculation)
+                        var calculatedBalance = calculatedTotal - (double)ReportData.Invoice.TotalPaidAmount;
+                    }
+                    <table class="table table-bordered" style="width: 100%;">
+                        <tbody>
+                            <tr>
+                                <td class="text-left font-weight-bold" style="width: 60%;">Sub Total:</td>
+                                <td class="text-end font-weight-bold">@calculatedSubTotal.ToString("N2")</td>
+                            </tr>
+                            @if (!isPurchaseInvoice && ReportData.Invoice.TotalChargeAmount > 0)
+                            {
+                                <tr>
+                                    <td class="text-left">Service Charges:</td>
+                                    <td class="text-end">@ReportData.Invoice.TotalChargeAmount.ToString("N2")</td>
+                                </tr>
+                            }
+                            @if (!isPurchaseInvoice && ReportData.Invoice.DiscountAmount > 0)
+                            {
+                                <tr>
+                                    <td class="text-left">Discount:</td>
+                                    <td class="text-end">@ReportData.Invoice.DiscountAmount.ToString("N2")</td>
+                                </tr>
+                            }
+                            <tr style="background-color: #e3f2fd;">
+                                <td class="text-left font-weight-bold">Total Invoice Amount:</td>
+                                <td class="text-end font-weight-bold">@calculatedTotal.ToString("N2")</td>
+                            </tr>
+                            @if (ReportData.Invoice.TotalPaidAmount > 0)
+                            {
+                                <tr style="background-color: #e8f5e9;">
+                                    <td class="text-left font-weight-bold">Total Paid:</td>
+                                    <td class="text-end font-weight-bold">@ReportData.Invoice.TotalPaidAmount.ToString("N2")</td>
+                                </tr>
+                            }
+                            @if (calculatedBalance != 0)
+                            {
+                                <tr style="background-color: #fff3cd;">
+                                    <td class="text-left font-weight-bold">Balance:</td>
+                                    <td class="text-end font-weight-bold">@calculatedBalance.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Payment Details - Below Items Grid -->
+        @if (ReportData.Payments != null && ReportData.Payments.Count > 0)
+        {
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h5 style="margin-bottom: 10px;">Payment Details</h5>
+                    <table class="table table-bordered" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th class="text-left">Particulars</th>
+                                <th class="text-end">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var payment in ReportData.Payments)
+                            {
+                                <tr>
+                                    <td class="text-left font-weight-bold">
+                                        @payment.PaymentMethod
+                                        @if (!string.IsNullOrWhiteSpace(payment.PaymentRef))
+                                        {
+                                            <text> (@payment.PaymentRef)</text>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        @payment.AmountPaid.ToString("N2")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+
+        <!-- Footer -->
+        <div class="row">
+            <div class="col-md-6 mt-4">
+                <p><strong>Created By:</strong> @ReportData.Invoice.Username</p>
+                <p><strong>Created Date:</strong> @ReportData.Invoice.CreatedOn.ToString("dd-MMM-yyyy HH:mm:ss")</p>
+            </div>
+            <div class="col-md-6 mt-4">
+                <p><strong>Print On:</strong> @DateTime.Now.ToString("dd-MMM-yyyy HH:mm:ss")</p>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <p>Loading...</p>
+}
+
+
+@code {
+    [Parameter] public int id { get; set; }
+    [Parameter] public int ServingSize { get; set; } = 1;
+    
+    private bool WithTax { get; set; } = false;
+
+    private InvoiceCompleteReportModel? ReportData;
+    private bool isLoading = true;
+    private string? errorMessage;
+    
+    // Dictionary to store recalculated tax amounts per invoice detail (ItemId, PartyId, Qty) -> TaxAmount
+    private Dictionary<(int ItemId, int PartyId, double Qty), double> _recalculatedTaxes = new();
+    
+    // Dictionary to store recalculated tax details per invoice detail for display
+    private Dictionary<int, List<ItemPartyTaxCalculationModel>> _recalculatedTaxDetails = new();
+    
+    private class TaxGroup
+    {
+        public string TaxName { get; set; } = string.Empty;
+        public decimal TaxRate { get; set; }
+        public decimal TaxAmount { get; set; }
+    }
+    
+    private List<TaxGroup> GetGroupedTaxes(List<InvoiceTaxesReportModel> taxes)
+    {
+        return taxes
+            .GroupBy(t => new { TaxName = t.TaxName ?? string.Empty, TaxRate = t.TaxRate })
+            .Select(g => new TaxGroup
+            {
+                TaxName = g.Key.TaxName,
+                TaxRate = g.Key.TaxRate,
+                TaxAmount = g.Sum(t => t.TaxAmount)
+            })
+            .OrderBy(t => t.TaxName)
+            .ToList();
+    }
+    
+    private double GetItemTaxAmount(int invoiceDetailId, int itemId, double qty)
+    {
+        // Use recalculated tax amount (matches InvoicePage logic)
+        var key = (itemId, ReportData?.Invoice?.PartyId ?? 0, qty);
+        if (_recalculatedTaxes.ContainsKey(key))
+        {
+            return _recalculatedTaxes[key];
+        }
+        
+        // Fallback to stored tax amount if recalculation not available
+        if (ReportData?.Taxes != null)
+        {
+            var itemTaxes = ReportData.Taxes
+                .Where(t => t.InvoiceDetailId == invoiceDetailId)
+                .ToList();
+                
+            if (itemTaxes != null && itemTaxes.Count > 0)
+            {
+                return (double)itemTaxes.Sum(t => t.TaxAmount);
+            }
+        }
+        
+        return 0.0;
+    }
+    
+    // Recalculate all item taxes using the same logic as InvoicePage.razor
+    private async Task RecalculateAllItemTaxes()
+    {
+        if (ReportData == null || ReportData.Details == null || !ReportData.Details.Any())
+            return;
+        
+        _recalculatedTaxes.Clear();
+        _recalculatedTaxDetails.Clear();
+        
+        int partyId = ReportData.Invoice?.PartyId ?? 0;
+        var invoiceType = ReportData.Invoice?.InvoiceType ?? string.Empty;
+        var isPurchase = !string.IsNullOrEmpty(invoiceType) && invoiceType.ToUpper().Contains("PURCHASE");
+        
+        if (partyId == 0) return;
+        
+        // For purchase invoices, taxes are still calculated (same as InvoicePage)
+        // The main difference is discount = 0 for purchase invoices
+        
+        // Process items in parallel for better performance
+        var tasks = ReportData.Details.Select(async item =>
+        {
+            try
+            {
+                // Get taxes from TaxCalculation API (same as InvoicePage)
+                var itemTaxes = await Functions.GetAsync<List<ItemPartyTaxCalculationModel>>(
+                    $"TaxCalculation/Search/ItemId={item.ItemId} and PartyId={partyId}", true) 
+                    ?? new List<ItemPartyTaxCalculationModel>();
+                
+                if (itemTaxes == null || !itemTaxes.Any())
+                {
+                    // Store empty tax details
+                    _recalculatedTaxDetails[item.InvoiceDetailId] = new List<ItemPartyTaxCalculationModel>();
+                    return;
+                }
+                
+                // Store tax details for display
+                _recalculatedTaxDetails[item.InvoiceDetailId] = itemTaxes;
+                
+                // Calculate tax using same logic as InvoicePage
+                double taxAmount = 0;
+                foreach (var tax in itemTaxes)
+                {
+                    // Calculate tax: per unit amount * quantity (same as InvoicePage)
+                    double lineTax = tax.TaxAmount * item.Qty;
+                    
+                    // If RETURN type, negate the tax (same as InvoicePage)
+                    if (!string.IsNullOrEmpty(invoiceType) && invoiceType.ToUpper().Contains("RETURN"))
+                    {
+                        lineTax = -lineTax;
+                    }
+                    
+                    taxAmount += lineTax;
+                }
+                
+                // Store recalculated tax amount
+                _recalculatedTaxes[(item.ItemId, partyId, item.Qty)] = taxAmount;
+            }
+            catch
+            {
+                // If recalculation fails, tax amount remains 0
+                _recalculatedTaxDetails[item.InvoiceDetailId] = new List<ItemPartyTaxCalculationModel>();
+            }
+        });
+        
+        await Task.WhenAll(tasks);
+    }
+    
+    // Recalculate tax using the same logic as InvoicePage.razor (for single item)
+    private async Task<double> CalculateItemTaxAsync(int itemId, int partyId, double quantity, string invoiceType)
+    {
+        try
+        {
+            // Get taxes from TaxCalculation API (same as InvoicePage)
+            var itemTaxes = await Functions.GetAsync<List<ItemPartyTaxCalculationModel>>(
+                $"TaxCalculation/Search/ItemId={itemId} and PartyId={partyId}", true) 
+                ?? new List<ItemPartyTaxCalculationModel>();
+            
+            if (itemTaxes == null || !itemTaxes.Any())
+                return 0.0;
+            
+            double taxAmount = 0;
+            foreach (var tax in itemTaxes)
+            {
+                // Calculate tax: per unit amount * quantity (same as InvoicePage)
+                double lineTax = tax.TaxAmount * quantity;
+                
+                // If RETURN type, negate the tax (same as InvoicePage)
+                if (!string.IsNullOrEmpty(invoiceType) && invoiceType.ToUpper().Contains("RETURN"))
+                {
+                    lineTax = -lineTax;
+                }
+                
+                taxAmount += lineTax;
+            }
+            
+            return taxAmount;
+        }
+        catch
+        {
+            // Fallback to stored tax amount if recalculation fails
+            return 0.0;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Parse withTax from query string
+        ParseWithTaxParameter();
+        // Try to load token from sessionStorage if Globals.Token is empty
+        await LoadTokenFromSessionStorage();
+        await LoadInvoiceData();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Parse withTax from query string
+        ParseWithTaxParameter();
+        // Try to load token from sessionStorage if Globals.Token is empty
+        await LoadTokenFromSessionStorage();
+        await LoadInvoiceData();
+    }
+    
+    private void ParseWithTaxParameter()
+    {
+        var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
+        var queryParams = QueryHelpers.ParseQuery(uri.Query);
+        if (queryParams.TryGetValue("withTax", out var withTaxValue))
+        {
+            WithTax = bool.TryParse(withTaxValue.ToString(), out var result) && result;
+        }
+        else
+        {
+            WithTax = false; // Default to false if not provided
+        }
+    }
+
+    private async Task LoadTokenFromSessionStorage()
+    {
+        try
+        {
+            // If Globals.Token is empty, try to get it from sessionStorage
+            if (string.IsNullOrEmpty(Globals.Token))
+            {
+                var token = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "authToken");
+                if (!string.IsNullOrEmpty(token))
+                {
+                    Globals.Token = token;
+                }
+            }
+        }
+        catch
+        {
+            // Ignore errors - token might not be in sessionStorage
+        }
+    }
+
+    private async Task LoadInvoiceData()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+            
+            if (id <= 0)
+            {
+                errorMessage = $"Invalid invoice ID: {id}";
+                isLoading = false;
+                return;
+            }
+            
+            // Load complete invoice report data from the comprehensive view endpoint
+            ReportData = await Functions.GetAsync<InvoiceCompleteReportModel>($"Invoice/GetInvoiceCompleteReport/{id}", true);
+            
+            // Check if invoice was found
+            if (ReportData == null)
+            {
+                errorMessage = $"Invoice not found (ID: {id}). The API returned null. Please check if the invoice exists in the database.";
+                isLoading = false;
+                return;
+            }
+            
+            if (ReportData.Invoice == null || ReportData.Invoice.Id == 0)
+            {
+                errorMessage = $"Invoice data is incomplete (ID: {id}). The API response did not include invoice header data.";
+                isLoading = false;
+                return;
+            }
+            
+            // Check if invoice ID matches
+            if (ReportData.Invoice.Id != id)
+            {
+                errorMessage = $"Invoice not found (ID: {id}). The invoice does not exist in the database. Found invoice ID: {ReportData.Invoice.Id}";
+                isLoading = false;
+                return;
+            }
+            
+            // Ensure collections are initialized
+            ReportData.Details ??= new List<InvoiceItemReportModel>();
+            ReportData.Charges ??= new List<InvoiceChargesReportModel>();
+            ReportData.Payments ??= new List<InvoicePaymentsReportModel>();
+            ReportData.Taxes ??= new List<InvoiceTaxesReportModel>();
+            
+            // Recalculate taxes for all items using the same logic as InvoicePage
+            await RecalculateAllItemTaxes();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading invoice (ID: {id}): {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"InvoiceReport Error for ID {id}: {ex}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    private async Task PrintReport()
+    {
+        await JSRuntime.InvokeVoidAsync("printInvoice");
+    }
+}
+
+
+<style>
+    .invoice-container {
+        font-family: 'Roboto Condensed', sans-serif;
+        margin: 20px auto;
+        max-width: 900px;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+    }
+
+    .invoice-header {
+        margin-bottom: 20px;
+    }
+
+    .invoice-actions button {
+        margin-left: 10px;
+    }
+
+    .invoice-table th, .invoice-table td {
+        padding: 8px;
+        text-align: right;
+    }
+
+    .invoice-table th {
+        background-color: #f2f2f2;
+    }
+
+    .table-row-hover:hover {
+        background-color: #f1f1f1;
+    }
+
+    .invoice-footer {
+        border-top: 1px solid #ddd;
+        padding-top: 10px;
+    }
+
+        .invoice-footer h4 {
+            margin-bottom: 10px;
+        }
+
+    .invoice-table th.text-left,
+    .invoice-table td.text-left {
+    text-align: left !important;
+    }
+
+    .item-tax-row {
+        background-color: #f9f9f9;
+    }
+
+    .item-tax-row td,
+    .item-tax-cell {
+        border-top: none;
+        padding-top: 2px;
+        padding-bottom: 2px;
+        padding-left: 30px;
+        font-size: 0.75em;
+        color: #666;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+</style>
+
+<script>
+    function exportPdf() {
+        const doc = new jsPDF();
+        doc.text("Invoice Export Functionality", 10, 10);
+        doc.save('invoice.pdf');
+    }
+
+    function printInvoice() {
+        var invoiceContent = document.querySelector('.invoice-container').innerHTML;
+        var originalContent = document.body.innerHTML;
+
+        document.body.innerHTML = '<div>' + invoiceContent + '</div>';
+        window.print();
+        document.body.innerHTML = originalContent;
+    }
+
+
+</script>
