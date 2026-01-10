@@ -15,7 +15,7 @@
 <div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
 
     <div class="text-end" style="margin-top:10px;">
-        @if (Action != "VIEW")
+        @if (Action != "VIEW" && Globals.AccessLevel == 1)
         {
             <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
                 <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
@@ -40,20 +40,34 @@
         }
     </div>
 
+        <!-- Period Validation Warning -->
+        @if (!string.IsNullOrWhiteSpace(PeriodValidationMessage))
+        {
+            <MudAlert Severity="Severity.Warning" Class="mb-2" Variant="Variant.Outlined" Dense="true">
+                <MudText Typo="Typo.body2">@PeriodValidationMessage</MudText>
+            </MudAlert>
+        }
+        else if (PeriodValidationChecked && record?.TranDate != null && record.OrganizationId > 0)
+        {
+            <MudAlert Severity="Severity.Success" Class="mb-2" Variant="Variant.Outlined" Dense="true">
+                <MudText Typo="Typo.body2">✓ Period is OPEN - You can save transactions for this date.</MudText>
+            </MudAlert>
+        }
+
     <br />
 
     <MudExpansionPanels MultiExpansion="true">
 
-        <!-- Transaction Information Panel -->
-        <MudExpansionPanel Text="Transaction Information" Expanded="true" Style="margin-bottom:10px;">
+        <!-- Basic Mandatory Details Panel -->
+        <MudExpansionPanel Text="Basic Details" Expanded="true" Style="margin-bottom:10px;">
             <TitleContent>
                 <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
-                    <i class="fa fa-exchange-alt"
+                    <i class="fa fa-check-circle"
                        style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
                     </i>
                     <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">@(string.IsNullOrWhiteSpace(record.TranType) ? "NO NAME" : record.TranType)</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted">Core transaction information</MudText>
+                        <MudText Typo="Typo.h6" Class="fw-bold">Basic Details</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Required mandatory information</MudText>
                     </div>
                 </div>
                 <hr style="height: 6px; border: none; background: #4CAF50; border-radius: 10px;" />
@@ -62,7 +76,7 @@
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Transaction Type</label>
+                        <label class="form-label fw-bold mb-1">Transaction Type <span style='color:red;'>*</span></label>
                         <MudSelect T="string"
                                    @bind-Value="record.TranType"
                                    Placeholder="Transaction Type"
@@ -89,24 +103,10 @@
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Transaction #</label>
-                        <MudTextField id="SeqNo"
-                                      @bind-Value="record.SeqNo"
-                                      placeholder="Transaction #"
-                                      ReadOnly="@isReadOnly"
-                                      Variant="Variant.Outlined"
-                                      FullWidth="true"
-                                      Class="flex-grow-1"></MudTextField>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.SeqNo)" />
-                        </div>
-                    </div>
-
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Transaction Date</label>
+                        <label class="form-label fw-bold mb-1">Transaction Date <span style='color:red;'>*</span></label>
                         <MudDatePicker @bind-Date="record.TranDate"
                                        @bind-Date:after="OnTranDateChanged"
-                                       DateFormat="yyyy-MM-dd"
+                                       DateFormat="dd MMM yyyy"
                                        placeholder="Transaction Date"
                                        ReadOnly="@isReadOnly"
                                        Variant="Variant.Outlined"
@@ -117,7 +117,7 @@
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Amount</label>
+                        <label class="form-label fw-bold mb-1">Amount <span style='color:red;'>*</span></label>
                         <MudNumericField @bind-Value="record.Amount"
                                          placeholder="Amount"
                                          ReadOnly="@isReadOnly"
@@ -130,23 +130,8 @@
                         </div>
                     </div>
 
-                    <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Description</label>
-                        <MudTextField id="Description"
-                                      @bind-Value="record.Description"
-                                      placeholder="Description"
-                                      ReadOnly="@isReadOnly"
-                                      Variant="Variant.Outlined"
-                                      FullWidth="true"
-                                      Class="flex-grow-1"></MudTextField>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.Description)" />
-                        </div>
-                    </div>
-                </div>
-                <div class="row" style="width:100%; display: flex;">
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Location</label>
+                        <label class="form-label fw-bold mb-1">Location <span style='color:red;'>*</span></label>
                          <AutoComplete TItem="LocationsModel"
                                       DataList="@Loc"
                                       DisplayProperty="@(p => p.Name)"
@@ -160,41 +145,7 @@
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Party</label>
-                        <AutoComplete TItem="PartiesModel"
-                                      DataList="@Par"
-                                      DisplayProperty="@(p => p.DisplayName)"
-                                      IdProperty="@(p => p.Id)"
-                                      @bind-SelectedId="record.PartyId"
-                                      Variant="Variant.Outlined"
-                                      FullWidth="true" />
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.PartyId)" />
-                        </div>
-                    </div>
-                </div>
-            </ChildContent>
-        </MudExpansionPanel>
-
-        <!-- Financial Details Panel -->
-        <MudExpansionPanel Text="Financial Details" Style="margin-bottom:10px;">
-            <TitleContent>
-                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
-                    <i class="fa fa-credit-card"
-                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
-                    </i>
-                    <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">Financial Details</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted">Account and payment information</MudText>
-                    </div>
-                </div>
-                <hr style="height: 6px; border: none; background: #FF9800; border-radius: 10px;" />
-            </TitleContent>
-
-            <ChildContent>
-                <div class="row" style="width:100%; display: flex;">
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Account</label>
+                        <label class="form-label fw-bold mb-1">Account <span style='color:red;'>*</span></label>
                         <MudSelect @bind-Value="record.AccountId"
                                    @key="record.AccountId"
                                    Placeholder="@filterCOA.Replace("'", "").Replace("InterfaceType=", "")"
@@ -216,7 +167,7 @@
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Payment Method</label>
+                        <label class="form-label fw-bold mb-1">Payment Method <span style='color:red;'>*</span></label>
                         <MudSelect T="string"
                                    @bind-Value="record.PaymentMethod"
                                    Placeholder="Payment Method"
@@ -241,6 +192,77 @@
                         </div>
                     </div>
                 </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <!-- Additional Details Panel -->
+        <MudExpansionPanel Text="Additional Details" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-info-circle"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Additional Details</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Optional transaction information</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #FF9800; border-radius: 10px;" />
+            </TitleContent>
+
+            <ChildContent>
+                <!-- Transaction Information Group -->
+                <h5 class="fw-bold mt-3 mb-3" style="color: var(--mud-palette-primary); border-bottom: 2px solid var(--mud-palette-primary); padding-bottom: 8px;">
+                    <i class="fa fa-exchange-alt me-2"></i>Transaction Information
+                </h5>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Transaction #</label>
+                        <MudTextField id="SeqNo"
+                                      @bind-Value="record.SeqNo"
+                                      placeholder="Transaction #"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.SeqNo)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Party</label>
+                        <AutoComplete TItem="PartiesModel"
+                                      DataList="@Par"
+                                      DisplayProperty="@(p => p.DisplayName)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="record.PartyId"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true" />
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.PartyId)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Description</label>
+                        <MudTextField id="Description"
+                                      @bind-Value="record.Description"
+                                      placeholder="Description"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Description)" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Information Group -->
+                <h5 class="fw-bold mt-4 mb-3" style="color: var(--mud-palette-primary); border-bottom: 2px solid var(--mud-palette-primary); padding-bottom: 8px;">
+                    <i class="fa fa-credit-card me-2"></i>Financial Information
+                </h5>
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
                         <label class="form-label fw-bold mb-1">Reference #</label>
@@ -270,21 +292,23 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Attachments Group -->
+                <h5 class="fw-bold mt-4 mb-3" style="color: var(--mud-palette-primary); border-bottom: 2px solid var(--mud-palette-primary); padding-bottom: 8px;">
+                    <i class="fa fa-paperclip me-2"></i>Attachments
+                </h5>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
+                        <div class="mt-2 flex-grow-1">
+                            <InputFile class="form-control" OnChange="OnFileInputChanged" />
+                            <a href=@record.FileAttachment download class="btn btn-link" style="font-size: 12px;">
+                                @record.FileAttachment
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </ChildContent>
         </MudExpansionPanel>
-
-        <!-- Attachments Panel -->
-        
-        <div class="row" style="width:100%; display: flex;">
-            <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
-                <div class="mt-2 flex-grow-1">
-                    <InputFile class="form-control" OnChange="OnFileInputChanged" />
-                    <a href=@record.FileAttachment download class="btn btn-link" style="font-size: 12px;">
-                        @record.FileAttachment
-                    </a>
-                </div>
-            </div>
-        </div>
     </MudExpansionPanels>
 
 </div>
@@ -311,6 +335,7 @@
     private bool LoadingPanel { get; set; } = false;
     private MyDrawer _drawer = new();
     private string PeriodValidationMessage { get; set; } = string.Empty;
+    private bool PeriodValidationChecked { get; set; } = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -336,6 +361,7 @@
             Clear();
             GetDefaultValues();
             isReadOnly = false;
+            await ValidatePeriodAsync();
         }
         else
         {
@@ -347,17 +373,14 @@
 
     protected void GetDefaultValues()
     {
-
         if (Acc != null && Acc.Any() && record.AccountId == 0)
         {
             record.AccountId = Acc.First().Id;
-
         }
 
         if (Par != null && Par.Any() && record.PartyId == 0)
         {
             record.PartyId = Par.First().Id;
-
         }
 
         StateHasChanged();
@@ -368,6 +391,8 @@
         LoadingPanel = true;
         record = await Functions.GetAsync<CashBookModel>($"CashBook/Get/{id}", true) ?? new CashBookModel();
         await OnTransactionTypeChanged();
+        // Set read-only if posted to GL
+        isReadOnly = record.IsPostedToGL == 1;
         await ValidatePeriodAsync();
         LoadingPanel = false;
     }
@@ -387,6 +412,12 @@
     protected async Task Edit(int id)
     {
         await Get(id);
+        if (record.IsPostedToGL == 1)
+        {
+            SnackbarService.Add("This entry has been posted to General Ledger and cannot be edited.", Severity.Warning);
+            isReadOnly = true;
+            return;
+        }
         Action = "UPDATE";
         isReadOnly = false;
     }
@@ -523,7 +554,7 @@
                     var parameters = new DialogParameters<InvoiceGLPreviewDialog>
                     {
                         { x => x.PreviewData, result.Result },
-                        { x => x.InvoiceId, CurrentRecord },
+                        { x => x.RecordId, CurrentRecord },
                         { x => x.IsPostedToGL, record.IsPostedToGL == 1 },
                         { x => x.OnPostToGL, EventCallback.Factory.Create(this, async () => 
                         {
@@ -617,10 +648,15 @@
 
     private async Task ValidatePeriodAsync()
     {
+        PeriodValidationChecked = false;
         PeriodValidationMessage = string.Empty;
         
         if (record?.TranDate == null || record.OrganizationId == 0)
+        {
+            PeriodValidationMessage = string.Empty;
+            await InvokeAsync(StateHasChanged);
             return;
+        }
 
         try
         {
@@ -630,18 +666,25 @@
                 $"PeriodClose/GetOpenPeriod/{record.OrganizationId}/{dateStr}/{moduleType}", 
                 true);
 
-            if (result == null || result.Id == 0)
+            PeriodValidationChecked = true;
+
+            // Period is OPEN if we get a valid result with Id > 0 and Status is OPEN or OPEN_PENDING
+            // Period is CLOSED if result is null, Id is 0, or Status is CLOSE
+            if (result != null && result.Id > 0 && 
+                (result.Status?.ToUpper() == "OPEN" || result.Status?.ToUpper() == "OPEN_PENDING"))
             {
-                PeriodValidationMessage = $"Period is CLOSED for {moduleType} module on {dateStr}. You cannot save transactions for this date. Please ensure the period is open before saving.";
-                SnackbarService.Add(PeriodValidationMessage, Severity.Warning);
+                // Period is open - clear any warning
+                PeriodValidationMessage = string.Empty;
             }
             else
             {
-                PeriodValidationMessage = string.Empty;
+                // Period is closed - show warning
+                PeriodValidationMessage = $"⚠️ Period is CLOSED for {moduleType} module on {dateStr}. You cannot save transactions for this date. Please ensure the period is open before saving.";
             }
         }
         catch (Exception ex)
         {
+            PeriodValidationChecked = true;
             PeriodValidationMessage = $"Error checking period status: {ex.Message}";
             SnackbarService.Add(PeriodValidationMessage, Severity.Error);
         }

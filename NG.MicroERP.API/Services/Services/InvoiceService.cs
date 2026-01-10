@@ -636,7 +636,11 @@ public class InvoiceService : IInvoiceService
                     if (Math.Abs(amount) < 0.0000001) continue;
                     
                     int paymentAccountId = GetIntProp(payment, "AccountId");
-                    if (paymentAccountId == 0) continue;
+                    // Validate AccountId (Payment Method) is required for payments with amount > 0
+                    if (paymentAccountId == 0)
+                    {
+                        return (false, null!, $"Payment requires a valid AccountId (Payment Method). PaymentRef='{GetStringProp(payment, "PaymentRef")}', Amount={amount:F2}");
+                    }
                     
                     string paymentRef = S(GetStringProp(payment, "PaymentRef"));
                     string notes = S(GetStringProp(payment, "Notes"));

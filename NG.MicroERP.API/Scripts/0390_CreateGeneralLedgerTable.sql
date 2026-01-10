@@ -108,7 +108,7 @@ GO
 -- Provides aggregated view of account balances
 -- =============================================
 
-CREATE VIEW dbo.GeneralLedgerSummary AS
+CREATE VIEW dbo.vw_GeneralLedgerSummary AS
 SELECT 
     glh.OrganizationId,
     gld.AccountId,
@@ -140,7 +140,7 @@ GO
 -- Detailed view with related information
 -- =============================================
 
-CREATE VIEW dbo.GeneralLedgerReport AS
+CREATE VIEW dbo.vw_GeneralLedgerReport AS
 SELECT 
     gld.Id,
     glh.OrganizationId,
@@ -194,7 +194,7 @@ GO
 -- Shows running balance for each account
 -- =============================================
 
-CREATE VIEW dbo.AccountBalance AS
+CREATE VIEW dbo.vw_AccountBalance AS
 SELECT 
     glh.OrganizationId,
     gld.AccountId,

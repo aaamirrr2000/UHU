@@ -244,9 +244,39 @@
 
             // Get all menu items with permissions for current user's group
             var allMenuItems = await Functions.GetAsync<List<GroupMenuModel>>(
-                $"Permissions/SearchGroupPermissions/{Globals.User.OrganizationId}",
+                $"Permissions/SearchGroupPermissions/{Globals.User.OrganizationId}/GroupId={Globals.User.GroupId}",
                 true) ?? new List<GroupMenuModel>();
+            
+            // For admin users, if no menu items found, try loading directly from Menu table
+            if ((allMenuItems == null || !allMenuItems.Any()) && Globals.User.GroupId == 1)
+            {
+                var menuData = await Functions.GetAsync<List<MyMenuModel>>(
+                    $"MyMenu/Search/Live=1",
+                    true);
+                
+                if (menuData != null && menuData.Any())
+                {
+                    allMenuItems = menuData
+                        .Select(x => new GroupMenuModel
+                        {
+                            MenuId = x.Id,
+                            MenuCaption = x.MenuCaption,
+                            ParentId = x.ParentId,
+                            Icon = x.Icon,
+                            PageName = x.PageName,
+                            Parameter = x.Parameter,
+                            SeqNo = x.SeqNo,
+                            Live = x.Live,
+                            GroupId = 1,
+                            My_Privilege = "FULL ACCESS",
+                            OrganizationId = Globals.User.OrganizationId
+                        })
+                        .ToList();
+                }
+            }
 
+            Console.WriteLine($"ReportsPage: Loaded {allMenuItems?.Count ?? 0} menu items");
+            
             // Find report header(s) - menu items with Parameter = "REPORT"
             // Deduplicate by MenuId since the same header can appear for different groups
             var reportHeaders = allMenuItems
@@ -256,9 +286,13 @@
                 .GroupBy(x => x.MenuId)
                 .Select(g => g.First())
                 .ToList();
+            
+            Console.WriteLine($"ReportsPage: Found {reportHeaders.Count} report header(s)");
 
             // Get unique report header MenuIds
             var reportHeaderIds = reportHeaders.Select(h => h.MenuId).Distinct().ToList();
+            
+            Console.WriteLine($"ReportsPage: Report header IDs: {string.Join(", ", reportHeaderIds)}");
             
             // Get all reports under report headers, deduplicate by MenuId
             var allReportsCandidates = allMenuItems
@@ -268,6 +302,8 @@
                 .GroupBy(x => x.MenuId)
                 .Select(g => g.First())
                 .ToList();
+            
+            Console.WriteLine($"ReportsPage: Found {allReportsCandidates.Count} report candidate(s)");
 
             // Filter reports using centralized PageAccess logic (without navigation)
             allReports = new List<GroupMenuModel>();

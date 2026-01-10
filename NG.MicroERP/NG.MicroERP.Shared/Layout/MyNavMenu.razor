@@ -1,4 +1,5 @@
-﻿@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Web
+@using NG.MicroERP.Shared.Models
 @inject NavigationManager NavManager
 @inject ISnackbar SnackbarService
 @inject Globals Globals
@@ -63,7 +64,7 @@
                             </div>
                         }
                     </div>
-                    <div class="user-details ms-2">
+                    <div class="user-details">
                         <div class="user-name">@Globals.User?.FullName</div>
                         <div class="user-role">@Globals.User?.GroupName</div>
                     </div>
@@ -356,76 +357,145 @@
 
     /* User Profile */
     .user-profile {
-        padding: 16px;
-        border-bottom: 1px solid var(--mud-palette-lines-default);
-        background: var(--mud-palette-background);
+        padding: 16px 20px;
+        margin: 8px 12px;
+        border-radius: 12px;
+        border: 1px solid var(--mud-palette-lines-default);
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .user-profile:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transform: translateY(-1px);
+    }
+
+    .profile-pic-container {
+        flex-shrink: 0;
     }
 
     .profile-pic {
-        width: 40px;
-        height: 40px;
+        width: 48px;
+        height: 48px;
         border-radius: 50%;
         object-fit: cover;
-        border: 2px solid var(--mud-palette-primary);
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .user-profile:hover .profile-pic {
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: scale(1.05);
     }
 
     .profile-pic-fallback {
-        width: 40px;
-        height: 40px;
+        width: 48px;
+        height: 48px;
         border-radius: 50%;
-        background: var(--mud-palette-primary);
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--mud-palette-primary-contrast);
-        font-size: 18px;
+        color: white;
+        font-size: 20px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .user-profile:hover .profile-pic-fallback {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: scale(1.05);
+    }
+
+    .user-details {
+        flex: 1;
+        min-width: 0;
+        margin-left: 12px;
     }
 
     .user-name {
-        font-size: 14px;
+        font-size: 15px;
         font-weight: 600;
-        color: var(--mud-palette-text-primary);
-        line-height: 1.2;
+        color: white;
+        line-height: 1.3;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
 
     .user-role {
         font-size: 12px;
-        color: var(--mud-palette-text-secondary);
-        line-height: 1.2;
+        color: rgba(255, 255, 255, 0.9);
+        line-height: 1.3;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
 
     /* Mini Profile (Collapsed) */
     .mini-profile {
         padding: 12px;
+        margin: 8px 12px;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        border-bottom: 1px solid var(--mud-palette-lines-default);
-        transition: all 0.2s;
+        border-radius: 12px;
+        border: 1px solid var(--mud-palette-lines-default);
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
     }
 
         .mini-profile:hover {
-            background: var(--mud-palette-action-hover);
+            background: linear-gradient(135deg, var(--mud-palette-primary) 0%, var(--mud-palette-primary-darken) 100%);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-1px) scale(1.05);
         }
 
     .mini-profile-pic {
-        width: 32px;
-        height: 32px;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         object-fit: cover;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .mini-profile:hover .mini-profile-pic {
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: scale(1.1);
     }
 
     .mini-profile-fallback {
-        width: 32px;
-        height: 32px;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
-        background: var(--mud-palette-primary);
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--mud-palette-primary-contrast);
-        font-size: 14px;
+        color: white;
+        font-size: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .mini-profile:hover .mini-profile-fallback {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: scale(1.1);
     }
 
     /* Navigation Menu */
@@ -651,8 +721,13 @@
     }
 
     .mud-theme-dark .user-profile {
-        background: var(--mud-palette-background);
-        border-bottom-color: var(--mud-palette-lines-default);
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .mud-theme-dark .mini-profile {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+        border-color: rgba(255, 255, 255, 0.1);
     }
 
     .mud-theme-dark .nav-group-items {
@@ -718,16 +793,101 @@
             Console.WriteLine($"Loading menu for OrganizationId: {organizationId}, GroupId: {groupId}");
 
             // Load menu data
-            var allMenuData = await Functions.GetAsync<List<GroupMenuModel>>(
-                $"Permissions/SearchGroupPermissions/{organizationId}",
-                true) ?? new List<GroupMenuModel>();
+            List<GroupMenuModel> allMenuData = new List<GroupMenuModel>();
+            
+            if (groupId == 1)
+            {
+                // For admin users, load directly from Menu table first
+                Console.WriteLine("Admin user: Loading menu directly from Menu table");
+                try
+                {
+                    var menuData = await Functions.GetAsync<List<MyMenuModel>>(
+                        $"MyMenu/Search/Live=1",
+                        true);
+                    
+                    if (menuData != null && menuData.Count > 0)
+                    {
+                        Console.WriteLine($"Direct menu data count: {menuData.Count}");
+                        
+                        // Convert MyMenuModel to GroupMenuModel for admin
+                        allMenuData = menuData
+                            .Select(x => new GroupMenuModel
+                            {
+                                MenuId = x.Id,
+                                MenuCaption = x.MenuCaption,
+                                ParentId = x.ParentId,
+                                Icon = x.Icon,
+                                PageName = x.PageName,
+                                Parameter = x.Parameter,
+                                SeqNo = x.SeqNo,
+                                Live = x.Live,
+                                GroupId = 1,
+                                My_Privilege = "FULL ACCESS",
+                                OrganizationId = organizationId
+                            })
+                            .ToList();
+                    }
+                    else
+                    {
+                        // Fallback to permissions view if Menu table is empty
+                        Console.WriteLine("Menu table empty, trying permissions view");
+                        allMenuData = await Functions.GetAsync<List<GroupMenuModel>>(
+                            $"Permissions/SearchGroupPermissions/{organizationId}/GroupId={groupId}",
+                            true) ?? new List<GroupMenuModel>();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading direct menu: {ex.Message}, falling back to permissions view");
+                    allMenuData = await Functions.GetAsync<List<GroupMenuModel>>(
+                        $"Permissions/SearchGroupPermissions/{organizationId}/GroupId={groupId}",
+                        true) ?? new List<GroupMenuModel>();
+                }
+            }
+            else
+            {
+                // Non-admin: Load from permissions view with GroupId filter
+                allMenuData = await Functions.GetAsync<List<GroupMenuModel>>(
+                    $"Permissions/SearchGroupPermissions/{organizationId}/GroupId={groupId}",
+                    true) ?? new List<GroupMenuModel>();
+            }
 
             Console.WriteLine($"Raw data count: {allMenuData.Count}");
+            
+            // Debug: Log sample data
+            if (allMenuData.Count > 0)
+            {
+                var sample = allMenuData.Take(5).ToList();
+                foreach (var item in sample)
+                {
+                    Console.WriteLine($"Sample: MenuId={item.MenuId}, GroupId={item.GroupId}, ParentId={item.ParentId}, Live={item.Live}, Parameter={item.Parameter}, MenuCaption={item.MenuCaption}, My_Privilege={item.My_Privilege}");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"WARNING: No menu data returned for OrganizationId={organizationId}, GroupId={groupId}");
+                Console.WriteLine($"  User: {Globals.User?.FullName}, GroupId: {Globals.User?.GroupId}");
+                Console.WriteLine($"  Organization: {Globals.Organization?.Name}, OrganizationId: {Globals.Organization?.Id}");
+            }
 
             // Store ALL menu items (including reports) in globals for access checking
-            Globals.MyPermissions = allMenuData
-                .Where(x => x.GroupId == groupId)
-                .ToList();
+            if (groupId == 1)
+            {
+                // Admin: Store ALL unique menu items (deduplicate by MenuId only, not GroupId)
+                Globals.MyPermissions = allMenuData
+                    .GroupBy(x => x.MenuId)
+                    .Select(g => g.First())
+                    .ToList();
+                Console.WriteLine($"Admin MyPermissions count: {Globals.MyPermissions.Count}");
+            }
+            else
+            {
+                // Non-admin: Only store items for their GroupId
+                Globals.MyPermissions = allMenuData
+                    .Where(x => x.GroupId == groupId)
+                    .ToList();
+                Console.WriteLine($"Non-admin MyPermissions count: {Globals.MyPermissions.Count}");
+            }
 
             // Find all setup parent menu items (needed for filtering)
             var setupParents = allMenuData
@@ -739,38 +899,61 @@
                 .ToList();
 
             var setupParentIds = setupParents.ToList();
+            Console.WriteLine($"Setup parent IDs: {string.Join(", ", setupParentIds)}");
 
             if (allMenuData.Count > 0)
             {
                 // Filter out reports and setup items (case-insensitive) for display only
-                // Exclude: reports, setup parents (by MenuId), and all setup children (by ParentId)
                 if (groupId == 1)
                 {
-                    // Admin: Filter by MenuId and ParentId, regardless of GroupId
+                    // Admin: Get all menu items, deduplicate by MenuId, exclude reports and setup
+                    // Don't filter by GroupId for admin - get all menu items
+                    var beforeFilter = allMenuData.Count;
+                    Console.WriteLine($"Admin: Before filter count: {beforeFilter}");
+                    
                     data = allMenuData
                         .Where(x => 
-                            x.Parameter?.ToUpper() != "REPORT" && 
-                            x.Parameter != "Report" &&
+                            (x.Parameter == null || 
+                             (x.Parameter.ToUpper() != "REPORT" && x.Parameter != "Report")) &&
                             !setupParentIds.Contains(x.MenuId) &&
-                            !setupParentIds.Contains(x.ParentId))
+                            !setupParentIds.Contains(x.ParentId) &&
+                            x.Live == 1)
                         .GroupBy(x => x.MenuId)
                         .Select(g => g.First())
+                        .OrderBy(x => x.SeqNo)
                         .ToList();
+                    
+                    Console.WriteLine($"Admin: After filter count: {data.Count}");
+                    
+                    // Debug: Log what was filtered out
+                    var filteredOut = allMenuData.Count - data.Count;
+                    Console.WriteLine($"Admin: Filtered out {filteredOut} items");
                 }
                 else
                 {
                     // Non-admin: Filter by GroupId, reports, setup parents, and setup children
                     data = allMenuData
                         .Where(x => 
-                            x.Parameter?.ToUpper() != "REPORT" && 
-                            x.Parameter != "Report" &&
+                            (x.Parameter == null || 
+                             (x.Parameter.ToUpper() != "REPORT" && x.Parameter != "Report")) &&
                             !setupParentIds.Contains(x.MenuId) &&
                             !setupParentIds.Contains(x.ParentId) &&
-                            x.GroupId == groupId)
+                            x.GroupId == groupId &&
+                            x.Live == 1 &&
+                            (x.My_Privilege == "READ ONLY" || x.My_Privilege == "FULL ACCESS"))
+                        .OrderBy(x => x.SeqNo)
                         .ToList();
                 }
 
                 Console.WriteLine($"Filtered data count: {data.Count}");
+                
+                // Debug: Log parent items
+                var parentItems = data.Where(x => x.ParentId == 0).ToList();
+                Console.WriteLine($"Parent items count: {parentItems.Count}");
+                foreach (var parent in parentItems.Take(5))
+                {
+                    Console.WriteLine($"  Parent: {parent.MenuCaption} (MenuId={parent.MenuId}, ParentId={parent.ParentId})");
+                }
 
                 // Get parent groups (MenuLevel == 0), excluding setup parents
                 if (groupId != 1)
@@ -781,17 +964,34 @@
                             data.Any(child => child.ParentId == parent.MenuId &&
                                 child.GroupId == groupId &&
                                 (child.My_Privilege == "READ ONLY" || child.My_Privilege == "FULL ACCESS")))
+                        .OrderBy(x => x.SeqNo)
                         .ToList();
                 }
                 else
                 {
                     // Admin: Get all parent groups except setup parents
+                    // First try: parent groups that have children
                     MenuGroupData = data
                         .Where(x => 
                             x.ParentId == 0 && 
                             !setupParentIds.Contains(x.MenuId) &&
                             data.Any(child => child.ParentId == x.MenuId))
+                        .OrderBy(x => x.SeqNo)
                         .ToList();
+                    
+                    Console.WriteLine($"Admin: Parent groups with children: {MenuGroupData.Count}");
+                    
+                    // If no parent groups with children found, get all parent items
+                    if (MenuGroupData.Count == 0)
+                    {
+                        MenuGroupData = data
+                            .Where(x => 
+                                x.ParentId == 0 && 
+                                !setupParentIds.Contains(x.MenuId))
+                            .OrderBy(x => x.SeqNo)
+                            .ToList();
+                        Console.WriteLine($"Admin: All parent groups (no children check): {MenuGroupData.Count}");
+                    }
                 }
 
                 Console.WriteLine($"MenuGroupData count: {MenuGroupData.Count}");
@@ -801,6 +1001,13 @@
                 {
                     expandedGroupId = MenuGroupData[0].MenuId;
                     Console.WriteLine($"Auto-expanding group: {MenuGroupData[0].MenuCaption}");
+                }
+                else
+                {
+                    Console.WriteLine("WARNING: No menu groups found!");
+                    Console.WriteLine($"  Total data items: {data.Count}");
+                    Console.WriteLine($"  Parent items (ParentId=0): {data.Count(x => x.ParentId == 0)}");
+                    Console.WriteLine($"  Setup parent IDs excluded: {string.Join(", ", setupParentIds)}");
                 }
 
                 // Log menu structure
@@ -813,7 +1020,89 @@
             else
             {
                 Console.WriteLine("No data returned from API");
-                SnackbarService.Add("No menu permissions configured for your account.", Severity.Info);
+                
+                // For admin users, try loading menu directly from Menu table as fallback
+                if (groupId == 1)
+                {
+                    Console.WriteLine("Admin user: Attempting to load menu directly from Menu table");
+                    try
+                    {
+                    var menuResponse = await Functions.GetAsync<List<MyMenuModel>>(
+                        $"MyMenu/Search",
+                        true);
+                    
+                    var directMenuData = menuResponse ?? new List<MyMenuModel>();
+                        
+                        if (directMenuData.Count > 0)
+                        {
+                            Console.WriteLine($"Direct menu data count: {directMenuData.Count}");
+                            
+                            // Convert MyMenuModel to GroupMenuModel format for admin
+                            var convertedData = directMenuData
+                                .Where(x => x.Live == 1 && 
+                                       (x.Parameter == null || 
+                                        (x.Parameter.ToUpper() != "REPORT" && x.Parameter != "Report" && 
+                                         x.Parameter.ToUpper() != "SETUP" && x.Parameter != "Setup")))
+                                .Select(x => new GroupMenuModel
+                                {
+                                    MenuId = x.Id,
+                                    MenuCaption = x.MenuCaption,
+                                    ParentId = x.ParentId,
+                                    Icon = x.Icon,
+                                    PageName = x.PageName,
+                                    Parameter = x.Parameter,
+                                    SeqNo = x.SeqNo,
+                                    Live = x.Live,
+                                    GroupId = 1, // Set to admin group
+                                    My_Privilege = "FULL ACCESS", // Admin has full access
+                                    OrganizationId = organizationId
+                                })
+                                .OrderBy(x => x.SeqNo)
+                                .ToList();
+                            
+                            data = convertedData;
+                            
+                            // Get parent groups
+                            MenuGroupData = data
+                                .Where(x => x.ParentId == 0 &&
+                                    data.Any(child => child.ParentId == x.MenuId))
+                                .OrderBy(x => x.SeqNo)
+                                .ToList();
+                            
+                            // Store permissions for access checking
+                            Globals.MyPermissions = convertedData
+                                .Select(x => new GroupMenuModel
+                                {
+                                    MenuId = x.MenuId,
+                                    PageName = x.PageName,
+                                    GroupId = 1,
+                                    My_Privilege = "FULL ACCESS",
+                                    OrganizationId = organizationId
+                                })
+                                .ToList();
+                            
+                            Console.WriteLine($"Converted menu data: {data.Count} items, {MenuGroupData.Count} groups");
+                            
+                            if (MenuGroupData.Count > 0)
+                            {
+                                expandedGroupId = MenuGroupData[0].MenuId;
+                            }
+                        }
+                        else
+                        {
+                            SnackbarService.Add("No menu items found in the system.", Severity.Warning);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error loading direct menu: {ex.Message}");
+                        SnackbarService.Add("Failed to load menu. Please contact administrator.", Severity.Error);
+                    }
+                }
+                else
+                {
+                    SnackbarService.Add("No menu permissions configured for your account.", Severity.Info);
+                }
             }
         }
         catch (Exception ex)

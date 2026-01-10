@@ -34,7 +34,10 @@ VALUES
 (51, 'Sales Orders', 'SALE', 'Create and manage customer sales orders', 'InvoiceDashboard', 50, 'fa-solid fa-file-invoice-dollar', 1010, 1, 1, NULL, 1, NULL),
 (52, 'Purchase Orders', 'PURCHASE', 'Create and manage supplier purchase orders', 'InvoiceDashboard', 50, 'fa-solid fa-file-invoice', 1020, 1, 1, NULL, 1, NULL),
 (53, 'Cash Book', NULL, 'Record and track cash receipts and payments', 'CashBookDashboard', 50, 'fa-solid fa-wallet', 1030, 1, 1, NULL, 1, NULL),
-(54, 'General Ledger', NULL, 'Manage general ledger entries and journal transactions', 'GeneralLedgerDashboard', 50, 'fa-solid fa-book', 1040, 1, 1, NULL, 1, NULL),
+(55, 'Petty Cash', NULL, 'Record and track petty cash transactions and expenses', 'PettyCashDashboard', 50, 'fa-solid fa-money-bill-wave', 1035, 1, 1, NULL, 1, NULL),
+(56, 'Advances', NULL, 'Record and track advance payments and receipts', 'AdvancesDashboard', 50, 'fa-solid fa-hand-holding-usd', 1037, 1, 1, NULL, 1, NULL),
+(57, 'Physical Cash Count', NULL, 'Record daily physical cash counts by denomination', 'PhysicalCashCountDashboard', 50, 'fa-solid fa-money-bill-wave', 1040, 1, 1, NULL, 1, NULL),
+(54, 'General Ledger', NULL, 'Manage general ledger entries and journal transactions', 'GeneralLedgerDashboard', 50, 'fa-solid fa-book', 1045, 1, 1, NULL, 1, NULL),
 
 /*──────────────────────────── STOCK MANAGEMENT ─────────────────────────────*/
 (100, 'Stock Management', NULL, 'Control inventory and stock movement', NULL, 0, 'fa-solid fa-boxes-stacked', 2000, 1, 1, NULL, 1, NULL),
@@ -44,8 +47,14 @@ VALUES
 
 /*──────────────────────────── REPORTS ─────────────────────────────*/
 (150, 'Reports', 'REPORT', 'View operational, financial, and analytical reports', NULL, 0, 'fa-solid fa-chart-line', 3000, 1, 1, NULL, 1, NULL),
-(151, 'Collections Report', NULL, 'Analyze customer collections and outstanding amounts', 'CollectionReport', 150, 'fa-solid fa-hand-holding-dollar', 3010, 1, 1, NULL, 1, NULL),
-(152, 'Cash Position', NULL, 'View daily cash balances and movements', 'CashPositionReport', 150, 'fa-solid fa-money-bill-wave', 3020, 1, 1, NULL, 1, NULL),
+(153, 'Daily Funds Closing', NULL, 'Daily cash and funds closing summary', 'DailyFundsClosingReport', 150, 'fa-solid fa-calendar-day', 3030, 1, 1, NULL, 1, NULL),
+(154, 'Inventory Closing', NULL, 'Daily inventory closing summary', 'InventoryClosingReport', 150, 'fa-solid fa-boxes', 3040, 1, 1, NULL, 1, NULL),
+(155, 'Cash by Location/User', NULL, 'Cash holdings by location and user', 'CashByLocationUserReport', 150, 'fa-solid fa-map-marked-alt', 3050, 1, 1, NULL, 1, NULL),
+(156, 'Inventory by Location', NULL, 'Current inventory levels by location', 'InventoryByLocationReport', 150, 'fa-solid fa-warehouse', 3060, 1, 1, NULL, 1, NULL),
+(157, 'Trial Balance', NULL, 'Trial balance as of selected date', 'TrialBalanceReport', 150, 'fa-solid fa-balance-scale', 3070, 1, 1, NULL, 1, NULL),
+(158, 'Account Analysis', NULL, 'Detailed account analysis', 'AccountAnalysisReport', 150, 'fa-solid fa-chart-bar', 3080, 1, 1, NULL, 1, NULL),
+(159, 'Profit & Loss', NULL, 'Income statement for selected period', 'ProfitLossReport', 150, 'fa-solid fa-chart-line', 3090, 1, 1, NULL, 1, NULL),
+(160, 'Balance Sheet', NULL, 'Balance sheet as of selected date', 'BalanceSheetReport', 150, 'fa-solid fa-file-invoice-dollar', 3100, 1, 1, NULL, 1, NULL),
 
 /*──────────────────────────── LEAVE MANAGEMENT ─────────────────────────────*/
 (200, 'Leave Management', NULL, 'Manage employee leave requests and approvals', NULL, 0, 'fa-solid fa-calendar-check', 4000, 1, 1, NULL, 1, NULL),

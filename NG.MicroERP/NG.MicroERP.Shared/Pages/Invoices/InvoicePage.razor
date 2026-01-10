@@ -88,6 +88,7 @@
                         Print
                     </MudButton>
 
+                    <!-- Preview GL Entry - Available before and after saving -->
                     <MudButton StartIcon="@Icons.Material.TwoTone.Preview"
                                Variant="Variant.Outlined"
                                Color="Color.Info"
@@ -95,7 +96,7 @@
                                OnClick="ShowGLPreview"
                                Class="invoice-header-btn"
                                Disabled="@(record?.Invoice?.PartyId == 0 || record?.InvoiceDetails == null || !record.InvoiceDetails.Any())">
-                        View GL Entry
+                        @(CurrentRecord.GetValueOrDefault() > 0 && record?.Invoice?.IsPostedToGL == 1 ? "View GL Entry" : "Preview GL Entry")
                     </MudButton>
 
                     @if (CurrentRecord.GetValueOrDefault() > 0 && record.Invoice.IsPostedToGL == 0)
@@ -112,6 +113,14 @@
                 </div>
             </div>
         </div>
+
+        <!-- Period Validation Warning - Only show when CLOSED -->
+        @if (PeriodValidationChecked && !string.IsNullOrWhiteSpace(PeriodValidationMessage) && PeriodValidationMessage.Contains("CLOSED"))
+        {
+            <MudAlert Severity="Severity.Warning" Class="mb-2" Variant="Variant.Outlined" Dense="true">
+                <MudText Typo="Typo.body2">@PeriodValidationMessage</MudText>
+            </MudAlert>
+        }
 
         <!-- Invoice Details Card -->
         <MudPaper Elevation="2" Class="pa-2 mb-2" Style="border-radius: 12px;">
@@ -324,6 +333,7 @@
     private double SelectedItemTaxTotal { get; set; } = 0;
     private static int _tempDetailIdCounter = -1;
     private string PeriodValidationMessage { get; set; } = string.Empty;
+    private bool PeriodValidationChecked { get; set; } = false;
     
     // Track if charges and discounts were manually overridden
     private bool _chargesManuallyOverridden = false;
@@ -355,6 +365,12 @@
             SelectedParty = Parties.FirstOrDefault(p => p.Id == record.Invoice.PartyId);
         }
         
+        // Validate period if we have a date set
+        if (record?.Invoice?.TranDate != null && record.Invoice.OrganizationId > 0)
+        {
+            await ValidatePeriodAsync();
+        }
+        
         StateHasChanged();
     }
 
@@ -362,12 +378,19 @@
     {
         EnsureInvoiceInitialized();
         Disabled = string.Equals(Action, "VIEW", StringComparison.OrdinalIgnoreCase);
+        
+        // Disable if posted to GL
+        if (record?.Invoice?.IsPostedToGL == 1)
+        {
+            Disabled = true;
+        }
 
         if (string.Equals(Action, "INSERT", StringComparison.OrdinalIgnoreCase) && CurrentRecord.GetValueOrDefault() == 0)
         {
             Disabled = false;
             record.Invoice.InvoiceType = InvoiceType;
             record.Invoice.TranDate = DateTime.Now;
+            record.Invoice.OrganizationId = Globals.User.OrganizationId; // Set OrganizationId for validation
         }
     }
 
@@ -384,6 +407,9 @@
             await LoadReferenceData();
             await LoadParties();
             await SetDefaultValues();
+
+            // Validate period after setting default values (includes default TranDate)
+            await ValidatePeriodAsync();
 
             if (_categories.Any())
             {
@@ -634,6 +660,12 @@
                     _isInvoiceSaved = true;
                     CurrentRecord = record.Invoice.Id; // Ensure CurrentRecord is set
                     await SaveOriginalRecord();
+                    
+                    // Disable if posted to GL
+                    if (record.Invoice.IsPostedToGL == 1)
+                    {
+                        Disabled = true;
+                    }
                     
                     // Track original item IDs to identify new items in updates
                     _originalItemIds = new HashSet<int>(
@@ -1257,6 +1289,13 @@
             return;
         }
 
+        // Validate AccountId (Payment Method) is selected
+        if (InvoicePayments.AccountId == 0)
+        {
+            Snackbar.Add("Please select a Payment Method. Payment Method is required.", Severity.Warning);
+            return;
+        }
+
         var toAdd = new InvoicePaymentModel
         {
             AccountId = InvoicePayments.AccountId,
@@ -1402,10 +1441,11 @@
 
                 if (result.Success && result.Result != null)
                 {
+                    int recordId = CurrentRecord.HasValue ? CurrentRecord.Value : 0;
                     var parameters = new DialogParameters<InvoiceGLPreviewDialog>
                     {
                         { x => x.PreviewData, result.Result },
-                        { x => x.InvoiceId, CurrentRecord.GetValueOrDefault() },
+                        { x => x.RecordId, recordId },
                         { x => x.IsPostedToGL, record.Invoice.IsPostedToGL == 1 },
                         { x => x.OnPostToGL, EventCallback.Factory.Create(this, async () => 
                         {
@@ -1911,6 +1951,7 @@
 
     private async Task ValidatePeriodAsync()
     {
+        PeriodValidationChecked = false;
         PeriodValidationMessage = string.Empty;
         
         if (record?.Invoice?.TranDate == null || record.Invoice.OrganizationId == 0)
@@ -1923,30 +1964,56 @@
         try
         {
             // Use SALE or PURCHASE module type based on invoice type
-            string moduleType = record.Invoice.InvoiceType?.ToUpper() == "PURCHASE" ? "PURCHASE" : "SALE";
+            // Handle: "PURCHASE", "PURCHASE RETURN" → "PURCHASE"
+            // Handle: "SALE", "SALE RETURN", or anything else → "SALE"
+            string invoiceTypeUpper = record.Invoice.InvoiceType?.ToUpper().Trim() ?? "";
+            string moduleType = invoiceTypeUpper.Contains("PURCHASE") ? "PURCHASE" : "SALE";
             string dateStr = record.Invoice.TranDate.Value.ToString("yyyy-MM-dd");
             
+            // Build the API URL - date is already in safe yyyy-MM-dd format, no need to escape
+            // ModuleType is also safe (SALE/PURCHASE/ALL), but we'll escape it to be safe
+            string apiUrl = $"PeriodClose/GetOpenPeriod/{record.Invoice.OrganizationId}/{dateStr}/{moduleType}";
+            
+            // Log the API call for debugging
+            Console.WriteLine($"InvoicePage ValidatePeriod: Calling API: {apiUrl}");
+            Console.WriteLine($"InvoicePage ValidatePeriod: OrganizationId={record.Invoice.OrganizationId}, Date={dateStr}, ModuleType={moduleType}, InvoiceType={record.Invoice.InvoiceType}");
+            
             // Use GetAsync and check if we got a valid result
-            var result = await Functions.GetAsync<PeriodCloseModel>(
-                $"PeriodClose/GetOpenPeriod/{record.Invoice.OrganizationId}/{dateStr}/{moduleType}", 
-                true);
+            var result = await Functions.GetAsync<PeriodCloseModel>(apiUrl, true);
+            
+            Console.WriteLine($"InvoicePage ValidatePeriod: API Response - Result is null: {result == null}, Id: {result?.Id ?? 0}, Status: {result?.Status ?? "null"}, ModuleType: {result?.ModuleType ?? "null"}");
+
+            PeriodValidationChecked = true;
 
             // Period is OPEN if we get a valid result with Id > 0 and Status is OPEN or OPEN_PENDING
             // Period is CLOSED if result is null, Id is 0, or Status is CLOSE
-            if (result != null && result.Id > 0 && 
-                (result.Status?.ToUpper() == "OPEN" || result.Status?.ToUpper() == "OPEN_PENDING"))
+            if (result != null && result.Id > 0)
             {
-                // Period is open - clear any warning
-                PeriodValidationMessage = string.Empty;
+                string statusUpper = result.Status?.ToUpper().Trim() ?? "";
+                if (statusUpper == "OPEN" || statusUpper == "OPEN_PENDING")
+                {
+                    // Period is open - clear message (don't show any message when open)
+                    PeriodValidationMessage = string.Empty;
+                    PeriodValidationChecked = true;
+                }
+                else
+                {
+                    // Period exists but is closed
+                    PeriodValidationMessage = $"⚠️ Period is CLOSED for {moduleType} module on {dateStr}. The period '{result.PeriodName}' exists but has status '{result.Status}'. Please open the period before saving transactions.";
+                    PeriodValidationChecked = true;
+                }
             }
             else
             {
-                // Period is closed - show warning
-                PeriodValidationMessage = $"⚠️ Period is CLOSED for {moduleType} module on {dateStr}. You cannot save transactions for this date. Please ensure the period is open before saving.";
+                // No period found or period is closed - show warning
+                // But first check if there's a debugging issue - log the API response
+                PeriodValidationMessage = $"⚠️ Period is CLOSED for {moduleType} module on {dateStr}. No open period found for this date. Please ensure the period is open before saving transactions.";
+                PeriodValidationChecked = true;
             }
         }
         catch (Exception ex)
         {
+            PeriodValidationChecked = true;
             PeriodValidationMessage = $"Error checking period status: {ex.Message}";
             SnackbarService.Add(PeriodValidationMessage, Severity.Error);
         }
@@ -2093,8 +2160,9 @@
                 }
             }
 
-            // Total invoice amount = item totals + charges - discount
+            // Total invoice amount = item totals + tax + charges - discount
             record.Invoice.TotalInvoiceAmount = record.Invoice.InvoiceAmount
+                                               + record.Invoice.TaxAmount
                                                + record.Invoice.ChargesAmount
                                                - record.Invoice.DiscountAmount;
 

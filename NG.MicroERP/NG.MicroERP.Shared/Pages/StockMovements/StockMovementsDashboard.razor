@@ -10,7 +10,7 @@
 
 <Loading IsLoading="@LoadingPanel" />
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 2px;">
     <div class="stock-movements-header mb-4">
         <div class="d-flex align-items-center justify-content-between flex-wrap">
             <div>
@@ -40,7 +40,7 @@
                                Color="Color.Success" 
                                Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
                                OnClick="@(() => Clear())">
-                        New Movement
+                        New
                     </MudButton>
                 }
                 <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
@@ -151,7 +151,7 @@
         background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
         border-radius: 12px;
         color: white;
-        margin-bottom: 24px;
+        margin-bottom: 8px;
     }
 
     .stock-movements-header .mud-typography {

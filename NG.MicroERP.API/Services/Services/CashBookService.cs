@@ -56,7 +56,7 @@ public class CashBookService : ICashBookService
 
     public async Task<(bool, CashBookReportModel?)>? GetCashBookReport(int id)
     {
-        CashBookReportModel result = (await dapper.SearchByID<CashBookReportModel>("CashBookReport", id)) ?? new CashBookReportModel();
+        CashBookReportModel result = (await dapper.SearchByID<CashBookReportModel>("vw_CashBookReport", id)) ?? new CashBookReportModel();
         if (result == null || result.Id == 0)
             return (false, null);
         else

@@ -254,6 +254,6 @@ WHERE i.IsSoftDeleted = 0 AND id.IsSoftDeleted = 0;
 
 GO
 
-CREATE OR ALTER VIEW InvoiceReport AS
+CREATE OR ALTER VIEW vw_InvoiceReport AS
 SELECT * FROM vw_InvoiceMasterReport;
 

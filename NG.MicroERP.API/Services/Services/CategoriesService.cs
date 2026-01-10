@@ -51,7 +51,7 @@ public class CategoriesService : ICategoriesService
 
     public async Task<(bool, List<CategoriesModel>)>? SearchCategoriesHavingSomeItems(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM CategoriesHavingSomeItems";
+        string SQL = $@"SELECT * FROM vw_CategoriesHavingSomeItems";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " where " + Criteria;

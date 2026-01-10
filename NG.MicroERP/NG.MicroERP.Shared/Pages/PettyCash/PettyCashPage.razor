@@ -1,0 +1,699 @@
+@page "/PettyCashPage/{Action}/{CurrentRecord?}"
+
+@using NG.MicroERP.Shared.Models
+@using NG.MicroERP.Shared.Pages.Invoices
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject FileUploadService FileUploadService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+
+    <div class="text-end" style="margin-top:10px;">
+        @if (Action != "VIEW" && Globals.AccessLevel == 1)
+        {
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                @(Action == "INSERT" ? "Save" : "Update")
+            </MudButton>
+
+            @if (Action == "UPDATE" && CurrentRecord > 0)
+            {
+                <MudButton Variant="Variant.Filled" OnClick="ShowGLPreview" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="mr-1" />
+                    View GL Entry
+                </MudButton>
+            }
+
+            @if (Action == "UPDATE" && record.IsPostedToGL == 0)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                    Delete
+                </MudButton>
+            }
+        }
+    </div>
+
+        <!-- Period Validation Warning -->
+        @if (!string.IsNullOrWhiteSpace(PeriodValidationMessage))
+        {
+            <MudAlert Severity="Severity.Warning" Class="mb-2" Variant="Variant.Outlined" Dense="true">
+                <MudText Typo="Typo.body2">@PeriodValidationMessage</MudText>
+            </MudAlert>
+        }
+        else if (PeriodValidationChecked && record?.TranDate != null && record.OrganizationId > 0)
+        {
+            <MudAlert Severity="Severity.Success" Class="mb-2" Variant="Variant.Outlined" Dense="true">
+                <MudText Typo="Typo.body2">✓ Period is OPEN - You can save transactions for this date.</MudText>
+            </MudAlert>
+        }
+
+    <br />
+
+    <MudExpansionPanels MultiExpansion="true">
+
+        <!-- Basic Mandatory Details Panel -->
+        <MudExpansionPanel Text="Basic Details" Expanded="true" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-check-circle"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Basic Details</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Required mandatory information</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #4CAF50; border-radius: 10px;" />
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Transaction Type <span style='color:red;'>*</span></label>
+                        <MudSelect T="string"
+                                   @bind-Value="record.TranType"
+                                   Placeholder="Transaction Type"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1"
+                                   @bind-Value:after="OnTransactionTypeChanged">
+                            @if (Tra != null && Tra.Any())
+                            {
+                                if (string.IsNullOrWhiteSpace(record.TranType))
+                                {
+                                    record.TranType = Tra.First().ListValue;
+                                }
+                                foreach (var i in Tra)
+                                {
+                                    <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.TranType)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Transaction Date <span style='color:red;'>*</span></label>
+                        <MudDatePicker @bind-Date="record.TranDate"
+                                       @bind-Date:after="OnTranDateChanged"
+                                       DateFormat="dd MMM yyyy"
+                                       placeholder="Transaction Date"
+                                       ReadOnly="@isReadOnly"
+                                       Variant="Variant.Outlined"
+                                       Class="flex-grow-1"></MudDatePicker>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.TranDate)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Amount <span style='color:red;'>*</span></label>
+                        <MudNumericField @bind-Value="record.Amount"
+                                         placeholder="Amount"
+                                         ReadOnly="@isReadOnly"
+                                         Format="#,##0.00"
+                                         Variant="Variant.Outlined"
+                                         FullWidth="true"
+                                         Class="flex-grow-1"></MudNumericField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Amount)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Location <span style='color:red;'>*</span></label>
+                         <AutoComplete TItem="LocationsModel"
+                                      DataList="@Loc"
+                                      DisplayProperty="@(p => p.Name)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="record.LocationId"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true" />
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.LocationId)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Account <span style='color:red;'>*</span></label>
+                        <MudSelect @bind-Value="record.AccountId"
+                                   @key="record.AccountId"
+                                   Placeholder="@filterCOA.Replace("'", "").Replace("InterfaceType=", "")"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
+                            @if (Acc != null && Acc.Any())
+                            {
+                                foreach (var i in Acc)
+                                {
+                                    <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.AccountId)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Payment Method <span style='color:red;'>*</span></label>
+                        <MudSelect T="string"
+                                   @bind-Value="record.PaymentMethod"
+                                   Placeholder="Payment Method"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
+                            @if (pm != null && pm.Any())
+                            {
+                                if (string.IsNullOrWhiteSpace(record.PaymentMethod))
+                                {
+                                    record.PaymentMethod = pm.First().ListValue;
+                                }
+                                foreach (var i in pm)
+                                {
+                                    <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.PaymentMethod)" />
+                        </div>
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <!-- Additional Details Panel -->
+        <MudExpansionPanel Text="Additional Details" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-info-circle"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Additional Details</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Optional transaction information</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #FF9800; border-radius: 10px;" />
+            </TitleContent>
+
+            <ChildContent>
+                <!-- Transaction Information Group -->
+                <h5 class="fw-bold mt-3 mb-3" style="color: var(--mud-palette-primary); border-bottom: 2px solid var(--mud-palette-primary); padding-bottom: 8px;">
+                    <i class="fa fa-exchange-alt me-2"></i>Transaction Information
+                </h5>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Transaction #</label>
+                        <MudTextField id="SeqNo"
+                                      @bind-Value="record.SeqNo"
+                                      placeholder="Transaction #"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.SeqNo)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Party</label>
+                        <AutoComplete TItem="PartiesModel"
+                                      DataList="@Par"
+                                      DisplayProperty="@(p => p.DisplayName)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="record.PartyId"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true" />
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.PartyId)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Description</label>
+                        <MudTextField id="Description"
+                                      @bind-Value="record.Description"
+                                      placeholder="Description"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Description)" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Information Group -->
+                <h5 class="fw-bold mt-4 mb-3" style="color: var(--mud-palette-primary); border-bottom: 2px solid var(--mud-palette-primary); padding-bottom: 8px;">
+                    <i class="fa fa-credit-card me-2"></i>Financial Information
+                </h5>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Reference #</label>
+                        <MudTextField id="RefNo"
+                                      @bind-Value="record.RefNo"
+                                      placeholder="Reference #"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.RefNo)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Bill Tran Reference</label>
+                        <MudTextField id="Bill Transaction Reference"
+                                      @bind-Value="record.TranRef"
+                                      placeholder="Bill Transaction Reference"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.TranRef)" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attachments Group -->
+                <h5 class="fw-bold mt-4 mb-3" style="color: var(--mud-palette-primary); border-bottom: 2px solid var(--mud-palette-primary); padding-bottom: 8px;">
+                    <i class="fa fa-paperclip me-2"></i>Attachments
+                </h5>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
+                        <div class="mt-2 flex-grow-1">
+                            <InputFile class="form-control" OnChange="OnFileInputChanged" />
+                            <a href=@record.FileAttachment download class="btn btn-link" style="font-size: 12px;">
+                                @record.FileAttachment
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+
+</div>
+
+@code
+{
+    PettyCashModel record = new();
+    List<LocationsModel> Loc = new();
+    List<PartiesModel> Par = new();
+    List<ChartOfAccountsModel> Acc = new();
+    List<TypeCodeModel> Tra = null!;
+    List<TypeCodeModel> pm = null!;
+
+    public bool isReportVisible { get; set; } = false;
+    public int Report_id { get; set; }
+    public string? filterCOA { get; set; } = string.Empty;
+    public string? filterParties { get; set; } = string.Empty;
+
+    [Parameter] public string? Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+    private string PeriodValidationMessage { get; set; } = string.Empty;
+    private bool PeriodValidationChecked { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "PettyCashDashboard");
+        await GetAll();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        Loc = await Functions.GetAsync<List<LocationsModel>>($"Locations/Search", true) ?? new List<LocationsModel>();
+        Tra = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PETTY CASH TRAN TYPE", true) ?? new List<TypeCodeModel>();
+        pm = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PAYMENT METHOD", true) ?? new List<TypeCodeModel>();
+        Par = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search", true) ?? new List<PartiesModel>();
+
+        if (Action == "INSERT")
+        {
+            Clear();
+            GetDefaultValues();
+            isReadOnly = false;
+            await ValidatePeriodAsync();
+        }
+        else
+        {
+            await Get(CurrentRecord);
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected void GetDefaultValues()
+    {
+
+        if (Acc != null && Acc.Any() && record.AccountId == 0)
+        {
+            record.AccountId = Acc.First().Id;
+
+        }
+
+        if (Par != null && Par.Any() && record.PartyId == 0)
+        {
+            record.PartyId = Par.First().Id;
+
+        }
+
+        StateHasChanged();
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<PettyCashModel>($"PettyCash/Get/{id}", true) ?? new PettyCashModel();
+        await OnTransactionTypeChanged();
+        // Set read-only if posted to GL
+        isReadOnly = record.IsPostedToGL == 1;
+        await ValidatePeriodAsync();
+        LoadingPanel = false;
+    }
+
+    protected async void Clear()
+    {
+        Action = "INSERT";
+        record = new PettyCashModel();
+        isReadOnly = false;
+        record.TranType = "RECEIPT";
+        record.LocationId = Globals.User.LocationId;
+        record.TranDate = DateTime.Now;
+        await OnTransactionTypeChanged();
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        if (record.IsPostedToGL == 1)
+        {
+            SnackbarService.Add("This entry has been posted to General Ledger and cannot be edited.", Severity.Warning);
+            isReadOnly = true;
+            return;
+        }
+        Action = "UPDATE";
+        isReadOnly = false;
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        try
+        {
+            LoadingPanel = true;
+
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<PettyCashModel>($"PettyCash/{url}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"ERROR: {result.Message ?? "Record Not Saved"}", Severity.Error);
+            }
+            else
+            {
+                await OnSaved.InvokeAsync();
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                    await Edit(result.Result!.Id);
+                else
+                {
+                    Clear();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning($"Error: {ex.Message}");
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    protected void Print()
+    {
+        var url = $"/PettyCashReport/{record.Id}";
+        JSRuntime.InvokeVoidAsync("open", url, "_blank");
+    }
+
+    private async Task OnFileInputChanged(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var result = await Functions.FileUpload(e, FileUploadService, 25);
+
+            if (result.Item1 == true)
+            {
+                record.FileAttachment = result.Item2;
+            }
+            else
+            {
+                SnackbarService.Add($"Error: {result.Item2}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Exception: {ex.Message}", Severity.Error);
+            record.FileAttachment = null;
+        }
+    }
+
+    private async Task OnTransactionTypeChanged()
+    {
+        LoadingPanel = true;
+
+        switch (record.TranType)
+        {
+            case "RECEIPT":
+                filterCOA = "InterfaceType='Revenue'";
+                filterParties = "a.partytype='Customer'";
+                break;
+
+            case "PAYMENT":
+                filterCOA = "InterfaceType='Expense'";
+                filterParties = "a.partytype='Supplier'";
+                break;
+
+            default:
+                filterCOA = "InterfaceType='Bank'";
+                filterParties = "a.partytype='Bank'";
+                break;
+        }
+
+        Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/{filterCOA.ToUpper()}", true) ?? new List<ChartOfAccountsModel>();
+        Par = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search/{filterParties.ToUpper()}", true) ?? new List<PartiesModel>();
+
+        LoadingPanel = false;
+    }
+
+    protected async Task ShowGLPreview()
+    {
+        try
+        {
+            if (CurrentRecord == 0)
+            {
+                SnackbarService.Add("Please save the petty cash entry first", Severity.Warning);
+                return;
+            }
+
+            // Ensure we have the latest petty cash data
+            await Get(CurrentRecord);
+
+            LoadingPanel = true;
+            try
+            {
+                var result = await Functions.PostAsync<GeneralLedgerHeaderModel>("GeneralLedger/PreviewGLFromPettyCash", record, true);
+                LoadingPanel = false;
+
+                if (result.Success && result.Result != null)
+                {
+                    var parameters = new DialogParameters<InvoiceGLPreviewDialog>
+                    {
+                        { x => x.PreviewData, result.Result },
+                        { x => x.RecordId, CurrentRecord },
+                        { x => x.IsPostedToGL, record.IsPostedToGL == 1 },
+                        { x => x.OnPostToGL, EventCallback.Factory.Create(this, async () => 
+                        {
+                            await PostToGL();
+                            // Refresh preview after posting
+                            await ShowGLPreview();
+                        }) }
+                    };
+
+                    var options = new DialogOptions()
+                    {
+                        MaxWidth = MaxWidth.Large,
+                        FullWidth = true,
+                        CloseButton = true,
+                        CloseOnEscapeKey = true,
+                        BackdropClick = false
+                    };
+
+                    await dialogService.ShowAsync<InvoiceGLPreviewDialog>("Accounting Entry Preview", parameters, options);
+                }
+                else
+                {
+                    string errorMsg = !string.IsNullOrWhiteSpace(result.Message) 
+                        ? result.Message 
+                        : "Unable to generate preview. Please ensure all required accounts are configured in Chart of Accounts.";
+                    SnackbarService.Add(errorMsg, Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                LoadingPanel = false;
+                SnackbarService.Add($"Error generating preview: {ex.Message}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            LoadingPanel = false;
+            SnackbarService.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    protected async Task PostToGL()
+    {
+        try
+        {
+            if (CurrentRecord == 0)
+            {
+                SnackbarService.Add("Please save the petty cash entry before posting to GL", Severity.Warning);
+                return;
+            }
+
+            if (record.IsPostedToGL == 1)
+            {
+                SnackbarService.Add("This petty cash entry is already posted to General Ledger", Severity.Info);
+                return;
+            }
+
+            var res = await Functions.ShowConfirmation(dialogService, "Do you want to post this petty cash entry to General Ledger? Once posted, it cannot be edited or deleted.");
+            if (res == false)
+                return;
+
+            LoadingPanel = true;
+            var result = await Functions.PostAsync<GeneralLedgerHeaderModel>(
+                $"GeneralLedger/CreateGLFromPettyCash/{CurrentRecord}?userId={Globals.User.Id}&clientInfo={Uri.EscapeDataString(Globals.ClientInfo)}", 
+                null, 
+                true);
+            LoadingPanel = false;
+
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+            }
+            else
+            {
+                SnackbarService.Add("Petty cash entry posted to General Ledger successfully", Severity.Success);
+                // Reload petty cash to get updated IsPostedToGL status
+                await Get(CurrentRecord);
+            }
+        }
+        catch (Exception ex)
+        {
+            LoadingPanel = false;
+            SnackbarService.Add($"Error posting to GL: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnTranDateChanged()
+    {
+        await ValidatePeriodAsync();
+    }
+
+    private async Task ValidatePeriodAsync()
+    {
+        PeriodValidationChecked = false;
+        PeriodValidationMessage = string.Empty;
+        
+        if (record?.TranDate == null || record.OrganizationId == 0)
+        {
+            PeriodValidationMessage = string.Empty;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        try
+        {
+            string moduleType = "PETTYCASH"; // PettyCash module type
+            string dateStr = record.TranDate.Value.ToString("yyyy-MM-dd");
+            var result = await Functions.GetAsync<PeriodCloseModel>(
+                $"PeriodClose/GetOpenPeriod/{record.OrganizationId}/{dateStr}/{moduleType}", 
+                true);
+
+            PeriodValidationChecked = true;
+
+            // Period is OPEN if we get a valid result with Id > 0 and Status is OPEN or OPEN_PENDING
+            // Period is CLOSED if result is null, Id is 0, or Status is CLOSE
+            if (result != null && result.Id > 0 && 
+                (result.Status?.ToUpper() == "OPEN" || result.Status?.ToUpper() == "OPEN_PENDING"))
+            {
+                // Period is open - clear any warning
+                PeriodValidationMessage = string.Empty;
+            }
+            else
+            {
+                // Period is closed - show warning
+                PeriodValidationMessage = $"⚠️ Period is CLOSED for {moduleType} module on {dateStr}. You cannot save transactions for this date. Please ensure the period is open before saving.";
+            }
+        }
+        catch (Exception ex)
+        {
+            PeriodValidationChecked = true;
+            PeriodValidationMessage = $"Error checking period status: {ex.Message}";
+            SnackbarService.Add(PeriodValidationMessage, Severity.Error);
+        }
+        
+        await InvokeAsync(StateHasChanged);
+    }
+
+}
+

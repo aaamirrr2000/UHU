@@ -81,6 +81,8 @@
                         <MudSelectItem T="string" Value=@("SALE")>Sale Invoice</MudSelectItem>
                         <MudSelectItem T="string" Value=@("PURCHASE")>Purchase Invoice</MudSelectItem>
                         <MudSelectItem T="string" Value=@("CASHBOOK")>Cashbook</MudSelectItem>
+                        <MudSelectItem T="string" Value=@("PETTYCASH")>Petty Cash</MudSelectItem>
+                        <MudSelectItem T="string" Value=@("ADVANCES")>Advances</MudSelectItem>
                         <MudSelectItem T="string" Value=@("GENERALLEDGER")>General Ledger</MudSelectItem>
                     </MudSelect>
                 </div>
@@ -210,6 +212,25 @@
     {
         try
         {
+            // Normalize ModuleType and Status to uppercase before saving
+            if (!string.IsNullOrWhiteSpace(record.ModuleType))
+            {
+                record.ModuleType = record.ModuleType.ToUpper().Trim();
+            }
+            else
+            {
+                record.ModuleType = "ALL"; // Default to ALL if not set
+            }
+            
+            if (!string.IsNullOrWhiteSpace(record.Status))
+            {
+                record.Status = record.Status.ToUpper().Trim();
+            }
+            else
+            {
+                record.Status = "OPEN"; // Default to OPEN if not set
+            }
+            
             record.OrganizationId = Globals.User.OrganizationId;
             record.CreatedBy = Globals.User.Id;
             record.CreatedOn = DateTime.Now;
@@ -222,15 +243,32 @@
             var result = await Functions.PostAsync<PeriodCloseModel>($"PeriodClose/{Action}", record, true);
             LoadingPanel = false;
 
-            if (result.Success == false || result.Result == null)
+            if (result.Success == false)
             {
-                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+                string errorMsg = !string.IsNullOrWhiteSpace(result.Message) ? result.Message : "Failed to save period. Please try again.";
+                SnackbarService.Add($"ERROR: {errorMsg}", Severity.Error);
+            }
+            else if (result.Result == null)
+            {
+                // If Result is null but Success is true, it might still be a successful save
+                // Try to refresh and show success message
+                await OnSaved.InvokeAsync();
+                string actionText = Action == "INSERT" ? "Saved" : "Updated";
+                SnackbarService.Add($"Period {actionText} Successfully", Severity.Success);
+                
+                // If we have CurrentRecord, reload it
+                if (CurrentRecord > 0)
+                {
+                    await Get(CurrentRecord);
+                    Action = "UPDATE";
+                }
             }
             else
             {
                 var res = result.Result;
                 await OnSaved.InvokeAsync();
-                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                string actionText = Action == "INSERT" ? "Saved" : "Updated";
+                SnackbarService.Add($"Period {actionText} Successfully", Severity.Success);
                 
                 await Get(res.Id);
                 CurrentRecord = res.Id;

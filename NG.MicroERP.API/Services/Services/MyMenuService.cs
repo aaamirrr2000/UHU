@@ -27,12 +27,12 @@ public class MyMenuService : IMyMenuService
 
     public async Task<(bool, List<MyMenuModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM Menu Where IsSoftDeleted=0 and IsActive=1";
+        string SQL = $@"SELECT * FROM Menu Where IsSoftDeleted=0 and Live=1";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " and " + Criteria;
 
-        SQL += " Order by Id Desc";
+        SQL += " Order by SeqNo, ParentId, Id";
 
         List<MyMenuModel> result = (await dapper.SearchByQuery<MyMenuModel>(SQL)) ?? new List<MyMenuModel>();
 

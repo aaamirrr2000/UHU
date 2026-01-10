@@ -1,4 +1,4 @@
-﻿@page "/InvoiceDashboard/{InvoiceType?}"
+@page "/InvoiceDashboard/{InvoiceType?}"
 @using NG.MicroERP.Shared.Models
 
 @inject IJSRuntime JSRuntime
@@ -10,8 +10,8 @@
 
 <Loading IsLoading="@LoadingPanel" />
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <div class="dashboard-header mb-4">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 2px;">
+    <div class="dashboard-header">
         <div class="d-flex align-items-center justify-content-between flex-wrap">
             <div>
                 <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
@@ -20,7 +20,17 @@
                 </MudText>
                 <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">Create and manage @InvoiceType.ToLower() invoices</MudText>
             </div>
-            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 flex-wrap">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <MudDatePicker @bind-Date="startDate"
+                                   Label="Start Date"
+                                   DateFormat="dd MMM yyyy"
+                                   Variant="Variant.Outlined" />
+                    <MudDatePicker @bind-Date="endDate"
+                                   Label="End Date"
+                                   DateFormat="dd MMM yyyy"
+                                   Variant="Variant.Outlined" />
+                </div>
                 <div class="dashboard-search-container">
                     <MudTextField @bind-Value="searchString"
                                 @bind-Value:after="FilterData"
@@ -34,6 +44,14 @@
                                 Class="dashboard-search-field"
                                 Style="background: rgba(255,255,255,0.95);" />
                 </div>
+                <MudButton StartIcon="@Icons.Material.TwoTone.Search" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Primary"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => GetAll())">
+                    Search
+                </MudButton>
                 <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
                            Size="Size.Small" 
                            Variant="Variant.Filled" 
@@ -161,7 +179,7 @@
         background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
         border-radius: 12px;
         color: white;
-        margin-bottom: 24px;
+        margin-bottom: 8px;
     }
 
     .dashboard-header .mud-typography {
@@ -248,6 +266,8 @@
     [Parameter] public string InvoiceType { get; set; } = "SALE";
     public string Action { get; set; } = "INSERT";
     private string searchString = "";
+    public DateTime? startDate { get; set; } = DateTime.Today.AddDays(-30);
+    public DateTime? endDate { get; set; } = DateTime.Today;
 
     private bool LoadingPanel { get; set; } = false;
     private MyDrawer _drawer = new();
@@ -291,10 +311,31 @@
     protected async Task GetAll()
     {
         LoadingPanel = true;
-        string ThisInvoiceType = $"InvoiceType = '{InvoiceType}'";
-        AllData = await Functions.GetAsync<List<InvoiceModel>>($"Invoice/Search/{ThisInvoiceType}", true) ?? new List<InvoiceModel>();
-        data = AllData;
-        LoadingPanel = false;
+        try
+        {
+            if (startDate > endDate)
+            {
+                SnackbarService.Add("Start date must be earlier than end date.", Severity.Warning);
+                LoadingPanel = false;
+                return;
+            }
+
+            var formattedStartDate = startDate?.ToString("yyyy-MM-dd") ?? DateTime.Today.AddDays(-30).ToString("yyyy-MM-dd");
+            var formattedEndDate = endDate?.ToString("yyyy-MM-dd") ?? DateTime.Today.ToString("yyyy-MM-dd");
+
+            string ThisInvoiceType = $"InvoiceType = '{InvoiceType}' and TranDate >= '{formattedStartDate}' and TranDate <= '{formattedEndDate}'";
+            AllData = await Functions.GetAsync<List<InvoiceModel>>($"Invoice/Search/{Uri.EscapeDataString(ThisInvoiceType)}", true) ?? new List<InvoiceModel>();
+            data = AllData;
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading data: {ex.Message}", Severity.Error);
+            data = new List<InvoiceModel>();
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
     }
 
     protected async Task Get(int id)

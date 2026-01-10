@@ -33,12 +33,14 @@
 
                 <MudGrid>
                     <MudItem xs="12" md="4">
+                        <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Payment Method <span style='color:red;'>*</span></label>
                         <MudSelect T="int"
-                                   Label="Payment Method"
                                    @bind-Value="InvoicePayments.AccountId"
+                                   Placeholder="Select Payment Method"
                                    Variant="Variant.Outlined"
-                                   Clearable="@true"
+                                   Clearable="@false"
                                    FullWidth="@true"
+                                   Dense="@true"
                                    @bind-Value:after="PaymentMethodChanged"
                                    Class="mb-3">
                             @if (PaymentMethod != null)
@@ -229,6 +231,13 @@
         if (InvoicePayments == null || InvoicePayments.Amount <= 0)
         {
             Snackbar.Add("Please enter a valid payment amount", Severity.Warning);
+            return;
+        }
+
+        // Validate AccountId (Payment Method) is selected
+        if (InvoicePayments.AccountId == 0)
+        {
+            Snackbar.Add("Please select a Payment Method. Payment Method is required.", Severity.Warning);
             return;
         }
 

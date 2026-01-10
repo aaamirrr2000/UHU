@@ -71,7 +71,8 @@ CREATE TABLE dbo.SerializedItems
     CONSTRAINT FK_SerializedItems_Item FOREIGN KEY (ItemId) REFERENCES dbo.Items(Id),
     CONSTRAINT FK_SerializedItems_Location FOREIGN KEY (LocationId) REFERENCES dbo.Locations(Id),
     CONSTRAINT FK_SerializedItems_Party FOREIGN KEY (PartyId) REFERENCES dbo.Parties(Id),
-    CONSTRAINT FK_SerializedItems_Invoice FOREIGN KEY (InvoiceId) REFERENCES dbo.Invoice(Id),
+    -- Note: InvoiceId foreign key constraint removed - Invoice table is created later (0370)
+    -- The relationship can be enforced at application level or added via ALTER TABLE after Invoice is created
     CONSTRAINT FK_SerializedItems_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES dbo.Users(Id),
     CONSTRAINT FK_SerializedItems_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES dbo.Users(Id),
     CONSTRAINT UQ_SerializedItems_SerialNumber_Organization UNIQUE (SerialNumber, OrganizationId)

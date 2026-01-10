@@ -1,4 +1,4 @@
-﻿@page "/PermissionsDashboard"
+@page "/PermissionsDashboard"
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
@@ -35,8 +35,8 @@
     </FooterContent>
 </MyModelDialog>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <div class="dashboard-header mb-4">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 2px;">
+    <div class="dashboard-header">
         <div class="d-flex align-items-center justify-content-between flex-wrap">
             <div>
                 <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
@@ -209,7 +209,7 @@
         background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
         border-radius: 12px;
         color: white;
-        margin-bottom: 24px;
+        margin-bottom: 8px;
     }
 
     .dashboard-header .mud-typography {
@@ -344,21 +344,55 @@
         try
         {
             LoadingPanel = true;
-            PreData = await Functions.GetAsync<List<GroupMenuModel>>($"Permissions/SearchGroupPermissions/{Globals.User.OrganizationId}/GroupId={selectedGroup}", true) ?? new List<GroupMenuModel>();
-            PreData = PreData
-                    .OrderBy(x => x.ParentId == 0 ? x.MenuId : PreData.FirstOrDefault(p => p.MenuId == x.ParentId)?.MenuId ?? x.MenuId)
-                    .ThenBy(x => x.ParentId)
-                    .ThenBy(x => x.MenuId)
-                    .ToList();
+            var result = await Functions.GetAsync<List<GroupMenuModel>>($"Permissions/SearchGroupPermissions/{Globals.User.OrganizationId}/GroupId={selectedGroup}", true);
+            PreData = result ?? new List<GroupMenuModel>();
+            
+            if (PreData.Count > 0)
+            {
+                PreData = PreData
+                        .OrderBy(x => x.ParentId == 0 ? x.MenuId : PreData.FirstOrDefault(p => p.MenuId == x.ParentId)?.MenuId ?? x.MenuId)
+                        .ThenBy(x => x.ParentId)
+                        .ThenBy(x => x.MenuId)
+                        .ToList();
+            }
+            else
+            {
+                // If no data, try to load menu items directly to show what's available
+                var menuItems = await Functions.GetAsync<List<MyMenuModel>>($"MyMenu/Search", true) ?? new List<MyMenuModel>();
+                if (menuItems.Count > 0)
+                {
+                    PreData = menuItems
+                        .Where(x => x.Live == 1 && x.IsSoftDeleted == 0)
+                        .Select(x => new GroupMenuModel
+                        {
+                            MenuId = x.Id,
+                            MenuCaption = x.MenuCaption,
+                            ParentId = x.ParentId,
+                            PageName = x.PageName,
+                            Icon = x.Icon,
+                            SeqNo = x.SeqNo,
+                            Live = x.Live,
+                            GroupId = selectedGroup,
+                            OrganizationId = Globals.User.OrganizationId,
+                            My_Privilege = "NO ACCESS"
+                        })
+                        .OrderBy(x => x.SeqNo)
+                        .ThenBy(x => x.ParentId)
+                        .ThenBy(x => x.MenuId)
+                        .ToList();
+                }
+            }
+            
             StateHasChanged();
             LoadingPanel = false;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            
-            throw;
+            SnackbarService.Add($"Error loading permissions: {ex.Message}", Severity.Error);
+            PreData = new List<GroupMenuModel>();
+            LoadingPanel = false;
+            StateHasChanged();
         }
-      
     }
 
 }

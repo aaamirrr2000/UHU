@@ -31,8 +31,8 @@ public class PermissionsController : ControllerBase
     public async Task<IActionResult> SearchGroupPermissions(int OrganizationId, string Criteria = "")
     {
         var result = await Srv.SearchGroupMenu(OrganizationId, Criteria)!;
-        if (result == null)
-            return NotFound("Record Not Found");
+        if (result == null || result.Count == 0)
+            return Ok(new List<GroupMenuModel>()); // Return empty list instead of NotFound
 
         return Ok(result);
     }

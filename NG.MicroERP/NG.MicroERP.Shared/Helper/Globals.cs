@@ -98,10 +98,6 @@ public class Globals
     {
         try
         {
-            // 👑 Admin (GroupId = 1) always has full access
-            if (User.GroupId == 1)
-                return 1;
-
             // 🧭 Validate navigation manager and input
             if (navManager == null || string.IsNullOrWhiteSpace(pageName))
             {
@@ -117,9 +113,16 @@ public class Globals
                 return -1;
             }
 
-            // 🗂 Validate permissions
+            // 👑 Admin (GroupId = 1) always has full access - check BEFORE permissions validation
+            if (User.GroupId == 1)
+                return 1;
+
+            // 🗂 Validate permissions for non-admin users
             if (MyPermissions == null || !MyPermissions.Any())
             {
+                // For non-admin users, if permissions aren't loaded yet, deny access
+                // This prevents unauthorized access while permissions are loading
+                Console.WriteLine("⚠️ Permissions not loaded yet for non-admin user.");
                 navManager.NavigateTo("/", true);
                 return -1;
             }
@@ -154,6 +157,9 @@ public class Globals
         {
             // 🛑 Catch any unexpected issues safely
             Console.WriteLine($"⚠️ PageAccess error: {ex.Message}");
+            // If user is admin and there's an error, still allow access
+            if (User != null && User.GroupId == 1)
+                return 1;
             return -1;
         }
     }

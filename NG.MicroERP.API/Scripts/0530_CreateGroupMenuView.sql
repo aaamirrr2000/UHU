@@ -1,4 +1,4 @@
-﻿CREATE VIEW GroupMenu AS
+﻿CREATE VIEW vw_GroupMenu AS
 WITH GroupMenuCTE AS
 (
     SELECT
@@ -17,11 +17,15 @@ WITH GroupMenuCTE AS
         g.OrganizationId
     FROM Groups AS g
     CROSS JOIN Menu AS m
+    WHERE m.IsSoftDeleted = 0
 )
 SELECT
     cte.*,
-    ISNULL(p.Privilege, '') AS My_Privilege
+    COALESCE(p.Privilege, 'NO ACCESS') AS My_Privilege
 FROM GroupMenuCTE AS cte
 LEFT JOIN Permissions AS p
     ON p.GroupId = cte.GroupId
-    AND p.MenuId = cte.MenuId;
+    AND p.MenuId = cte.MenuId
+    AND p.OrganizationId = cte.OrganizationId
+    AND p.IsSoftDeleted = 0
+    AND p.IsActive = 1;

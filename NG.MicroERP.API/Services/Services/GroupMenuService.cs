@@ -26,7 +26,7 @@ public class GroupMenuService : IGroupMenuService
 
     public async Task<(bool, List<GroupMenuModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT * FROM ViewGroupMenu";
+        string SQL = $@"SELECT * FROM vw_GroupMenu";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
             SQL += " Where " + Criteria;
@@ -43,7 +43,7 @@ public class GroupMenuService : IGroupMenuService
 
     public async Task<(bool, GroupMenuModel?)>? Get(int id)
     {
-        GroupMenuModel result = (await dapper.SearchByID<GroupMenuModel>("GroupMenu", id)) ?? new GroupMenuModel();
+        GroupMenuModel result = (await dapper.SearchByID<GroupMenuModel>("vw_GroupMenu", id)) ?? new GroupMenuModel();
         if (result == null || result.GroupId == 0)
             return (false, null);
         else
@@ -52,7 +52,7 @@ public class GroupMenuService : IGroupMenuService
 
     public async Task<(bool, List<GroupMenuModel>)>? SearchGroupMenu(string Criteria = "")
     {
-        string SQL = "Select * from ViewGroupMenu ";
+        string SQL = "Select * from vw_GroupMenu ";
 
         if (Debugger.IsAttached == true)
         {
@@ -87,7 +87,7 @@ public class GroupMenuService : IGroupMenuService
             return (true, "FULL ACCESS");
 
         // 2. Get Access Level
-        string accessSql = $"SELECT * FROM GroupMenu WHERE GroupId = {user.GroupId} AND lower(PageName) = '{pageName.ToLower()}'";
+        string accessSql = $"SELECT * FROM vw_GroupMenu WHERE GroupId = {user.GroupId} AND lower(PageName) = '{pageName.ToLower()}'";
         var accessLevel = (await dapper.SearchByQuery<GroupMenuModel>(accessSql))?.FirstOrDefault();
 
         if (accessLevel == null)

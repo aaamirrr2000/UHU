@@ -1,0 +1,362 @@
+@page "/PhysicalCashCountPage/{Action}/{CurrentRecord?}"
+
+@using NG.MicroERP.Shared.Models
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+
+    <div class="text-end" style="margin-top:10px;">
+        @if (Action != "VIEW" && Globals.AccessLevel == 1)
+        {
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                @(Action == "INSERT" ? "Save" : "Update")
+            </MudButton>
+
+            @if (Action == "UPDATE" && CurrentRecord > 0)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                    Delete
+                </MudButton>
+            }
+        }
+    </div>
+
+    <br />
+
+    <MudExpansionPanels MultiExpansion="true">
+
+        <!-- Basic Mandatory Details Panel -->
+        <MudExpansionPanel Text="Basic Details" Expanded="true" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-check-circle"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Basic Details</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Required mandatory information</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #4CAF50; border-radius: 10px;" />
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Count Date <span style='color:red;'>*</span></label>
+                        <MudDatePicker @bind-Date="record.CountDate"
+                                       DateFormat="dd MMM yyyy"
+                                       placeholder="Count Date"
+                                       ReadOnly="@isReadOnly"
+                                       Variant="Variant.Outlined"
+                                       Class="flex-grow-1"></MudDatePicker>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.CountDate)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Location <span style='color:red;'>*</span></label>
+                        <AutoComplete TItem="LocationsModel"
+                                      DataList="@Loc"
+                                      DisplayProperty="@(p => p.Name)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="record.LocationId"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true" />
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.LocationId)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Locker <span style='color:red;'>*</span></label>
+                        <MudTextField @bind-Value="record.Locker"
+                                      placeholder="Locker Name/Number"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Locker)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Denomination <span style='color:red;'>*</span></label>
+                        <MudNumericField @bind-Value="record.Denomination"
+                                         @bind-Value:after="CalculateAmount"
+                                         placeholder="Denomination (e.g., 5000, 1000, 500)"
+                                         ReadOnly="@isReadOnly"
+                                         Format="#,##0.00"
+                                         Variant="Variant.Outlined"
+                                         FullWidth="true"
+                                         Class="flex-grow-1"></MudNumericField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Denomination)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Quantity <span style='color:red;'>*</span></label>
+                        <MudNumericField @bind-Value="record.Quantity"
+                                         @bind-Value:after="CalculateAmount"
+                                         placeholder="Number of notes/coins"
+                                         ReadOnly="@isReadOnly"
+                                         Format="#,##0"
+                                         Variant="Variant.Outlined"
+                                         FullWidth="true"
+                                         Class="flex-grow-1"></MudNumericField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Quantity)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Amount</label>
+                        <MudNumericField @bind-Value="record.Amount"
+                                         placeholder="Amount (Auto-calculated)"
+                                         ReadOnly="true"
+                                         Format="#,##0.00"
+                                         Variant="Variant.Outlined"
+                                         FullWidth="true"
+                                         Class="flex-grow-1"></MudNumericField>
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <!-- Additional Details Panel -->
+        <MudExpansionPanel Text="Additional Details" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-info-circle"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Additional Details</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Optional information</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #2196F3; border-radius: 10px;" />
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 mb-3 d-flex flex-column" style="min-height: 95px;">
+                        <label class="form-label fw-bold mb-1">Notes</label>
+                        <MudTextField @bind-Value="record.Notes"
+                                      placeholder="Additional notes or remarks"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      Lines="3"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Status</label>
+                        <MudSelect T="string"
+                                   @bind-Value="record.Status"
+                                   Placeholder="Status"
+                                   Variant="Variant.Outlined"
+                                   Clearable="false"
+                                   FullWidth="true"
+                                   ReadOnly="@isReadOnly"
+                                   Class="flex-grow-1">
+                            <MudSelectItem T="string" Value=@("PENDING")>Pending</MudSelectItem>
+                            <MudSelectItem T="string" Value=@("VERIFIED")>Verified</MudSelectItem>
+                            <MudSelectItem T="string" Value=@("DISPUTED")>Disputed</MudSelectItem>
+                        </MudSelect>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Counted By</label>
+                        @if (isReadOnly)
+                        {
+                            <MudTextField Value="@(record.CountedByName ?? Globals.User?.FullName ?? "")"
+                                          ReadOnly="true"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="true"
+                                          Class="flex-grow-1"></MudTextField>
+                        }
+                        else
+                        {
+                            <MudTextField Value="@(Globals.User?.FullName ?? "")"
+                                          ReadOnly="true"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="true"
+                                          Class="flex-grow-1"></MudTextField>
+                        }
+                    </div>
+
+                    @if (Action == "UPDATE" || Action == "VIEW")
+                    {
+                        <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                            <label class="form-label fw-bold mb-1">Verified By</label>
+                            <MudTextField Value="@(record.VerifiedByName ?? "Not Verified")"
+                                          ReadOnly="true"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="true"
+                                          Class="flex-grow-1"></MudTextField>
+                        </div>
+
+                        @if (record.VerifiedOn.HasValue)
+                        {
+                            <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                                <label class="form-label fw-bold mb-1">Verified On</label>
+                                <MudTextField Value="@(record.VerifiedOn.Value.ToString("dd MMM yyyy HH:mm"))"
+                                              ReadOnly="true"
+                                              Variant="Variant.Outlined"
+                                              FullWidth="true"
+                                              Class="flex-grow-1"></MudTextField>
+                            </div>
+                        }
+                    }
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+    </MudExpansionPanels>
+</div>
+
+@code
+{
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    PhysicalCashCountModel record = new();
+    List<LocationsModel> Loc = new();
+
+    bool isReadOnly = false;
+    private bool LoadingPanel { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        LoadingPanel = true;
+
+        // Load locations
+        Loc = await Functions.GetAsync<List<LocationsModel>>($"Locations/Search/IsActive=1", true) ?? new List<LocationsModel>();
+
+        if (Action == "INSERT")
+        {
+            record = new PhysicalCashCountModel();
+            record.CountDate = DateTime.Today;
+            record.CountedBy = Globals.User.Id;
+            record.Status = "PENDING";
+            isReadOnly = false;
+        }
+        else if (Action == "UPDATE")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action == "VIEW")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<PhysicalCashCountModel>($"PhysicalCashCount/Get/{id}", true) ?? new PhysicalCashCountModel();
+        LoadingPanel = false;
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new PhysicalCashCountModel();
+        record.CountDate = DateTime.Today;
+        record.CountedBy = Globals.User.Id;
+        record.Status = "PENDING";
+        isReadOnly = false;
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected void CalculateAmount()
+    {
+        record.Amount = record.Denomination * record.Quantity;
+        StateHasChanged();
+    }
+
+    protected async Task Save()
+    {
+        try
+        {
+            LoadingPanel = true;
+
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+            record.CountedBy = Globals.User.Id;
+
+            // Calculate amount before saving
+            record.Amount = record.Denomination * record.Quantity;
+
+            string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<PhysicalCashCountModel>($"PhysicalCashCount/{url}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"ERROR: {result.Message ?? "Record Not Saved"}", Severity.Error);
+            }
+            else
+            {
+                await OnSaved.InvokeAsync();
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                {
+                    CurrentRecord = result.Result!.Id;
+                    await Get(CurrentRecord);
+                    Action = "UPDATE";
+                }
+                else
+                {
+                    Clear();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+}

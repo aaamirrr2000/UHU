@@ -191,7 +191,7 @@ public class PermissionsService : IPermissionsService
 
     public async Task<List<GroupMenuModel>>? SearchGroupMenu(int OrganizationId, string Criteria = "")
     {
-        string SQL = $"Select * from GroupMenu where OrganizationId = {OrganizationId}";
+        string SQL = $"Select * from vw_GroupMenu where OrganizationId = {OrganizationId}";
 
         if (Debugger.IsAttached == true)
         {

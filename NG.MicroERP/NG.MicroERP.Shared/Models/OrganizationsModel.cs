@@ -14,8 +14,6 @@ public class OrganizationsModel
     public string? EntraId { get; set; } = string.Empty;
     public string? Logo { get; set; } = string.Empty;
     public string? Wallpaper { get; set; }
-    public string? ThemeColor { get; set; } = null!;
-    public string? MenuColor { get; set; } = null!;
     public string? Name { get; set; } = string.Empty;
     public string? Description { get; set; } = string.Empty;
     public string? Phone { get; set; } = string.Empty;
@@ -23,7 +21,6 @@ public class OrganizationsModel
     public string? Address { get; set; } = string.Empty;
     public int MaxUsers { get; set; } = 0;
     public double DbSize { get; set; } = 0;
-    public string? LoginPic { get; set; } = string.Empty;
     public string? Industry { get; set; } = string.Empty;
     public string? Website { get; set; } = string.Empty;
     public string? TimeZone { get; set; } = string.Empty;

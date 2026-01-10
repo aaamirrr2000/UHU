@@ -25,8 +25,12 @@ public interface IGeneralLedgerService
     Task<(bool, string)> ValidatePeriod(int organizationId, DateTime date, string moduleType = "GENERALLEDGER");
     Task<(bool, GeneralLedgerHeaderModel, string)> CreateGLFromInvoice(int invoiceId, int userId, string clientInfo);
     Task<(bool, GeneralLedgerHeaderModel, string)> CreateGLFromCashBook(int cashBookId, int userId, string clientInfo);
+    Task<(bool, GeneralLedgerHeaderModel, string)> CreateGLFromPettyCash(int pettyCashId, int userId, string clientInfo);
+    Task<(bool, GeneralLedgerHeaderModel, string)> CreateGLFromAdvances(int advancesId, int userId, string clientInfo);
     Task<(bool, GeneralLedgerHeaderModel?)> PreviewGLFromInvoice(InvoicesModel invoice);
     Task<(bool, GeneralLedgerHeaderModel?)> PreviewGLFromCashBook(CashBookModel cashBook);
+    Task<(bool, GeneralLedgerHeaderModel?)> PreviewGLFromPettyCash(PettyCashModel pettyCash);
+    Task<(bool, GeneralLedgerHeaderModel?)> PreviewGLFromAdvances(AdvancesModel advances);
 }
 
 public class GeneralLedgerService : IGeneralLedgerService
@@ -87,7 +91,7 @@ public class GeneralLedgerService : IGeneralLedgerService
 
     public async Task<(bool, GeneralLedgerReportModel?)>? GetGeneralLedgerReport(int id)
     {
-        GeneralLedgerReportModel result = (await dapper.SearchByID<GeneralLedgerReportModel>("GeneralLedgerReport", id)) ?? new GeneralLedgerReportModel();
+        GeneralLedgerReportModel result = (await dapper.SearchByID<GeneralLedgerReportModel>("vw_GeneralLedgerReport", id)) ?? new GeneralLedgerReportModel();
         if (result == null || result.Id == 0)
             return (false, null);
         else
@@ -505,52 +509,288 @@ public class GeneralLedgerService : IGeneralLedgerService
                 };
 
                 // Map invoice to GL entry - use AccountId from invoice if available, otherwise lookup AR/AP
-                int accountId = 0;
+                int arApAccountId = 0;
                 string accountTypeName = "";
+                bool isSale = invoice.InvoiceType?.ToUpper() == "SALE";
                 
                 if (invoice.AccountId > 0)
                 {
                     // Use the account specified in the invoice
-                    accountId = invoice.AccountId;
-                    // Verify the account exists
-                    string sqlVerifyAccount = $@"SELECT TOP 1 Id FROM ChartOfAccounts 
-                                                 WHERE Id = {accountId} AND OrganizationId = {invoice.OrganizationId} AND IsActive = 1";
-                    var verifyResult = await connection.QueryFirstOrDefaultAsync<int?>(sqlVerifyAccount, transaction: transaction);
-                    if (verifyResult == null || verifyResult == 0)
+                    arApAccountId = invoice.AccountId;
+                    // Verify the account exists and get its code/name/type
+                    string sqlVerifyAccount = $@"SELECT TOP 1 Id, Code, Name, Type FROM ChartOfAccounts 
+                                                 WHERE Id = {arApAccountId} AND OrganizationId = {invoice.OrganizationId} AND IsActive = 1";
+                    var verifyResult = await connection.QueryFirstOrDefaultAsync<(int Id, string Code, string Name, string Type)?>(sqlVerifyAccount, transaction: transaction);
+                    if (verifyResult == null || verifyResult.Value.Id == 0)
                     {
                         transaction.Rollback();
-                        return (false, null!, $"Account ID {accountId} specified in invoice is not valid or inactive. Please select a valid account.");
+                        return (false, null!, $"Account ID {arApAccountId} specified in invoice is not valid or inactive. Please select a valid account.");
                     }
+                    accountTypeName = verifyResult.Value.Name;
                 }
                 else
                 {
                     // Fallback to AR/AP lookup if AccountId not specified
-                    string accountCode = invoice.InvoiceType?.ToUpper() == "SALE" ? "AR" : "AP";
-                    accountTypeName = invoice.InvoiceType?.ToUpper() == "SALE" ? "Accounts Receivable (AR)" : "Accounts Payable (AP)";
-                    string sqlAccount = $@"SELECT TOP 1 Id FROM ChartOfAccounts 
+                    string accountCode = isSale ? "AR" : "AP";
+                    accountTypeName = isSale ? "Accounts Receivable (AR)" : "Accounts Payable (AP)";
+                    string sqlAccount = $@"SELECT TOP 1 Id, Code, Name, Type FROM ChartOfAccounts 
                                           WHERE OrganizationId = {invoice.OrganizationId} 
                                           AND (Code = '{accountCode}' OR Code LIKE '{accountCode}%')
                                           AND IsActive = 1
                                           ORDER BY Code";
-                    var accountResult = await connection.QueryFirstOrDefaultAsync<int?>(sqlAccount, transaction: transaction);
-                    accountId = accountResult ?? 0;
+                    var accountResult = await connection.QueryFirstOrDefaultAsync<(int Id, string Code, string Name, string Type)?>(sqlAccount, transaction: transaction);
                     
                     // Validate AR/AP account ID
-                    if (accountId == 0 || accountResult == null)
+                    if (accountResult == null || accountResult.Value.Id == 0)
                     {
                         transaction.Rollback();
                         return (false, null!, $"{accountTypeName} account not found for OrganizationId {invoice.OrganizationId}. Please configure the account in Chart of Accounts or specify an AccountId in the invoice before posting to GL.");
                     }
+                    arApAccountId = accountResult.Value.Id;
                 }
-                
-                glHeader.Details.Add(new GeneralLedgerDetailModel
+
+                // Get AR/AP account details for GL entry
+                string sqlArApDetails = $@"SELECT TOP 1 Id, Code, Name, Type FROM ChartOfAccounts WHERE Id = {arApAccountId}";
+                var arApAccount = await connection.QueryFirstOrDefaultAsync<(int Id, string Code, string Name, string Type)?>(sqlArApDetails, transaction: transaction);
+                if (arApAccount == null)
                 {
-                    AccountId = accountId,
-                    DebitAmount = (double)invoice.InvoiceAmount,
-                    CreditAmount = 0,
-                    Description = $"Invoice {invoice.Code}",
-                    PartyId = invoice.PartyId
-                });
+                    transaction.Rollback();
+                    return (false, null!, $"AR/AP account details not found.");
+                }
+
+                // For SALE: Debit AR, Credit Revenue/Tax/Charges, Debit Discount
+                // For PURCHASE: Credit AP, Debit Expense/Tax/Charges, Credit Discount
+                if (isSale)
+                {
+                    // Debit AR for TotalInvoiceAmount
+                    glHeader.Details.Add(new GeneralLedgerDetailModel
+                    {
+                        AccountId = arApAccount.Value.Id,
+                        AccountCode = arApAccount.Value.Code,
+                        AccountName = arApAccount.Value.Name,
+                        AccountType = arApAccount.Value.Type,
+                        DebitAmount = (double)invoice.TotalInvoiceAmount,
+                        CreditAmount = 0,
+                        Description = $"Invoice {invoice.Code}",
+                        PartyId = invoice.PartyId
+                    });
+
+                    // Credit Revenue (from InvoiceAmount)
+                    if (invoice.InvoiceAmount > 0)
+                    {
+                        string revenueSql = $@"SELECT TOP 1 Id, Code, Name, Type FROM ChartOfAccounts 
+                                              WHERE OrganizationId = {invoice.OrganizationId} 
+                                              AND Type = 'REVENUE'
+                                              AND IsActive = 1
+                                              ORDER BY Code";
+                        var revenueAccount = await connection.QueryFirstOrDefaultAsync<(int Id, string Code, string Name, string Type)?>(revenueSql, transaction: transaction);
+                        
+                        if (revenueAccount != null && revenueAccount.Value.Id > 0)
+                        {
+                            glHeader.Details.Add(new GeneralLedgerDetailModel
+                            {
+                                AccountId = revenueAccount.Value.Id,
+                                AccountCode = revenueAccount.Value.Code,
+                                AccountName = revenueAccount.Value.Name,
+                                AccountType = revenueAccount.Value.Type,
+                                DebitAmount = 0,
+                                CreditAmount = (double)invoice.InvoiceAmount,
+                                Description = $"Sales Revenue - Invoice {invoice.Code}"
+                            });
+                        }
+                    }
+
+                    // Credit Tax accounts
+                    if (invoice.TaxAmount > 0)
+                    {
+                        string taxSql = $@"SELECT TOP 1 Id, Code, Name, Type FROM ChartOfAccounts 
+                                          WHERE OrganizationId = {invoice.OrganizationId} 
+                                          AND InterfaceType = 'TAX'
+                                          AND IsActive = 1
+                                          ORDER BY Code";
+                        var taxAccount = await connection.QueryFirstOrDefaultAsync<(int Id, string Code, string Name, string Type)?>(taxSql, transaction: transaction);
+                        
+                        if (taxAccount != null && taxAccount.Value.Id > 0)
+                        {
+                            glHeader.Details.Add(new GeneralLedgerDetailModel
+                            {
+                                AccountId = taxAccount.Value.Id,
+                                AccountCode = taxAccount.Value.Code,
+                                AccountName = taxAccount.Value.Name,
+                                AccountType = taxAccount.Value.Type,
+                                DebitAmount = 0,
+                                CreditAmount = (double)invoice.TaxAmount,
+                                Description = $"Tax - Invoice {invoice.Code}"
+                            });
+                        }
+                    }
+
+                    // Credit Service Charges
+                    if (invoice.ChargesAmount > 0)
+                    {
+                        string chargeSql = $@"SELECT TOP 1 Id, Code, Name, Type FROM ChartOfAccounts 
+                                             WHERE OrganizationId = {invoice.OrganizationId} 
+                                             AND InterfaceType = 'SERVICE'
+                                             AND IsActive = 1
+                                             ORDER BY Code";
+                        var chargeAccount = await connection.QueryFirstOrDefaultAsync<(int Id, string Code, string Name, string Type)?>(chargeSql, transaction: transaction);
+                        
+                        if (chargeAccount != null && chargeAccount.Value.Id > 0)
+                        {
+                            glHeader.Details.Add(new GeneralLedgerDetailModel
+                            {
+                                AccountId = chargeAccount.Value.Id,
+                                AccountCode = chargeAccount.Value.Code,
+                                AccountName = chargeAccount.Value.Name,
+                                AccountType = chargeAccount.Value.Type,
+                                DebitAmount = 0,
+                                CreditAmount = (double)invoice.ChargesAmount,
+                                Description = $"Service Charges - Invoice {invoice.Code}"
+                            });
+                        }
+                    }
+
+                    // Debit Discount
+                    if (invoice.DiscountAmount > 0)
+                    {
+                        string discountSql = $@"SELECT TOP 1 Id, Code, Name, Type FROM ChartOfAccounts 
+                                               WHERE OrganizationId = {invoice.OrganizationId} 
+                                               AND InterfaceType = 'DISCOUNT'
+                                               AND IsActive = 1
+                                               ORDER BY Code";
+                        var discountAccount = await connection.QueryFirstOrDefaultAsync<(int Id, string Code, string Name, string Type)?>(discountSql, transaction: transaction);
+                        
+                        if (discountAccount != null && discountAccount.Value.Id > 0)
+                        {
+                            glHeader.Details.Add(new GeneralLedgerDetailModel
+                            {
+                                AccountId = discountAccount.Value.Id,
+                                AccountCode = discountAccount.Value.Code,
+                                AccountName = discountAccount.Value.Name,
+                                AccountType = discountAccount.Value.Type,
+                                DebitAmount = (double)invoice.DiscountAmount,
+                                CreditAmount = 0,
+                                Description = $"Discount - Invoice {invoice.Code}"
+                            });
+                        }
+                    }
+                }
+                else
+                {
+                    // PURCHASE: Credit AP, Debit Expense/Tax/Charges, Credit Discount
+                    // Credit AP for TotalInvoiceAmount
+                    glHeader.Details.Add(new GeneralLedgerDetailModel
+                    {
+                        AccountId = arApAccount.Value.Id,
+                        AccountCode = arApAccount.Value.Code,
+                        AccountName = arApAccount.Value.Name,
+                        AccountType = arApAccount.Value.Type,
+                        DebitAmount = 0,
+                        CreditAmount = (double)invoice.TotalInvoiceAmount,
+                        Description = $"Invoice {invoice.Code}",
+                        PartyId = invoice.PartyId
+                    });
+
+                    // Debit Expense (from InvoiceAmount)
+                    if (invoice.InvoiceAmount > 0)
+                    {
+                        string expenseSql = $@"SELECT TOP 1 Id, Code, Name, Type FROM ChartOfAccounts 
+                                              WHERE OrganizationId = {invoice.OrganizationId} 
+                                              AND Type = 'EXPENSE'
+                                              AND IsActive = 1
+                                              ORDER BY Code";
+                        var expenseAccount = await connection.QueryFirstOrDefaultAsync<(int Id, string Code, string Name, string Type)?>(expenseSql, transaction: transaction);
+                        
+                        if (expenseAccount != null && expenseAccount.Value.Id > 0)
+                        {
+                            glHeader.Details.Add(new GeneralLedgerDetailModel
+                            {
+                                AccountId = expenseAccount.Value.Id,
+                                AccountCode = expenseAccount.Value.Code,
+                                AccountName = expenseAccount.Value.Name,
+                                AccountType = expenseAccount.Value.Type,
+                                DebitAmount = (double)invoice.InvoiceAmount,
+                                CreditAmount = 0,
+                                Description = $"Purchase Expense - Invoice {invoice.Code}"
+                            });
+                        }
+                    }
+
+                    // Debit Tax accounts
+                    if (invoice.TaxAmount > 0)
+                    {
+                        string taxSql = $@"SELECT TOP 1 Id, Code, Name, Type FROM ChartOfAccounts 
+                                          WHERE OrganizationId = {invoice.OrganizationId} 
+                                          AND InterfaceType = 'TAX'
+                                          AND IsActive = 1
+                                          ORDER BY Code";
+                        var taxAccount = await connection.QueryFirstOrDefaultAsync<(int Id, string Code, string Name, string Type)?>(taxSql, transaction: transaction);
+                        
+                        if (taxAccount != null && taxAccount.Value.Id > 0)
+                        {
+                            glHeader.Details.Add(new GeneralLedgerDetailModel
+                            {
+                                AccountId = taxAccount.Value.Id,
+                                AccountCode = taxAccount.Value.Code,
+                                AccountName = taxAccount.Value.Name,
+                                AccountType = taxAccount.Value.Type,
+                                DebitAmount = (double)invoice.TaxAmount,
+                                CreditAmount = 0,
+                                Description = $"Tax - Invoice {invoice.Code}"
+                            });
+                        }
+                    }
+
+                    // Debit Service Charges
+                    if (invoice.ChargesAmount > 0)
+                    {
+                        string chargeSql = $@"SELECT TOP 1 Id, Code, Name, Type FROM ChartOfAccounts 
+                                             WHERE OrganizationId = {invoice.OrganizationId} 
+                                             AND InterfaceType = 'SERVICE'
+                                             AND IsActive = 1
+                                             ORDER BY Code";
+                        var chargeAccount = await connection.QueryFirstOrDefaultAsync<(int Id, string Code, string Name, string Type)?>(chargeSql, transaction: transaction);
+                        
+                        if (chargeAccount != null && chargeAccount.Value.Id > 0)
+                        {
+                            glHeader.Details.Add(new GeneralLedgerDetailModel
+                            {
+                                AccountId = chargeAccount.Value.Id,
+                                AccountCode = chargeAccount.Value.Code,
+                                AccountName = chargeAccount.Value.Name,
+                                AccountType = chargeAccount.Value.Type,
+                                DebitAmount = (double)invoice.ChargesAmount,
+                                CreditAmount = 0,
+                                Description = $"Service Charges - Invoice {invoice.Code}"
+                            });
+                        }
+                    }
+
+                    // Credit Discount
+                    if (invoice.DiscountAmount > 0)
+                    {
+                        string discountSql = $@"SELECT TOP 1 Id, Code, Name, Type FROM ChartOfAccounts 
+                                               WHERE OrganizationId = {invoice.OrganizationId} 
+                                               AND InterfaceType = 'DISCOUNT'
+                                               AND IsActive = 1
+                                               ORDER BY Code";
+                        var discountAccount = await connection.QueryFirstOrDefaultAsync<(int Id, string Code, string Name, string Type)?>(discountSql, transaction: transaction);
+                        
+                        if (discountAccount != null && discountAccount.Value.Id > 0)
+                        {
+                            glHeader.Details.Add(new GeneralLedgerDetailModel
+                            {
+                                AccountId = discountAccount.Value.Id,
+                                AccountCode = discountAccount.Value.Code,
+                                AccountName = discountAccount.Value.Name,
+                                AccountType = discountAccount.Value.Type,
+                                DebitAmount = 0,
+                                CreditAmount = (double)invoice.DiscountAmount,
+                                Description = $"Discount - Invoice {invoice.Code}"
+                            });
+                        }
+                    }
+                }
 
                 // Calculate totals
                 glHeader.TotalDebit = glHeader.Details.Sum(d => d.DebitAmount);
@@ -1354,6 +1594,654 @@ public class GeneralLedgerService : IGeneralLedgerService
         {
             Log.Error(ex, "GeneralLedgerService PreviewGLFromCashBook Error: {Message}", ex.Message);
             return (false, null);
+        }
+    }
+
+    public async Task<(bool, GeneralLedgerHeaderModel?)> PreviewGLFromPettyCash(PettyCashModel pettyCash)
+    {
+        try
+        {
+            if (pettyCash == null || pettyCash.Id == 0)
+            {
+                Log.Warning("PreviewGLFromPettyCash: PettyCash model is null or invalid");
+                return (false, null);
+            }
+
+            DapperFunctions dapper = new DapperFunctions();
+            
+            // If petty cash is already posted, return the actual GL entry
+            if (pettyCash.Id > 0 && pettyCash.IsPostedToGL == 1 && !string.IsNullOrWhiteSpace(pettyCash.GLEntryNo))
+            {
+                // Get the actual posted GL entry by EntryNo
+                string sqlPostedEntry = $@"SELECT glh.*, p.Name as PartyName, loc.Name as LocationName
+                                          FROM GeneralLedgerHeader as glh
+                                          LEFT JOIN Parties as p on p.Id=glh.PartyId
+                                          LEFT JOIN Locations as loc on loc.Id=glh.LocationId
+                                          WHERE glh.EntryNo = '{pettyCash.GLEntryNo}' AND glh.IsSoftDeleted=0";
+                
+                var postedHeader = (await dapper.SearchByQuery<GeneralLedgerHeaderModel>(sqlPostedEntry))?.FirstOrDefault();
+                
+                if (postedHeader != null && postedHeader.Id > 0)
+                {
+                    // Get details for the posted entry
+                    string sqlPostedDetails = $@"SELECT gld.*, coa.Code as AccountCode, coa.Name as AccountName, coa.Type as AccountType,
+                                                p.Name as PartyName, loc.Name as LocationName
+                                                FROM GeneralLedgerDetail as gld
+                                                LEFT JOIN ChartOfAccounts as coa on coa.Id=gld.AccountId
+                                                LEFT JOIN Parties as p on p.Id=gld.PartyId
+                                                LEFT JOIN Locations as loc on loc.Id=gld.LocationId
+                                                WHERE gld.HeaderId={postedHeader.Id} AND gld.IsSoftDeleted=0
+                                                ORDER BY gld.SeqNo, gld.Id";
+                    
+                    var postedDetails = await dapper.SearchByQuery<GeneralLedgerDetailModel>(sqlPostedDetails);
+                    postedHeader.Details = new System.Collections.ObjectModel.ObservableCollection<GeneralLedgerDetailModel>(postedDetails ?? new List<GeneralLedgerDetailModel>());
+                    
+                    return (true, postedHeader);
+                }
+            }
+            
+            // Create preview GL header (not saved)
+            GeneralLedgerHeaderModel glHeader = new GeneralLedgerHeaderModel
+            {
+                OrganizationId = pettyCash.OrganizationId,
+                EntryNo = "PREVIEW",
+                EntryDate = pettyCash.TranDate ?? DateTime.Now,
+                Source = "PETTYCASH",
+                Description = $"Petty Cash {pettyCash.SeqNo}",
+                ReferenceNo = pettyCash.SeqNo,
+                ReferenceType = "PETTYCASH",
+                ReferenceId = pettyCash.Id,
+                PartyId = pettyCash.PartyId,
+                LocationId = pettyCash.LocationId,
+                BaseCurrencyId = pettyCash.BaseCurrencyId,
+                EnteredCurrencyId = pettyCash.EnteredCurrencyId,
+                Details = new System.Collections.ObjectModel.ObservableCollection<GeneralLedgerDetailModel>()
+            };
+
+            // Get account details for petty cash account
+            string sqlAccount = $@"SELECT coa.* FROM ChartOfAccounts coa WHERE coa.Id = {pettyCash.AccountId} AND coa.IsActive = 1";
+            var accountResult = await dapper.SearchByQuery<ChartOfAccountsModel>(sqlAccount);
+            var account = accountResult?.FirstOrDefault();
+
+            if (account == null || account.Id == 0)
+            {
+                Log.Warning($"PreviewGLFromPettyCash: Account {pettyCash.AccountId} not found");
+                return (false, null);
+            }
+
+            // Create GL entries based on transaction type (similar to CashBook)
+            if (pettyCash.TranType?.ToUpper() == "RECEIPT")
+            {
+                // Debit petty cash account
+                glHeader.Details.Add(new GeneralLedgerDetailModel
+                {
+                    AccountId = pettyCash.AccountId,
+                    AccountCode = account.Code,
+                    AccountName = account.Name,
+                    AccountType = account.Type,
+                    DebitAmount = pettyCash.Amount,
+                    CreditAmount = 0,
+                    Description = pettyCash.Description ?? $"Receipt {pettyCash.SeqNo}",
+                    PartyId = pettyCash.PartyId
+                });
+            }
+            else if (pettyCash.TranType?.ToUpper() == "PAYMENT")
+            {
+                // Debit expense/other account, Credit petty cash account
+                glHeader.Details.Add(new GeneralLedgerDetailModel
+                {
+                    AccountId = pettyCash.AccountId,
+                    AccountCode = account.Code,
+                    AccountName = account.Name,
+                    AccountType = account.Type,
+                    DebitAmount = pettyCash.Amount,
+                    CreditAmount = 0,
+                    Description = pettyCash.Description ?? $"Payment {pettyCash.SeqNo}",
+                    PartyId = pettyCash.PartyId
+                });
+            }
+
+            // Calculate totals
+            glHeader.TotalDebit = glHeader.Details.Sum(d => d.DebitAmount);
+            glHeader.TotalCredit = glHeader.Details.Sum(d => d.CreditAmount);
+
+            if (glHeader.Details.Count == 0)
+            {
+                Log.Warning("PreviewGLFromPettyCash: No GL details generated");
+                return (false, null);
+            }
+
+            return (true, glHeader);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "GeneralLedgerService PreviewGLFromPettyCash Error: {Message}", ex.Message);
+            return (false, null);
+        }
+    }
+
+    public async Task<(bool, GeneralLedgerHeaderModel?)> PreviewGLFromAdvances(AdvancesModel advances)
+    {
+        try
+        {
+            if (advances == null || advances.Id == 0)
+            {
+                Log.Warning("PreviewGLFromAdvances: Advances model is null or invalid");
+                return (false, null);
+            }
+
+            DapperFunctions dapper = new DapperFunctions();
+            
+            // If advance is already posted, return the actual GL entry
+            if (advances.Id > 0 && advances.IsPostedToGL == 1 && !string.IsNullOrWhiteSpace(advances.GLEntryNo))
+            {
+                // Get the actual posted GL entry by EntryNo
+                string sqlPostedEntry = $@"SELECT glh.*, p.Name as PartyName, loc.Name as LocationName
+                                          FROM GeneralLedgerHeader as glh
+                                          LEFT JOIN Parties as p on p.Id=glh.PartyId
+                                          LEFT JOIN Locations as loc on loc.Id=glh.LocationId
+                                          WHERE glh.EntryNo = '{advances.GLEntryNo}' AND glh.IsSoftDeleted=0";
+                
+                var postedHeader = (await dapper.SearchByQuery<GeneralLedgerHeaderModel>(sqlPostedEntry))?.FirstOrDefault();
+                
+                if (postedHeader != null && postedHeader.Id > 0)
+                {
+                    // Get details for the posted entry
+                    string sqlPostedDetails = $@"SELECT gld.*, coa.Code as AccountCode, coa.Name as AccountName, coa.Type as AccountType,
+                                                p.Name as PartyName, loc.Name as LocationName
+                                                FROM GeneralLedgerDetail as gld
+                                                LEFT JOIN ChartOfAccounts as coa on coa.Id=gld.AccountId
+                                                LEFT JOIN Parties as p on p.Id=gld.PartyId
+                                                LEFT JOIN Locations as loc on loc.Id=gld.LocationId
+                                                WHERE gld.HeaderId={postedHeader.Id} AND gld.IsSoftDeleted=0
+                                                ORDER BY gld.SeqNo, gld.Id";
+                    
+                    var postedDetails = await dapper.SearchByQuery<GeneralLedgerDetailModel>(sqlPostedDetails);
+                    postedHeader.Details = new System.Collections.ObjectModel.ObservableCollection<GeneralLedgerDetailModel>(postedDetails ?? new List<GeneralLedgerDetailModel>());
+                    
+                    return (true, postedHeader);
+                }
+            }
+            
+            // Create preview GL header (not saved)
+            GeneralLedgerHeaderModel glHeader = new GeneralLedgerHeaderModel
+            {
+                OrganizationId = advances.OrganizationId,
+                EntryNo = "PREVIEW",
+                EntryDate = advances.TranDate ?? DateTime.Now,
+                Source = "ADVANCES",
+                Description = $"Advance {advances.SeqNo}",
+                ReferenceNo = advances.SeqNo,
+                ReferenceType = "ADVANCES",
+                ReferenceId = advances.Id,
+                PartyId = advances.PartyId,
+                LocationId = advances.LocationId,
+                BaseCurrencyId = advances.BaseCurrencyId,
+                EnteredCurrencyId = advances.EnteredCurrencyId,
+                Details = new System.Collections.ObjectModel.ObservableCollection<GeneralLedgerDetailModel>()
+            };
+
+            // Get account details for advance account
+            string sqlAccount = $@"SELECT coa.* FROM ChartOfAccounts coa WHERE coa.Id = {advances.AccountId} AND coa.IsActive = 1";
+            var accountResult = await dapper.SearchByQuery<ChartOfAccountsModel>(sqlAccount);
+            var account = accountResult?.FirstOrDefault();
+
+            if (account == null || account.Id == 0)
+            {
+                Log.Warning($"PreviewGLFromAdvances: Account {advances.AccountId} not found");
+                return (false, null);
+            }
+
+            // Create GL entries based on transaction type (similar to CashBook)
+            if (advances.TranType?.ToUpper() == "RECEIPT")
+            {
+                // Debit advance account
+                glHeader.Details.Add(new GeneralLedgerDetailModel
+                {
+                    AccountId = advances.AccountId,
+                    AccountCode = account.Code,
+                    AccountName = account.Name,
+                    AccountType = account.Type,
+                    DebitAmount = advances.Amount,
+                    CreditAmount = 0,
+                    Description = advances.Description ?? $"Receipt {advances.SeqNo}",
+                    PartyId = advances.PartyId
+                });
+            }
+            else if (advances.TranType?.ToUpper() == "PAYMENT")
+            {
+                // Debit expense/other account, Credit advance account
+                glHeader.Details.Add(new GeneralLedgerDetailModel
+                {
+                    AccountId = advances.AccountId,
+                    AccountCode = account.Code,
+                    AccountName = account.Name,
+                    AccountType = account.Type,
+                    DebitAmount = advances.Amount,
+                    CreditAmount = 0,
+                    Description = advances.Description ?? $"Payment {advances.SeqNo}",
+                    PartyId = advances.PartyId
+                });
+            }
+
+            // Calculate totals
+            glHeader.TotalDebit = glHeader.Details.Sum(d => d.DebitAmount);
+            glHeader.TotalCredit = glHeader.Details.Sum(d => d.CreditAmount);
+
+            if (glHeader.Details.Count == 0)
+            {
+                Log.Warning("PreviewGLFromAdvances: No GL details generated");
+                return (false, null);
+            }
+
+            return (true, glHeader);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "GeneralLedgerService PreviewGLFromAdvances Error: {Message}", ex.Message);
+            return (false, null);
+        }
+    }
+
+    public async Task<(bool, GeneralLedgerHeaderModel, string)> CreateGLFromPettyCash(int pettyCashId, int userId, string clientInfo)
+    {
+        try
+        {
+            using var connection = new SqlConnection(new Config().DefaultConnectionString);
+            connection.Open();
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                // Get petty cash data
+                string SQLPettyCash = $@"SELECT * FROM PettyCash WHERE Id = {pettyCashId} AND IsSoftDeleted = 0";
+                var pettyCash = (await connection.QueryAsync<PettyCashModel>(SQLPettyCash, transaction: transaction))?.FirstOrDefault();
+                
+                if (pettyCash == null || pettyCash.Id == 0)
+                {
+                    transaction.Rollback();
+                    return (false, null!, "Petty cash entry not found.");
+                }
+
+                // Check if already posted
+                if (pettyCash.IsPostedToGL == 1)
+                {
+                    transaction.Rollback();
+                    return (false, null!, "Petty cash entry is already posted to General Ledger.");
+                }
+
+                // Validate period for PETTYCASH module
+                var periodCheck = await ValidatePeriod(pettyCash.OrganizationId, pettyCash.TranDate ?? DateTime.Now, "PETTYCASH");
+                if (!periodCheck.Item1)
+                {
+                    transaction.Rollback();
+                    return (false, null!, periodCheck.Item2);
+                }
+
+                // Generate EntryNo within transaction
+                string prefix = "GL";
+                int codeLength = 6;
+                string format = new string('0', codeLength);
+                string sqlGetCode = $@"SELECT MAX(CAST(SUBSTRING(EntryNo, {prefix.Length + 1}, LEN(EntryNo) - {prefix.Length}) AS INT)) AS SEQNO
+                     FROM GeneralLedgerHeader WHERE LEFT(EntryNo, {prefix.Length}) = '{prefix}'";
+                var codeResult = await connection.QueryFirstOrDefaultAsync<int?>(sqlGetCode, transaction: transaction);
+                int nextCode = (codeResult ?? 0) + 1;
+                string entryNo = prefix + nextCode.ToString(format);
+                
+                GeneralLedgerHeaderModel glHeader = new GeneralLedgerHeaderModel
+                {
+                    OrganizationId = pettyCash.OrganizationId,
+                    EntryNo = entryNo,
+                    EntryDate = pettyCash.TranDate ?? DateTime.Now,
+                    Source = "PETTYCASH",
+                    Description = $"Petty Cash {pettyCash.SeqNo}",
+                    ReferenceNo = pettyCash.SeqNo,
+                    ReferenceType = "PETTYCASH",
+                    ReferenceId = pettyCash.Id,
+                    PartyId = pettyCash.PartyId,
+                    LocationId = pettyCash.LocationId,
+                    BaseCurrencyId = pettyCash.BaseCurrencyId,
+                    EnteredCurrencyId = pettyCash.EnteredCurrencyId,
+                    CreatedBy = userId,
+                    CreatedFrom = clientInfo,
+                    Details = new System.Collections.ObjectModel.ObservableCollection<GeneralLedgerDetailModel>()
+                };
+
+                // Create GL entries based on transaction type (same pattern as CashBook)
+                if (pettyCash.TranType?.ToUpper() == "RECEIPT")
+                {
+                    glHeader.Details.Add(new GeneralLedgerDetailModel
+                    {
+                        AccountId = pettyCash.AccountId,
+                        DebitAmount = pettyCash.Amount,
+                        CreditAmount = 0,
+                        Description = pettyCash.Description,
+                        PartyId = pettyCash.PartyId
+                    });
+                }
+                else if (pettyCash.TranType?.ToUpper() == "PAYMENT")
+                {
+                    glHeader.Details.Add(new GeneralLedgerDetailModel
+                    {
+                        AccountId = pettyCash.AccountId,
+                        DebitAmount = pettyCash.Amount,
+                        CreditAmount = 0,
+                        Description = pettyCash.Description,
+                        PartyId = pettyCash.PartyId
+                    });
+                }
+
+                // Calculate totals
+                glHeader.TotalDebit = glHeader.Details.Sum(d => d.DebitAmount);
+                glHeader.TotalCredit = glHeader.Details.Sum(d => d.CreditAmount);
+
+                // Validate balance
+                if (Math.Abs(glHeader.TotalDebit - glHeader.TotalCredit) > 0.01)
+                {
+                    transaction.Rollback();
+                    return (false, null!, $"GL entry is not balanced. Total Debit: {glHeader.TotalDebit:N2}, Total Credit: {glHeader.TotalCredit:N2}");
+                }
+
+                // Insert GL Header
+                string SQLDuplicate = $@"SELECT * FROM GeneralLedgerHeader WHERE UPPER(EntryNo) = '{entryNo.ToUpper()}';";
+                string SQLInsertHeader = $@"INSERT INTO GeneralLedgerHeader 
+                    (
+                        OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, ReferenceType, ReferenceId,
+                        PartyId, LocationId, BaseCurrencyId, EnteredCurrencyId, TotalDebit, TotalCredit, IsReversed, ReversedEntryNo, IsPosted,
+                        PostedDate, PostedBy, IsAdjusted, AdjustmentEntryNo, FileAttachment, Notes,
+                        CreatedBy, CreatedOn, CreatedFrom, IsSoftDeleted
+                    ) 
+                    VALUES 
+                    (
+                        {glHeader.OrganizationId}, '{entryNo.ToUpper()}', '{glHeader.EntryDate:yyyy-MM-dd}',
+                        '{glHeader.Source?.ToUpper().Replace("'", "''") ?? "PETTYCASH"}', '{glHeader.Description!.ToUpper().Replace("'", "''")}',
+                        '{glHeader.ReferenceNo?.ToUpper().Replace("'", "''") ?? ""}', '{glHeader.ReferenceType?.ToUpper().Replace("'", "''") ?? ""}',
+                        {glHeader.ReferenceId}, {(glHeader.PartyId > 0 ? glHeader.PartyId.ToString() : "NULL")},
+                        {(glHeader.LocationId > 0 ? glHeader.LocationId.ToString() : "NULL")},
+                        {(glHeader.BaseCurrencyId > 0 ? glHeader.BaseCurrencyId.ToString() : "NULL")},
+                        {(glHeader.EnteredCurrencyId > 0 ? glHeader.EnteredCurrencyId.ToString() : "NULL")},
+                        {glHeader.TotalDebit}, {glHeader.TotalCredit},
+                        {glHeader.IsReversed}, '{glHeader.ReversedEntryNo?.ToUpper().Replace("'", "''") ?? ""}',
+                        {glHeader.IsPosted}, {(glHeader.PostedDate.HasValue ? $"'{glHeader.PostedDate.Value:yyyy-MM-dd HH:mm:ss}'" : "NULL")},
+                        {(glHeader.PostedBy > 0 ? glHeader.PostedBy.ToString() : "NULL")}, {glHeader.IsAdjusted},
+                        '{glHeader.AdjustmentEntryNo?.ToUpper().Replace("'", "''") ?? ""}', '{glHeader.FileAttachment?.Replace("'", "''") ?? ""}',
+                        '{glHeader.Notes?.ToUpper().Replace("'", "''") ?? ""}', {glHeader.CreatedBy},
+                        '{DateTime.Now:yyyy-MM-dd HH:mm:ss}', '{glHeader.CreatedFrom!.ToUpper()}', {glHeader.IsSoftDeleted}
+                    );
+                    SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                // Check for duplicate
+                if (!string.IsNullOrEmpty(SQLDuplicate))
+                {
+                    var duplicateCheck = await connection.QueryAsync(SQLDuplicate, transaction: transaction);
+                    if (duplicateCheck.Any())
+                    {
+                        transaction.Rollback();
+                        return (false, null!, "Duplicate Entry No Found.");
+                    }
+                }
+
+                // Insert header
+                await connection.ExecuteAsync(SQLInsertHeader.TrimEnd(';'), transaction: transaction);
+                int headerId = Convert.ToInt32(await connection.ExecuteScalarAsync("SELECT SCOPE_IDENTITY();", transaction: transaction));
+
+                // Validate all account IDs before inserting details
+                var invalidDetails = glHeader.Details.Where(d => d.AccountId == 0).ToList();
+                if (invalidDetails.Any())
+                {
+                    transaction.Rollback();
+                    var invalidDescriptions = string.Join(", ", invalidDetails.Select(d => d.Description ?? "Unknown"));
+                    return (false, null!, $"Invalid Account ID found in GL entries. One or more accounts have AccountId = 0. Details: {invalidDescriptions}. Please ensure all accounts are properly configured in Chart of Accounts.");
+                }
+
+                // Insert Details
+                int seqNo = 1;
+                foreach (var detail in glHeader.Details)
+                {
+                    if (detail.AccountId == 0)
+                    {
+                        transaction.Rollback();
+                        return (false, null!, $"Invalid Account ID (0) found in GL detail entry: {detail.Description ?? "Unknown"}. AccountId must be a valid account from Chart of Accounts.");
+                    }
+
+                    string SQLInsertDetail = $@"INSERT INTO GeneralLedgerDetail 
+                        (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, SeqNo,
+                         CreatedBy, CreatedOn, CreatedFrom, IsSoftDeleted)
+                        VALUES
+                        ({headerId}, {detail.AccountId}, '{detail.Description?.ToUpper().Replace("'", "''") ?? ""}',
+                         {detail.DebitAmount}, {detail.CreditAmount}, {(detail.PartyId > 0 ? detail.PartyId.ToString() : "NULL")},
+                         {seqNo++}, {glHeader.CreatedBy}, '{DateTime.Now:yyyy-MM-dd HH:mm:ss}',
+                         '{glHeader.CreatedFrom!.ToUpper()}', {detail.IsSoftDeleted});";
+                    
+                    await connection.ExecuteAsync(SQLInsertDetail.TrimEnd(';'), transaction: transaction);
+                }
+
+                // Update petty cash with GL posting info
+                string SQLUpdatePettyCash = $@"UPDATE PettyCash SET 
+                    IsPostedToGL = 1,
+                    PostedToGLDate = '{DateTime.Now:yyyy-MM-dd HH:mm:ss}',
+                    PostedToGLBy = {userId},
+                    GLEntryNo = '{entryNo}'
+                WHERE Id = {pettyCashId}";
+
+                await connection.ExecuteAsync(SQLUpdatePettyCash, transaction: transaction);
+                transaction.Commit();
+
+                // Get the created GL entry
+                var result = await Get(headerId);
+                return (true, result!.Item2!, "");
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "GeneralLedgerService CreateGLFromPettyCash Error");
+            return (false, null!, ex.Message);
+        }
+    }
+
+    public async Task<(bool, GeneralLedgerHeaderModel, string)> CreateGLFromAdvances(int advancesId, int userId, string clientInfo)
+    {
+        try
+        {
+            using var connection = new SqlConnection(new Config().DefaultConnectionString);
+            connection.Open();
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                // Get advances data
+                string SQLAdvances = $@"SELECT * FROM Advances WHERE Id = {advancesId} AND IsSoftDeleted = 0";
+                var advances = (await connection.QueryAsync<AdvancesModel>(SQLAdvances, transaction: transaction))?.FirstOrDefault();
+                
+                if (advances == null || advances.Id == 0)
+                {
+                    transaction.Rollback();
+                    return (false, null!, "Advances entry not found.");
+                }
+
+                // Check if already posted
+                if (advances.IsPostedToGL == 1)
+                {
+                    transaction.Rollback();
+                    return (false, null!, "Advances entry is already posted to General Ledger.");
+                }
+
+                // Validate period for ADVANCES module
+                var periodCheck = await ValidatePeriod(advances.OrganizationId, advances.TranDate ?? DateTime.Now, "ADVANCES");
+                if (!periodCheck.Item1)
+                {
+                    transaction.Rollback();
+                    return (false, null!, periodCheck.Item2);
+                }
+
+                // Generate EntryNo within transaction
+                string prefix = "GL";
+                int codeLength = 6;
+                string format = new string('0', codeLength);
+                string sqlGetCode = $@"SELECT MAX(CAST(SUBSTRING(EntryNo, {prefix.Length + 1}, LEN(EntryNo) - {prefix.Length}) AS INT)) AS SEQNO
+                     FROM GeneralLedgerHeader WHERE LEFT(EntryNo, {prefix.Length}) = '{prefix}'";
+                var codeResult = await connection.QueryFirstOrDefaultAsync<int?>(sqlGetCode, transaction: transaction);
+                int nextCode = (codeResult ?? 0) + 1;
+                string entryNo = prefix + nextCode.ToString(format);
+                
+                GeneralLedgerHeaderModel glHeader = new GeneralLedgerHeaderModel
+                {
+                    OrganizationId = advances.OrganizationId,
+                    EntryNo = entryNo,
+                    EntryDate = advances.TranDate ?? DateTime.Now,
+                    Source = "ADVANCES",
+                    Description = $"Advance {advances.SeqNo}",
+                    ReferenceNo = advances.SeqNo,
+                    ReferenceType = "ADVANCES",
+                    ReferenceId = advances.Id,
+                    PartyId = advances.PartyId,
+                    LocationId = advances.LocationId,
+                    BaseCurrencyId = advances.BaseCurrencyId,
+                    EnteredCurrencyId = advances.EnteredCurrencyId,
+                    CreatedBy = userId,
+                    CreatedFrom = clientInfo,
+                    Details = new System.Collections.ObjectModel.ObservableCollection<GeneralLedgerDetailModel>()
+                };
+
+                // Create GL entries based on transaction type (same pattern as CashBook)
+                if (advances.TranType?.ToUpper() == "RECEIPT")
+                {
+                    glHeader.Details.Add(new GeneralLedgerDetailModel
+                    {
+                        AccountId = advances.AccountId,
+                        DebitAmount = advances.Amount,
+                        CreditAmount = 0,
+                        Description = advances.Description,
+                        PartyId = advances.PartyId
+                    });
+                }
+                else if (advances.TranType?.ToUpper() == "PAYMENT")
+                {
+                    glHeader.Details.Add(new GeneralLedgerDetailModel
+                    {
+                        AccountId = advances.AccountId,
+                        DebitAmount = advances.Amount,
+                        CreditAmount = 0,
+                        Description = advances.Description,
+                        PartyId = advances.PartyId
+                    });
+                }
+
+                // Calculate totals
+                glHeader.TotalDebit = glHeader.Details.Sum(d => d.DebitAmount);
+                glHeader.TotalCredit = glHeader.Details.Sum(d => d.CreditAmount);
+
+                // Validate balance
+                if (Math.Abs(glHeader.TotalDebit - glHeader.TotalCredit) > 0.01)
+                {
+                    transaction.Rollback();
+                    return (false, null!, $"GL entry is not balanced. Total Debit: {glHeader.TotalDebit:N2}, Total Credit: {glHeader.TotalCredit:N2}");
+                }
+
+                // Insert GL Header
+                string SQLDuplicate = $@"SELECT * FROM GeneralLedgerHeader WHERE UPPER(EntryNo) = '{entryNo.ToUpper()}';";
+                string SQLInsertHeader = $@"INSERT INTO GeneralLedgerHeader 
+                    (
+                        OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, ReferenceType, ReferenceId,
+                        PartyId, LocationId, BaseCurrencyId, EnteredCurrencyId, TotalDebit, TotalCredit, IsReversed, ReversedEntryNo, IsPosted,
+                        PostedDate, PostedBy, IsAdjusted, AdjustmentEntryNo, FileAttachment, Notes,
+                        CreatedBy, CreatedOn, CreatedFrom, IsSoftDeleted
+                    ) 
+                    VALUES 
+                    (
+                        {glHeader.OrganizationId}, '{entryNo.ToUpper()}', '{glHeader.EntryDate:yyyy-MM-dd}',
+                        '{glHeader.Source?.ToUpper().Replace("'", "''") ?? "ADVANCES"}', '{glHeader.Description!.ToUpper().Replace("'", "''")}',
+                        '{glHeader.ReferenceNo?.ToUpper().Replace("'", "''") ?? ""}', '{glHeader.ReferenceType?.ToUpper().Replace("'", "''") ?? ""}',
+                        {glHeader.ReferenceId}, {(glHeader.PartyId > 0 ? glHeader.PartyId.ToString() : "NULL")},
+                        {(glHeader.LocationId > 0 ? glHeader.LocationId.ToString() : "NULL")},
+                        {(glHeader.BaseCurrencyId > 0 ? glHeader.BaseCurrencyId.ToString() : "NULL")},
+                        {(glHeader.EnteredCurrencyId > 0 ? glHeader.EnteredCurrencyId.ToString() : "NULL")},
+                        {glHeader.TotalDebit}, {glHeader.TotalCredit},
+                        {glHeader.IsReversed}, '{glHeader.ReversedEntryNo?.ToUpper().Replace("'", "''") ?? ""}',
+                        {glHeader.IsPosted}, {(glHeader.PostedDate.HasValue ? $"'{glHeader.PostedDate.Value:yyyy-MM-dd HH:mm:ss}'" : "NULL")},
+                        {(glHeader.PostedBy > 0 ? glHeader.PostedBy.ToString() : "NULL")}, {glHeader.IsAdjusted},
+                        '{glHeader.AdjustmentEntryNo?.ToUpper().Replace("'", "''") ?? ""}', '{glHeader.FileAttachment?.Replace("'", "''") ?? ""}',
+                        '{glHeader.Notes?.ToUpper().Replace("'", "''") ?? ""}', {glHeader.CreatedBy},
+                        '{DateTime.Now:yyyy-MM-dd HH:mm:ss}', '{glHeader.CreatedFrom!.ToUpper()}', {glHeader.IsSoftDeleted}
+                    );
+                    SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                // Check for duplicate
+                if (!string.IsNullOrEmpty(SQLDuplicate))
+                {
+                    var duplicateCheck = await connection.QueryAsync(SQLDuplicate, transaction: transaction);
+                    if (duplicateCheck.Any())
+                    {
+                        transaction.Rollback();
+                        return (false, null!, "Duplicate Entry No Found.");
+                    }
+                }
+
+                // Insert header
+                await connection.ExecuteAsync(SQLInsertHeader.TrimEnd(';'), transaction: transaction);
+                int headerId = Convert.ToInt32(await connection.ExecuteScalarAsync("SELECT SCOPE_IDENTITY();", transaction: transaction));
+
+                // Validate all account IDs before inserting details
+                var invalidDetails = glHeader.Details.Where(d => d.AccountId == 0).ToList();
+                if (invalidDetails.Any())
+                {
+                    transaction.Rollback();
+                    var invalidDescriptions = string.Join(", ", invalidDetails.Select(d => d.Description ?? "Unknown"));
+                    return (false, null!, $"Invalid Account ID found in GL entries. One or more accounts have AccountId = 0. Details: {invalidDescriptions}. Please ensure all accounts are properly configured in Chart of Accounts.");
+                }
+
+                // Insert Details
+                int seqNo = 1;
+                foreach (var detail in glHeader.Details)
+                {
+                    if (detail.AccountId == 0)
+                    {
+                        transaction.Rollback();
+                        return (false, null!, $"Invalid Account ID (0) found in GL detail entry: {detail.Description ?? "Unknown"}. AccountId must be a valid account from Chart of Accounts.");
+                    }
+
+                    string SQLInsertDetail = $@"INSERT INTO GeneralLedgerDetail 
+                        (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, SeqNo,
+                         CreatedBy, CreatedOn, CreatedFrom, IsSoftDeleted)
+                        VALUES
+                        ({headerId}, {detail.AccountId}, '{detail.Description?.ToUpper().Replace("'", "''") ?? ""}',
+                         {detail.DebitAmount}, {detail.CreditAmount}, {(detail.PartyId > 0 ? detail.PartyId.ToString() : "NULL")},
+                         {seqNo++}, {glHeader.CreatedBy}, '{DateTime.Now:yyyy-MM-dd HH:mm:ss}',
+                         '{glHeader.CreatedFrom!.ToUpper()}', {detail.IsSoftDeleted});";
+                    
+                    await connection.ExecuteAsync(SQLInsertDetail.TrimEnd(';'), transaction: transaction);
+                }
+
+                // Update advances with GL posting info
+                string SQLUpdateAdvances = $@"UPDATE Advances SET 
+                    IsPostedToGL = 1,
+                    PostedToGLDate = '{DateTime.Now:yyyy-MM-dd HH:mm:ss}',
+                    PostedToGLBy = {userId},
+                    GLEntryNo = '{entryNo}'
+                WHERE Id = {advancesId}";
+
+                await connection.ExecuteAsync(SQLUpdateAdvances, transaction: transaction);
+                transaction.Commit();
+
+                // Get the created GL entry
+                var result = await Get(headerId);
+                return (true, result!.Item2!, "");
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "GeneralLedgerService CreateGLFromAdvances Error");
+            return (false, null!, ex.Message);
         }
     }
 }

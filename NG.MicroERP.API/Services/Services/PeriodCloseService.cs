@@ -28,7 +28,7 @@ public class PeriodCloseService : IPeriodCloseService
 
     public async Task<(bool, List<PeriodCloseModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT pc.*, u.Fullname as ClosedByName
+        string SQL = $@"SELECT pc.*, u.Username as ClosedByName
                         FROM PeriodClose as pc
                         LEFT JOIN Users as u on u.Id=pc.ClosedBy
                         Where pc.IsSoftDeleted=0";
@@ -48,7 +48,7 @@ public class PeriodCloseService : IPeriodCloseService
 
     public async Task<(bool, PeriodCloseModel?)>? Get(int id)
     {
-        string SQL = $@"SELECT pc.*, u.Fullname as ClosedByName
+        string SQL = $@"SELECT pc.*, u.Username as ClosedByName
                        FROM PeriodClose as pc
                        LEFT JOIN Users as u on u.Id=pc.ClosedBy
                        Where pc.Id={id} AND pc.IsSoftDeleted=0";
@@ -257,22 +257,78 @@ public class PeriodCloseService : IPeriodCloseService
 
     public async Task<(bool, PeriodCloseModel?)>? GetOpenPeriod(int organizationId, DateTime date, string moduleType = "ALL")
     {
-        string moduleTypeEscaped = (moduleType ?? "ALL").ToUpper().Replace("'", "''");
-        string SQL = $@"SELECT pc.*, u.Fullname as ClosedByName
-                        FROM PeriodClose as pc
-                        LEFT JOIN Users as u on u.Id=pc.ClosedBy
-                        WHERE pc.OrganizationId = {organizationId}
-                        AND pc.IsSoftDeleted = 0
-                        AND pc.Status IN ('OPEN', 'OPEN_PENDING')
-                        AND (pc.ModuleType = '{moduleTypeEscaped}' OR pc.ModuleType = 'ALL')
-                        AND '{date:yyyy-MM-dd}' BETWEEN pc.StartDate AND pc.EndDate";
+        try
+        {
+            string moduleTypeEscaped = (moduleType ?? "ALL").ToUpper().Trim().Replace("'", "''");
+            string dateStr = date.ToString("yyyy-MM-dd");
+            
+            // Use UPPER() for case-insensitive ModuleType comparison and proper date comparison
+            // Compare dates as DATE types for reliable comparison
+            string SQL = $@"SELECT pc.*, u.Username as ClosedByName
+                            FROM PeriodClose as pc
+                            LEFT JOIN Users as u on u.Id=pc.ClosedBy
+                            WHERE pc.OrganizationId = {organizationId}
+                            AND pc.IsSoftDeleted = 0
+                            AND UPPER(LTRIM(RTRIM(ISNULL(pc.Status, '')))) IN ('OPEN', 'OPEN_PENDING')
+                            AND (
+                                UPPER(LTRIM(RTRIM(ISNULL(pc.ModuleType, '')))) = '{moduleTypeEscaped}' 
+                                OR UPPER(LTRIM(RTRIM(ISNULL(pc.ModuleType, '')))) = 'ALL'
+                            )
+                            AND CAST('{dateStr}' AS DATE) BETWEEN CAST(pc.StartDate AS DATE) AND CAST(pc.EndDate AS DATE)";
 
-        PeriodCloseModel result = (await dapper.SearchByQuery<PeriodCloseModel>(SQL))?.FirstOrDefault() ?? new PeriodCloseModel();
-        
-        if (result == null || result.Id == 0)
+            Log.Information("GetOpenPeriod Query: OrganizationId={OrganizationId}, Date={Date}, ModuleType={ModuleType}, SQL={SQL}", 
+                organizationId, dateStr, moduleTypeEscaped, SQL);
+
+            PeriodCloseModel result = (await dapper.SearchByQuery<PeriodCloseModel>(SQL))?.FirstOrDefault() ?? new PeriodCloseModel();
+            
+            if (result == null || result.Id == 0)
+            {
+                // Debug: Check what periods exist for this organization and date range
+                string debugSQL = $@"SELECT pc.Id, pc.OrganizationId, pc.PeriodName, pc.ModuleType, pc.Status, pc.StartDate, pc.EndDate, pc.IsSoftDeleted,
+                                    CONVERT(VARCHAR(10), pc.StartDate, 120) as StartDateStr,
+                                    CONVERT(VARCHAR(10), pc.EndDate, 120) as EndDateStr
+                                    FROM PeriodClose as pc
+                                    WHERE pc.OrganizationId = {organizationId}
+                                    AND pc.IsSoftDeleted = 0
+                                    AND CAST('{dateStr}' AS DATE) BETWEEN CAST(pc.StartDate AS DATE) AND CAST(pc.EndDate AS DATE)";
+                
+                var debugResults = await dapper.SearchByQuery<PeriodCloseModel>(debugSQL);
+                if (debugResults != null && debugResults.Any())
+                {
+                    foreach (var period in debugResults)
+                    {
+                        Log.Warning("GetOpenPeriod Debug: Found period matching date range - Id={Id}, ModuleType='{ModuleType}' (len={Len}), Status='{Status}' (len={StatusLen}), StartDate={StartDate}, EndDate={EndDate}", 
+                            period.Id, 
+                            period.ModuleType, 
+                            period.ModuleType?.Length ?? 0,
+                            period.Status,
+                            period.Status?.Length ?? 0,
+                            period.StartDate, 
+                            period.EndDate);
+                    }
+                }
+                else
+                {
+                    Log.Warning("GetOpenPeriod Debug: No periods found matching date range for OrganizationId={OrganizationId}, Date={Date}", organizationId, dateStr);
+                }
+                
+                Log.Warning("GetOpenPeriod: No open period found. OrganizationId={OrganizationId}, Date={Date}, ModuleType={ModuleType}", 
+                    organizationId, dateStr, moduleTypeEscaped);
+                return (false, null);
+            }
+            else
+            {
+                Log.Information("GetOpenPeriod: Found period Id={PeriodId}, ModuleType={ModuleType}, Status={Status}, StartDate={StartDate}, EndDate={EndDate}", 
+                    result.Id, result.ModuleType, result.Status, result.StartDate, result.EndDate);
+                return (true, result);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "GetOpenPeriod Error: OrganizationId={OrganizationId}, Date={Date}, ModuleType={ModuleType}", 
+                organizationId, date.ToString("yyyy-MM-dd"), moduleType);
             return (false, null);
-        else
-            return (true, result);
+        }
     }
 
     public async Task<(bool, string)> ClosePeriod(int id, int userId)

@@ -1,4 +1,4 @@
-﻿@page "/AreasDashboard"
+@page "/AreasDashboard"
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
@@ -9,7 +9,7 @@
 
 <Loading IsLoading="@LoadingPanel" />
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 2px;">
     <div class="areas-header mb-4">
         <div class="d-flex align-items-center justify-content-between flex-wrap">
             <div>
@@ -130,7 +130,7 @@
         background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
         border-radius: 12px;
         color: white;
-        margin-bottom: 24px;
+        margin-bottom: 8px;
     }
 
     .areas-header .mud-typography {

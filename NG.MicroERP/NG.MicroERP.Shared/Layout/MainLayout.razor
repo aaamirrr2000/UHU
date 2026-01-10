@@ -13,36 +13,58 @@
 
 
 <MudLayout>
-    <MudAppBar Elevation="1" Dense=true>
-@*         <MudIconButton Icon="@Icons.Material.Filled.Menu"
-                       Color="Color.Inherit"
-                       Edge="Edge.Start"
-                       OnClick="@(() => DrawerToggle())" /> *@
-
+    <MudAppBar Elevation="2" Dense="false" Class="professional-navbar">
+        <div class="navbar-content">
+            <!-- Left Section: Logo and Company Name -->
+            <div class="navbar-left">
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
+                    <div class="company-brand">
+                        @if (!string.IsNullOrEmpty(Globals.Organization?.Logo))
+                        {
             <img src="@Globals.Organization.Logo" alt="Company Logo" class="company-logo" />
-            <span style="margin-left:5px; font-size: 24px; color: white; letter-spacing:2px;">
-                @(Globals.Organization?.Description ?? "Organization")
-            </span>
+                        }
+                        <div class="company-info">
+                            <span class="company-name">@(Globals.Organization?.Name ?? "Organization")</span>
+                            @if (!string.IsNullOrEmpty(Globals.Organization?.Description))
+                            {
+                                <span class="company-description">@Globals.Organization.Description</span>
+                            }
+                        </div>
+                    </div>
         </MudHidden>
+            </div>
 
+            <!-- Center Section: Spacer -->
         <MudSpacer />
 
+            <!-- Right Section: Actions -->
+            <div class="navbar-right">
        <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <a href="/@(Globals.User?.Dashboard ?? "dashboard")" class="nav-link">
-                <i class="fas fa-home"></i>
-            </a>
+                    <div class="navbar-actions">
+                        <!-- Home Button -->
+                        <MudTooltip Text="Dashboard">
+                            <MudIconButton Icon="@Icons.Material.Filled.Home"
+                                         Color="Color.Inherit"
+                                         Hover="true"
+                                         Class="navbar-action-btn"
+                                         OnClick="@(() => Nav.NavigateTo($"/{Globals.User?.Dashboard ?? "dashboard"}"))" />
+                        </MudTooltip>
 
+                        <!-- Settings Menu -->
+                        @if (setupParentMenus.Any())
+                        {
             <MudMenu @ref="setupMenuRef"
                      OffsetY="true"
                      Dense="true"
-                     AnchorOrigin="Origin.BottomCenter"
-                     TransformOrigin="Origin.TopCenter">
-
+                                     AnchorOrigin="Origin.BottomRight"
+                                     TransformOrigin="Origin.TopRight">
                 <ActivatorContent>
+                                    <MudTooltip Text="Settings">
                     <MudIconButton Icon="@Icons.Material.Filled.Settings"
                                    Color="Color.Inherit"
-                                   Edge="Edge.End" />
+                                                     Hover="true"
+                                                     Class="navbar-action-btn" />
+                                    </MudTooltip>
                 </ActivatorContent>
 
                 <ChildContent>
@@ -77,13 +99,23 @@
                     </MudPaper>
                 </ChildContent>
             </MudMenu>
+                        }
 
-            <MudChip T="string" Color="Color.Secondary">
+                        <!-- Date Display -->
+                        <MudChip T="string" 
+                                 Color="Color.Secondary" 
+                                 Variant="Variant.Outlined"
+                                 Size="Size.Small"
+                                 Class="date-chip">
+                            <i class="fas fa-calendar-alt me-2" style="font-size: 12px;"></i>
                 @DateTime.Now.ToString("dddd, dd MMMM yyyy")
             </MudChip>
+                    </div>
         </MudHidden>
+            </div>
 
         <MudThemeProvider @bind-IsDarkMode="@Globals._isDarkMode" Theme="_theme" />
+        </div>
     </MudAppBar>
 
     <!-- Use inline styles to control drawer width -->
@@ -132,15 +164,78 @@
         {
             if (Globals.User == null || Globals.Organization == null)
             {
+                Console.WriteLine("LoadSetupMenuItems: User or Organization is null");
                 return;
             }
 
-            var allMenuData = await Functions.GetAsync<List<GroupMenuModel>>(
-                $"Permissions/SearchGroupPermissions/{Globals.User.OrganizationId}",
+            var organizationId = Globals.User.OrganizationId;
+            var groupId = Globals.User.GroupId;
+
+            Console.WriteLine($"LoadSetupMenuItems: Loading for OrganizationId={organizationId}, GroupId={groupId}");
+
+            List<GroupMenuModel> allMenuData = new List<GroupMenuModel>();
+
+            if (groupId == 1)
+            {
+                // For admin users, try loading directly from Menu table first
+                Console.WriteLine("LoadSetupMenuItems: Admin user - loading from Menu table");
+                try
+                {
+                    var menuData = await Functions.GetAsync<List<MyMenuModel>>(
+                        $"MyMenu/Search/Live=1",
+                        true);
+
+                    if (menuData != null && menuData.Count > 0)
+                    {
+                        Console.WriteLine($"LoadSetupMenuItems: Direct menu data count: {menuData.Count}");
+                        
+                        // Convert MyMenuModel to GroupMenuModel for admin
+                        allMenuData = menuData
+                            .Select(x => new GroupMenuModel
+                            {
+                                MenuId = x.Id,
+                                MenuCaption = x.MenuCaption,
+                                ParentId = x.ParentId,
+                                Icon = x.Icon,
+                                PageName = x.PageName,
+                                Parameter = x.Parameter,
+                                SeqNo = x.SeqNo,
+                                Live = x.Live,
+                                GroupId = 1,
+                                My_Privilege = "FULL ACCESS",
+                                OrganizationId = organizationId
+                            })
+                            .ToList();
+                    }
+                    else
+                    {
+                        // Fallback to permissions view
+                        Console.WriteLine("LoadSetupMenuItems: Menu table empty, trying permissions view");
+                        allMenuData = await Functions.GetAsync<List<GroupMenuModel>>(
+                            $"Permissions/SearchGroupPermissions/{organizationId}/GroupId={groupId}",
+                            true) ?? new List<GroupMenuModel>();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"LoadSetupMenuItems: Error loading direct menu: {ex.Message}, falling back to permissions view");
+                    allMenuData = await Functions.GetAsync<List<GroupMenuModel>>(
+                        $"Permissions/SearchGroupPermissions/{organizationId}/GroupId={groupId}",
+                        true) ?? new List<GroupMenuModel>();
+                }
+            }
+            else
+            {
+                // Non-admin: Load from permissions view
+                allMenuData = await Functions.GetAsync<List<GroupMenuModel>>(
+                    $"Permissions/SearchGroupPermissions/{organizationId}/GroupId={groupId}",
                 true) ?? new List<GroupMenuModel>();
+            }
+
+            Console.WriteLine($"LoadSetupMenuItems: Total menu data count: {allMenuData.Count}");
 
             // Find all parent menu items with Parameter = "SETUP"
-            if (Globals.User.GroupId == 1)
+            if (groupId == 1)
             {
                 // Admin: Get all setup parents, deduplicate by MenuId
                 setupParentMenus = allMenuData
@@ -161,18 +256,20 @@
                         (x.Parameter?.ToUpper() == "SETUP" || x.Parameter == "Setup") &&
                         x.ParentId == 0 &&
                         x.Live == 1 &&
-                        x.GroupId == Globals.User.GroupId &&
+                        x.GroupId == groupId &&
                         (x.My_Privilege == "READ ONLY" || x.My_Privilege == "FULL ACCESS"))
                     .OrderBy(x => x.SeqNo)
                     .ToList();
             }
+
+            Console.WriteLine($"LoadSetupMenuItems: Setup parent menus count: {setupParentMenus.Count}");
 
             if (setupParentMenus.Any())
             {
                 // Get all child items of all setup parents
                 var setupParentIds = setupParentMenus.Select(p => p.MenuId).ToList();
                 
-                if (Globals.User.GroupId == 1)
+                if (groupId == 1)
                 {
                     // Admin: Get all setup children, deduplicate by MenuId
                     setupMenuItems = allMenuData
@@ -191,15 +288,18 @@
                         .Where(x =>
                             setupParentIds.Contains(x.ParentId) &&
                             x.Live == 1 &&
-                            x.GroupId == Globals.User.GroupId &&
+                            x.GroupId == groupId &&
                             (x.My_Privilege == "READ ONLY" || x.My_Privilege == "FULL ACCESS"))
                         .OrderBy(x => x.SeqNo)
                         .ToList();
                 }
+
+                Console.WriteLine($"LoadSetupMenuItems: Setup menu items count: {setupMenuItems.Count}");
             }
             else
             {
                 setupMenuItems = new List<GroupMenuModel>();
+                Console.WriteLine("LoadSetupMenuItems: No setup parent menus found");
             }
 
             StateHasChanged();
@@ -207,6 +307,7 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading setup menu items: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
         }
     }
 
@@ -218,7 +319,23 @@
             return;
         }
 
-        // Check access using centralized function
+        // Admin users always have access
+        if (Globals.User?.GroupId == 1)
+        {
+            string url = $"/{item.PageName}";
+            
+            if (!string.IsNullOrEmpty(item.Parameter) && 
+                item.Parameter.ToUpper() != "SETUP" && 
+                item.Parameter != "Setup")
+            {
+                url += $"/{item.Parameter}";
+            }
+            
+            Nav.NavigateTo(url);
+            return;
+        }
+
+        // Check access using centralized function for non-admin users
         int accessLevel = Globals.PageAccess(Nav, item.PageName);
         
         if (accessLevel < 0)
@@ -227,16 +344,16 @@
             return;
         }
 
-        string url = $"/{item.PageName}";
+        string url2 = $"/{item.PageName}";
         
         if (!string.IsNullOrEmpty(item.Parameter) && 
             item.Parameter.ToUpper() != "SETUP" && 
             item.Parameter != "Setup")
         {
-            url += $"/{item.Parameter}";
+            url2 += $"/{item.Parameter}";
         }
         
-        Nav.NavigateTo(url);
+        Nav.NavigateTo(url2);
     }
 
     private void NavigateToSetupAndClose(GroupMenuModel item)
@@ -424,15 +541,130 @@
 }
 
 <style>
-    .nav-link {
-        margin: 10px;
-        color: white;
-        text-decoration: none;
+    /* Professional Navbar Styles */
+    .professional-navbar {
+        padding: 0 !important;
+        min-height: 64px !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .navbar-content {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 0 24px;
+        min-height: 64px;
+    }
+
+    .navbar-left {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .company-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0;
     }
 
     .company-logo {
-        height: 35px;
-        border-radius: 5px;
+        height: 40px;
+        width: 40px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .company-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .company-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: white;
+        letter-spacing: 0.3px;
+        line-height: 1.2;
+    }
+
+    .company-description {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.85);
+        letter-spacing: 0.2px;
+        line-height: 1.2;
+    }
+
+    .navbar-right {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .navbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0;
+    }
+
+    .navbar-action-btn {
+        color: rgba(255, 255, 255, 0.9) !important;
+        transition: all 0.2s ease;
+        padding: 8px !important;
+    }
+
+    .navbar-action-btn:hover {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+        transform: scale(1.05);
+    }
+
+    .date-chip {
+        background-color: rgba(255, 255, 255, 0.15) !important;
+        color: white !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        padding: 6px 12px !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        letter-spacing: 0.3px !important;
+    }
+
+    .date-chip i {
+        opacity: 0.9;
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 960px) {
+        .navbar-content {
+            padding: 0 16px;
+        }
+
+        .company-name {
+            font-size: 14px;
+        }
+
+        .company-description {
+            font-size: 11px;
+        }
+
+        .company-logo {
+            height: 36px;
+            width: 36px;
+        }
+
+        .navbar-actions {
+            gap: 8px;
+        }
+
+        .date-chip {
+            font-size: 11px !important;
+            padding: 4px 8px !important;
+        }
     }
 
     /* Mega Menu Styles */
@@ -486,7 +718,7 @@
 
     .mud-main-content.sidebar-collapsed {
         margin-left: 52px !important;
-        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: margin-left 0.1s cubic-bezier(0.4, 0, 0.2, 1);
         width: calc(100% - 52px) !important;
     }
 
@@ -499,7 +731,7 @@
     /* Ensure content wrapper takes full available space */
     .content-wrapper {
         height: 100%;
-        padding: 16px;
+        padding: 2px !important;
         background: var(--mud-palette-background);
     }
 

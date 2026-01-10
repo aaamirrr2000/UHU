@@ -39,6 +39,20 @@
         }
     </div>
 
+    <!-- Period Validation Warning -->
+    @if (!string.IsNullOrWhiteSpace(PeriodValidationMessage))
+    {
+        <MudAlert Severity="Severity.Warning" Class="mb-2" Variant="Variant.Outlined" Dense="true">
+            <MudText Typo="Typo.body2">@PeriodValidationMessage</MudText>
+        </MudAlert>
+    }
+    else if (PeriodValidationChecked && record?.EntryDate != null && record.OrganizationId > 0)
+    {
+        <MudAlert Severity="Severity.Success" Class="mb-2" Variant="Variant.Outlined" Dense="true">
+            <MudText Typo="Typo.body2">✓ Period is OPEN - You can save transactions for this date.</MudText>
+        </MudAlert>
+    }
+
     <!-- Entry Header Information -->
     <MudCard Elevation="1" Class="mb-2" Style="padding: 8px;">
         <MudCardContent Style="padding: 12px !important;">
@@ -372,6 +386,7 @@
     bool isReadOnly = true;
     private bool LoadingPanel { get; set; } = false;
     private string PeriodValidationMessage { get; set; } = string.Empty;
+    private bool PeriodValidationChecked { get; set; } = false;
 
     private double TotalDebit => record.Details?.Sum(d => d.DebitAmount) ?? 0;
     private double TotalCredit => record.Details?.Sum(d => d.CreditAmount) ?? 0;
@@ -456,7 +471,8 @@
                 record.Details = new ObservableCollection<GeneralLedgerDetailModel>();
             if (string.IsNullOrWhiteSpace(record.Source))
                 record.Source = "MANUAL";
-            isReadOnly = Action == "VIEW";
+            // Set read-only if posted or in VIEW mode
+            isReadOnly = Action == "VIEW" || record.IsPosted == 1;
             await ValidatePeriodAsync();
         }
         catch (Exception ex)
@@ -494,10 +510,15 @@
 
     private async Task ValidatePeriodAsync()
     {
+        PeriodValidationChecked = false;
         PeriodValidationMessage = string.Empty;
         
         if (record?.EntryDate == null || record.OrganizationId == 0)
+        {
+            PeriodValidationMessage = string.Empty;
+            await InvokeAsync(StateHasChanged);
             return;
+        }
 
         try
         {
@@ -507,18 +528,25 @@
                 $"PeriodClose/GetOpenPeriod/{record.OrganizationId}/{dateStr}/{moduleType}", 
                 true);
 
-            if (result == null || result.Id == 0)
+            PeriodValidationChecked = true;
+
+            // Period is OPEN if we get a valid result with Id > 0 and Status is OPEN or OPEN_PENDING
+            // Period is CLOSED if result is null, Id is 0, or Status is CLOSE
+            if (result != null && result.Id > 0 && 
+                (result.Status?.ToUpper() == "OPEN" || result.Status?.ToUpper() == "OPEN_PENDING"))
             {
-                PeriodValidationMessage = $"Period is CLOSED for {moduleType} module on {dateStr}. You cannot save transactions for this date. Please ensure the period is open before saving.";
-                SnackbarService.Add(PeriodValidationMessage, Severity.Warning);
+                // Period is open - clear any warning
+                PeriodValidationMessage = string.Empty;
             }
             else
             {
-                PeriodValidationMessage = string.Empty;
+                // Period is closed - show warning
+                PeriodValidationMessage = $"⚠️ Period is CLOSED for {moduleType} module on {dateStr}. You cannot save transactions for this date. Please ensure the period is open before saving.";
             }
         }
         catch (Exception ex)
         {
+            PeriodValidationChecked = true;
             PeriodValidationMessage = $"Error checking period status: {ex.Message}";
             SnackbarService.Add(PeriodValidationMessage, Severity.Error);
         }
@@ -652,7 +680,7 @@
                 var parameters = new DialogParameters<InvoiceGLPreviewDialog>
                 {
                     { x => x.PreviewData, result },
-                    { x => x.InvoiceId, CurrentRecord },
+                    { x => x.RecordId, CurrentRecord },
                     { x => x.IsPostedToGL, record.IsPosted == 1 },
                     { x => x.OnPostToGL, EventCallback.Factory.Create(this, async () => 
                     {

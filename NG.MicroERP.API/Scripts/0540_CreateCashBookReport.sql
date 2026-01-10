@@ -1,4 +1,4 @@
-﻿CREATE VIEW CashBookReport AS
+﻿CREATE VIEW vw_CashBookReport AS
 SELECT
   a.Id,
   a.SeqNo,

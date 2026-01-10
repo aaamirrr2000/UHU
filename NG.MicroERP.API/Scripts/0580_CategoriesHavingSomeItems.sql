@@ -1,4 +1,4 @@
-﻿CREATE OR ALTER VIEW CategoriesHavingSomeItems AS
+﻿CREATE OR ALTER VIEW vw_CategoriesHavingSomeItems AS
 SELECT
   a.Id,
   a.OrganizationId,

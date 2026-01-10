@@ -1,4 +1,4 @@
-﻿@page "/CashBookDashboard"
+@page "/CashBookDashboard"
 @using NG.MicroERP.Shared.Models
 
 @inject IJSRuntime JSRuntime
@@ -10,8 +10,8 @@
 
 <Loading IsLoading="@LoadingPanel" />
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <div class="dashboard-header mb-4">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 2px;">
+    <div class="dashboard-header">
         <div class="d-flex align-items-center justify-content-between flex-wrap">
             <div>
                 <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
@@ -22,27 +22,28 @@
             </div>
             <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 flex-wrap">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <div style="position: relative;">
-                        <MudDatePicker @bind-Date="startDate"
-                                       Label="Start Date"
-                                       Variant="Variant.Outlined"
-                                       Style="background: rgba(255,255,255,0.95); width: 160px;" />
-                    </div>
-                    <div style="position: relative;">
-                        <MudDatePicker @bind-Date="endDate"
-                                       Label="End Date"
-                                       Variant="Variant.Outlined"
-                                       Style="background: rgba(255,255,255,0.95); width: 160px;" />
-                    </div>
+                    <MudDatePicker @bind-Date="startDate"
+                                   Label="Start Date"
+                                   DateFormat="dd MMM yyyy"
+                                   Variant="Variant.Outlined"
+                                   Style="background: rgba(255,255,255,0.95); width: 160px;" />
+                    <MudDatePicker @bind-Date="endDate"
+                                   Label="End Date"
+                                   DateFormat="dd MMM yyyy"
+                                   Variant="Variant.Outlined"
+                                   Style="background: rgba(255,255,255,0.95); width: 160px;" />
                 </div>
-                <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
-                           Size="Size.Small" 
-                           Variant="Variant.Filled" 
-                           Color="Color.Success" 
-                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
-                           OnClick="@(() => Clear())">
-                    New
-                </MudButton>
+                @if (Globals.AccessLevel == 1)
+                {
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
+                               Size="Size.Small" 
+                               Variant="Variant.Filled" 
+                               Color="Color.Success" 
+                               Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                               OnClick="@(() => Clear())">
+                        New
+                    </MudButton>
+                }
                 <MudButton StartIcon="@Icons.Material.TwoTone.Search" 
                            Size="Size.Small" 
                            Variant="Variant.Filled" 
@@ -131,24 +132,30 @@
                                     {
                                         @if (row.Item.IsPostedToGL == 0)
                                         {
-                                            <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
-                                                         Class="menu-item edit-item">
-                                                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
-                                                <span>Edit</span>
-                                            </MudMenuItem>
-                                        
-                                            <MudMenuItem OnClick="@(() => Delete(row.Item.Id))"
-                                            Color="Color.Error"
-                                            Class="menu-item delete-item">
-                                                <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
-                                                <span>Delete</span>
-                                            </MudMenuItem>
-                                            <hr />
-                                            <MudMenuItem OnClick="@(() => PostToGL(row.Item.Id))"
-                                                         Class="menu-item post-item">
-                                                <MudIcon Icon="@Icons.Material.Filled.PostAdd" Class="menu-icon" />
-                                                <span>Post to General Ledger</span>
-                                            </MudMenuItem>
+                                            @if (Globals.AccessLevel == 1)
+                                            {
+                                                <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
+                                                             Class="menu-item edit-item">
+                                                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
+                                                    <span>Edit</span>
+                                                </MudMenuItem>
+                                            
+                                                <MudMenuItem OnClick="@(() => Delete(row.Item.Id))"
+                                                Color="Color.Error"
+                                                Class="menu-item delete-item">
+                                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
+                                                    <span>Delete</span>
+                                                </MudMenuItem>
+                                                <hr />
+                                            }
+                                            @if (Globals.AccessLevel == 1)
+                                            {
+                                                <MudMenuItem OnClick="@(() => PostToGL(row.Item.Id))"
+                                                             Class="menu-item post-item">
+                                                    <MudIcon Icon="@Icons.Material.Filled.PostAdd" Class="menu-icon" />
+                                                    <span>Post to General Ledger</span>
+                                                </MudMenuItem>
+                                            }
                                         }
                                         else
                                         {
@@ -192,7 +199,7 @@
                                     Filterable="true"
                                     HeaderClass="grid-header"
                                     CellClass="grid-cell"
-                                    Format="dd-MMM-yyyy"
+                                    Format="dd MMM yyyy"
                                     Width="120px" />
 
                     @if (Globals.User.GroupId == 1)
@@ -274,7 +281,7 @@
         background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
         border-radius: 12px;
         color: white;
-        margin-bottom: 24px;
+        margin-bottom: 8px;
     }
 
     .dashboard-header .mud-typography {

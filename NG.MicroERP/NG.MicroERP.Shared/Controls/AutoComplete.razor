@@ -16,6 +16,7 @@
                  Variant="Variant"
                  Label="@(string.IsNullOrWhiteSpace(Label) ? null : Label)"
                  Placeholder="@Placeholder"
+                 Class="@Class"
                  @attributes="AdditionalAttributes">
 
     <ProgressIndicatorTemplate>
@@ -28,6 +29,7 @@
     [Parameter] public Variant Variant { get; set; } = Variant.Outlined;
     [Parameter] public string? Label { get; set; } = "Select";
     [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public string? Class { get; set; }
 
     [Parameter] public TItem? SelectedValue { get; set; }
     [Parameter] public EventCallback<TItem?> SelectedValueChanged { get; set; }

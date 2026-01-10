@@ -5,8 +5,6 @@
     EntraId             VARCHAR(255)    NULL,
     Logo                VARCHAR(2000)   NULL DEFAULT NULL,
     Wallpaper           VARCHAR(2000)   NULL DEFAULT NULL,
-    ThemeColor          VARCHAR(20)     NULL DEFAULT NULL,
-    MenuColor           VARCHAR(20)     NULL DEFAULT NULL,
     Name                VARCHAR(255)    NOT NULL,
     Description         VARCHAR(255)    NOT NULL,
     Phone               VARCHAR(50)     NULL DEFAULT NULL,
@@ -14,7 +12,6 @@
     Address             VARCHAR(255)    NOT NULL,
     MaxUsers            INT             NULL DEFAULT NULL,
     DbSize              FLOAT           NULL DEFAULT NULL,
-    LoginPic            VARCHAR(255)    NULL DEFAULT NULL,
     Industry            VARCHAR(255)    NULL,
     Website             VARCHAR(255)    NULL,
     TimeZone            VARCHAR(100)    NULL,
@@ -34,11 +31,11 @@
 
 -- Insert statement
 INSERT INTO Organizations 
-    (Code, EntraId, Logo, ThemeColor, MenuColor, Name, Description, Phone, Email, Address, 
-     MaxUsers, DbSize, LoginPic, Industry, Website, TimeZone, GMT, IsVerified, Expiry, ParentId, 
+    (Code, EntraId, Logo, Name, Description, Phone, Email, Address, 
+     MaxUsers, DbSize, Industry, Website, TimeZone, GMT, IsVerified, Expiry, ParentId, 
      IsActive, CreatedBy, CreatedFrom, UpdatedBy, UpdatedFrom, IsSoftDeleted) 
 VALUES 
-    ('ORG002', 'SomeEntraId', 'images/logo.jpg', '#333333', '#222222', 'UHU', 
+    ('ORG002', 'SomeEntraId', 'images/logo.jpg', 'UHU', 
      'UHU Corporation', 'xxxxx', 'contact@uhu.com', 'Karachi', 
-     100, 500.0, 'images/loginpic.jpg', 'Sales', 'https://uhu.com', 'Asia/Karachi', 5,
+     100, 500.0, 'Sales', 'https://uhu.com', 'Asia/Karachi', 5,
      1, '2026-12-31 23:59:59', NULL, 1, 101, 'System', NULL, 'System', 0);

@@ -1,9 +1,8 @@
 -- =============================================
--- Merge Inventory with Items - Create Inventory View
--- Inventory will be calculated from transactions (Invoices, Shipments, StockMovements)
+-- Create Inventory View
+-- Calculates current inventory from all stock transactions
 -- =============================================
 
--- Create a view to calculate current inventory by location and item
 IF EXISTS (SELECT * FROM sys.views WHERE name = 'vw_Inventory' AND schema_id = SCHEMA_ID('dbo'))
     DROP VIEW dbo.vw_Inventory;
 GO
@@ -75,10 +74,10 @@ WITH StockTransactions AS (
     
     UNION ALL
     
-    -- Stock Movements (Transfer between locations)
+    -- Stock Movements (Transfer between locations - In)
     SELECT 
         sm.OrganizationId,
-        sm.ToLocationId AS LocationId, -- Stock coming in
+        sm.ToLocationId AS LocationId,
         smd.ItemId,
         ISNULL(smd.StockCondition, 'NEW') AS StockCondition,
         smd.Quantity,
@@ -96,9 +95,10 @@ WITH StockTransactions AS (
     
     UNION ALL
     
+    -- Stock Movements (Transfer between locations - Out)
     SELECT 
         sm.OrganizationId,
-        sm.FromLocationId AS LocationId, -- Stock going out
+        sm.FromLocationId AS LocationId,
         smd.ItemId,
         ISNULL(smd.StockCondition, 'NEW') AS StockCondition,
         -smd.Quantity, -- Negative for stock out
@@ -126,14 +126,3 @@ SELECT
 FROM StockTransactions
 GROUP BY OrganizationId, LocationId, ItemId, StockCondition;
 GO
-
--- Note: Inventory table is maintained automatically by:
--- 1. Purchase Invoices (stock in)
--- 2. Sale Invoices (stock out)
--- 3. Stock Movements (transfers between locations)
--- 4. Shipments (incoming/outgoing)
-
--- The Inventory table acts as a cache/aggregate table that is updated by these transactions
--- The vw_Inventory view provides a calculated view from all transactions
-GO
-

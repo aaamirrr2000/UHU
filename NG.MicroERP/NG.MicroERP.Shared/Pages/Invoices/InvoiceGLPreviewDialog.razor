@@ -18,7 +18,7 @@
             {
                 <MudAlert Severity="Severity.Success" Class="mb-3">
                     <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="me-2" />
-                    This invoice has already been posted to General Ledger. Entry No: @PreviewData?.EntryNo
+                    This entry has already been posted to General Ledger. Entry No: @PreviewData?.EntryNo
                 </MudAlert>
             }
 
@@ -113,20 +113,20 @@
             else
             {
                 <MudAlert Severity="Severity.Info">
-                    Unable to generate preview. Please ensure all invoice details are complete.
+                    Unable to generate preview. Please ensure all entry details are complete.
                 </MudAlert>
             }
         </MudContainer>
     </DialogContent>
     <DialogActions>
-        @if (!IsPostedToGL && InvoiceId > 0)
+        @if (!IsPostedToGL && RecordId > 0)
         {
             <MudButton Variant="Variant.Filled"
                       Color="Color.Success"
                       StartIcon="@Icons.Material.Filled.AccountBalance"
                       OnClick="PostToGL"
-                      Disabled="@(IsPosting || InvoiceId == 0)">
-                @(IsPosting ? "Posting..." : "Post to GL")
+                      Disabled="@(IsPosting || RecordId == 0)">
+                @(IsPosting ? "Posting..." : "Transfer to GL")
             </MudButton>
         }
         <MudButton OnClick="Close">Close</MudButton>
@@ -136,7 +136,7 @@
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
     [Parameter] public GeneralLedgerHeaderModel? PreviewData { get; set; }
-    [Parameter] public int InvoiceId { get; set; } = 0;
+    [Parameter] public int RecordId { get; set; } = 0;
     [Parameter] public bool IsPostedToGL { get; set; } = false;
     [Parameter] public EventCallback OnPostToGL { get; set; }
     
@@ -153,14 +153,14 @@
     
     private async Task PostToGL()
     {
-        if (InvoiceId == 0)
+        if (RecordId == 0)
         {
-            SnackbarService.Add("Invoice ID is required", Severity.Warning);
+            SnackbarService.Add("Record ID is required", Severity.Warning);
             return;
         }
 
         var confirmed = await Functions.ShowConfirmation(DialogService, 
-            "Do you want to post this invoice to General Ledger? Once posted, it cannot be edited or deleted.");
+            "Do you want to transfer this entry to General Ledger? Once posted, it cannot be edited or deleted.");
         
         if (!confirmed)
             return;
@@ -174,21 +174,7 @@
             }
             else
             {
-                // Fallback: call API directly if callback not provided
-                var result = await Functions.PostAsync<GeneralLedgerHeaderModel>(
-                    $"GeneralLedger/CreateGLFromInvoice/{InvoiceId}?userId={Globals.User.Id}&clientInfo={Uri.EscapeDataString(Globals.ClientInfo)}", 
-                    null, 
-                    true);
-                
-                if (result.Success)
-                {
-                    SnackbarService.Add("Invoice posted to General Ledger successfully", Severity.Success);
-                    MudDialog?.Close();
-                }
-                else
-                {
-                    SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
-                }
+                SnackbarService.Add("Post to GL callback not configured", Severity.Warning);
             }
         }
         catch (Exception ex)
