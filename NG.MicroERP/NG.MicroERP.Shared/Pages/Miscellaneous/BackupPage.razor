@@ -219,24 +219,107 @@
         {
             isBackupInProgress = true;
             statusMessage = "Backup process started... This may take several minutes.";
+            alertClass = "alert-info";
+            lastBackupResult = null;
             StateHasChanged();
 
-            var result = await Functions.PostAsync<BackupResult>($"Backup/Create?Email={Email}&ftp={Ftp}", null, true);
+            // Use HttpClient directly to handle both success and error responses
+            using var httpClient = new HttpClient();
+            httpClient.Timeout = TimeSpan.FromMinutes(30); // Set timeout to 30 minutes for long-running backup operations
+            httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
 
-            if (result.Success)
+            if (!string.IsNullOrEmpty(Globals.Token))
             {
-                    statusMessage = $"Backup completed successfully!";
+                httpClient.DefaultRequestHeaders.Authorization = 
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Globals.Token);
+            }
+
+            var apiUrl = $"{Globals.BaseURI}Backup/Create?email={Email.ToString().ToLower()}&ftp={Ftp.ToString().ToLower()}";
+            var response = await httpClient.PostAsync(apiUrl, null);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Parse success response
+                var jsonOptions = new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                var apiResponse = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(responseContent, jsonOptions);
+
+                if (apiResponse != null && apiResponse.ContainsKey("success") && 
+                    (apiResponse["success"].ToString()?.ToLower() == "true" || 
+                     (apiResponse["success"] is System.Text.Json.JsonElement jsonElem && jsonElem.GetBoolean())))
+                {
+                    lastBackupResult = new BackupResult
+                    {
+                        Success = true,
+                        Message = apiResponse.ContainsKey("message") ? apiResponse["message"].ToString() ?? "Backup completed successfully" : "Backup completed successfully",
+                        BackupPath = apiResponse.ContainsKey("backupPath") ? apiResponse["backupPath"].ToString() ?? string.Empty : string.Empty,
+                        Timestamp = apiResponse.ContainsKey("timestamp") ? apiResponse["timestamp"].ToString() ?? DateTime.Now.ToString() : DateTime.Now.ToString(),
+                        Details = apiResponse.ContainsKey("details") ? apiResponse["details"] : null
+                    };
+                    statusMessage = lastBackupResult.Message;
+                    alertClass = "alert-success";
                     SnackbarService.Add(statusMessage, Severity.Success);
+                }
+                else
+                {
+                    statusMessage = "Backup completed but response format was unexpected.";
+                    alertClass = "alert-warning";
+                    SnackbarService.Add(statusMessage, Severity.Warning);
+                }
             }
             else
             {
-                statusMessage = "Backup failed: No response from server. Please check if the backup service is running.";
+                // Parse error response
+                var jsonOptions = new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                var errorResponse = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(responseContent, jsonOptions);
+
+                string errorMessage = "Backup failed";
+                string errorDetails = string.Empty;
+
+                if (errorResponse != null)
+                {
+                    if (errorResponse.ContainsKey("message"))
+                        errorMessage = errorResponse["message"].ToString() ?? errorMessage;
+                    if (errorResponse.ContainsKey("error"))
+                        errorDetails = errorResponse["error"].ToString() ?? string.Empty;
+                }
+                else if (!string.IsNullOrEmpty(responseContent))
+                {
+                    errorDetails = responseContent;
+                }
+
+                lastBackupResult = new BackupResult
+                {
+                    Success = false,
+                    Message = errorMessage,
+                    Error = errorDetails,
+                    Timestamp = DateTime.Now.ToString()
+                };
+
+                statusMessage = !string.IsNullOrEmpty(errorDetails) 
+                    ? $"{errorMessage}: {errorDetails}" 
+                    : errorMessage;
+                alertClass = "alert-danger";
                 SnackbarService.Add(statusMessage, Severity.Error);
             }
         }
         catch (Exception ex)
         {
             statusMessage = $"Error during backup: {ex.Message}";
+            alertClass = "alert-danger";
+            lastBackupResult = new BackupResult
+            {
+                Success = false,
+                Error = ex.Message,
+                Message = "Backup failed",
+                Timestamp = DateTime.Now.ToString()
+            };
             SnackbarService.Add(statusMessage, Severity.Error);
         }
         finally

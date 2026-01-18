@@ -32,32 +32,76 @@ public class Functions
         Globals = globals;
     }
 
-    public  async Task<T?> GetAsync<T>(string url, bool useTokenAuthorize = false)
+    public async Task<T?> GetAsync<T>(string url, bool useTokenAuthorize = false)
     {
         try
         {
-            string uri = $"{Globals.BaseURI}{url}";
+            // Use injected Globals instance only
+            string baseUri = Globals?.BaseURI ?? string.Empty;
+            string token = Globals?.Token ?? string.Empty;
+            
+            string uri = $"{baseUri}{url}";
+
+            // Log token details for debugging
+            Serilog.Log.Information($"Functions.GetAsync - Globals instance: {(Globals != null ? "SET" : "NULL")}, Token length: {token?.Length ?? 0}, Token empty: {string.IsNullOrEmpty(token)}, UseTokenAuth: {useTokenAuthorize}");
+            if (!string.IsNullOrEmpty(token) && token.Length > 50)
+            {
+                Serilog.Log.Information($"Functions.GetAsync - Token preview: {token.Substring(0, 50)}...");
+            }
 
             using HttpClient httpClient = new();
             httpClient.DefaultRequestHeaders.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json"));
 
-            if (useTokenAuthorize && !string.IsNullOrEmpty(Globals.Token))
+            if (useTokenAuthorize && !string.IsNullOrEmpty(token))
             {
-                httpClient.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue("Bearer", Globals.Token);
+                // Remove "Bearer " prefix if already present to avoid duplication
+                string cleanToken = token.Trim();
+                if (cleanToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                {
+                    cleanToken = cleanToken.Substring("Bearer ".Length).Trim();
+                }
+                
+                // Verify token is not empty after cleaning
+                if (string.IsNullOrEmpty(cleanToken))
+                {
+                    Serilog.Log.Error($"Functions.GetAsync - Token became empty after cleaning! Original token length: {token.Length}");
+                }
+                else
+                {
+                    httpClient.DefaultRequestHeaders.Authorization =
+                        new AuthenticationHeaderValue("Bearer", cleanToken);
+                    
+                    // Log the actual authorization header being sent
+                    var authHeader = httpClient.DefaultRequestHeaders.Authorization?.ToString();
+                    string authHeaderPreview = !string.IsNullOrEmpty(authHeader) && authHeader.Length > 60 
+                        ? authHeader.Substring(0, 60) + "..." 
+                        : authHeader ?? "";
+                    Serilog.Log.Information($"Functions.GetAsync - Authorization header set: {authHeaderPreview}, Clean token length: {cleanToken.Length}, Full URL: {uri}");
+                }
+            }
+            else if (useTokenAuthorize)
+            {
+                Serilog.Log.Warning($"Functions.GetAsync - Token authorization requested but token is empty. useTokenAuthorize: {useTokenAuthorize}, Injected Globals token empty: {string.IsNullOrEmpty(Globals?.Token)}");
             }
 
+            Serilog.Log.Information($"Functions.GetAsync - Making API Request - Method: GET, URL: {uri}, UseToken: {useTokenAuthorize}");
             HttpResponseMessage response = await httpClient.GetAsync(uri);
+            
+            Serilog.Log.Information($"Functions.GetAsync - API Response - Status: {response.StatusCode}, Reason: {response.ReasonPhrase}, URL: {uri}");
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                string errorContent = await response.Content.ReadAsStringAsync();
+                Serilog.Log.Warning($"API Error Response - Status: {response.StatusCode}, Content: {errorContent}");
+            }
 
             if (response.IsSuccessStatusCode)
             {
                 string resultMessage = await response.Content.ReadAsStringAsync();
 
-                // ✅ If empty or "null", treat as success (return an empty T instance)
                 if (string.IsNullOrWhiteSpace(resultMessage) || resultMessage == "null")
                 {
-                    // Try creating an empty instance if T is a class
                     if (typeof(T).IsClass && Activator.CreateInstance(typeof(T)) is T emptyObj)
                         return emptyObj;
 
@@ -87,7 +131,7 @@ public class Functions
     }
 
 
-    public  async Task<(bool Success, T? Result, string Message)> PostAsync<T>(string url, object? data = null, bool useTokenAuthorize = false)
+    public async Task<(bool Success, T? Result, string Message)> PostAsync<T>(string url, object? data = null, bool useTokenAuthorize = false)
     {
         try
         {
@@ -136,7 +180,7 @@ public class Functions
             {
                 // Try to extract meaningful error message from response
                 string errorMessage = "Request failed";
-                
+
                 if (!string.IsNullOrWhiteSpace(responseContent))
                 {
                     try
@@ -161,7 +205,7 @@ public class Functions
                             else if (errorObj.Detail != null)
                                 errorMessage = errorObj.Detail.ToString();
                         }
-                        
+
                         // If it's a plain JSON string, use it directly
                         if (errorMessage == "Request failed" && responseContent.StartsWith("\"") && responseContent.EndsWith("\""))
                         {
@@ -179,7 +223,7 @@ public class Functions
                         errorMessage = responseContent.Trim('"');
                     }
                 }
-                
+
                 return (false, default, errorMessage);
             }
         }
@@ -190,7 +234,7 @@ public class Functions
     }
 
 
-    public  async Task<(int?, string?)> DeleteAsync(string url, bool Authorized = true)
+    public async Task<(int?, string?)> DeleteAsync(string url, bool Authorized = true)
     {
         try
         {
@@ -225,7 +269,8 @@ public class Functions
         }
     }
 
-    public  async Task<bool> ShowConfirmation(
+
+    public async Task<bool> ShowConfirmation(
         IDialogService dialogService,
         string message,
         string icon = "🔔",

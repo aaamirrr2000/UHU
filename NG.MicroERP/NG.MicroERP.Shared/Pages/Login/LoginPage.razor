@@ -18,7 +18,7 @@
     <div class="left-panel">
         <div class="login-box-image-style">
 
-            <img src="@Globals.Organization.Logo"
+            <img src="@Globals.GetImageUrl(Globals.Organization.Logo)"
                  alt="Company Logo"
                  class="brand-logo" style="width:200px; height:150px; border-radius: 5px;"/>
 
@@ -29,10 +29,19 @@
                 Can’t login? <a class="recover-link" @onclick="ForgotPassword">recover your password</a>
             </p>
 
-            <input type="text" class="input-field" placeholder="Username" @bind="Username" />
-            <input type="password" class="input-field" placeholder="Password" @bind="Password" />
+            <input type="text" class="input-field" placeholder="Username" @bind="Username" disabled="@(!IsAccountActive)" />
+            <input type="password" class="input-field" placeholder="Password" @bind="Password" disabled="@(!IsAccountActive)" />
 
-            <button class="btn-gradient" @onclick="async () => await Login()">
+            @if (!IsAccountActive && !string.IsNullOrEmpty(AccountStatusMessage))
+            {
+                <div class="account-status-message">
+                    <p style="color: #d32f2f; font-size: 14px; margin-bottom: 15px; padding: 10px; background: #ffebee; border-radius: 6px; border-left: 4px solid #d32f2f;">
+                        @AccountStatusMessage
+                    </p>
+                </div>
+            }
+
+            <button class="btn-gradient" @onclick="async () => await Login()" disabled="@(!IsAccountActive)" style="@(IsAccountActive ? "" : "opacity: 0.5; cursor: not-allowed;")">
                 Continue
             </button>
 
@@ -51,6 +60,8 @@
     public string Password { get; set; } = string.Empty;
     private bool LoadingPanel { get; set; } = false;
     private string clientInfoString = "Loading...";
+    private bool IsAccountActive { get; set; } = true; // Default to true to allow login if check fails
+    private string AccountStatusMessage { get; set; } = string.Empty;
 
     private string BackgroundImagePath = "_content/NG.MicroERP.Shared/images/default.jpg";
     private string BackgroundStyle => $"background: url('{BackgroundImagePath}') no-repeat center center; background-size: cover; background-color:#1976D2;";
@@ -59,6 +70,7 @@
     {
         try
         {
+            // First, get organization to extract database name
             var org = await Functions.GetAsync<List<OrganizationsModel>>("Organizations/Search", true) ?? new List<OrganizationsModel>();
             Globals.Organization = org.FirstOrDefault()!;
             clientInfoString = ClientInfo.GetClientInfoString();
@@ -66,14 +78,44 @@
 
             if (!string.IsNullOrEmpty(Globals.Organization.Wallpaper))
             {
-                BackgroundImagePath = $"{Globals.Organization.Wallpaper}".Replace("\\", "/");
+                BackgroundImagePath = Globals.GetImageUrl(Globals.Organization.Wallpaper);
             }
             else
                 BackgroundImagePath = "_content/NG.MicroERP.Shared/images/background.jpg";
+
+            // Check account status from ControlCenter
+            await CheckAccountStatus();
         }
         catch
         {
             BackgroundImagePath = "_content/NG.MicroERP.Shared/images/background.jpg";
+            // If check fails, allow login (fail open)
+            IsAccountActive = true;
+        }
+    }
+
+    private async Task CheckAccountStatus()
+    {
+        try
+        {
+            var accountStatus = await Functions.GetAsync<AccountStatusModel>("ControlCenter/CheckAccountStatus/Current", false);
+            
+            if (accountStatus != null)
+            {
+                IsAccountActive = accountStatus.IsActive;
+                AccountStatusMessage = accountStatus.Message ?? "";
+            }
+            else
+            {
+                // If API call fails, allow login (fail open)
+                IsAccountActive = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            // If check fails, allow login (fail open)
+            IsAccountActive = true;
+            Serilog.Log.Warning(ex, "Failed to check account status from ControlCenter");
         }
     }
 
@@ -94,6 +136,9 @@
             Globals.User = res;
             Globals.User.Password = Globals.Decrypt(Globals.User.Password);
             Globals.Token = res.Token;
+
+            // Store token in sessionStorage for new tab scenarios (e.g., report pages)
+            await JS.InvokeVoidAsync("sessionStorage.setItem", "authToken", Globals.Token);
 
             var org = await Functions.GetAsync<List<OrganizationsModel>>("Organizations/Search", true) ?? new List<OrganizationsModel>();
             Globals.Organization = org.FirstOrDefault()!;
@@ -274,7 +319,22 @@
         transition: 0.3s;
     }
 
-        .btn-gradient:hover {
+        .btn-gradient:hover:not(:disabled) {
             opacity: 0.85;
         }
+
+        .btn-gradient:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: linear-gradient(90deg, #ccc, #999);
+        }
+
+    .input-field:disabled {
+        background: #e0e0e0;
+        cursor: not-allowed;
+    }
+
+    .account-status-message {
+        margin-bottom: 15px;
+    }
 </style>

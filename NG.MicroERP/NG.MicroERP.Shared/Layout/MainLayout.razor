@@ -21,7 +21,7 @@
                     <div class="company-brand">
                         @if (!string.IsNullOrEmpty(Globals.Organization?.Logo))
                         {
-            <img src="@Globals.Organization.Logo" alt="Company Logo" class="company-logo" />
+            <img src="@Globals.GetImageUrl(Globals.Organization.Logo)" alt="Company Logo" class="company-logo" />
                         }
                         <div class="company-info">
                             <span class="company-name">@(Globals.Organization?.Name ?? "Organization")</span>

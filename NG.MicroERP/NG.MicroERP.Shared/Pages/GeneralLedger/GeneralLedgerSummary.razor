@@ -1,0 +1,317 @@
+@page "/GeneralLedgerSummary"
+
+@inject Functions Functions
+@inject Globals Globals
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject IJSRuntime JSRuntime
+
+<Loading IsLoading="@isLoading" />
+
+<div class="container-fluid p-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-1">General Ledger Summary</h3>
+            <p class="text-muted mb-0">@startDate.ToString("dd MMM yyyy") to @endDate.ToString("dd MMM yyyy")</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary btn-sm" @onclick="LoadReport">
+                <i class="fas fa-sync me-1"></i> Refresh
+            </button>
+            <button class="btn btn-success btn-sm" @onclick="PrintReport">
+                <i class="fas fa-print me-1"></i> Print
+            </button>
+        </div>
+    </div>
+
+    <!-- Date Range -->
+    <div class="card mb-4">
+        <div class="card-body py-2">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label small mb-1">Start Date</label>
+                    <input type="date" class="form-control form-control-sm" @bind="startDate" @bind:format="yyyy-MM-dd" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small mb-1">End Date</label>
+                    <input type="date" class="form-control form-control-sm" @bind="endDate" @bind:format="yyyy-MM-dd" />
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button class="btn btn-primary btn-sm w-100" @onclick="LoadReport">
+                        <i class="fas fa-search me-1"></i> Load Summary
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (entries == null)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary spinner-border-sm" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">Loading report data...</p>
+        </div>
+    }
+    else
+    {
+        <!-- Compact Summary Cards Row -->
+        <div class="row mb-4 g-2">
+            <!-- Total Entries Card -->
+            <div class="col-xl-3 col-md-4 col-6">
+                <div class="card bg-primary text-white h-100">
+                    <div class="card-body p-2 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="card-title mb-0 small">Total Entries</h6>
+                            <i class="fas fa-file-invoice fa-sm"></i>
+                        </div>
+                        <div class="mt-auto">
+                            <h5 class="mb-2 fw-bold text-center">@totalEntries</h5>
+                            <div class="text-center small opacity-75 mb-2">
+                                <div>Journal Entries</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Debit Card -->
+            <div class="col-xl-3 col-md-4 col-6">
+                <div class="card bg-danger text-white h-100">
+                    <div class="card-body p-2 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="card-title mb-0 small">Total Debit</h6>
+                            <i class="fas fa-arrow-up fa-sm"></i>
+                        </div>
+                        <div class="mt-auto">
+                            <h5 class="mb-2 fw-bold text-center">@totalDebit.ToString("N2")</h5>
+                            <div class="text-center small opacity-75 mb-2">
+                                <div>Debit Amount</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Credit Card -->
+            <div class="col-xl-3 col-md-4 col-6">
+                <div class="card bg-success text-white h-100">
+                    <div class="card-body p-2 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="card-title mb-0 small">Total Credit</h6>
+                            <i class="fas fa-arrow-down fa-sm"></i>
+                        </div>
+                        <div class="mt-auto">
+                            <h5 class="mb-2 fw-bold text-center">@totalCredit.ToString("N2")</h5>
+                            <div class="text-center small opacity-75 mb-2">
+                                <div>Credit Amount</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Net Balance Card -->
+            <div class="col-xl-3 col-md-4 col-6">
+                @{
+                    var netBalance = totalDebit - totalCredit;
+                    var netBalanceClass = Math.Abs(netBalance) < 0.01m ? "bg-info" : (netBalance > 0 ? "bg-warning" : "bg-danger");
+                    var netBalanceIcon = Math.Abs(netBalance) < 0.01m ? "fa-check-circle" : "fa-exclamation-triangle";
+                }
+                <div class="card @netBalanceClass text-white h-100">
+                    <div class="card-body p-2 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="card-title mb-0 small">Net Balance</h6>
+                            <i class="fas @netBalanceIcon fa-sm"></i>
+                        </div>
+                        <div class="mt-auto">
+                            <h5 class="mb-2 fw-bold text-center">@netBalance.ToString("N2")</h5>
+                            <div class="text-center small opacity-75 mb-2">
+                                <div>@(Math.Abs(netBalance) < 0.01m ? "Balanced" : "Difference")</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (!entries.Any())
+        {
+            <div class="alert alert-info py-2 mb-4">
+                <i class="fas fa-info-circle me-2"></i> No entries found for the selected period.
+            </div>
+        }
+
+        <!-- Entry Details -->
+        <div class="card">
+            <div class="card-header bg-light py-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-list me-1 fa-xs text-secondary"></i>
+                        <small>Entry Details (@entries.Count records)</small>
+                    </h6>
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped mb-0" style="table-layout: fixed;">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-2" style="width: 8%;">Date</th>
+                                <th style="width: 10%;">Entry No</th>
+                                @if (Globals.User.GroupId == 1)
+                                {
+                                    <th style="width: 10%;">Location</th>
+                                }
+                                <th style="width: 15%;">Description</th>
+                                <th style="width: 10%;">Source</th>
+                                <th style="width: 10%;">Party</th>
+                                <th style="width: 10%;">Reference</th>
+                                <th class="text-end border-start" style="width: 10%;">Debit</th>
+                                <th class="text-end pe-2 border-end" style="width: 10%;">Credit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var entry in entries.OrderBy(x => x.EntryDate).ThenBy(x => x.Id))
+                            {
+                                <tr>
+                                    <td class="ps-2">
+                                        @if (entry.EntryDate.HasValue)
+                                        {
+                                            @entry.EntryDate.Value.ToString("dd MMM yyyy")
+                                        }
+                                    </td>
+                                    <td>@entry.EntryNo</td>
+                                    @if (Globals.User.GroupId == 1)
+                                    {
+                                        <td>@entry.LocationName</td>
+                                    }
+                                    <td class="text-truncate" title="@entry.Description">@entry.Description</td>
+                                    <td>@entry.Source</td>
+                                    <td class="text-truncate" title="@entry.PartyName">@entry.PartyName</td>
+                                    <td>@entry.ReferenceNo</td>
+                                    <td class="text-end text-danger fw-bold border-start">@((decimal)entry.TotalDebit).ToString("N2")</td>
+                                    <td class="text-end text-success fw-bold pe-2 border-end">@((decimal)entry.TotalCredit).ToString("N2")</td>
+                                </tr>
+                            }
+
+                            <!-- Totals Row -->
+                            <tr class="table-primary">
+                                <td class="ps-2 fw-bold" colspan="@(Globals.User.GroupId == 1 ? 7 : 6)">Totals</td>
+                                <td class="text-end fw-bold text-danger border-start">@totalDebit.ToString("N2")</td>
+                                <td class="text-end fw-bold text-success pe-2 border-end">@totalCredit.ToString("N2")</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<GeneralLedgerHeaderModel> entries = new();
+    private DateTime startDate = DateTime.Today.AddDays(-30);
+    private DateTime endDate = DateTime.Today;
+    private bool isLoading = false;
+
+    private int totalEntries = 0;
+    private decimal totalDebit = 0;
+    private decimal totalCredit = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Globals.AccessLevel = Globals.PageAccess(NavManager, "GeneralLedgerDashboard");
+            await LoadReport();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error initializing page: {ex.Message}", Severity.Error);
+            entries = new List<GeneralLedgerHeaderModel>();
+        }
+    }
+
+    private async Task LoadReport()
+    {
+        if (startDate > endDate)
+        {
+            SnackbarService.Add("Start date must be earlier than end date.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            string criteria = $"EntryDate >= '{startDate:yyyy-MM-dd}' AND EntryDate <= '{endDate:yyyy-MM-dd}'";
+
+            if (Globals.User.GroupId != 1)
+            {
+                criteria += $" AND LocationId = {Globals.User.LocationId}";
+            }
+
+            string url = "GeneralLedger/Search";
+            if (!string.IsNullOrEmpty(criteria))
+            {
+                url += $"/{Uri.EscapeDataString(criteria)}";
+            }
+
+            var result = await Functions.GetAsync<List<GeneralLedgerHeaderModel>>(url, true);
+            entries = result ?? new List<GeneralLedgerHeaderModel>();
+
+            CalculateSummaries();
+
+            if (entries.Any())
+            {
+                SnackbarService.Add($"Summary loaded: {entries.Count} entries", Severity.Success);
+            }
+            else
+            {
+                SnackbarService.Add($"No entries found for the selected period", Severity.Info);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading summary: {ex.Message}", Severity.Error);
+            entries = new List<GeneralLedgerHeaderModel>();
+            ResetSummaryValues();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CalculateSummaries()
+    {
+        totalEntries = entries.Count;
+        totalDebit = entries.Sum(x => (decimal)x.TotalDebit);
+        totalCredit = entries.Sum(x => (decimal)x.TotalCredit);
+    }
+
+    private void ResetSummaryValues()
+    {
+        totalEntries = 0;
+        totalDebit = 0;
+        totalCredit = 0;
+    }
+
+    private async void PrintReport()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("print");
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error printing: {ex.Message}", Severity.Error);
+        }
+    }
+}

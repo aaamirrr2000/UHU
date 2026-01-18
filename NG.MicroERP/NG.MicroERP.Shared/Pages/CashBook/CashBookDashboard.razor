@@ -25,13 +25,11 @@
                     <MudDatePicker @bind-Date="startDate"
                                    Label="Start Date"
                                    DateFormat="dd MMM yyyy"
-                                   Variant="Variant.Outlined"
-                                   Style="background: rgba(255,255,255,0.95); width: 160px;" />
+                                   Variant="Variant.Outlined" />
                     <MudDatePicker @bind-Date="endDate"
                                    Label="End Date"
                                    DateFormat="dd MMM yyyy"
-                                   Variant="Variant.Outlined"
-                                   Style="background: rgba(255,255,255,0.95); width: 160px;" />
+                                   Variant="Variant.Outlined" />
                 </div>
                 @if (Globals.AccessLevel == 1)
                 {
@@ -445,13 +443,7 @@
 
     protected void Print(int id)
     {
-        /*
-        var url = $"/CashBookReport/{id}";
-        JSRuntime.InvokeVoidAsync("open", url, "_blank");
-        */
-
         NavManager.NavigateTo($"/CashBookReport/{id}");
-
     }
 
     protected async Task Save()

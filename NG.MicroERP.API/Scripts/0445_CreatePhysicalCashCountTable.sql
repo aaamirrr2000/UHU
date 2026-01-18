@@ -4,15 +4,17 @@ CREATE TABLE PhysicalCashCount
     OrganizationId      INT             NOT NULL,
     LocationId          INT             NOT NULL,
     Locker              VARCHAR(100)     NOT NULL,
-    CountDate           DATE             NOT NULL,
+    CountDate           DATETIME        NOT NULL,
+    SessionId           UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
     Denomination        DECIMAL(10, 2)   NOT NULL,
     Quantity            INT              NOT NULL DEFAULT 0,
     Amount              DECIMAL(18, 2)   NOT NULL DEFAULT 0,
     Notes               VARCHAR(500)     NULL,
+    Comments            VARCHAR(500)     NULL,
     CountedBy           INT             NOT NULL,
     VerifiedBy          INT             NULL,
     VerifiedOn          DATETIME        NULL,
-    Status              VARCHAR(20)      NOT NULL DEFAULT 'PENDING', -- PENDING, VERIFIED, DISPUTED
+    Status              VARCHAR(20)      NOT NULL DEFAULT 'NOT RECONCILED', -- RECONCILED, NOT RECONCILED
     CreatedBy           INT             NULL DEFAULT NULL,
     CreatedOn           DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CreatedFrom         VARCHAR(255)    NULL DEFAULT NULL,
@@ -33,3 +35,4 @@ CREATE INDEX IX_PhysicalCashCount_OrganizationId ON PhysicalCashCount(Organizati
 CREATE INDEX IX_PhysicalCashCount_LocationId ON PhysicalCashCount(LocationId);
 CREATE INDEX IX_PhysicalCashCount_CountDate ON PhysicalCashCount(CountDate);
 CREATE INDEX IX_PhysicalCashCount_Status ON PhysicalCashCount(Status);
+CREATE INDEX IX_PhysicalCashCount_SessionId ON PhysicalCashCount(SessionId);

@@ -65,10 +65,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Remove="Helper\PdfHelper.cs" />
-    </ItemGroup>
-
-    <ItemGroup>
       <MauiFont Remove="Resources\Fonts\FiraSansExtraCondensed.ttf" />
       <MauiFont Remove="Resources\Fonts\OpenSans-Semibold.ttf" />
       <MauiFont Remove="Resources\Fonts\Orbitron.ttf" />
@@ -170,10 +166,6 @@
       <MauiImage Update="Resources\Images\waiter1.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </MauiImage>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Helper\" />
     </ItemGroup>
 
 </Project>

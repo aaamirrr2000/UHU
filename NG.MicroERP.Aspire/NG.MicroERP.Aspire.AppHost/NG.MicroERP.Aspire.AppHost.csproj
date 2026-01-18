@@ -12,6 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\NG.ControlCenter.WebSite\NG.ControlCenter.WebSite.csproj" />
     <ProjectReference Include="..\..\NG.MicroERP.API\NG.MicroERP.API.csproj" />
     <ProjectReference Include="..\..\NG.MicroERP\NG.MicroERP.Web\NG.MicroERP.Web.csproj" />
     <ProjectReference Include="..\NG.MicroERP.Aspire.ApiService\NG.MicroERP.Aspire.ApiService.csproj" />

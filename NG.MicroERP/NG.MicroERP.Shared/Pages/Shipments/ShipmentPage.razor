@@ -55,13 +55,13 @@
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Location <span style='color:red;'>*</span></label>
-                    @if (isReadOnly)
+                    @if (isReadOnly || Globals.User.GroupId != 1)
                     {
                         <MudTextField Value="@(Locations.FirstOrDefault(l => l.Id == record.LocationId)?.Name ?? "")" Variant="Variant.Outlined" Dense="@true" FullWidth="@true" ReadOnly="@true" />
                     }
                     else
                     {
-                        <AutoComplete TItem="LocationsModel" DataList="@Locations" DisplayProperty="@(p => p.Name)" IdProperty="@(p => p.Id)" @bind-SelectedId="record.LocationId" Variant="Variant.Outlined" FullWidth="@true" />
+                        <AutoComplete TItem="LocationsModel" DataList="@Locations" DisplayProperty="@(p => p.Name)" IdProperty="@(p => p.Id)" @bind-SelectedId="record.LocationId" Variant="Variant.Outlined" Label="" FullWidth="@true" />
                     }
                 </div>
                 <div class="col-12 col-md-3">
@@ -106,7 +106,7 @@
                     }
                     else
                     {
-                        <AutoComplete TItem="PartiesModel" DataList="@Couriers" DisplayProperty="@(p => p.DisplayName)" IdProperty="@(p => p.Id)" @bind-SelectedId="record.CourierId" Variant="Variant.Outlined" FullWidth="@true" />
+                        <AutoComplete TItem="PartiesModel" DataList="@Couriers" DisplayProperty="@(p => p.DisplayName)" IdProperty="@(p => p.Id)" @bind-SelectedId="record.CourierId" Variant="Variant.Outlined" Label="" FullWidth="@true" />
                     }
                 </div>
                 <div class="col-12 col-md-3">
@@ -166,7 +166,7 @@
                             }
                             else
                             {
-                                <AutoComplete TItem="ItemsModel" DataList="@Items" DisplayProperty="@(p => p.DisplayName)" IdProperty="@(p => p.Id)" @bind-SelectedId="detail.ItemId" Variant="Variant.Outlined" FullWidth="@true" />
+                                <AutoComplete TItem="ItemsModel" DataList="@Items" DisplayProperty="@(p => p.DisplayName)" IdProperty="@(p => p.Id)" @bind-SelectedId="detail.ItemId" Variant="Variant.Outlined" Label="" FullWidth="@true" />
                             }
                         </MudTd>
                         <MudTd>
@@ -257,6 +257,11 @@
         record = await Functions.GetAsync<ShipmentModel>($"Shipments/Get/{id}", true) ?? new ShipmentModel();
         if (record.Details == null)
             record.Details = new ObservableCollection<ShipmentDetailModel>();
+        // Lock location for non-admin users
+        if (Globals.User.GroupId != 1 && record.LocationId != Globals.User.LocationId)
+        {
+            record.LocationId = Globals.User.LocationId;
+        }
         isReadOnly = Action == "VIEW";
         LoadingPanel = false;
     }
@@ -269,6 +274,11 @@
         record.ShipmentType = "INCOMING";
         record.Status = "PENDING";
         record.ShipmentDate = DateTime.Today;
+        // Set location for non-admin users
+        if (Globals.User.GroupId != 1)
+        {
+            record.LocationId = Globals.User.LocationId;
+        }
         isReadOnly = false;
     }
 

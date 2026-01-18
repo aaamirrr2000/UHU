@@ -92,3 +92,68 @@ public class BalanceSheetItemModel
     public string? AccountName { get; set; }
     public decimal Amount { get; set; }
 }
+
+public class EmployeeAdvanceReportModel
+{
+    public int PartyId { get; set; }
+    public string? PartyCode { get; set; }
+    public string? PartyName { get; set; }
+    public int EmployeeId { get; set; }
+    public string? EmployeeCode { get; set; }
+    public string? EmployeeName { get; set; }
+    public string? DepartmentName { get; set; }
+    public decimal TotalAdvanceGiven { get; set; }
+    public decimal TotalAdvanceRecovered { get; set; }
+    public decimal OutstandingBalance { get; set; }
+    public int TransactionCount { get; set; }
+    public DateTime? LastTransactionDate { get; set; }
+}
+
+public class CashReconciliationReportModel
+{
+    public DateTime? CountDate { get; set; }
+    public int LocationId { get; set; }
+    public string? LocationName { get; set; }
+    public string? Locker { get; set; }
+    public decimal OpeningBalance { get; set; }
+    public decimal CashReceipts { get; set; }
+    public decimal CashPayments { get; set; }
+    public decimal ExpectedBalance { get; set; } // Opening + Receipts - Payments
+    public decimal PhysicalCount { get; set; } // Total from PhysicalCashCount
+    public decimal Variance { get; set; } // PhysicalCount - ExpectedBalance
+    public string? Status { get; set; } // RECONCILED, NOT RECONCILED
+    public string? CountedByName { get; set; }
+    public DateTime? CountedOn { get; set; }
+    public int CountedBy { get; set; } // Added for filtering
+}
+
+public class PhysicalCashCountSessionModel
+{
+    public DateTime? CountDate { get; set; }
+    public int LocationId { get; set; }
+    public string? LocationName { get; set; }
+    public string? Locker { get; set; }
+    public int CountedBy { get; set; }
+    public string? CountedByName { get; set; }
+    public DateTime? CountedOn { get; set; }
+    public decimal TotalAmount { get; set; }
+    public string? Status { get; set; }
+    public string? DisplayText { get; set; }
+    
+    // Unique key for comparison
+    public string SessionKey => $"{CountDate:yyyy-MM-dd}_{LocationId}_{Locker}_{CountedBy}_{CountedOn:yyyy-MM-dd HH:mm:ss}";
+    
+    public override bool Equals(object? obj)
+    {
+        if (obj is PhysicalCashCountSessionModel other)
+        {
+            return SessionKey == other.SessionKey;
+        }
+        return false;
+    }
+    
+    public override int GetHashCode()
+    {
+        return SessionKey?.GetHashCode() ?? 0;
+    }
+}

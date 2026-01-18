@@ -1,8 +1,11 @@
 ﻿@page "/ClientFeedbackPage/{id:int}"
 @using System.ComponentModel.DataAnnotations
+@using NG.MicroERP.App.SwiftServe.Helper
 @layout MyMenuLayout
 @inject NavigationManager Nav
 
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-0" Style="padding: 8px;">
 <EditForm Model="@feedback">
     <div class="p-3">
         <div class="d-flex align-items-center justify-content-start gap-3 mb-3">
@@ -56,13 +59,13 @@
         </div>
 
         <h5 class="text-secondary mt-4">Item-wise Feedback</h5>
-        @if (BillDetail?.Any() == true)
+        @if (InvoiceDetail?.Any() == true)
         {
-            @foreach (var item in BillDetail)
+            @foreach (var item in InvoiceDetail)
             {
                 <div class="border rounded p-2 my-2 bg-light">
                     <div class="d-flex justify-content-between align-items-center">
-                        <strong>@item.Item</strong>
+                        <strong>@item.ItemName</strong>
                         <div class="d-flex gap-1">
                             @for (int i = 1; i <= 5; i++)
                             {
@@ -84,12 +87,13 @@
         </button>
     </div>
 </EditForm>
+</MudContainer>
 
 @code {
     [Parameter] public int id { get; set; }
    
     private FeedbackModel feedback = new();
-    private List<BillDetailModel> BillDetail = new();
+    private List<InvoiceItemReportModel> InvoiceDetail = new();
 
     private int rating = 3;
 
@@ -102,10 +106,10 @@
     {
         if (id > 0)
         {
-            var result = await Functions.GetAsync<List<BillDetailModel>>($"BillDetail/Search/BillId={id}", true);
+            var result = await MyFunctions.GetAsync<List<InvoiceItemReportModel>>($"InvoiceDetail/Search/InvoiceDetail.InvoiceId={id}", true);
             if (result != null)
             {
-                BillDetail = result.Select(r => { r.Rating = 5; return r; }).ToList();
+                InvoiceDetail = result.Select(r => { r.Rating = 5; return r; }).ToList();
             }
             else
             {
@@ -122,7 +126,7 @@
         InvokeAsync(StateHasChanged);
     }
 
-    private void SetItemRating(BillDetailModel item, int rating)
+    private void SetItemRating(InvoiceItemReportModel item, int rating)
     {
         item.Rating = rating;
         InvokeAsync(StateHasChanged);
@@ -130,19 +134,18 @@
 
     private async Task Save()
     {
-        BillsModel MyBill = new();
+        InvoicesModel MyInvoice = new();
 
-        MyBill.Bill.Id = id;
-        MyBill.Bill.PartyName = feedback.Name.ToUpper();
-        MyBill.Bill.PartyEmail = feedback.Email;
-        MyBill.Bill.PartyPhone = feedback.Phone;
-        MyBill.Bill.Rating = rating;
-        MyBill.Bill.ClientComments = feedback.Comments;
-        //MyBill.Bill.Rating = rating;
+        MyInvoice.Invoice.Id = id;
+        MyInvoice.Invoice.PartyName = feedback.Name.ToUpper();
+        MyInvoice.Invoice.PartyEmail = feedback.Email;
+        MyInvoice.Invoice.PartyPhone = feedback.Phone;
+        MyInvoice.Invoice.Rating = rating;
+        MyInvoice.Invoice.ClientComments = feedback.Comments;
 
-        //MyBill.BillDetails = new ObservableCollection<BillItemReportModel>(BillDetail);
+        MyInvoice.InvoiceDetails = new ObservableCollection<InvoiceItemReportModel>(InvoiceDetail);
 
-        var result = await Functions.PostAsync<string>("Bill/ClientComments", MyBill, true);
+        var result = await MyFunctions.PostAsync<string>("Invoice/ClientComments", MyInvoice, true);
 
         if (!result.Success)
             await Application.Current.MainPage.DisplayAlert("⚠️ Save Failed", "Unable to save your changes. Please try again.", "OK");
@@ -152,7 +155,7 @@
 
     private void GoBack()
     {
-        //Nav.NavigateTo($"/OrderPage?tableId={Globals._selectedTable}");
+        //Nav.NavigateTo($"/OrderPage?tableId={MyGlobals._selectedTable}");
         Nav.NavigateTo($"/OrdersPage");
     }
 

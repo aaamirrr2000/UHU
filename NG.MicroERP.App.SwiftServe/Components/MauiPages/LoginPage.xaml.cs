@@ -1,8 +1,13 @@
 
 
-using NG.MicroERP.Shared.Helper;
 using NG.MicroERP.Shared.Models;
 using NG.MicroERP.Shared.Services;
+using NG.MicroERP.App.SwiftServe.Helper;
+using System.Net.Http;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Maui.Controls;
 
 using Serilog;
 
@@ -10,16 +15,23 @@ namespace NG.MicroERP.App.SwiftServe.Components.MauiPages;
 
 public partial class LoginPage : ContentPage
 {
-    
-
     public LoginPage()
-	{
-		InitializeComponent();
-	}
+    {
+        InitializeComponent();
+    }
+
+    protected override void OnHandlerChanged()
+    {
+        base.OnHandlerChanged();
+        InitializeServices();
+    }
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        
+        // Try to initialize if not already done
+        InitializeServices();
 
         string savedUsername = Preferences.Get("Username", "");
         string savedPassword = Preferences.Get("Password", "");
@@ -30,8 +42,21 @@ public partial class LoginPage : ContentPage
             //await Login(UsernameEntry.Text, PasswordEntry.Text);
         }
 
-        if (Globals.BaseURI == null || Globals.BaseURI.Trim() == string.Empty)
-            lblURL.Text = Globals.BaseURI;
+        if (MyGlobals.BaseURI == null || MyGlobals.BaseURI.Trim() == string.Empty)
+            lblURL.Text = MyGlobals.BaseURI;
+    }
+
+    private void InitializeServices()
+    {
+        string savedUrl = Preferences.Get("BaseURI", "").Trim();
+        if (!string.IsNullOrEmpty(savedUrl))
+        {
+            MyGlobals.BaseURI = savedUrl;
+        }
+        else
+        {
+            MyGlobals.BaseURI = "https://localhost:7019/api/";
+        }
     }
 
     private async void OnLoginClicked(object sender, EventArgs e)
@@ -50,60 +75,65 @@ public partial class LoginPage : ContentPage
 
     private async Task Login(string userName, string password)
     {
+        // Ensure services are initialized
+        InitializeServices();
+
         LoginSpinner.IsVisible = true;
         LoginSpinner.IsRunning = true;
 
         try
         {
+            if (MyGlobals.BaseURI == null || MyGlobals.BaseURI.Trim() == string.Empty)
+                lblURL.Text = MyGlobals.BaseURI;
 
-            if (Globals.BaseURI == null || Globals.BaseURI.Trim() == string.Empty)
-                lblURL.Text = Globals.BaseURI;
-
-            var res = await Functions.GetAsync<UsersModel>($"Login/Login/{userName}/{password}", false);
-            //Log.Information($"link {lblURL.Text}.");
+            var res = await MyFunctions.GetAsync<UsersModel>($"api/Login/Login/{userName}/{password}", false);
 
             if (res != null)
             {
-                //Log.Information($"User {userName} logged in.");
-
                 Preferences.Set("Username", userName);
                 Preferences.Set("Password", password);
 
-                // Save user data
-                Globals.User = res;
-                Globals.Token = res.Token;
+                // Store in static MyGlobals (accessible from both MAUI and Blazor)
+                MyGlobals.User = res;
+                MyGlobals.Token = res.Token ?? string.Empty;
+                
+                // Log token storage for debugging
+                Serilog.Log.Information($"Token stored in static MyGlobals - Length: {MyGlobals.Token?.Length ?? 0}, IsEmpty: {string.IsNullOrEmpty(MyGlobals.Token)}, Token preview: {(string.IsNullOrEmpty(MyGlobals.Token) ? "EMPTY" : MyGlobals.Token.Substring(0, Math.Min(20, MyGlobals.Token.Length)) + "...")}");
 
-                //Get Service Charges
-                ServiceChargeCalculationService _serviceChargeService = new();
-                await _serviceChargeService.InitializeAsync();
-                Globals.ServiceCharge!.ChargeType = _serviceChargeService.ServiceChargeType;
-                Globals.ServiceCharge.Amount = _serviceChargeService.ServiceCharge;
+                var org = await MyFunctions.GetAsync<List<OrganizationsModel>>($"api/Organizations/Search", true) ?? new List<OrganizationsModel>();
+                if (org != null && org.Any())
+                {
+                    MyGlobals.Organization = org.FirstOrDefault()!;
+                }
 
-                //Get GST
-                TaxCalculationService _gst = new();
-                await _gst.InitializeAsync();
-                Globals.GST = _gst.GST;
-
-
-                var org = await Functions.GetAsync<List<OrganizationsModel>>($"Organizations/Search", true) ?? new List<OrganizationsModel>();
-                if (org != null)
-                    Globals.Organization = org.FirstOrDefault()!;
-
-                if (Globals.Organization.Expiry <= DateTime.Now)
+                if (MyGlobals.Organization.Expiry <= DateTime.Now)
                 {
                     await DisplayAlert("Login Failed", "License Expired.", "OK");
 
                 }
                 else
                 {
-                    //if (Globals.User.UserType.ToUpper() == "WAITER")
-                    await Navigation.PushAsync(new MainPage());                    
+                    if (MyGlobals.User.UserType!.ToUpper() == "WAITER")
+                    {
+                        // Hide current page to prevent flicker
+                        this.IsVisible = false;
+                        
+                        // Create and navigate to MainPage
+                        var mainPage = new MainPage();
+                        await Navigation.PushAsync(mainPage);
+                        
+                        // Remove LoginPage from navigation stack to prevent back navigation
+                        var navigationStack = Navigation.NavigationStack.ToList();
+                        if (navigationStack.Count > 1)
+                        {
+                            Navigation.RemovePage(navigationStack[0]);
+                        }
+                    }
                 }
 
             }
             else
             {
-                //Log.Information($"{userName} login failed.");
                 await DisplayAlert("Login Failed", "Invalid credentials.", "OK");
             }
         }
@@ -121,6 +151,9 @@ public partial class LoginPage : ContentPage
 
     private async void OnSettingsClicked(object sender, EventArgs e)
     {
+        // Ensure services are initialized
+        InitializeServices();
+
         string savedUrl = Preferences.Get("BaseURI", "").Trim();
 
         string result = await DisplayPromptAsync(
@@ -135,7 +168,7 @@ public partial class LoginPage : ContentPage
         if (!string.IsNullOrWhiteSpace(result))
         {
             Preferences.Set("BaseURI", result.Trim());
-            Globals.BaseURI = result.Trim();
+            MyGlobals.BaseURI = result.Trim();
             await DisplayAlert("URL", $"API URL saved successfully.", "Okay");
         }
     }

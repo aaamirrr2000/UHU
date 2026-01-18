@@ -1387,16 +1387,9 @@
                 return;
             }
             
-            if (!string.IsNullOrEmpty(Globals.Token))
-            {
-                await JS.InvokeVoidAsync("sessionStorage.setItem", "authToken", Globals.Token);
-            }
-            
-            var baseUri = NavManager.BaseUri.TrimEnd('/');
-            // Pass withTax=true as query parameter to show tax details
-            var reportUrl = $"{baseUri}/InvoiceReport/{invoiceId}?withTax=false";
-            
-            await JS.InvokeVoidAsync("open", reportUrl, "_blank");
+            // Navigate to report in same tab
+            var reportUrl = $"/InvoiceReport/{invoiceId}?withTax=false";
+            NavManager.NavigateTo(reportUrl);
         }
         catch (Exception ex)
         {

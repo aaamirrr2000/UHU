@@ -1,5 +1,6 @@
 ﻿using NG.MicroERP.App.SwiftServe.Components.MauiPages;
-using NG.MicroERP.Shared.Helper;
+using NG.MicroERP.App.SwiftServe.Helper;
+using Microsoft.Maui.Controls;
 
 using System.Diagnostics;
 
@@ -13,13 +14,7 @@ namespace NG.MicroERP.App.SwiftServe
         public App()
         {
             InitializeComponent();
-
-            string savedUrl = Preferences.Get("BaseURI", "").Trim();
-            if (!string.IsNullOrEmpty(savedUrl))
-            {
-                Globals.BaseURI = savedUrl;
-            }
-
+            // BaseURI will be loaded in LoginPage when Globals is available via DI
         }
 
         protected override Window CreateWindow(IActivationState? activationState)

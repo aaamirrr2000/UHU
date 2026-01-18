@@ -1,6 +1,8 @@
 @page "/PhysicalCashCountPage/{Action}/{CurrentRecord?}"
 
 @using NG.MicroERP.Shared.Models
+@using System.Linq
+@using Microsoft.AspNetCore.Components
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
 @inject NavigationManager NavManager
@@ -12,17 +14,24 @@
 
 <div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
 
+    @if (!string.IsNullOrEmpty(PeriodValidationMessage) && PeriodValidationChecked)
+    {
+        <MudAlert Severity="@(PeriodValidationMessage.Contains("CLOSED") ? Severity.Error : Severity.Success)" Class="mb-3">
+            @PeriodValidationMessage
+        </MudAlert>
+    }
+
     <div class="text-end" style="margin-top:10px;">
         @if (Action != "VIEW" && Globals.AccessLevel == 1)
         {
-            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;" Disabled="@(!string.IsNullOrEmpty(PeriodValidationMessage))">
                 <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
                 @(Action == "INSERT" ? "Save" : "Update")
             </MudButton>
 
-            @if (Action == "UPDATE" && CurrentRecord > 0)
+            @if (Action == "UPDATE" && CurrentRecord.HasValue && CurrentRecord.Value > 0)
             {
-                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;" Disabled="@(!string.IsNullOrEmpty(PeriodValidationMessage))">
                     <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
                     Delete
                 </MudButton>
@@ -52,86 +61,147 @@
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Count Date <span style='color:red;'>*</span></label>
-                        <MudDatePicker @bind-Date="record.CountDate"
-                                       DateFormat="dd MMM yyyy"
-                                       placeholder="Count Date"
+                        <label class="form-label fw-bold mb-1">Count Date & Time <span style='color:red;'>*</span></label>
+                        <MudDatePicker @bind-Date="countDate"
+                                       DateFormat="dd MMM yyyy HH:mm"
+                                       TimeFormat="HH:mm"
+                                       UseTimePicker="true"
+                                       Placeholder="Select Date & Time"
                                        ReadOnly="@isReadOnly"
                                        Variant="Variant.Outlined"
-                                       Class="flex-grow-1"></MudDatePicker>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.CountDate)" />
-                        </div>
+                                       Class="flex-grow-1"
+                                       @bind-Date:after="OnCountDateChanged"></MudDatePicker>
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
                         <label class="form-label fw-bold mb-1">Location <span style='color:red;'>*</span></label>
-                        <AutoComplete TItem="LocationsModel"
-                                      DataList="@Loc"
-                                      DisplayProperty="@(p => p.Name)"
-                                      IdProperty="@(p => p.Id)"
-                                      @bind-SelectedId="record.LocationId"
-                                      Variant="Variant.Outlined"
-                                      FullWidth="true" />
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.LocationId)" />
-                        </div>
+                        @if (Globals.User.GroupId == 1)
+                        {
+                            <AutoComplete TItem="LocationsModel"
+                                          DataList="@Loc"
+                                          DisplayProperty="@(p => p.Name)"
+                                          IdProperty="@(p => p.Id)"
+                                          @bind-SelectedId="locationId"
+                                          @bind-SelectedId:after="OnLocationChanged"
+                                          Variant="Variant.Outlined"
+                                          Label=""
+                                          FullWidth="true" />
+                        }
+                        else
+                        {
+                            <MudTextField Value="@(Loc.FirstOrDefault(l => l.Id == locationId)?.Name ?? "")"
+                                          Variant="Variant.Outlined"
+                                          ReadOnly="true"
+                                          FullWidth="true" />
+                        }
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
                         <label class="form-label fw-bold mb-1">Locker <span style='color:red;'>*</span></label>
-                        <MudTextField @bind-Value="record.Locker"
-                                      placeholder="Locker Name/Number"
-                                      ReadOnly="@isReadOnly"
+                        <MudSelect T="string"
+                                   @bind-Value="locker"
+                                   @bind-Value:after="OnLockerChanged"
+                                   Placeholder="Select Locker"
+                                   Variant="Variant.Outlined"
+                                   FullWidth="true"
+                                   Clearable="false"
+                                   ReadOnly="@isReadOnly"
+                                   Class="flex-grow-1">
+                            @foreach (var lockerItem in lockers)
+                            {
+                                <MudSelectItem T="string" Value="@lockerItem.ListValue">@lockerItem.ListValue</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => locker)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Counted By (Employee) <span style='color:red;'>*</span></label>
+                        <AutoComplete TItem="UsersModel"
+                                      DataList="@Users"
+                                      DisplayProperty="@(p => string.IsNullOrWhiteSpace(p.FullName) ? p.Username ?? "" : p.FullName)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="countedBy"
+                                      @bind-SelectedId:after="OnCountedByChanged"
                                       Variant="Variant.Outlined"
+                                      Label=""
                                       FullWidth="true"
-                                      Class="flex-grow-1"></MudTextField>
+                                      Clearable="false"
+                                      ReadOnly="@isReadOnly" />
                         <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.Locker)" />
+                            <ValidationMessage For="@(() => countedBy)" />
                         </div>
-                    </div>
-
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Denomination <span style='color:red;'>*</span></label>
-                        <MudNumericField @bind-Value="record.Denomination"
-                                         @bind-Value:after="CalculateAmount"
-                                         placeholder="Denomination (e.g., 5000, 1000, 500)"
-                                         ReadOnly="@isReadOnly"
-                                         Format="#,##0.00"
-                                         Variant="Variant.Outlined"
-                                         FullWidth="true"
-                                         Class="flex-grow-1"></MudNumericField>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.Denomination)" />
-                        </div>
-                    </div>
-
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Quantity <span style='color:red;'>*</span></label>
-                        <MudNumericField @bind-Value="record.Quantity"
-                                         @bind-Value:after="CalculateAmount"
-                                         placeholder="Number of notes/coins"
-                                         ReadOnly="@isReadOnly"
-                                         Format="#,##0"
-                                         Variant="Variant.Outlined"
-                                         FullWidth="true"
-                                         Class="flex-grow-1"></MudNumericField>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.Quantity)" />
-                        </div>
-                    </div>
-
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Amount</label>
-                        <MudNumericField @bind-Value="record.Amount"
-                                         placeholder="Amount (Auto-calculated)"
-                                         ReadOnly="true"
-                                         Format="#,##0.00"
-                                         Variant="Variant.Outlined"
-                                         FullWidth="true"
-                                         Class="flex-grow-1"></MudNumericField>
                     </div>
                 </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <!-- Denominations Panel -->
+        <MudExpansionPanel Text="Cash Count by Denomination" Expanded="true" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-money-bill-wave"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Cash Count by Denomination</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Enter quantity for each denomination</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #FF9800; border-radius: 10px;" />
+            </TitleContent>
+
+            <ChildContent>
+                <MudPaper Elevation="2" Class="pa-4">
+                    <MudTable Items="@denominationEntries" Hover="true" Dense="true" Bordered="true">
+                        <HeaderContent>
+                            <MudTh>Denomination</MudTh>
+                            <MudTh>X</MudTh>
+                            <MudTh>Quantity</MudTh>
+                            <MudTh>=</MudTh>
+                            <MudTh Class="text-end">Total</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>
+                                <MudText Typo="Typo.h6" Class="fw-bold">
+                                    @context.Denomination.ToString("#,##0.00")
+                                </MudText>
+                            </MudTd>
+                            <MudTd Class="text-center">
+                                <MudText Typo="Typo.body1" Class="fw-bold">X</MudText>
+                            </MudTd>
+                            <MudTd>
+                                <MudNumericField @bind-Value="context.Quantity"
+                                                 @bind-Value:after="CalculateTotal"
+                                                 ReadOnly="@isReadOnly"
+                                                 Format="#,##0"
+                                                 Variant="Variant.Outlined"
+                                                 Style="max-width: 150px;"
+                                                 Min="0"></MudNumericField>
+                            </MudTd>
+                            <MudTd Class="text-center">
+                                <MudText Typo="Typo.body1" Class="fw-bold">=</MudText>
+                            </MudTd>
+                            <MudTd Class="text-end">
+                                <MudText Typo="Typo.h6" Class="fw-bold text-success">
+                                    @context.Amount.ToString("#,##0.00")
+                                </MudText>
+                            </MudTd>
+                        </RowTemplate>
+                        <FooterContent>
+                            <MudTd ColSpan="4" Class="text-end fw-bold">
+                                <MudText Typo="Typo.h5">Grand Total:</MudText>
+                            </MudTd>
+                            <MudTd Class="text-end">
+                                <MudText Typo="Typo.h5" Class="fw-bold text-primary">
+                                    @GrandTotal.ToString("#,##0.00")
+                                </MudText>
+                            </MudTd>
+                        </FooterContent>
+                    </MudTable>
+                </MudPaper>
             </ChildContent>
         </MudExpansionPanel>
 
@@ -154,7 +224,7 @@
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-12 mb-3 d-flex flex-column" style="min-height: 95px;">
                         <label class="form-label fw-bold mb-1">Notes</label>
-                        <MudTextField @bind-Value="record.Notes"
+                        <MudTextField @bind-Value="notes"
                                       placeholder="Additional notes or remarks"
                                       ReadOnly="@isReadOnly"
                                       Variant="Variant.Outlined"
@@ -163,65 +233,42 @@
                                       Class="flex-grow-1"></MudTextField>
                     </div>
 
+                    <div class="col-12 mb-3 d-flex flex-column" style="min-height: 95px;">
+                        <label class="form-label fw-bold mb-1">Comments</label>
+                        <MudTextField @bind-Value="comments"
+                                      placeholder="Comments will be auto-generated on save if empty (e.g., 'Sale Cash Total Amount 15,000.00 on 01 Jan 2025 14:30')"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      Lines="3"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        @if (!isReadOnly && string.IsNullOrWhiteSpace(comments) && !string.IsNullOrWhiteSpace(locker))
+                        {
+                            <MudText Typo="Typo.caption" Class="text-muted mt-1">
+                                <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="me-1" />
+                                Will auto-generate: "{locker} Total Amount {GrandTotal:N2} on {DateTime.Now:dd MMM yyyy HH:mm}"
+                            </MudText>
+                        }
+                    </div>
+
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Status</label>
+                        <label class="form-label fw-bold mb-1">Status <span style='color:red;'>*</span></label>
                         <MudSelect T="string"
-                                   @bind-Value="record.Status"
-                                   Placeholder="Status"
+                                   @bind-Value="status"
+                                   @bind-Value:after="UpdateComments"
+                                   Placeholder="Select Status"
                                    Variant="Variant.Outlined"
-                                   Clearable="false"
                                    FullWidth="true"
+                                   Clearable="false"
                                    ReadOnly="@isReadOnly"
                                    Class="flex-grow-1">
-                            <MudSelectItem T="string" Value=@("PENDING")>Pending</MudSelectItem>
-                            <MudSelectItem T="string" Value=@("VERIFIED")>Verified</MudSelectItem>
-                            <MudSelectItem T="string" Value=@("DISPUTED")>Disputed</MudSelectItem>
+                            <MudSelectItem T="string" Value=@("RECONCILED")>Reconciled</MudSelectItem>
+                            <MudSelectItem T="string" Value=@("NOT RECONCILED")>Not Reconciled</MudSelectItem>
                         </MudSelect>
-                    </div>
-
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Counted By</label>
-                        @if (isReadOnly)
-                        {
-                            <MudTextField Value="@(record.CountedByName ?? Globals.User?.FullName ?? "")"
-                                          ReadOnly="true"
-                                          Variant="Variant.Outlined"
-                                          FullWidth="true"
-                                          Class="flex-grow-1"></MudTextField>
-                        }
-                        else
-                        {
-                            <MudTextField Value="@(Globals.User?.FullName ?? "")"
-                                          ReadOnly="true"
-                                          Variant="Variant.Outlined"
-                                          FullWidth="true"
-                                          Class="flex-grow-1"></MudTextField>
-                        }
-                    </div>
-
-                    @if (Action == "UPDATE" || Action == "VIEW")
-                    {
-                        <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                            <label class="form-label fw-bold mb-1">Verified By</label>
-                            <MudTextField Value="@(record.VerifiedByName ?? "Not Verified")"
-                                          ReadOnly="true"
-                                          Variant="Variant.Outlined"
-                                          FullWidth="true"
-                                          Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => status)" />
                         </div>
-
-                        @if (record.VerifiedOn.HasValue)
-                        {
-                            <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                                <label class="form-label fw-bold mb-1">Verified On</label>
-                                <MudTextField Value="@(record.VerifiedOn.Value.ToString("dd MMM yyyy HH:mm"))"
-                                              ReadOnly="true"
-                                              Variant="Variant.Outlined"
-                                              FullWidth="true"
-                                              Class="flex-grow-1"></MudTextField>
-                            </div>
-                        }
-                    }
+                    </div>
                 </div>
             </ChildContent>
         </MudExpansionPanel>
@@ -231,123 +278,627 @@
 
 @code
 {
+    [Parameter] public int? CurrentRecord { get; set; }
     [Parameter] public string Action { get; set; } = "INSERT";
-    [Parameter] public int CurrentRecord { get; set; } = 0;
     [Parameter] public EventCallback OnSaved { get; set; }
 
-    PhysicalCashCountModel record = new();
-    List<LocationsModel> Loc = new();
+    private PhysicalCashCountModel record = new();
+    private List<LocationsModel> Loc = new();
+    private List<UsersModel> Users = new();
+    private List<TypeCodeModel> denominations = new();
+    private List<TypeCodeModel> lockers = new();
+    private List<PhysicalCashCountDenominationEntry> denominationEntries = new();
+
+    // Form fields - declared first
+    private DateTime? countDate = DateTime.Now;
+    private int locationId = 0;
+    private string locker { get; set; } = string.Empty;
+    private int countedBy = 0;
+    private string notes { get; set; } = string.Empty;
+    private string comments { get; set; } = string.Empty;
+    private string status { get; set; } = "NOT RECONCILED";
+    private Guid? currentSessionId = null; // Unique identifier for the cash count session
 
     bool isReadOnly = false;
     private bool LoadingPanel { get; set; } = false;
 
+    string PeriodValidationMessage = string.Empty;
+    bool PeriodValidationChecked = false;
+
+    decimal GrandTotal => denominationEntries?.Sum(e => e.Amount) ?? 0;
+
+    private bool _isInitialized = false;
+
     protected override async Task OnInitializedAsync()
     {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "PhysicalCashCountDashboard");
+
+        if (_isInitialized) return;
+        _isInitialized = true;
+
         LoadingPanel = true;
 
         // Load locations
         Loc = await Functions.GetAsync<List<LocationsModel>>($"Locations/Search/IsActive=1", true) ?? new List<LocationsModel>();
 
+        // Load employees (for employee selection)
+        try
+        {
+            // First try to load Employees
+            var employees = await Functions.GetAsync<List<EmployeesModel>>($"Employees/Search", true) ?? new List<EmployeesModel>();
+            
+            if (employees != null && employees.Any())
+            {
+                // Convert Employees to UsersModel for the dropdown
+                Users = employees.Select(e => new UsersModel
+                {
+                    Id = e.Id,
+                    FullName = e.Fullname,
+                    Username = e.EmpId,
+                    IsActive = e.IsActive
+                }).Where(u => u.IsActive == 1).OrderBy(u => u.FullName ?? u.Username ?? "").ToList();
+            }
+            else
+            {
+                // Fallback to Users if Employees not available
+                Users = await Functions.GetAsync<List<UsersModel>>($"Users/Search/IsActive=1", true) ?? new List<UsersModel>();
+                if (Users != null && Users.Any())
+                {
+                    Users = Users.OrderBy(u => u.FullName ?? u.Username ?? "").ToList();
+                }
+            }
+            
+            if (Users == null || !Users.Any())
+            {
+                SnackbarService.Add("Warning: No active employees found.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading employees: {ex.Message}", Severity.Error);
+            Users = new List<UsersModel>();
+        }
+
+        // Load lockers from TypeCode
+        try
+        {
+            var lockersResult = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/LOCKER", true);
+            lockers = lockersResult ?? new List<TypeCodeModel>();
+            
+            if (lockers == null || !lockers.Any())
+            {
+                SnackbarService.Add("Warning: No lockers found in TypeCode table. Please ensure LOCKER entries exist with ListName='LOCKER'.", Severity.Warning);
+            }
+            else
+            {
+                // Sort lockers by ListValue for consistent display
+                lockers = lockers.OrderBy(l => l.ListValue).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading lockers: {ex.Message}", Severity.Error);
+            lockers = new List<TypeCodeModel>();
+        }
+
+        // Load denominations from TypeCode
+        await LoadDenominations();
+
+        LoadingPanel = false;
+        await LoadRecordData();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Handle parameter changes (e.g., when CurrentRecord or Action changes from parent)
+        if (_isInitialized)
+        {
+            await LoadRecordData();
+        }
+    }
+
+    private async Task LoadRecordData()
+    {
+        LoadingPanel = true;
+        
         if (Action == "INSERT")
         {
-            record = new PhysicalCashCountModel();
-            record.CountDate = DateTime.Today;
-            record.CountedBy = Globals.User.Id;
-            record.Status = "PENDING";
-            isReadOnly = false;
+            InitializeNewRecord();
+            await ValidatePeriodAsync();
         }
-        else if (Action == "UPDATE")
+        else if (Action == "UPDATE" && CurrentRecord.HasValue && CurrentRecord.Value > 0)
         {
-            await Get(CurrentRecord);
-            isReadOnly = false;
+            await LoadExistingRecords(CurrentRecord.Value);
+            await ValidatePeriodAsync();
         }
-        else if (Action == "VIEW")
+        else if (Action == "VIEW" && CurrentRecord.HasValue && CurrentRecord.Value > 0)
         {
-            await Get(CurrentRecord);
+            await LoadExistingRecords(CurrentRecord.Value);
             isReadOnly = true;
         }
 
         LoadingPanel = false;
+        StateHasChanged(); // Ensure UI updates after all data is loaded
     }
 
-    protected async Task Get(int id)
+    protected async Task LoadDenominations()
+    {
+        try
+        {
+            // Load all denominations from TypeCode where ListName = 'DENOMINATION', ordered by ListValue descending (highest first)
+            var allDenominations = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/DENOMINATION", true) ?? new List<TypeCodeModel>();
+            
+            if (!allDenominations.Any())
+            {
+                SnackbarService.Add("Warning: No denominations found in TypeCode table. Please ensure DENOMINATION entries exist.", Severity.Warning);
+            }
+            
+            // Sort by denomination value (highest first) - parse ListValue as decimal
+            denominations = allDenominations
+                .OrderByDescending(d => decimal.TryParse(d.ListValue, out decimal val) ? val : 0)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading denominations: {ex.Message}", Severity.Error);
+            denominations = new List<TypeCodeModel>();
+        }
+
+        // Initialize denomination entries if empty
+        if (!denominationEntries.Any())
+        {
+            if (denominations.Any())
+            {
+                denominationEntries = denominations
+                    .Where(d => decimal.TryParse(d.ListValue, out _))
+                    .Select(d => new PhysicalCashCountDenominationEntry
+                    {
+                        Denomination = decimal.TryParse(d.ListValue, out decimal val) ? val : 0,
+                        Quantity = 0,
+                        Amount = 0,
+                        RecordId = null
+                    })
+                    .Where(e => e.Denomination > 0)
+                    .OrderByDescending(e => e.Denomination)
+                    .ToList();
+            }
+            else
+            {
+                // Initialize with empty list if no denominations found
+                denominationEntries = new List<PhysicalCashCountDenominationEntry>();
+            }
+        }
+        
+        StateHasChanged(); // Trigger UI update after loading denominations
+    }
+
+    protected void InitializeNewRecord()
+    {
+        countDate = DateTime.Now;
+        // Set first location by default for admin, or user's location for non-admin
+        if (Globals.User.GroupId == 1)
+        {
+            locationId = Loc?.FirstOrDefault()?.Id ?? 0;
+        }
+        else
+        {
+            locationId = Globals.User.LocationId;
+        }
+        locker = string.Empty;
+        countedBy = Globals.User.Id; // Default to current user
+        notes = string.Empty;
+        comments = string.Empty;
+        status = "NOT RECONCILED";
+        
+        // Generate new SessionId for new cash count session
+        currentSessionId = Guid.NewGuid();
+
+        // Reset all quantities to 0
+        foreach (var entry in denominationEntries)
+        {
+            entry.Quantity = 0;
+            entry.Amount = 0;
+            entry.RecordId = null;
+        }
+        isReadOnly = false;
+    }
+
+    protected async Task LoadExistingRecords(int firstRecordId)
     {
         LoadingPanel = true;
-        record = await Functions.GetAsync<PhysicalCashCountModel>($"PhysicalCashCount/Get/{id}", true) ?? new PhysicalCashCountModel();
-        LoadingPanel = false;
+        try
+        {
+            // Get the first record to get common fields
+            record = await Functions.GetAsync<PhysicalCashCountModel>($"PhysicalCashCount/Get/{firstRecordId}", true) ?? new PhysicalCashCountModel();
+            
+            if (record.Id > 0)
+            {
+                countDate = record.CountDate;
+                locationId = record.LocationId;
+                // Lock location for non-admin users
+                if (Globals.User.GroupId != 1 && locationId != Globals.User.LocationId)
+                {
+                    locationId = Globals.User.LocationId;
+                }
+                locker = record.Locker ?? string.Empty;
+                countedBy = record.CountedBy > 0 ? record.CountedBy : Globals.User.Id;
+                notes = record.Notes ?? string.Empty;
+                comments = record.Comments ?? string.Empty;
+                status = record.Status ?? "NOT RECONCILED";
+                
+                // Get SessionId from the record
+                currentSessionId = record.SessionId ?? Guid.NewGuid();
+
+                // Load all individual denomination records for the same session
+                // Use SessionId if available, otherwise fall back to old method
+                List<PhysicalCashCountModel> allSessionRecords;
+                
+                if (record.SessionId.HasValue)
+                {
+                    // Use SessionId to get all records in the session
+                    string sessionIdStr = record.SessionId.Value.ToString();
+                    string criteria = $"pcc.SessionId='{sessionIdStr}'";
+                    allSessionRecords = await Functions.GetAsync<List<PhysicalCashCountModel>>($"PhysicalCashCount/SearchIndividual/{Uri.EscapeDataString(criteria)}", true) ?? new List<PhysicalCashCountModel>();
+                }
+                else
+                {
+                    // Fallback: Use old method for backward compatibility
+                    string lockerEscaped = locker?.Replace("'", "''") ?? string.Empty;
+                    string countDateStr = record.CountDate.HasValue ? record.CountDate.Value.ToString("yyyy-MM-dd HH:mm:ss") : string.Empty;
+                    string criteria = $"pcc.CountDate='{countDateStr}' AND pcc.LocationId={locationId} AND pcc.Locker='{lockerEscaped}' AND pcc.CountedBy={record.CountedBy}";
+                    allSessionRecords = await Functions.GetAsync<List<PhysicalCashCountModel>>($"PhysicalCashCount/SearchIndividual/{Uri.EscapeDataString(criteria)}", true) ?? new List<PhysicalCashCountModel>();
+                }
+
+                // Populate denomination entries with existing quantities
+                foreach (var entry in denominationEntries)
+                {
+                    var existingRecord = allSessionRecords.FirstOrDefault(r => r.Denomination == entry.Denomination);
+                    if (existingRecord != null)
+                    {
+                        entry.Quantity = existingRecord.Quantity;
+                        entry.Amount = existingRecord.Amount; // Set the amount from existing record
+                        entry.RecordId = existingRecord.Id;
+                    }
+                    else
+                    {
+                        entry.Quantity = 0;
+                        entry.Amount = 0; // Reset amount when quantity is 0
+                        entry.RecordId = null;
+                    }
+                }
+
+                // Store first record ID for reference
+                CurrentRecord = firstRecordId;
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading records: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    protected async Task OnCountDateChanged()
+    {
+        await ValidatePeriodAsync();
+        UpdateComments();
+    }
+
+    protected void OnLockerChanged()
+    {
+        UpdateComments();
+    }
+
+    protected void OnLocationChanged()
+    {
+        UpdateComments();
+    }
+
+    protected void OnCountedByChanged()
+    {
+        // Can add any logic here if needed when counted by changes
+    }
+
+    protected void UpdateComments()
+    {
+        // Auto-generate comments if locker is selected and we have a count date
+        if (!string.IsNullOrWhiteSpace(locker) && countDate.HasValue)
+        {
+            comments = $"{locker} Total Amount {GrandTotal:N2} on {countDate.Value:dd MMM yyyy HH:mm}";
+            StateHasChanged();
+        }
+    }
+
+    protected async Task ValidatePeriodAsync()
+    {
+        if (!countDate.HasValue || locationId == 0)
+        {
+            PeriodValidationMessage = string.Empty;
+            PeriodValidationChecked = false;
+            return;
+        }
+
+        try
+        {
+            LoadingPanel = true;
+            string dateStr = countDate.Value.ToString("yyyy-MM-dd");
+            var periodResult = await Functions.GetAsync<PeriodCloseModel>($"PeriodClose/GetOpenPeriod/{Globals.User.OrganizationId}/{dateStr}/CASHBOOK", true);
+
+            if (periodResult == null || periodResult.Id == 0)
+            {
+                PeriodValidationMessage = $"Period is CLOSED for CashBook on {countDate.Value:dd MMM yyyy}. You cannot save cash count for this date.";
+                PeriodValidationChecked = true;
+            }
+            else
+            {
+                PeriodValidationMessage = string.Empty; // Period is open, no message needed
+                PeriodValidationChecked = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            PeriodValidationMessage = $"Error validating period: {ex.Message}";
+            PeriodValidationChecked = true;
+        }
+        finally
+        {
+            LoadingPanel = false;
+            StateHasChanged();
+        }
+    }
+
+    protected void CalculateTotal()
+    {
+        // Recalculate amount for all entries when quantity changes
+        foreach (var entry in denominationEntries)
+        {
+            entry.Amount = entry.Denomination * entry.Quantity;
+        }
+        
+        // Auto-update comments whenever quantities change
+        UpdateComments();
+        
+        StateHasChanged(); // Trigger recalculation of GrandTotal
     }
 
     protected async Task Clear()
     {
         Action = "INSERT";
-        record = new PhysicalCashCountModel();
-        record.CountDate = DateTime.Today;
-        record.CountedBy = Globals.User.Id;
-        record.Status = "PENDING";
-        isReadOnly = false;
-    }
-
-    protected async Task Edit(int id)
-    {
-        await Get(id);
-        Action = "UPDATE";
-        isReadOnly = false;
+        InitializeNewRecord();
+        CurrentRecord = null;
+        await ValidatePeriodAsync();
     }
 
     protected async Task Delete()
     {
-        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete all cash count records for this session?");
         if (res == false)
             return;
 
-        Action = "SOFTDELETE";
-        await Save();
-    }
+        try
+        {
+            LoadingPanel = true;
 
-    protected void CalculateAmount()
-    {
-        record.Amount = record.Denomination * record.Quantity;
-        StateHasChanged();
+            // Use SessionId if available, otherwise fall back to old method
+            if (currentSessionId.HasValue)
+            {
+                // Use SessionId to delete all records in the session
+                var deleteRecord = new PhysicalCashCountModel
+                {
+                    Id = record.Id > 0 ? record.Id : 0,
+                    SessionId = currentSessionId,
+                    UpdatedBy = Globals.User.Id,
+                    UpdatedOn = DateTime.Now,
+                    UpdatedFrom = Globals.ClientInfo
+                };
+                var result = await Functions.PostAsync<PhysicalCashCountModel>("PhysicalCashCount/SoftDelete", deleteRecord, true);
+                
+                if (result.Success)
+                {
+                    SnackbarService.Add("Cash count session deleted successfully", Severity.Success);
+                    await Clear();
+                    await OnSaved.InvokeAsync();
+                }
+                else
+                {
+                    SnackbarService.Add($"Failed to delete: {result.Message ?? "Unknown error"}", Severity.Error);
+                }
+            }
+            else
+            {
+                // Fallback: Use old method for backward compatibility
+                string lockerEscaped = locker?.Replace("'", "''") ?? string.Empty;
+                string countDateStr = countDate.HasValue ? countDate.Value.ToString("yyyy-MM-dd HH:mm:ss") : string.Empty;
+                int countedById = countedBy > 0 ? countedBy : record.CountedBy > 0 ? record.CountedBy : Globals.User.Id;
+                string criteria = $"CountDate='{countDateStr}' AND LocationId={locationId} AND Locker='{lockerEscaped}' AND CountedBy={countedById} AND IsSoftDeleted=0";
+                var allRecords = await Functions.GetAsync<List<PhysicalCashCountModel>>($"PhysicalCashCount/Search/{Uri.EscapeDataString(criteria)}", true) ?? new List<PhysicalCashCountModel>();
+
+                // Soft delete all records
+                bool allDeleted = true;
+                foreach (var rec in allRecords)
+                {
+                    rec.UpdatedBy = Globals.User.Id;
+                    rec.UpdatedOn = DateTime.Now;
+                    rec.UpdatedFrom = Globals.ClientInfo;
+                    var result = await Functions.PostAsync<PhysicalCashCountModel>("PhysicalCashCount/SoftDelete", rec, true);
+                    if (!result.Success)
+                    {
+                        allDeleted = false;
+                    }
+                }
+
+                if (allDeleted)
+                {
+                    SnackbarService.Add("Cash count records deleted successfully", Severity.Success);
+                    await Clear();
+                    await OnSaved.InvokeAsync();
+                }
+                else
+                {
+                    SnackbarService.Add("Some records could not be deleted", Severity.Warning);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error deleting records: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
     }
 
     protected async Task Save()
     {
         try
         {
+            // Validate required fields
+            if (!countDate.HasValue)
+            {
+                SnackbarService.Add("Please select a Count Date", Severity.Warning);
+                return;
+            }
+
+            if (locationId == 0)
+            {
+                SnackbarService.Add("Please select a Location", Severity.Warning);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(locker))
+            {
+                SnackbarService.Add("Please enter a Locker name/number", Severity.Warning);
+                return;
+            }
+
+            if (countedBy == 0)
+            {
+                SnackbarService.Add("Please select the employee who performed the physical count", Severity.Warning);
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(PeriodValidationMessage) && PeriodValidationMessage.Contains("CLOSED"))
+            {
+                SnackbarService.Add("Cannot save: Period is closed for the selected date", Severity.Error);
+                return;
+            }
+
+            // Validate at least one denomination has quantity > 0
+            if (!denominationEntries.Any(e => e.Quantity > 0))
+            {
+                SnackbarService.Add("Please enter quantity for at least one denomination", Severity.Warning);
+                return;
+            }
+
+            // Auto-generate comments if empty
+            if (string.IsNullOrWhiteSpace(comments) && countDate.HasValue)
+            {
+                string locationName = Loc.FirstOrDefault(l => l.Id == locationId)?.Name ?? "Unknown Location";
+                comments = $"{locker} Total Amount {GrandTotal:N2} on {countDate.Value:dd MMM yyyy HH:mm}";
+            }
+
             LoadingPanel = true;
 
-            record.OrganizationId = Globals.User.OrganizationId;
-            record.CreatedBy = Globals.User.Id;
-            record.CreatedOn = DateTime.Now;
-            record.CreatedFrom = Globals.ClientInfo;
-            record.UpdatedBy = Globals.User.Id;
-            record.UpdatedOn = DateTime.Now;
-            record.UpdatedFrom = Globals.ClientInfo;
-            record.CountedBy = Globals.User.Id;
-
-            // Calculate amount before saving
-            record.Amount = record.Denomination * record.Quantity;
-
-            string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
-            var result = await Functions.PostAsync<PhysicalCashCountModel>($"PhysicalCashCount/{url}", record, true);
-            if (result.Success == false)
+            // Generate SessionId for new sessions, or use existing one for updates
+            if (!currentSessionId.HasValue)
             {
-                SnackbarService.Add($"ERROR: {result.Message ?? "Record Not Saved"}", Severity.Error);
+                currentSessionId = Guid.NewGuid();
             }
-            else
+
+            if (Action == "UPDATE" && CurrentRecord.HasValue && CurrentRecord.Value > 0)
             {
-                await OnSaved.InvokeAsync();
-                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
-                if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                // Delete existing records first, then insert new ones
+                // Use SessionId if available, otherwise fall back to old method
+                if (record.SessionId.HasValue)
                 {
-                    CurrentRecord = result.Result!.Id;
-                    await Get(CurrentRecord);
-                    Action = "UPDATE";
+                    // Use SessionId to delete all records in the session
+                    var deleteRecord = new PhysicalCashCountModel
+                    {
+                        Id = record.Id,
+                        SessionId = record.SessionId,
+                        UpdatedBy = Globals.User.Id,
+                        UpdatedOn = DateTime.Now,
+                        UpdatedFrom = Globals.ClientInfo
+                    };
+                    await Functions.PostAsync<PhysicalCashCountModel>("PhysicalCashCount/SoftDelete", deleteRecord, true);
+                    // Use the existing SessionId for the update
+                    currentSessionId = record.SessionId;
                 }
                 else
                 {
-                    Clear();
+                    // Fallback: Use old method for backward compatibility
+                    int countedById = record.CountedBy > 0 ? record.CountedBy : countedBy > 0 ? countedBy : Globals.User.Id;
+                    string originalCountDateStr = record.CountDate.HasValue ? record.CountDate.Value.ToString("yyyy-MM-dd HH:mm:ss") : string.Empty;
+                    string lockerEscaped = locker?.Replace("'", "''") ?? string.Empty;
+                    string criteria = $"CountDate='{originalCountDateStr}' AND LocationId={locationId} AND Locker='{lockerEscaped}' AND CountedBy={countedById} AND IsSoftDeleted=0";
+                    var allRecords = await Functions.GetAsync<List<PhysicalCashCountModel>>($"PhysicalCashCount/Search/{Uri.EscapeDataString(criteria)}", true) ?? new List<PhysicalCashCountModel>();
+
+                    foreach (var rec in allRecords)
+                    {
+                        rec.UpdatedBy = Globals.User.Id;
+                        rec.UpdatedOn = DateTime.Now;
+                        rec.UpdatedFrom = Globals.ClientInfo;
+                        await Functions.PostAsync<PhysicalCashCountModel>("PhysicalCashCount/SoftDelete", rec, true);
+                    }
                 }
+            }
+
+            // Save all entries with quantity > 0
+            int savedCount = 0;
+            int? firstSavedId = null;
+
+            foreach (var entry in denominationEntries.Where(e => e.Quantity > 0))
+            {
+                PhysicalCashCountModel recordToSave = new PhysicalCashCountModel
+                {
+                    OrganizationId = Globals.User.OrganizationId,
+                    SessionId = currentSessionId, // Use the same SessionId for all records in this session
+                    LocationId = locationId,
+                    Locker = locker,
+                    CountDate = countDate.Value,
+                    Denomination = entry.Denomination,
+                    Quantity = entry.Quantity,
+                    Amount = entry.Amount,
+                    Notes = notes,
+                    Comments = comments,
+                    CountedBy = countedBy,
+                    Status = status,
+                    CreatedBy = Globals.User.Id,
+                    CreatedOn = DateTime.Now,
+                    CreatedFrom = Globals.ClientInfo,
+                    UpdatedBy = Globals.User.Id,
+                    UpdatedOn = DateTime.Now,
+                    UpdatedFrom = Globals.ClientInfo,
+                    IsSoftDeleted = 0
+                };
+
+                var result = await Functions.PostAsync<PhysicalCashCountModel>("PhysicalCashCount/Insert", recordToSave, true);
+                if (result.Success && result.Result != null)
+                {
+                    savedCount++;
+                    if (firstSavedId == null)
+                        firstSavedId = result.Result.Id;
+                }
+            }
+
+            if (savedCount > 0)
+            {
+                SnackbarService.Add($"Cash count saved successfully ({savedCount} denomination(s))", Severity.Success);
+                await OnSaved.InvokeAsync();
+                if (firstSavedId.HasValue)
+                {
+                    CurrentRecord = firstSavedId.Value;
+                    await LoadExistingRecords(firstSavedId.Value);
+                    Action = "UPDATE";
+                }
+            }
+            else
+            {
+                SnackbarService.Add("Failed to save cash count records", Severity.Error);
             }
         }
         catch (Exception ex)

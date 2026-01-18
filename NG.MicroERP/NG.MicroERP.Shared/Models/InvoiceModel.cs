@@ -78,7 +78,80 @@ public class InvoiceModel
     // UI/Service Communication Fields (not persisted to DB)
     public bool SkipStockValidation { get; set; } = false;
 
+    // Restaurant POS specific fields
+    public int TableId { get; set; } = 0;
+    public string? ServiceType { get; set; } = string.Empty;
+    public decimal BillAmount { get; set; } = 0;
+    public string? SeqNo { get; set; } = string.Empty;
 }
+
+// Type aliases for backward compatibility with SwiftServe (Restaurant Management)
+public class BillModel : InvoiceModel { }
+
+public class BillsModel : InvoicesModel 
+{ 
+    public BillModel Bill 
+    { 
+        get => new BillModel 
+        { 
+            Id = Invoice.Id,
+            OrganizationId = Invoice.OrganizationId,
+            InvoiceType = Invoice.InvoiceType,
+            Source = Invoice.Source,
+            SalesId = Invoice.SalesId,
+            LocationId = Invoice.LocationId,
+            PartyId = Invoice.PartyId,
+            PartyName = Invoice.PartyName,
+            PartyPhone = Invoice.PartyPhone,
+            PartyEmail = Invoice.PartyEmail,
+            PartyAddress = Invoice.PartyAddress,
+            TranDate = Invoice.TranDate,
+            ServiceType = Invoice.ServiceType,
+            Description = Invoice.Description,
+            Status = Invoice.Status,
+            CreatedBy = Invoice.CreatedBy,
+            CreatedOn = Invoice.CreatedOn,
+            CreatedFrom = Invoice.CreatedFrom,
+            Location = Invoice.Location,
+            TableName = Invoice.TableName,
+            BillAmount = Invoice.InvoiceAmount,
+            SeqNo = Invoice.Code,
+            DiscountAmount = Invoice.DiscountAmount
+        }; 
+        set 
+        { 
+            Invoice.Id = value.Id;
+            Invoice.OrganizationId = value.OrganizationId;
+            Invoice.InvoiceType = value.InvoiceType;
+            Invoice.Source = value.Source;
+            Invoice.SalesId = value.SalesId;
+            Invoice.LocationId = value.LocationId;
+            Invoice.PartyId = value.PartyId;
+            Invoice.PartyName = value.PartyName;
+            Invoice.PartyPhone = value.PartyPhone;
+            Invoice.PartyEmail = value.PartyEmail;
+            Invoice.PartyAddress = value.PartyAddress;
+            Invoice.TranDate = value.TranDate;
+            Invoice.Description = value.Description;
+            Invoice.Status = value.Status;
+            Invoice.CreatedBy = value.CreatedBy;
+            Invoice.CreatedOn = value.CreatedOn;
+            Invoice.CreatedFrom = value.CreatedFrom;
+            Invoice.InvoiceAmount = value.BillAmount;
+            Invoice.Code = value.SeqNo;
+            Invoice.DiscountAmount = value.DiscountAmount;
+        } 
+    } 
+}
+
+public class BillDetailModel : InvoiceItemReportModel 
+{
+    public int BillId { get => InvoiceId; set => InvoiceId = value; }
+    public double Item_Amount { get => ItemTotalAmount; set => ItemTotalAmount = value; }
+}
+
+public class BillItemReportModel : InvoiceItemReportModel { }
+
 
 public class InvoiceDetailModel
 {

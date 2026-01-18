@@ -78,7 +78,26 @@ public class UsersService : IUsersService
 
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM Users WHERE UPPER(Username) = '{obj.Username!.ToUpper()}';";
+            // Escape single quotes to prevent SQL injection
+            string usernameEscaped = obj.Username!.ToUpper().Replace("'", "''");
+            // Check for duplicates excluding soft-deleted records
+            string SQLDuplicate = $@"SELECT TOP 1 Id FROM Users WHERE UPPER(Username) = '{usernameEscaped}' AND IsSoftDeleted = 0";
+            
+            // Use provided password if it's already encrypted (starts with base64 pattern), otherwise encrypt it
+            // If password is empty or looks like plain text, encrypt it
+            string passwordValue = obj.Password!;
+            if (string.IsNullOrEmpty(passwordValue) || (!passwordValue.Contains("==") && passwordValue.Length < 50))
+            {
+                // If password looks like plain text or is empty, generate random or use provided
+                passwordValue = string.IsNullOrEmpty(obj.Password) 
+                    ? Config.Encrypt(Config.GenerateRandomPassword()) 
+                    : Config.Encrypt(obj.Password);
+            }
+            // If password already looks encrypted (contains == and is longer), use it as-is
+            
+            // Escape password value for SQL
+            string passwordEscaped = passwordValue.Replace("'", "''");
+            
             string SQLInsert = $@"INSERT INTO Users 
 			(
 				Username, 
@@ -99,9 +118,9 @@ public class UsersService : IUsersService
 			) 
 			VALUES 
 			(
-				'{obj.Username!.ToUpper()}', 
-				'{Config.Encrypt(Config.GenerateRandomPassword())}', 
-				'{obj.UserType!.ToUpper()}', 
+				'{obj.Username!.ToUpper().Replace("'", "''")}', 
+				'{passwordEscaped}', 
+				'{obj.UserType!.ToUpper().Replace("'", "''")}', 
 				0,
 				{obj.EmpId},
 				{obj.GroupId},
@@ -109,10 +128,10 @@ public class UsersService : IUsersService
 				{obj.IsActive},
 				{obj.CreatedBy},
 				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
-				'{obj.CreatedFrom!.ToUpper()}', 
+				'{obj.CreatedFrom!.ToUpper().Replace("'", "''")}', 
 				{obj.UpdatedBy},
 				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
-				'{obj.UpdatedFrom!.ToUpper()}', 
+				'{obj.UpdatedFrom!.ToUpper().Replace("'", "''")}', 
 				{obj.IsSoftDeleted}
 			);";
 

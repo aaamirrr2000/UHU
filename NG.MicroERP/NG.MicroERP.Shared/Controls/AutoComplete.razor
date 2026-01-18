@@ -7,7 +7,8 @@
                  SearchFunc="@SearchItems"
                  ToStringFunc="@ItemToString"
                  Adornment="Adornment.End"
-                 Clearable="true"
+                 Clearable="@Clearable"
+                 ReadOnly="@ReadOnly"
                  CoerceText="true"
                  CoerceValue="true"
                  ResetValueOnEmptyText="true"
@@ -17,6 +18,7 @@
                  Label="@(string.IsNullOrWhiteSpace(Label) ? null : Label)"
                  Placeholder="@Placeholder"
                  Class="@Class"
+                 Style="@Style"
                  @attributes="AdditionalAttributes">
 
     <ProgressIndicatorTemplate>
@@ -30,6 +32,9 @@
     [Parameter] public string? Label { get; set; } = "Select";
     [Parameter] public string? Placeholder { get; set; }
     [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public bool Clearable { get; set; } = true;
+    [Parameter] public bool ReadOnly { get; set; } = false;
 
     [Parameter] public TItem? SelectedValue { get; set; }
     [Parameter] public EventCallback<TItem?> SelectedValueChanged { get; set; }

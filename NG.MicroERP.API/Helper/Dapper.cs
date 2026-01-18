@@ -7,33 +7,41 @@ namespace NG.MicroERP.API.Helper
 {
     public class DapperFunctions
     {
-        private static string DBConnection = string.Empty;
         private readonly Config cfg = new();
-
-        private static readonly object _lock = new();
 
         private static string GetConnectionString(string type, Config cfg)
         {
-            if (string.IsNullOrEmpty(DBConnection))
+            string connectionString = string.Empty;
+            
+            switch (type.ToLower())
             {
-                lock (_lock)
-                {
-                    if (string.IsNullOrEmpty(DBConnection))
-                    {
-                        DBConnection = type == "Default" ? cfg.DefaultDB()! : cfg.GlobalDB()!;
-
-                        // Ensure pooling and reasonable defaults
-                        if (!DBConnection.Contains("Pooling"))
-                            DBConnection += ";Pooling=true;Min Pool Size=5;Max Pool Size=50;";
-                    }
-                }
+                case "default":
+                    connectionString = cfg.DefaultDB() ?? string.Empty;
+                    break;
+                case "global":
+                    connectionString = cfg.GlobalDB() ?? string.Empty;
+                    break;
+                case "controlcenter":
+                    connectionString = cfg.ControlCenterDB() ?? string.Empty;
+                    break;
+                default:
+                    connectionString = cfg.DefaultDB() ?? string.Empty;
+                    break;
             }
-            return DBConnection;
+
+            // Ensure pooling and reasonable defaults
+            if (!string.IsNullOrEmpty(connectionString) && !connectionString.Contains("Pooling"))
+            {
+                connectionString += ";Pooling=true;Min Pool Size=5;Max Pool Size=50;";
+            }
+
+            return connectionString;
         }
 
         private static async Task<SqlConnection> GetConnectionAsync(string connectionType, Config cfg)
         {
-            var cnn = new SqlConnection(GetConnectionString(connectionType, cfg));
+            var connectionString = GetConnectionString(connectionType, cfg);
+            var cnn = new SqlConnection(connectionString);
             await cnn.OpenAsync();
             return cnn;
         }
@@ -54,12 +62,14 @@ namespace NG.MicroERP.API.Helper
             }
         }
 
-        public async Task<List<T>?> SearchByQuery<T>(string sql, string connection = "Default")
+        public async Task<List<T>?> SearchByQuery<T>(string sql, string connection = "Default", object? parameters = null)
         {
             try
             {
                 await using var cnn = await GetConnectionAsync(connection, cfg);
-                var result = await cnn.QueryAsync<T>(sql);
+                var result = parameters != null 
+                    ? await cnn.QueryAsync<T>(sql, parameters)
+                    : await cnn.QueryAsync<T>(sql);
                 return result.ToList();
             }
             catch (Exception ex)
@@ -122,7 +132,7 @@ namespace NG.MicroERP.API.Helper
 
                 await using var cnn = await GetConnectionAsync(connection, cfg);
                 int affected = await cnn.ExecuteAsync(sqlUpdate);
-                return affected > 0 ? (true, null) : (false, "Record Not Saved.");
+                return affected > 0 ? (true, null) : (false, "Update operation completed but no records were affected. The record may not exist, no changes were detected, or the WHERE clause did not match any rows.");
             }
             catch (Exception ex)
             {

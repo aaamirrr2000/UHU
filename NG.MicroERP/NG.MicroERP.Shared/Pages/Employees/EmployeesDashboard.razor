@@ -121,7 +121,7 @@
                                     HeaderClass="grid-header"
                                     CellClass="grid-cell">
                         <CellTemplate Context="row">
-                            <img src="@(!string.IsNullOrWhiteSpace(row.Item.Pic) ? row.Item.Pic : "images/no-image.png")"
+                            <img src="@(!string.IsNullOrWhiteSpace(row.Item.Pic) ? Globals.GetImageUrl(row.Item.Pic) : "images/no-image.png")"
                                  alt="Employee Photo"
                                  style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd;" />
                         </CellTemplate>

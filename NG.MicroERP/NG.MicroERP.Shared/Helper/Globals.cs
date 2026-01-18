@@ -16,9 +16,8 @@ namespace NG.MicroERP.Shared.Helper;
 
 public class Globals
 {
-
-    public  string BaseURI = "";
-    public  string key = "aT4hmLHkxfeXaT4h";
+    public string BaseURI = "";
+    public string key = "aT4hmLHkxfeXaT4h";
 
     public  string Computer_sr = string.Empty;
     public  string Token { get; set; } = string.Empty;
@@ -44,18 +43,33 @@ public class Globals
     
     public event Action? OnSidebarToggle;
     public int AccessLevel { get; set; } = 0;
+    
+    // Service Charge and Tax for SwiftServe (Restaurant Management)
+    public ServiceChargeInfo ServiceCharge { get; set; } = new ServiceChargeInfo();
+    public double GST { get; set; } = 0;
+    public string _serviceType { get; set; } = "Dine-In";
+    public RestaurantTablesModel? _selectedTable { get; set; }
 
     public Globals()
     {
-        IConfigurationBuilder builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json", optional: false);
-        _ = builder.Build();
+        try
+        {
+            IConfigurationBuilder builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json", optional: true);
+            _ = builder.Build();
 
-        IConfiguration configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: false)
-                .Build();
+            IConfiguration configuration = new ConfigurationBuilder()
+                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .AddJsonFile("appsettings.json", optional: true)
+                    .Build();
 
-        BaseURI = configuration.GetValue<string>("ApiUrl:BaseUrl") ?? string.Empty;
+            BaseURI = configuration.GetValue<string>("ApiUrl:BaseUrl") ?? string.Empty;
+        }
+        catch
+        {
+            // If appsettings.json doesn't exist or can't be read, just use empty BaseURI
+            // It will be set from Preferences in App.xaml.cs or by user in LoginPage
+            BaseURI = string.Empty;
+        }
     }
 
 
@@ -197,5 +211,44 @@ public class Globals
         }
 
         return Invoice;
+    }
+
+    /// <summary>
+    /// Gets the full image URL from a filename. Handles both filename-only and full URL formats for backward compatibility.
+    /// </summary>
+    /// <param name="pic">The picture value from database (can be filename or full URL)</param>
+    /// <returns>Full URL to the image, or empty string if pic is null/empty</returns>
+    public string GetImageUrl(string? pic)
+    {
+        if (string.IsNullOrWhiteSpace(pic))
+            return string.Empty;
+
+        // If it's already a full URL (contains http:// or https://), return as is for backward compatibility
+        if (pic.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || 
+            pic.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return pic;
+        }
+
+        // If it's already a relative path starting with /, return as is
+        if (pic.StartsWith("/"))
+        {
+            return pic;
+        }
+
+        // Otherwise, construct the full URL from BaseURI
+        // BaseURI format is typically "https://api.example.com/api/" or "https://api.example.com/"
+        if (string.IsNullOrWhiteSpace(BaseURI))
+            return $"/files/{pic}"; // Fallback to relative path if BaseURI not set
+
+        string baseUrl = BaseURI.TrimEnd('/');
+        // Remove /api if present to get the base domain
+        if (baseUrl.EndsWith("/api", StringComparison.OrdinalIgnoreCase))
+        {
+            baseUrl = baseUrl.Substring(0, baseUrl.Length - 4);
+        }
+
+        // Construct URL: baseUrl/files/filename
+        return $"{baseUrl}/files/{pic}";
     }
 }

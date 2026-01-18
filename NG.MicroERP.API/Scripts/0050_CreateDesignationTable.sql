@@ -17,23 +17,8 @@
     CONSTRAINT FK_Designations_Department FOREIGN KEY (DepartmentId) REFERENCES Departments(Id)
 );
 
-INSERT INTO Designations
-(
-    DesignationName,
-    ParentId,
-    DepartmentId,
-    Description,
-    IsActive,
-    CreatedBy,
-    CreatedFrom
-)
-VALUES
-(
-    'Administrator',        -- Designation name
-    NULL,                   -- Top-level designation, no parent
-    1,                      -- DepartmentId (assumes 'Admin' department has Id = 1)
-    'System Administrator with full privileges',  -- Description
-    1,                      -- IsActive = true
-    1,                      -- CreatedBy (e.g., admin user id)
-    'System'                -- CreatedFrom
-);
+INSERT INTO Designations (DesignationName, DepartmentId, ParentId) VALUES
+('ADMINISTRATOR', 1, NULL),
+('PARTNER', 1, 1),
+('CASHIER', 1, 2),
+('PHARMASIST', 1, 4);

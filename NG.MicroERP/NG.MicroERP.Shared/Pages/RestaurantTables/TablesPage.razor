@@ -1,0 +1,521 @@
+@page "/TablesPage"
+@using System.Collections.ObjectModel
+@using MudBlazor
+@inject NavigationManager Nav
+@inject Globals Globals
+@inject Functions Functions
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 2px;">
+    <!-- Professional Header Section -->
+    <div class="tables-header mb-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.Restaurant" Class="me-2" Style="color: white;" />
+                    Restaurant Tables
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">
+                    Select a table to start taking orders
+                </MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+                <MudTextField @bind-Value="searchString"
+                            @bind-Value:after="FilterTables"
+                            Placeholder="Search tables..."
+                            Adornment="Adornment.Start"
+                            AdornmentIcon="@Icons.Material.Filled.Search"
+                            IconSize="Size.Small"
+                            Variant="Variant.Outlined"
+                            Immediate="true"
+                            Margin="Margin.Dense"
+                            Class="tables-search-field"
+                            Style="background: rgba(255,255,255,0.95); width: 280px;" />
+                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Info"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => RefreshTables())">
+                    Refresh
+                </MudButton>
+                <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="white--text">
+                    @(FilteredTables?.Count ?? 0) Tables
+                </MudChip>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    @if (isLoading)
+    {
+        <MudPaper Elevation="2" Class="pa-8" Style="border-radius: 12px;">
+            <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 400px;">
+                <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+                <MudText Typo="Typo.body1" Class="mt-4 text-muted">Loading tables...</MudText>
+            </MudStack>
+        </MudPaper>
+    }
+    <!-- Tables Grid -->
+    else if (FilteredTables?.Any() == true)
+    {
+        <MudGrid Spacing="3">
+            @foreach (var table in FilteredTables)
+            {
+                <MudItem xs="12" sm="6" md="4" lg="3">
+                    <MudCard Elevation="3" Class="h-100 table-card" Style="border-radius: 16px; transition: all 0.3s ease; overflow: hidden;">
+                        <!-- Top Image Section -->
+                        <div class="table-card-image" style="height: 180px; background: linear-gradient(135deg, @(table.IsAvailable == 1 ? "#ff6b6b" : "#51cf66") 0%, @(table.IsAvailable == 1 ? "#ee5a6f" : "#40c057") 100%); position: relative; display: flex; align-items: center; justify-content: center;">
+                            <MudIcon Icon="@Icons.Material.Filled.Restaurant" 
+                                     Size="Size.Large" 
+                                     Style="font-size: 80px; color: rgba(255,255,255,0.9);" />
+                            <!-- Status Badge -->
+                            <div style="position: absolute; top: 12px; right: 12px;">
+                                <MudChip T="string" 
+                                         Color="@(table.IsAvailable == 1 ? Color.Error : Color.Success)" 
+                                         Variant="Variant.Filled" 
+                                         Size="Size.Small"
+                                         Icon="@(table.IsAvailable == 1 ? Icons.Material.Filled.Block : Icons.Material.Filled.CheckCircle)"
+                                         Style="@GetStatusBadgeStyle(table.IsAvailable)">
+                                    @(table.IsAvailable == 1 ? "Busy" : "Available")
+                                </MudChip>
+                            </div>
+                            <!-- Capacity Badge -->
+                            <div style="position: absolute; bottom: 12px; left: 12px;">
+                                <MudChip T="string" 
+                                         Color="Color.Info" 
+                                         Variant="Variant.Filled" 
+                                         Size="Size.Small"
+                                         Icon="@Icons.Material.Filled.People"
+                                         Style="background: rgba(255,255,255,0.95); color: #1976d2;">
+                                    @table.Capacity
+                                </MudChip>
+                            </div>
+                        </div>
+                        
+                        <MudCardContent Class="pa-3">
+                            <!-- Table Name - Bold -->
+                            <MudText Typo="Typo.h6" Class="font-weight-bold text-center mb-3" Style="color: var(--mud-palette-text-primary);">
+                                @table.TableNumber
+                            </MudText>
+                            
+                            <!-- Location (Optional) -->
+                            @if (!string.IsNullOrEmpty(table.TableLocation))
+                            {
+                                <MudText Typo="Typo.body2" Class="text-muted text-center mb-3" Style="font-size: 0.875rem;">
+                                    <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" Class="mr-1" />
+                                    @table.TableLocation
+                                </MudText>
+                            }
+                            
+                            <!-- Three Service Type Buttons -->
+                            <MudStack Spacing="2" Class="mb-3">
+                                <!-- Dine-In Button -->
+                                <MudButton Variant="Variant.Filled" 
+                                           Color="Color.Primary" 
+                                           Size="Size.Small" 
+                                           FullWidth="true"
+                                           StartIcon="@Icons.Material.Filled.Restaurant"
+                                           OnClick="@(() => OnServiceTypeSelected(table, "Dine-In"))"
+                                           Disabled="@(table.IsAvailable == 1)"
+                                           Style="text-transform: none; font-weight: 500;">
+                                    Dine-In
+                                </MudButton>
+                                
+                                <!-- Takeaway Button -->
+                                <MudButton Variant="Variant.Filled" 
+                                           Color="Color.Secondary" 
+                                           Size="Size.Small" 
+                                           FullWidth="true"
+                                           StartIcon="@Icons.Material.Filled.ShoppingBag"
+                                           OnClick="@(() => OnServiceTypeSelected(table, "Takeaway"))"
+                                           Disabled="@(table.IsAvailable == 1)"
+                                           Style="text-transform: none; font-weight: 500;">
+                                    Takeaway
+                                </MudButton>
+                                
+                                <!-- Parcel Button -->
+                                <MudButton Variant="Variant.Filled" 
+                                           Color="Color.Tertiary" 
+                                           Size="Size.Small" 
+                                           FullWidth="true"
+                                           StartIcon="@Icons.Material.Filled.Inventory"
+                                           OnClick="@(() => OnServiceTypeSelected(table, "Parcel"))"
+                                           Disabled="@(table.IsAvailable == 1)"
+                                           Style="text-transform: none; font-weight: 500;">
+                                    Parcel
+                                </MudButton>
+                            </MudStack>
+                            
+                            <!-- View Icon Button -->
+                            <div class="text-center">
+                                <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
+                                               Color="Color.Info" 
+                                               Size="Size.Medium"
+                                               Variant="Variant.Text"
+                                               OnClick="@(() => OnViewOrderClicked(table.Id))"
+                                               Title="View Orders"
+                                               Style="font-size: 28px;">
+                                </MudIconButton>
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+    <!-- Empty State -->
+    else if (!isLoading)
+    {
+        <MudPaper Elevation="2" Class="pa-8" Style="border-radius: 12px;">
+            <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 400px;">
+                <MudIcon Icon="@Icons.Material.Filled.Restaurant" Size="Size.Large" Color="Color.Primary" Style="font-size: 80px; opacity: 0.3;" />
+                <MudText Typo="Typo.h6" Class="mt-4 text-muted">No tables found</MudText>
+                <MudText Typo="Typo.body2" Class="text-muted text-center mt-2">
+                    @if (!string.IsNullOrEmpty(searchString))
+                    {
+                        <span>No tables match your search criteria. Try a different search term.</span>
+                    }
+                    else
+                    {
+                        <span>Please ensure tables are configured in the system.</span>
+                    }
+                </MudText>
+                @if (!string.IsNullOrEmpty(searchString))
+                {
+                    <MudButton Variant="Variant.Outlined" 
+                               Color="Color.Primary" 
+                               Size="Size.Small" 
+                               Class="mt-3"
+                               OnClick="@(() => searchString = string.Empty)">
+                        Clear Search
+                    </MudButton>
+                }
+            </MudStack>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    private List<RestaurantTablesModel> Tables = new();
+    private List<RestaurantTablesModel> FilteredTables = new();
+    private string searchString = string.Empty;
+    
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Globals.PageTitle = "Tables";
+        
+        // Synchronize token from static Instance if injected Globals doesn't have it
+        // if (string.IsNullOrEmpty(Globals.Token) && NG.MicroERP.Shared.Helper.Globals.Instance != null)
+        // {
+        //     if (!string.IsNullOrEmpty(NG.MicroERP.Shared.Helper.Globals.Instance.Token))
+        //     {
+        //         Globals.Token = NG.MicroERP.Shared.Helper.Globals.Instance.Token;
+        //         Globals.User = NG.MicroERP.Shared.Helper.Globals.Instance.User;
+        //         Globals.BaseURI = NG.MicroERP.Shared.Helper.Globals.Instance.BaseURI;
+        //         Serilog.Log.Information("Synchronized token from static Instance to injected Globals in TablesPage");
+        //     }
+        // }
+        
+        // Check user type - ONLINE users cannot access tables
+        var userType = Globals.User?.UserType?.ToUpper() ?? "";
+        if (userType == "ONLINE")
+        {
+            Nav.NavigateTo("/OrdersPage?serviceType=Online");
+            return;
+        }
+
+        StateHasChanged();
+        await LoadTablesAsync();
+    }
+
+    private async Task LoadTablesAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+            
+            // Verify token is available - check both injected Globals and static Instance
+            string token = Globals?.Token ?? string.Empty;
+            
+            if (string.IsNullOrEmpty(token))
+            {
+                Serilog.Log.Warning($"No authentication token available - Injected Globals token empty: {string.IsNullOrEmpty(Globals?.Token)}");
+                Tables = new List<RestaurantTablesModel>();
+                FilteredTables = new List<RestaurantTablesModel>();
+                return;
+            }
+
+            Serilog.Log.Information($"Loading tables - Token available: {!string.IsNullOrEmpty(token)}, Token length: {token?.Length ?? 0}, BaseURI: {Globals?.BaseURI ?? "NOT SET"}");
+            
+            // Ensure Globals has the token before making the API call
+            if (Globals != null && string.IsNullOrEmpty(Globals.Token))
+            {
+                Globals.Token = token;
+                Serilog.Log.Information("Synchronized token from static Instance to injected Globals");
+            }
+            
+            // Ensure token is synced before making API call (if in SwiftServe context)
+            try
+            {
+                var myGlobalsType = System.Type.GetType("NG.MicroERP.App.SwiftServe.Helper.MyGlobals, NG.MicroERP.App.SwiftServe");
+                if (myGlobalsType != null)
+                {
+                    var tokenProperty = myGlobalsType.GetProperty("Token");
+                    var myGlobalsToken = tokenProperty?.GetValue(null) as string;
+                    
+                    if (!string.IsNullOrEmpty(myGlobalsToken) && (string.IsNullOrEmpty(Globals.Token) || Globals.Token != myGlobalsToken))
+                    {
+                        Globals.Token = myGlobalsToken;
+                        Serilog.Log.Information($"TablesPage.LoadTablesAsync - Synced token from MyGlobals before API call - Token length: {Globals.Token?.Length ?? 0}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Ignore if MyGlobals not available (e.g., in main Blazor app)
+                Serilog.Log.Debug($"MyGlobals not available (expected in main Blazor app): {ex.Message}");
+            }
+            
+            // Log token state before API call
+            Serilog.Log.Information($"TablesPage.LoadTablesAsync - Before API call - Globals.Token length: {Globals.Token?.Length ?? 0}, BaseURI: {Globals.BaseURI}");
+            
+            string apiUrl = BuildApiUrl("api/RestaurantTables/Search");
+            
+            Serilog.Log.Information($"Calling RestaurantTables API: {apiUrl}");
+            
+            var result = await Functions.GetAsync<List<RestaurantTablesModel>>(apiUrl, true);
+
+            if (result != null && result.Any())
+            {
+                Serilog.Log.Information($"Loaded {result.Count} tables successfully");
+                Tables = result.Select(table =>
+                {
+                    table.AvailableStatus = table.IsAvailable == 1 ? "Busy" : "Available";
+                    return table;
+                }).OrderBy(t => t.TableNumber).ToList();
+                
+                FilteredTables = Tables.ToList();
+            }
+            else
+            {
+                Serilog.Log.Warning("No tables returned from API");
+                Tables = new List<RestaurantTablesModel>();
+                FilteredTables = new List<RestaurantTablesModel>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Error(ex, $"Error loading tables: {ex.Message}");
+            Tables = new List<RestaurantTablesModel>();
+            FilteredTables = new List<RestaurantTablesModel>();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void FilterTables()
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+        {
+            FilteredTables = Tables.ToList();
+        }
+        else
+        {
+            var searchLower = searchString.ToLower();
+            FilteredTables = Tables.Where(t => 
+                t.TableNumber?.ToLower().Contains(searchLower) == true ||
+                t.TableLocation?.ToLower().Contains(searchLower) == true ||
+                t.Capacity.ToString().Contains(searchLower)
+            ).ToList();
+        }
+        StateHasChanged();
+    }
+
+    private async Task RefreshTables()
+    {
+        await LoadTablesAsync();
+    }
+
+    private void OnServiceTypeSelected(RestaurantTablesModel selectedTable, string serviceType)
+    {
+        // Clear cart if switching to a different table
+        // Note: Cart clearing is handled by the consuming application (SwiftServe) if needed
+        if (Globals._selectedTable == null || Globals._selectedTable.Id != selectedTable.Id)
+        {
+            // Cart clearing logic can be handled by the consuming application
+        }
+
+        Globals._selectedTable = selectedTable;
+        Globals._serviceType = serviceType;
+        Nav.NavigateTo($"/OrderPage?tableId={Globals._selectedTable.Id}");
+    }
+
+    private void OnViewOrderClicked(int tableId)
+    {
+        Nav.NavigateTo($"/OrderDetailsPage/TABLE/{tableId}");
+    }
+
+    private string GetStatusBadgeStyle(int isAvailable)
+    {
+        return isAvailable == 1 
+            ? "background: rgba(255,255,255,0.95); color: #c92a2a;" 
+            : "background: rgba(255,255,255,0.95); color: #2b8a3e;";
+    }
+
+    /// <summary>
+    /// Builds the API URL by ensuring proper format based on BaseURI
+    /// Functions.GetAsync concatenates BaseURI + url directly
+    /// If endpoint already has "api/", we need to check if BaseURI also has "api/" to avoid duplication
+    /// </summary>
+    private string BuildApiUrl(string endpoint)
+    {
+        if (string.IsNullOrEmpty(Globals?.BaseURI))
+            return endpoint.TrimStart('/');
+
+        string baseUri = Globals.BaseURI.TrimEnd('/');
+        string normalizedEndpoint = endpoint.TrimStart('/');
+
+        // Check if BaseURI already includes "api" (case-insensitive)
+        bool baseUriHasApi = baseUri.EndsWith("/api", StringComparison.OrdinalIgnoreCase) || 
+                            baseUri.EndsWith("/api/", StringComparison.OrdinalIgnoreCase) ||
+                            baseUri.EndsWith("api", StringComparison.OrdinalIgnoreCase);
+
+        // Check if endpoint already starts with "api/"
+        bool endpointHasApi = normalizedEndpoint.StartsWith("api/", StringComparison.OrdinalIgnoreCase);
+
+        if (baseUriHasApi && endpointHasApi)
+        {
+            // Both have "api/", remove it from endpoint to avoid duplication
+            return normalizedEndpoint.Substring(4); // Remove "api/"
+        }
+        else if (!baseUriHasApi && !endpointHasApi)
+        {
+            // Neither has "api/", add it to endpoint
+            return $"api/{normalizedEndpoint}";
+        }
+        else
+        {
+            // One has "api/" and the other doesn't, return endpoint as-is
+            return normalizedEndpoint;
+        }
+    }
+}
+
+<style>
+    .tables-header {
+        padding: 24px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .tables-header .mud-typography {
+        color: white !important;
+    }
+
+    .tables-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    .tables-search-field .mud-input-root {
+        color: var(--mud-palette-text-primary) !important;
+        border-radius: 28px !important;
+        overflow: hidden !important;
+    }
+
+    .tables-search-field .mud-input-root input {
+        color: var(--mud-palette-text-primary) !important;
+        border-radius: 28px !important;
+        padding-left: 48px !important;
+    }
+
+    .tables-search-field .mud-input-root::before {
+        border-color: rgba(0,0,0,0.2) !important;
+        border-radius: 28px !important;
+    }
+
+    .tables-search-field .mud-input-root:hover::before {
+        border-color: var(--mud-palette-primary) !important;
+    }
+
+    .tables-search-field .mud-input-root::after {
+        border-color: var(--mud-palette-primary) !important;
+        border-radius: 28px !important;
+    }
+
+    .table-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        cursor: pointer;
+    }
+
+    .table-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2) !important;
+        border-color: var(--mud-palette-primary);
+    }
+
+    .table-card-image {
+        transition: all 0.3s ease;
+    }
+
+    .table-card:hover .table-card-image {
+        transform: scale(1.05);
+    }
+
+    .table-card .mud-button {
+        transition: all 0.2s ease;
+        border-radius: 8px;
+    }
+
+    .table-card .mud-button:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .table-card .mud-icon-button {
+        transition: all 0.2s ease;
+    }
+
+    .table-card .mud-icon-button:hover {
+        transform: scale(1.15);
+        background-color: rgba(var(--mud-palette-info-rgb), 0.1);
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .tables-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+
+    .mud-theme-dark .tables-search-field {
+        background: rgba(255,255,255,0.1) !important;
+    }
+
+    .mud-theme-dark .tables-search-field .mud-input-root {
+        color: white !important;
+    }
+
+    .mud-theme-dark .tables-search-field .mud-input-root input {
+        color: white !important;
+    }
+
+    .mud-theme-dark .tables-search-field .mud-input-root::placeholder {
+        color: rgba(255,255,255,0.7) !important;
+    }
+
+    .mud-theme-dark .table-card {
+        border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .mud-theme-dark .table-card:hover {
+        border-color: var(--mud-palette-primary);
+    }
+</style>

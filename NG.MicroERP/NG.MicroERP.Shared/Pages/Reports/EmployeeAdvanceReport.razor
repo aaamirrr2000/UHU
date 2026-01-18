@@ -1,0 +1,295 @@
+@page "/EmployeeAdvanceReport"
+@using NG.MicroERP.Shared.Models
+@using System.Linq
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Employee Advance Report</PageTitle>
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 2px;">
+    <div class="dashboard-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="me-2" Style="color: white;" />
+                    Employee Advance Report
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">View outstanding employee advances from cashbook</MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 flex-wrap">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <AutoComplete TItem="LocationsModel"
+                                  DataList="@Locations"
+                                  DisplayProperty="@(p => p.Name)"
+                                  IdProperty="@(p => p.Id)"
+                                  @bind-SelectedId="selectedLocationId"
+                                  @bind-SelectedId:after="OnFilterChanged"
+                                  Variant="Variant.Outlined"
+                                  Label=""
+                                  Placeholder="All Locations"
+                                  Style="background: rgba(255,255,255,0.95); width: 180px;" />
+                    <AutoComplete TItem="EmployeesModel"
+                                  DataList="@Employees"
+                                  DisplayProperty="@(p => p.Fullname)"
+                                  IdProperty="@(p => p.Id)"
+                                  @bind-SelectedId="selectedEmployeeId"
+                                  @bind-SelectedId:after="OnFilterChanged"
+                                  Variant="Variant.Outlined"
+                                  Label=""
+                                  Placeholder="All Employees"
+                                  Clearable="true"
+                                  Style="background: rgba(255,255,255,0.95); width: 200px;" />
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Search" 
+                               Size="Size.Small" 
+                               Variant="Variant.Filled" 
+                               Color="Color.Primary"
+                               Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                               OnClick="@(() => LoadReport())">
+                        Generate
+                    </MudButton>
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Print" 
+                               Size="Size.Small" 
+                               Variant="Variant.Filled" 
+                               Color="Color.Info"
+                               Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                               OnClick="@(() => PrintReport())"
+                               Disabled="@(reportData == null || !reportData.Any())">
+                        Print
+                    </MudButton>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (reportData != null && reportData.Any())
+    {
+        <MudPaper Elevation="3" Class="pa-4" Style="border-radius: 12px; margin-bottom: 8px;">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+                <MudText Typo="Typo.h6">Employee Advances Summary</MudText>
+                <div class="d-flex gap-2 align-items-center mt-2 mt-md-0">
+                    @if (selectedLocationId > 0)
+                    {
+                        <MudChip T="string" Color="Color.Info" Size="Size.Small">
+                            Location: @Locations.FirstOrDefault(l => l.Id == selectedLocationId)?.Name
+                        </MudChip>
+                    }
+                    @if (selectedEmployeeId > 0)
+                    {
+                        <MudChip T="string" Color="Color.Success" Size="Size.Small">
+                            Employee: @Employees.FirstOrDefault(e => e.Id == selectedEmployeeId)?.Fullname
+                        </MudChip>
+                    }
+                </div>
+            </div>
+            
+            <!-- Summary Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-2">
+                    <MudPaper Elevation="2" Class="pa-3 text-center summary-card">
+                        <MudText Typo="Typo.caption" Class="text-muted">Total Employees</MudText>
+                        <MudText Typo="Typo.h6" Class="fw-bold text-primary">
+                            @reportData.Count
+                        </MudText>
+                    </MudPaper>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <MudPaper Elevation="2" Class="pa-3 text-center summary-card">
+                        <MudText Typo="Typo.caption" Class="text-muted">Total Advances Given</MudText>
+                        <MudText Typo="Typo.h6" Class="fw-bold text-error">
+                            @reportData.Sum(r => r.TotalAdvanceGiven).ToString("#,##0.00")
+                        </MudText>
+                    </MudPaper>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <MudPaper Elevation="2" Class="pa-3 text-center summary-card">
+                        <MudText Typo="Typo.caption" Class="text-muted">Total Advances Recovered</MudText>
+                        <MudText Typo="Typo.h6" Class="fw-bold text-success">
+                            @reportData.Sum(r => r.TotalAdvanceRecovered).ToString("#,##0.00")
+                        </MudText>
+                    </MudPaper>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <MudPaper Elevation="2" Class="pa-3 text-center summary-card">
+                        <MudText Typo="Typo.caption" Class="text-muted">Total Outstanding</MudText>
+                        <MudText Typo="Typo.h6" Class="fw-bold text-warning">
+                            @reportData.Sum(r => r.OutstandingBalance).ToString("#,##0.00")
+                        </MudText>
+                    </MudPaper>
+                </div>
+            </div>
+            
+            <MudDataGrid T="EmployeeAdvanceReportModel"
+                         Items="@reportData"
+                         SortMode="SortMode.Multiple"
+                         Filterable="true"
+                         Hideable="true"
+                         Dense="true"
+                         Striped="true"
+                         Hover="true"
+                         Bordered="true">
+                <Columns>
+                    <PropertyColumn Property="x => x.EmployeeCode" 
+                                    Title="Employee Code" 
+                                    Sortable="true" 
+                                    Filterable="true" />
+                    
+                    <PropertyColumn Property="x => x.EmployeeName" 
+                                    Title="Employee Name" 
+                                    Sortable="true" 
+                                    Filterable="true" />
+                    
+                    <PropertyColumn Property="x => x.DepartmentName" 
+                                    Title="Department" 
+                                    Sortable="true" 
+                                    Filterable="true" />
+                    
+                    <PropertyColumn Property="x => x.TotalAdvanceGiven" 
+                                    Title="Total Advance Given" 
+                                    Format="#,##0.00" 
+                                    Sortable="true"
+                                    CellClass="text-end text-error" />
+                    
+                    <PropertyColumn Property="x => x.TotalAdvanceRecovered" 
+                                    Title="Total Advance Recovered" 
+                                    Format="#,##0.00" 
+                                    Sortable="true"
+                                    CellClass="text-end text-success" />
+                    
+                    <PropertyColumn Property="x => x.OutstandingBalance" 
+                                    Title="Outstanding Balance" 
+                                    Format="#,##0.00" 
+                                    Sortable="true"
+                                    CellClass="text-end">
+                        <CellTemplate>
+                            <MudText Typo="Typo.body2" 
+                                     Class="@($"fw-bold {(context.Item.OutstandingBalance > 0 ? "text-warning" : context.Item.OutstandingBalance < 0 ? "text-success" : "text-muted")}")">
+                                @context.Item.OutstandingBalance.ToString("#,##0.00")
+                            </MudText>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    
+                    <PropertyColumn Property="x => x.TransactionCount" 
+                                    Title="Transactions" 
+                                    Sortable="true"
+                                    CellClass="text-center" />
+                    
+                    <PropertyColumn Property="x => x.LastTransactionDate" 
+                                    Title="Last Transaction" 
+                                    Format="dd MMM yyyy" 
+                                    Sortable="true" />
+                </Columns>
+            </MudDataGrid>
+        </MudPaper>
+    }
+    else if (!LoadingPanel)
+    {
+        <MudPaper Elevation="2" Class="pa-6 text-center">
+            <MudText Typo="Typo.body1">No employee advance data available.</MudText>
+            <MudText Typo="Typo.body2" Class="text-muted mt-2">Please ensure advance transactions exist in cashbook with the Advance account.</MudText>
+        </MudPaper>
+    }
+</MudContainer>
+
+<style>
+    .dashboard-header {
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .summary-card {
+        transition: transform 0.2s;
+    }
+
+    .summary-card:hover {
+        transform: translateY(-2px);
+    }
+</style>
+
+@code
+{
+    private bool LoadingPanel { get; set; } = false;
+    private List<EmployeeAdvanceReportModel> reportData = new();
+    private List<LocationsModel> Locations = new();
+    private List<EmployeesModel> Employees = new();
+    private int selectedLocationId = 0;
+    private int selectedEmployeeId = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "EmployeeAdvanceReport");
+        
+        // Load locations
+        Locations = await Functions.GetAsync<List<LocationsModel>>($"Locations/Search/IsActive=1", true) ?? new List<LocationsModel>();
+        
+        // Load employees
+        Employees = await Functions.GetAsync<List<EmployeesModel>>($"Employees/Search", true) ?? new List<EmployeesModel>();
+        
+        // Auto-load report on initialization
+        await LoadReport();
+    }
+
+    private async Task OnFilterChanged()
+    {
+        await LoadReport();
+    }
+
+    private async Task LoadReport()
+    {
+        try
+        {
+            LoadingPanel = true;
+            
+            string url = $"Reports/EmployeeAdvances/{Globals.User.OrganizationId}";
+            if (selectedLocationId > 0)
+            {
+                url += $"?locationId={selectedLocationId}";
+            }
+            if (selectedEmployeeId > 0)
+            {
+                url += $"{(url.Contains("?") ? "&" : "?")}employeeId={selectedEmployeeId}";
+            }
+            
+            reportData = await Functions.GetAsync<List<EmployeeAdvanceReportModel>>(url, true) ?? new List<EmployeeAdvanceReportModel>();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading report: {ex.Message}", Severity.Error);
+            reportData = new List<EmployeeAdvanceReportModel>();
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    private async Task PrintReport()
+    {
+        try
+        {
+            string url = $"{NavManager.BaseUri}EmployeeAdvanceReport";
+            if (selectedLocationId > 0)
+            {
+                url += $"?locationId={selectedLocationId}";
+            }
+            if (selectedEmployeeId > 0)
+            {
+                url += $"{(url.Contains("?") ? "&" : "?")}employeeId={selectedEmployeeId}";
+            }
+            
+            NavManager.NavigateTo(url);
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error printing report: {ex.Message}", Severity.Error);
+        }
+    }
+}

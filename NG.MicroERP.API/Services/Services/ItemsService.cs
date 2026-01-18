@@ -8,6 +8,7 @@ using NG.MicroERP.Shared.Models;
 using NG.MicroERP.API.Services;
 using NG.MicroERP.API.Helper;
 using System.Text.Json;
+using Serilog;
 
 namespace NG.MicroERP.API.Services;
 
@@ -176,7 +177,10 @@ public class ItemsService : IItemsService
 
         try
         {
+            // TaxRuleId is optional - can be NULL
+
             string Code = dapper.GetCode("", "Items", "Code", 12)!;
+            string taxRuleIdValue = (obj.TaxRuleId.HasValue && obj.TaxRuleId.Value > 0) ? obj.TaxRuleId.Value.ToString() : "NULL";
             string SQLDuplicate = $@"SELECT * FROM Items WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
             string SQLInsert = $@"
                                 INSERT INTO Items 
@@ -220,7 +224,7 @@ public class ItemsService : IItemsService
                                     {obj.CategoryId},
                                     '{obj.StockType?.ToUpper() ?? "null"}', 
                                     '{obj.Unit?.ToUpper() ?? "null"}', 
-                                    {obj.TaxRuleId},
+                                    {taxRuleIdValue},
                                     {obj.IsFavorite},
                                     {obj.IsActive},
                                     {obj.CreatedBy},
@@ -239,12 +243,26 @@ public class ItemsService : IItemsService
             }
             else
             {
-                return (false, null!, "Duplicate Record Found.");
+                // Check if it's a duplicate or other error
+                if (!string.IsNullOrEmpty(res.Item3) && !res.Item3.Contains("Duplicate"))
+                {
+                    return (false, null!, $"Failed to create item '{obj.Name}'. {res.Item3}");
+                }
+                
+                // Check for duplicate Item Code
+                var existingCode = await dapper.SearchByQuery<dynamic>($"SELECT * FROM Items WHERE UPPER(Code) = '{obj.Code!.ToUpper()}' AND IsSoftDeleted = 0", "Default");
+                if (existingCode != null && existingCode.Any())
+                {
+                    return (false, null!, $"Item Code '{obj.Code}' already exists. Please use a different Item Code.");
+                }
+                
+                return (false, null!, $"Item '{obj.Name}' could not be created. A duplicate record was found (Item Code '{obj.Code}' already exists).");
             }
         }
         catch (Exception ex)
         {
-            return (false, null!, ex.Message);
+            Log.Error(ex, "ItemsService.Post Error for Item: {Name}, Code: {Code}", obj.Name, obj.Code);
+            return (false, null!, $"Failed to create item '{obj.Name}' (Code: {obj.Code}): {ex.Message}");
         }
     }
 
@@ -252,6 +270,9 @@ public class ItemsService : IItemsService
     {
         try
         {
+            // TaxRuleId is optional - can be NULL
+
+            string taxRuleIdValueUpdate = (obj.TaxRuleId.HasValue && obj.TaxRuleId.Value > 0) ? obj.TaxRuleId.Value.ToString() : "NULL";
             string SQLDuplicate = $@"SELECT * FROM Items WHERE UPPER(code) = '{obj.Code!.ToUpper()}' and ID != {obj.Id};";
             string SQLUpdate = $@"
                     UPDATE Items SET 
@@ -270,7 +291,7 @@ public class ItemsService : IItemsService
                         CategoryId = {obj.CategoryId}, 
                         StockType = '{obj.StockType?.ToUpper() ?? "null"}', 
                         Unit = '{obj.Unit?.ToUpper() ?? "null"}',
-                        TaxRuleId = {obj.TaxRuleId}, 
+                        TaxRuleId = {taxRuleIdValueUpdate}, 
                         ServingSize = '{obj.ServingSize?.ToUpper() ?? "null"}',
                         IsFavorite = {obj.IsFavorite}, 
                         IsActive = {obj.IsActive}, 
@@ -290,12 +311,30 @@ public class ItemsService : IItemsService
             }
             else
             {
-                return (false, null!, "Duplicate Record Found.");
+                // Check if it's a duplicate or other error
+                if (!string.IsNullOrEmpty(res.Item2) && !res.Item2.Contains("Duplicate") && !res.Item2.Contains("Record Not Saved"))
+                {
+                    return (false, null!, $"Failed to update item (ID: {obj.Id}) '{obj.Name}'. {res.Item2}");
+                }
+                
+                if (!string.IsNullOrEmpty(res.Item2) && res.Item2.Contains("Record Not Saved"))
+                {
+                    return (false, null!, $"Item record (ID: {obj.Id}) '{obj.Name}' could not be updated. The record may not exist, no changes were made, or the update query failed.");
+                }
+                
+                // Check for duplicate Item Code
+                var existingCode = await dapper.SearchByQuery<dynamic>($"SELECT * FROM Items WHERE UPPER(Code) = '{obj.Code!.ToUpper()}' AND ID != {obj.Id} AND IsSoftDeleted = 0", "Default");
+                if (existingCode != null && existingCode.Any())
+                {
+                    return (false, null!, $"Item Code '{obj.Code}' is already assigned to another item (ID: {existingCode.FirstOrDefault()?.Id}). Please use a different Item Code.");
+                }
+                
+                return (false, null!, $"Item record (ID: {obj.Id}) '{obj.Name}' could not be updated. A duplicate record was found (Item Code '{obj.Code}' already exists).");
             }
         }
         catch (Exception ex)
         {
-            return (false, null!, ex.Message);
+            return (false, null!, $"Failed to update item (ID: {obj.Id}) '{obj.Name}' (Code: {obj.Code}): {ex.Message}");
         }
     }
 

@@ -34,12 +34,25 @@
         <MudCardContent Style="padding: 12px !important;">
             <div class="row g-2">
                 <div class="col-12 col-md-3">
-                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Movement No</label>
-                    <MudTextField @bind-Value="record.MovementNo" ReadOnly="@isReadOnly" Variant="Variant.Outlined" Dense="@true" FullWidth="@true" />
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Document No</label>
+                    <MudTextField @bind-Value="record.MovementNo" ReadOnly="@true" Variant="Variant.Outlined" Dense="@true" FullWidth="@true" />
+                    <MudText Typo="Typo.caption" Class="text-muted">Auto-generated</MudText>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Document Type</label>
+                    <MudSelect T="string" @bind-Value="record.DocumentType" @bind-Value:after="OnDocumentTypeChanged" Variant="Variant.Outlined" Dense="@true" FullWidth="@true" ReadOnly="@isReadOnly">
+                        <MudSelectItem Value="@("GRN")">GRN - Goods Receipt Note</MudSelectItem>
+                        <MudSelectItem Value="@("SIR")">SIR - Stock Issue Requisition</MudSelectItem>
+                        <MudSelectItem Value="@("STN")">STN - Stock Transfer Note</MudSelectItem>
+                        <MudSelectItem Value="@("ADJ")">ADJ - Adjustment</MudSelectItem>
+                        <MudSelectItem Value="@("RTN")">RTN - Return</MudSelectItem>
+                        <MudSelectItem Value="@("DMG")">DMG - Damage</MudSelectItem>
+                        <MudSelectItem Value="@("LSS")">LSS - Loss</MudSelectItem>
+                    </MudSelect>
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Movement Type</label>
-                    <MudSelect T="string" @bind-Value="record.MovementType" Variant="Variant.Outlined" Dense="@true" FullWidth="@true" ReadOnly="@isReadOnly">
+                    <MudSelect T="string" @bind-Value="record.MovementType" @bind-Value:after="OnMovementTypeChanged" Variant="Variant.Outlined" Dense="@true" FullWidth="@true" ReadOnly="@isReadOnly">
                         <MudSelectItem Value="@("TRANSFER")">TRANSFER</MudSelectItem>
                         <MudSelectItem Value="@("ADJUSTMENT")">ADJUSTMENT</MudSelectItem>
                         <MudSelectItem Value="@("RETURN")">RETURN</MudSelectItem>
@@ -49,24 +62,24 @@
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">From Location</label>
-                    @if (isReadOnly)
+                    @if (isReadOnly || Globals.User.GroupId != 1)
                     {
                         <MudTextField Value="@(Locations.FirstOrDefault(l => l.Id == record.FromLocationId)?.Name ?? "")" Variant="Variant.Outlined" Dense="@true" FullWidth="@true" ReadOnly="@true" />
                     }
                     else
                     {
-                        <AutoComplete TItem="LocationsModel" DataList="@Locations" DisplayProperty="@(p => p.Name)" IdProperty="@(p => p.Id)" @bind-SelectedId="record.FromLocationId" Variant="Variant.Outlined" FullWidth="@true" />
+                        <AutoComplete TItem="LocationsModel" DataList="@Locations" DisplayProperty="@(p => p.Name)" IdProperty="@(p => p.Id)" @bind-SelectedId="record.FromLocationId" Variant="Variant.Outlined" Label="" FullWidth="@true" />
                     }
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">To Location</label>
-                    @if (isReadOnly)
+                    @if (isReadOnly || Globals.User.GroupId != 1)
                     {
                         <MudTextField Value="@(Locations.FirstOrDefault(l => l.Id == record.ToLocationId)?.Name ?? "")" Variant="Variant.Outlined" Dense="@true" FullWidth="@true" ReadOnly="@true" />
                     }
                     else
                     {
-                        <AutoComplete TItem="LocationsModel" DataList="@Locations" DisplayProperty="@(p => p.Name)" IdProperty="@(p => p.Id)" @bind-SelectedId="record.ToLocationId" Variant="Variant.Outlined" FullWidth="@true" />
+                        <AutoComplete TItem="LocationsModel" DataList="@Locations" DisplayProperty="@(p => p.Name)" IdProperty="@(p => p.Id)" @bind-SelectedId="record.ToLocationId" Variant="Variant.Outlined" Label="" FullWidth="@true" />
                     }
                 </div>
                 <div class="col-12 col-md-3">
@@ -136,7 +149,7 @@
                             }
                             else
                             {
-                                <AutoComplete TItem="ItemsModel" DataList="@Items" DisplayProperty="@(p => p.DisplayName)" IdProperty="@(p => p.Id)" @bind-SelectedId="detail.ItemId" Variant="Variant.Outlined" FullWidth="@true" />
+                                <AutoComplete TItem="ItemsModel" DataList="@Items" DisplayProperty="@(p => p.DisplayName)" IdProperty="@(p => p.Id)" @bind-SelectedId="detail.ItemId" Variant="Variant.Outlined" Label="" FullWidth="@true" />
                             }
                         </MudTd>
                         <MudTd>
@@ -220,6 +233,14 @@
         record = await Functions.GetAsync<StockMovementModel>($"StockMovements/Get/{id}", true) ?? new StockMovementModel();
         if (record.Details == null)
             record.Details = new ObservableCollection<StockMovementDetailModel>();
+        // Lock location for non-admin users
+        if (Globals.User.GroupId != 1)
+        {
+            if (record.FromLocationId != Globals.User.LocationId)
+                record.FromLocationId = Globals.User.LocationId;
+            if (record.ToLocationId != Globals.User.LocationId)
+                record.ToLocationId = Globals.User.LocationId;
+        }
         isReadOnly = Action == "VIEW";
         LoadingPanel = false;
     }
@@ -230,9 +251,54 @@
         record = new StockMovementModel();
         record.Details = new ObservableCollection<StockMovementDetailModel>();
         record.MovementType = "TRANSFER";
+        record.DocumentType = "STN"; // Default to Stock Transfer Note
         record.Status = "PENDING";
         record.MovementDate = DateTime.Today;
+        // Set location for non-admin users
+        if (Globals.User.GroupId != 1)
+        {
+            record.FromLocationId = Globals.User.LocationId;
+            record.ToLocationId = Globals.User.LocationId;
+        }
         isReadOnly = false;
+    }
+
+    protected void OnDocumentTypeChanged()
+    {
+        // Auto-update MovementType based on DocumentType if not set
+        if (string.IsNullOrWhiteSpace(record.MovementType))
+        {
+            record.MovementType = record.DocumentType?.ToUpper() switch
+            {
+                "GRN" => "TRANSFER",  // Goods Receipt is a transfer in
+                "SIR" => "TRANSFER",  // Stock Issue is a transfer out
+                "STN" => "TRANSFER",  // Stock Transfer Note
+                "ADJ" => "ADJUSTMENT", // Adjustment
+                "RTN" => "RETURN",     // Return
+                "DMG" => "DAMAGE",     // Damage
+                "LSS" => "LOSS",       // Loss
+                _ => "TRANSFER"
+            };
+        }
+        StateHasChanged();
+    }
+
+    protected void OnMovementTypeChanged()
+    {
+        // Auto-update DocumentType based on MovementType if not set
+        if (string.IsNullOrWhiteSpace(record.DocumentType))
+        {
+            record.DocumentType = record.MovementType?.ToUpper() switch
+            {
+                "TRANSFER" => "STN",  // Stock Transfer Note
+                "ADJUSTMENT" => "ADJ", // Adjustment
+                "RETURN" => "RTN",     // Return
+                "DAMAGE" => "DMG",     // Damage
+                "LOSS" => "LSS",       // Loss
+                _ => "STN"
+            };
+        }
+        StateHasChanged();
     }
 
     protected void AddDetailLine()

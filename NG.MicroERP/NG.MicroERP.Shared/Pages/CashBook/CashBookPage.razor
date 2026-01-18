@@ -22,13 +22,12 @@
                 @(Action == "INSERT" ? "Save" : "Update")
             </MudButton>
 
-            @if (Action == "UPDATE" && CurrentRecord > 0)
-            {
-                <MudButton Variant="Variant.Filled" OnClick="ShowGLPreview" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
-                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="mr-1" />
-                    View GL Entry
-                </MudButton>
-            }
+            <!-- Preview GL Entry - Available before and after saving -->
+            <MudButton Variant="Variant.Filled" OnClick="ShowGLPreview" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;"
+                       Disabled="@(record?.AccountId == 0 || record?.PartyId == 0 || record?.Amount == 0 || string.IsNullOrWhiteSpace(record?.TranType))">
+                <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="mr-1" />
+                @(CurrentRecord > 0 && record?.IsPostedToGL == 1 ? "View GL Entry" : "Preview GL Entry")
+            </MudButton>
 
             @if (Action == "UPDATE" && record.IsPostedToGL == 0)
             {
@@ -132,13 +131,24 @@
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
                         <label class="form-label fw-bold mb-1">Location <span style='color:red;'>*</span></label>
-                         <AutoComplete TItem="LocationsModel"
-                                      DataList="@Loc"
-                                      DisplayProperty="@(p => p.Name)"
-                                      IdProperty="@(p => p.Id)"
-                                      @bind-SelectedId="record.LocationId"
-                                      Variant="Variant.Outlined"
-                                      FullWidth="true" />
+                        @if (Globals.User.GroupId == 1)
+                        {
+                            <AutoComplete TItem="LocationsModel"
+                                          DataList="@Loc"
+                                          DisplayProperty="@(p => p.Name)"
+                                          IdProperty="@(p => p.Id)"
+                                          @bind-SelectedId="record.LocationId"
+                                          Variant="Variant.Outlined"
+                                          Label=""
+                                          FullWidth="true" />
+                        }
+                        else
+                        {
+                            <MudTextField Value="@(Loc.FirstOrDefault(l => l.Id == record.LocationId)?.Name ?? "")"
+                                          Variant="Variant.Outlined"
+                                          ReadOnly="true"
+                                          FullWidth="true" />
+                        }
                         <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.LocationId)" />
                         </div>
@@ -191,6 +201,22 @@
                             <ValidationMessage For="@(() => record.PaymentMethod)" />
                         </div>
                     </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">@GetPartyLabel()</label>
+                        <AutoComplete TItem="PartiesModel"
+                                      DataList="@Par"
+                                      DisplayProperty="@(p => p.DisplayName)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="record.PartyId"
+                                      Variant="Variant.Outlined"
+                                      Label=""
+                                      FullWidth="true"
+                                      @bind-SelectedId:after="OnPartyChanged" />
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.PartyId)" />
+                        </div>
+                    </div>
                 </div>
             </ChildContent>
         </MudExpansionPanel>
@@ -216,6 +242,23 @@
                     <i class="fa fa-exchange-alt me-2"></i>Transaction Information
                 </h5>
                 <div class="row" style="width:100%; display: flex;">
+                    @if (record.TranType == "RECEIPT" || record.TranType == "PAYMENT")
+                    {
+                        <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                            <label class="form-label fw-bold mb-1">Invoice Reference (Optional)</label>
+                            <AutoComplete TItem="InvoicesAllModel"
+                                          DataList="@Invoices"
+                                          DisplayProperty="@(i => $"{i.Code} - {i.PartyName} - {i.BillAmount:N2}")"
+                                          IdProperty="@(i => i.ID)"
+                                          SelectedId="selectedInvoiceId"
+                                          SelectedIdChanged="OnInvoiceIdChanged"
+                                          Variant="Variant.Outlined"
+                                          Label=""
+                                          FullWidth="true" />
+                            <div class="validation-container" style="min-height: 22px;">
+                            </div>
+                        </div>
+                    }
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
                         <label class="form-label fw-bold mb-1">Transaction #</label>
                         <MudTextField id="SeqNo"
@@ -227,20 +270,6 @@
                                       Class="flex-grow-1"></MudTextField>
                         <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.SeqNo)" />
-                        </div>
-                    </div>
-
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Party</label>
-                        <AutoComplete TItem="PartiesModel"
-                                      DataList="@Par"
-                                      DisplayProperty="@(p => p.DisplayName)"
-                                      IdProperty="@(p => p.Id)"
-                                      @bind-SelectedId="record.PartyId"
-                                      Variant="Variant.Outlined"
-                                      FullWidth="true" />
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.PartyId)" />
                         </div>
                     </div>
 
@@ -259,51 +288,24 @@
                     </div>
                 </div>
 
-                <!-- Financial Information Group -->
-                <h5 class="fw-bold mt-4 mb-3" style="color: var(--mud-palette-primary); border-bottom: 2px solid var(--mud-palette-primary); padding-bottom: 8px;">
-                    <i class="fa fa-credit-card me-2"></i>Financial Information
-                </h5>
-                <div class="row" style="width:100%; display: flex;">
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Reference #</label>
-                        <MudTextField id="RefNo"
-                                      @bind-Value="record.RefNo"
-                                      placeholder="Reference #"
-                                      ReadOnly="@isReadOnly"
-                                      Variant="Variant.Outlined"
-                                      FullWidth="true"
-                                      Class="flex-grow-1"></MudTextField>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.RefNo)" />
-                        </div>
-                    </div>
-
-                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Bill Tran Reference</label>
-                        <MudTextField id="Bill Transaction Reference"
-                                      @bind-Value="record.TranRef"
-                                      placeholder="Bill Transaction Reference"
-                                      ReadOnly="@isReadOnly"
-                                      Variant="Variant.Outlined"
-                                      FullWidth="true"
-                                      Class="flex-grow-1"></MudTextField>
-                        <div class="validation-container" style="min-height: 22px;">
-                            <ValidationMessage For="@(() => record.TranRef)" />
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Attachments Group -->
                 <h5 class="fw-bold mt-4 mb-3" style="color: var(--mud-palette-primary); border-bottom: 2px solid var(--mud-palette-primary); padding-bottom: 8px;">
-                    <i class="fa fa-paperclip me-2"></i>Attachments
+                    <i class="fa fa-paperclip me-2"></i>Document Attachment
                 </h5>
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">@(record.TranType == "RECEIPT" || record.TranType == "PAYMENT" ? "Invoice/Document Attachment (Optional)" : "Document Attachment (Optional)")</label>
                         <div class="mt-2 flex-grow-1">
-                            <InputFile class="form-control" OnChange="OnFileInputChanged" />
-                            <a href=@record.FileAttachment download class="btn btn-link" style="font-size: 12px;">
-                                @record.FileAttachment
-                            </a>
+                            @if (!isReadOnly)
+                            {
+                                <InputFile class="form-control" OnChange="OnFileInputChanged" />
+                            }
+                            @if (!string.IsNullOrWhiteSpace(record.FileAttachment))
+                            {
+                                <a href="@record.FileAttachment" download class="btn btn-link" style="font-size: 12px; margin-top: 5px;">
+                                    <i class="fas fa-download me-1"></i>@record.FileAttachment
+                                </a>
+                            }
                         </div>
                     </div>
                 </div>
@@ -321,6 +323,8 @@
     List<ChartOfAccountsModel> Acc = new();
     List<TypeCodeModel> Tra = null!;
     List<TypeCodeModel> pm = null!;
+    List<InvoicesAllModel> Invoices = new();
+    int selectedInvoiceId = 0;
 
     public bool isReportVisible { get; set; } = false;
     public int Report_id { get; set; }
@@ -390,6 +394,12 @@
     {
         LoadingPanel = true;
         record = await Functions.GetAsync<CashBookModel>($"CashBook/Get/{id}", true) ?? new CashBookModel();
+        // Lock location for non-admin users
+        if (Globals.User.GroupId != 1 && record.LocationId != Globals.User.LocationId)
+        {
+            record.LocationId = Globals.User.LocationId;
+        }
+        selectedInvoiceId = 0; // Reset invoice selection when loading existing record
         await OnTransactionTypeChanged();
         // Set read-only if posted to GL
         isReadOnly = record.IsPostedToGL == 1;
@@ -405,6 +415,7 @@
         record.TranType = "RECEIPT";
         record.LocationId = Globals.User.LocationId;
         record.TranDate = DateTime.Now;
+        selectedInvoiceId = 0;
         await OnTransactionTypeChanged();
         await _drawer.OpenDrawerAsync();
     }
@@ -477,7 +488,7 @@
     protected void Print()
     {
         var url = $"/CashBookReport/{record.Id}";
-        JSRuntime.InvokeVoidAsync("open", url, "_blank");
+        NavManager.NavigateTo(url);
     }
 
     private async Task OnFileInputChanged(InputFileChangeEventArgs e)
@@ -489,6 +500,10 @@
             if (result.Item1 == true)
             {
                 record.FileAttachment = result.Item2;
+                string message = (record.TranType == "RECEIPT" || record.TranType == "PAYMENT") 
+                    ? "Invoice/Document uploaded successfully" 
+                    : "Document uploaded successfully";
+                SnackbarService.Add(message, Severity.Success);
             }
             else
             {
@@ -509,18 +524,22 @@
         switch (record.TranType)
         {
             case "RECEIPT":
-                filterCOA = "InterfaceType='Revenue'";
+                filterCOA = "(InterfaceType='REVENUE' OR InterfaceType='ACCOUNTS RECEIVABLE')";
                 filterParties = "a.partytype='Customer'";
+                await LoadInvoices("SALE");
                 break;
 
             case "PAYMENT":
-                filterCOA = "InterfaceType='Expense'";
+                filterCOA = "(InterfaceType='EXPENSE' OR InterfaceType='ACCOUNTS PAYABLE')";
                 filterParties = "a.partytype='Supplier'";
+                await LoadInvoices("PURCHASE");
                 break;
 
             default:
                 filterCOA = "InterfaceType='Bank'";
                 filterParties = "a.partytype='Bank'";
+                Invoices = new List<InvoicesAllModel>();
+                selectedInvoiceId = 0;
                 break;
         }
 
@@ -530,18 +549,128 @@
         LoadingPanel = false;
     }
 
+    private async Task LoadInvoices(string invoiceType)
+    {
+        try
+        {
+            // Load invoices based on type and filter by balance > 0 (unpaid invoices)
+            // BalanceAmount is a calculated field in the SQL query, so we can use it directly
+            string filter = $"InvoiceType='{invoiceType}' AND BalanceAmount > 0";
+            
+            if (record.PartyId > 0)
+            {
+                filter += $" AND PartyId={record.PartyId}";
+            }
+
+            // Filter by location if set
+            if (record.LocationId > 0)
+            {
+                filter += $" AND LocationId={record.LocationId}";
+            }
+
+            Invoices = await Functions.GetAsync<List<InvoicesAllModel>>($"Invoice/Search/{Uri.EscapeDataString(filter)}", true) ?? new List<InvoicesAllModel>();
+            
+            // Reset selection if current selected invoice is not in the list
+            if (selectedInvoiceId > 0 && !Invoices.Any(i => i.ID == selectedInvoiceId))
+            {
+                selectedInvoiceId = 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            Invoices = new List<InvoicesAllModel>();
+            System.Diagnostics.Debug.WriteLine($"Error loading invoices: {ex.Message}");
+        }
+    }
+
+    private async Task OnInvoiceIdChanged(int invoiceId)
+    {
+        selectedInvoiceId = invoiceId;
+        
+        if (invoiceId > 0)
+        {
+            var invoice = Invoices.FirstOrDefault(i => i.ID == invoiceId);
+            if (invoice != null)
+            {
+                record.SeqNo = invoice.Code ?? string.Empty;
+                // Optionally set party if not already set
+                if (record.PartyId == 0 && invoice.PartyId > 0)
+                {
+                    record.PartyId = invoice.PartyId;
+                }
+                StateHasChanged();
+            }
+        }
+        else
+        {
+            // Clear SeqNo if invoice is deselected
+            if (string.IsNullOrWhiteSpace(record.SeqNo))
+            {
+                record.SeqNo = string.Empty;
+            }
+        }
+    }
+
+    private async Task OnPartyChanged()
+    {
+        // Reload invoices when party changes to filter by selected party
+        if (record.TranType == "RECEIPT" || record.TranType == "PAYMENT")
+        {
+            string invoiceType = record.TranType == "RECEIPT" ? "SALE" : "PURCHASE";
+            await LoadInvoices(invoiceType);
+        }
+    }
+
+    private string GetPartyLabel()
+    {
+        return record.TranType switch
+        {
+            "RECEIPT" => "Customer",
+            "PAYMENT" => "Supplier",
+            _ => "Bank"
+        };
+    }
+
     protected async Task ShowGLPreview()
     {
         try
         {
-            if (CurrentRecord == 0)
+            // Validate required fields for preview (works before saving)
+            if (record?.AccountId == 0)
             {
-                SnackbarService.Add("Please save the cashbook entry first", Severity.Warning);
+                SnackbarService.Add("Please select an account first", Severity.Warning);
                 return;
             }
 
-            // Ensure we have the latest cashbook data
-            await Get(CurrentRecord);
+            if (record?.PartyId == 0)
+            {
+                SnackbarService.Add("Please select a party first", Severity.Warning);
+                return;
+            }
+
+            if (record?.Amount == 0)
+            {
+                SnackbarService.Add("Please enter an amount first", Severity.Warning);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(record?.TranType))
+            {
+                SnackbarService.Add("Please select a transaction type first", Severity.Warning);
+                return;
+            }
+
+            // Validate organization is set
+            if (record.OrganizationId == 0)
+            {
+                record.OrganizationId = Globals.User.OrganizationId;
+            }
+
+            // If record is saved, ensure we have latest data, otherwise use current form data
+            if (CurrentRecord > 0)
+            {
+                await Get(CurrentRecord);
+            }
 
             LoadingPanel = true;
             try
@@ -558,6 +687,11 @@
                         { x => x.IsPostedToGL, record.IsPostedToGL == 1 },
                         { x => x.OnPostToGL, EventCallback.Factory.Create(this, async () => 
                         {
+                            if (CurrentRecord == 0)
+                            {
+                                SnackbarService.Add("Please save the cashbook entry before posting to GL", Severity.Warning);
+                                return;
+                            }
                             await PostToGL();
                             // Refresh preview after posting
                             await ShowGLPreview();

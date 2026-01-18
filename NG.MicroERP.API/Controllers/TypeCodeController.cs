@@ -16,9 +16,15 @@ public class TypeCodeController : ControllerBase
     [HttpGet("Search/{Value?}")]
     public async Task<IActionResult> Search(string Value="")
     {
-        var result = await Srv.Search($"ListName='{Value}'")!;
-        if (result.Item1 == false)
-            return NotFound("Record Not Found");
+        // Escape single quotes to prevent SQL injection
+        string safeValue = Value?.Replace("'", "''") ?? "";
+        
+        // Use case-insensitive comparison to match stored uppercase values
+        var result = await Srv.Search($"UPPER(ListName) = UPPER('{safeValue}')")!;
+        
+        // Return empty list if no records found instead of 404
+        if (result.Item1 == false || result.Item2 == null || result.Item2.Count == 0)
+            return Ok(new List<TypeCodeModel>());
 
         return Ok(result.Item2);
     }

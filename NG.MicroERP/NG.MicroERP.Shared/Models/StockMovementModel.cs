@@ -12,6 +12,7 @@ public class StockMovementModel
     public int Id { get; set; } = 0;
     public int OrganizationId { get; set; } = 0;
     public string? MovementNo { get; set; } = string.Empty;
+    public string? DocumentType { get; set; } = string.Empty; // GRN (Goods Receipt Note), SIR (Stock Issue Requisition), STN (Stock Transfer Note), ADJ (Adjustment), RTN (Return), DMG (Damage), LSS (Loss)
     public string? MovementType { get; set; } = "TRANSFER"; // TRANSFER, ADJUSTMENT, RETURN, DAMAGE, LOSS
     public int FromLocationId { get; set; } = 0;
     public string? FromLocationName { get; set; } = string.Empty;

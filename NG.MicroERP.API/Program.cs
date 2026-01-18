@@ -65,7 +65,35 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = issuer,
             ValidAudience = audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key ?? string.Empty)),
+            // Map the Name claim to User.Identity.Name
+            NameClaimType = System.Security.Claims.ClaimTypes.Name
+        };
+        
+        // Add event handlers for debugging authentication failures
+        options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Serilog.Log.Warning($"JWT Authentication failed: {context.Exception.Message}");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                var username = context.Principal?.Identity?.Name ?? 
+                              context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ??
+                              context.Principal?.FindFirst("sub")?.Value ?? 
+                              "Unknown";
+                Serilog.Log.Debug($"JWT Token validated successfully for user: {username}");
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                var requestPath = context.Request.Path;
+                var hasAuthHeader = context.Request.Headers.ContainsKey("Authorization");
+                Serilog.Log.Warning($"JWT Challenge triggered - Path: {requestPath}, HasAuthHeader: {hasAuthHeader}, Error: {context.Error ?? "None"}, ErrorDescription: {context.ErrorDescription ?? "None"}");
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -83,6 +111,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddSingleton<DatabaseMigrator>();
+builder.Services.AddScoped<IControlCenterService, ControlCenterService>();
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
 
 var app = builder.Build();

@@ -34,6 +34,7 @@ public class Config
 
     public string DefaultConnectionString { get; private set; } = "";
     public string GlobalConnectionString { get; private set; } = "";
+    public string ControlCenterConnectionString { get; private set; } = "";
 
     public Config()
     {
@@ -47,10 +48,12 @@ public class Config
 
         DefaultConnectionString = configuration.GetValue<string>("ConnectionStrings:Default") ?? string.Empty;
         GlobalConnectionString = configuration.GetValue<string>("ConnectionStrings:Global") ?? string.Empty;
+        ControlCenterConnectionString = configuration.GetValue<string>("ConnectionStrings:ControlCenter") ?? string.Empty;
     }
 
     public string DefaultDB() => DefaultConnectionString;
     public string GlobalDB() => GlobalConnectionString;
+    public string ControlCenterDB() => ControlCenterConnectionString;
 
   
 
@@ -79,7 +82,7 @@ public class Config
         return strReturn;
     }
 
-    public static bool sendEmail(string toEmail, string subject, string content, string attachment = "")
+    public static async Task<bool> sendEmailAsync(string toEmail, string subject, string content, string attachment = "", int organizationId = 1)
     {
         MailMessage message = null;
         Attachment emailAttachment = null;
@@ -89,10 +92,20 @@ public class Config
         {
             Log.Information("=== Starting email send process ===");
 
+            // Get email configuration from database
+            var emailConfig = await SystemConfigurationHelper.GetCategoryConfigAsync("Email", organizationId);
+            
+            var smtpServer = emailConfig.TryGetValue("SmtpServer", out var server) ? server : "mail.nexgentechstudios.com";
+            var smtpPort = emailConfig.TryGetValue("SmtpPort", out var portStr) && int.TryParse(portStr, out int port) ? port : 587;
+            var smtpUsername = emailConfig.TryGetValue("SmtpUsername", out var username) ? username : "mail@nexgentechstudios.com";
+            var smtpPassword = emailConfig.TryGetValue("SmtpPassword", out var password) ? password : "Solution_00";
+            var fromEmail = emailConfig.TryGetValue("FromEmail", out var from) ? from : "mail@nexgentechstudios.com";
+            var fromName = emailConfig.TryGetValue("FromName", out var name) ? name : "Cybercom Support";
+
             message = new MailMessage();
             smtp = new SmtpClient();
 
-            message.From = new MailAddress("mail@nexgentechstudios.com", "Cybercom Support");
+            message.From = new MailAddress(fromEmail, fromName);
             message.To.Add(new MailAddress(toEmail));
             message.Bcc.Add(new MailAddress("aamir.rashid.1973@gmail.com"));
             message.Subject = subject;
@@ -113,16 +126,16 @@ public class Config
                 }
             }
 
-            smtp.Port = 587;
-            smtp.Host = "mail.nexgentechstudios.com";
+            smtp.Port = smtpPort;
+            smtp.Host = smtpServer;
             smtp.EnableSsl = true;
             smtp.UseDefaultCredentials = false;
-            smtp.Credentials = new NetworkCredential("mail@nexgentechstudios.com", "Solution_00");
+            smtp.Credentials = new NetworkCredential(smtpUsername, smtpPassword);
             smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
             smtp.Timeout = 120000;
 
             Log.Information("Attempting to send email...");
-            smtp.Send(message);
+            await Task.Run(() => smtp.Send(message));
             Log.Information("=== Email sent successfully! ===");
 
             return true;
@@ -141,13 +154,34 @@ public class Config
         }
     }
 
-    public static async Task<bool> UploadToFtpAsync(string ftpUrl, string username, string password, string localFilePath)
+    // Synchronous wrapper for backward compatibility
+    public static bool sendEmail(string toEmail, string subject, string content, string attachment = "", int organizationId = 1)
+    {
+        return sendEmailAsync(toEmail, subject, content, attachment, organizationId).GetAwaiter().GetResult();
+    }
+
+    public static async Task<bool> UploadToFtpAsync(string localFilePath, int organizationId = 1, string? ftpUrl = null, string? username = null, string? password = null)
     {
         try
         {
             if (!File.Exists(localFilePath))
             {
                 Log.Error($"File not found: {localFilePath}");
+                return false;
+            }
+
+            // Get FTP configuration from database if not provided
+            if (string.IsNullOrEmpty(ftpUrl) || string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            {
+                var ftpConfig = await SystemConfigurationHelper.GetCategoryConfigAsync("FTP", organizationId);
+                ftpUrl = ftpUrl ?? (ftpConfig.TryGetValue("ServerUrl", out var url) ? url : "");
+                username = username ?? (ftpConfig.TryGetValue("Username", out var user) ? user : "");
+                password = password ?? (ftpConfig.TryGetValue("Password", out var pwd) ? pwd : "");
+            }
+
+            if (string.IsNullOrEmpty(ftpUrl))
+            {
+                Log.Error("FTP ServerUrl is not configured");
                 return false;
             }
 

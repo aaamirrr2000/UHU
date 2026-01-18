@@ -35,7 +35,7 @@ INSERT INTO Organizations
      MaxUsers, DbSize, Industry, Website, TimeZone, GMT, IsVerified, Expiry, ParentId, 
      IsActive, CreatedBy, CreatedFrom, UpdatedBy, UpdatedFrom, IsSoftDeleted) 
 VALUES 
-    ('ORG002', 'SomeEntraId', 'images/logo.jpg', 'UHU', 
-     'UHU Corporation', 'xxxxx', 'contact@uhu.com', 'Karachi', 
-     100, 500.0, 'Sales', 'https://uhu.com', 'Asia/Karachi', 5,
+    ('ORG000001', 'SomeEntraId', 'images/logo.jpg', 'HWPI', 
+     'HEALTHWIRE PHARMACY ISLAMABAD', 'xxxxx', 'contact@uhu.com', 'Islamabad', 
+     100, 500.0, 'Sales', 'https://healthwire.pk', 'Asia/Karachi', 5,
      1, '2026-12-31 23:59:59', NULL, 1, 101, 'System', NULL, 'System', 0);

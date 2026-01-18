@@ -44,7 +44,7 @@
 
                 <MudPaper Elevation="2" Class="pa-3">
                     <MudText Typo="Typo.subtitle1" Class="mb-3 fw-bold">Account Entries</MudText>
-                    <MudTable Items="@PreviewData.Details" Hover="true" Dense="true" Bordered="true">
+                    <MudTable Items="@SortedDetails" Hover="true" Dense="true" Bordered="true">
                         <HeaderContent>
                             <MudTh>Account</MudTh>
                             <MudTh Class="text-end">Debit</MudTh>
@@ -145,6 +145,41 @@
     [Inject] private ISnackbar SnackbarService { get; set; } = null!;
     
     private bool IsPosting { get; set; } = false;
+
+    /// <summary>
+    /// Returns sorted details with debits first, then credits
+    /// </summary>
+    private IEnumerable<GeneralLedgerDetailModel> SortedDetails
+    {
+        get
+        {
+            if (PreviewData?.Details == null || !PreviewData.Details.Any())
+                return Enumerable.Empty<GeneralLedgerDetailModel>();
+
+            // Sort: Debits first (DebitAmount > 0 and CreditAmount == 0), then Credits (CreditAmount > 0)
+            // Within each group, sort by amount descending, then by account code for consistency
+            var debits = PreviewData.Details
+                .Where(d => d.DebitAmount > 0 && d.CreditAmount == 0)
+                .OrderByDescending(d => d.DebitAmount)
+                .ThenBy(d => d.AccountCode ?? string.Empty)
+                .ThenBy(d => d.AccountName ?? string.Empty);
+
+            var credits = PreviewData.Details
+                .Where(d => d.CreditAmount > 0 && d.DebitAmount == 0)
+                .OrderByDescending(d => d.CreditAmount)
+                .ThenBy(d => d.AccountCode ?? string.Empty)
+                .ThenBy(d => d.AccountName ?? string.Empty);
+
+            // Handle edge case: entries with both debit and credit (shouldn't happen but handle gracefully)
+            var invalidEntries = PreviewData.Details
+                .Where(d => d.DebitAmount > 0 && d.CreditAmount > 0)
+                .OrderByDescending(d => d.DebitAmount)
+                .ThenBy(d => d.AccountCode ?? string.Empty);
+
+            // Debits first, then credits, then invalid entries (if any)
+            return debits.Concat(credits).Concat(invalidEntries);
+        }
+    }
 
     private void Close()
     {

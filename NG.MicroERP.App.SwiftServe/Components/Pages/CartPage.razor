@@ -5,32 +5,25 @@
 @inject IJSRuntime JS
 @layout MyMenuLayout
 
-<div class="container mt-4">
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 mb-3 rounded shadow-sm"
-         style="background-color: #f8f9fa; border: 1px solid #e0e0e0;">
-
-        <div class="d-flex align-items-center justify-content-start gap-4 flex-nowrap mb-3 p-2 rounded"
-             style="background-color: #f8f9fa; border: 0px solid #dee2e6;">
-
-            <button class="btn btn-outline-primary rounded-pill px-3 py-2"
-                    @onclick="GoBackToOrderPage"
-                    title="Back to Order">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-
-            <h5 class="mb-0 text-dark d-flex align-items-center">
-                <i class="fas fa-shopping-cart text-primary me-2"></i> Cart
-            </h5>
-
-            <h6 class="mb-0 text-secondary d-flex align-items-center">
-                <i class="fas fa-chair me-2"></i> @CartState.SelectedTable?.TableNumber
-            </h6>
-
-            <h6 class="mb-0 text-secondary d-flex align-items-center">
-                <i class="fas fa-concierge-bell me-2"></i> @CartState.ServiceType
-            </h6>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 8px;">
+    <div class="cart-header mb-3">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <h4 class="mb-0 fw-bold" style="color: white;">
+                    <i class="fas fa-shopping-cart me-2"></i>
+                    Shopping Cart
+                </h4>
+                <p class="text-muted mt-1 mb-0" style="color: rgba(255,255,255,0.85) !important;">
+                    <i class="fas fa-chair me-1"></i> Table: @CartState.SelectedTable?.TableNumber | 
+                    <i class="fas fa-concierge-bell me-1"></i> Service: @CartState.ServiceType
+                </p>
+            </div>
+            <div>
+                <button class="btn btn-sm" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 8px;" @onclick="GoBackToOrderPage" title="Back to Order">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </button>
+            </div>
         </div>
-
     </div>
 
 
@@ -41,7 +34,7 @@
             <div class="cart-item">
                 <div class="d-flex justify-content-between align-items-center">
                     <h4>@item.Name</h4>
-                    <button class="btn btn-danger mt-2" @onclick="() => RemoveItem(item)">Remove</button>
+                    <button class="btn mt-2" style="background-color: #dc3545; color: white; border-radius: 8px;" @onclick="() => RemoveItem(item)">Remove</button>
                 </div>
                <div class="d-flex flex-column mt-2">
                     <!-- Row 1: Quantity -->
@@ -81,39 +74,46 @@
 
         @{
             double serviceAmount = 0;
-            if (Globals.ServiceCharge.ChargeType == "PERCENTAGE")
+            if (MyGlobals.ServiceCharge.ChargeType == "PERCENTAGE")
             {
-                serviceAmount = (Globals.ServiceCharge.Amount / 100) * TotalAmount;
+                serviceAmount = (MyGlobals.ServiceCharge.Amount / 100) * TotalAmount;
             }
-            else if (Globals.ServiceCharge.ChargeType == "AMOUNT")
+            else if (MyGlobals.ServiceCharge.ChargeType == "FLAT")
             {
-                serviceAmount = Globals.ServiceCharge.Amount;
+                serviceAmount = MyGlobals.ServiceCharge.Amount;
             }
 
+            // Tax is calculated on base amount (subtotal + service charge)
             var taxableAmount = TotalAmount + serviceAmount;
-            var gstAmount = (Globals.GST / 100) * taxableAmount;
+            var gstAmount = (MyGlobals.GST / 100) * taxableAmount;
             var grandTotal = taxableAmount + gstAmount;
         }
 
-        @if (Globals.ServiceCharge.ChargeType == "AMOUNT")
+        @if (serviceAmount > 0)
         {
-            <div class="summary-row">
-                <span>Service Charges:</span>
-                <span>@serviceAmount.ToString("N2")</span>
-            </div>
-        }
-        else if (Globals.ServiceCharge.ChargeType == "PERCENTAGE")
-        {
-            <div class="summary-row">
-                <span>Service Charges @Globals.ServiceCharge.Amount.ToString("N2")%:</span>
-                <span>@serviceAmount.ToString("N2")</span>
-            </div>
+            @if (MyGlobals.ServiceCharge.ChargeType == "FLAT")
+            {
+                <div class="summary-row">
+                    <span>Service Charges:</span>
+                    <span>@serviceAmount.ToString("N2")</span>
+                </div>
+            }
+            else if (MyGlobals.ServiceCharge.ChargeType == "PERCENTAGE")
+            {
+                <div class="summary-row">
+                    <span>Service Charges @MyGlobals.ServiceCharge.Amount.ToString("N2")%:</span>
+                    <span>@serviceAmount.ToString("N2")</span>
+                </div>
+            }
         }
 
-        <div class="summary-row">
-            <span>GST @Globals.GST.ToString("N2")%:</span>
-            <span>@gstAmount.ToString("N2")</span>
-        </div>
+        @if (MyGlobals.GST > 0)
+        {
+            <div class="summary-row">
+                <span>Tax @MyGlobals.GST.ToString("N2")%:</span>
+                <span>@gstAmount.ToString("N2")</span>
+            </div>
+        }
 
         <div class="summary-row grand-total">
             <span>Grand Total:</span>
@@ -121,7 +121,7 @@
         </div>
     </div>
 
-    @if (Globals._serviceType.ToUpper() == "PARCEL")
+    @if (MyGlobals._serviceType.ToUpper() == "PARCEL")
     {
         <div class="cart-item mt-4 p-4 rounded shadow-sm" style="background-color: #ffffff; border: 1px solid #e3e3e3;">
             <h5 class="text-primary fw-semibold mb-4">
@@ -153,14 +153,16 @@
     }
 
 
-    <button class="btn btn-primary mt-2" @onclick="PlaceOrder">Place Order</button>
+    <button class="btn mt-2" style="background-color: #512BD4; color: white; border-radius: 8px; padding: 12px 24px; font-weight: 600;" @onclick="PlaceOrder">
+        <i class="fas fa-check-circle me-2"></i> Place Order
+    </button>
 
    
-</div>
+</MudContainer>
 
 @code {
     private double TotalAmount => CartState.CartItems?.Sum(i => i.RetailPrice * i.MaxQty) ?? 0;
-    public BillModel party { get; set; } = new();
+    public InvoiceModel party { get; set; } = new();
     [CascadingParameter] private List<ItemsModel> _cart { get; set; }
 
     private void RemoveItem(ItemsModel item)
@@ -171,26 +173,26 @@
     private async Task PlaceOrder()
     {
         var tranDate = DateTime.Now;
-        var billDetails = CartState.CartItems.Select(item => new BillDetailModel
+        var billDetails = CartState.CartItems.Select(item => new InvoiceItemReportModel
         {
             ItemId = item.Id,
             StockCondition = "NEW",
             Qty = item.MaxQty,
             UnitPrice = item.RetailPrice,
             TranDate = tranDate,
-            Description = item.Description!,
+            Instructions = item.Description!,
             Status = "PENDING",
             ServingSize = item.ServingSize,
             Person = item.Person
         }).ToList();
 
-        var bill = new BillModel
+        var bill = new InvoiceModel
         {
-            OrganizationId = Globals.Organization.Id,
+            OrganizationId = MyGlobals.Organization.Id,
             InvoiceType = "BILL",
             Source = "POS",
             TableId = CartState.SelectedTable?.Id ?? 0,
-            SalesId = Globals.User.EmpId,
+            SalesId = MyGlobals.User.EmpId,
             PartyId = 1,
             PartyName = party.PartyName ?? "",
             PartyPhone = party.PartyPhone ?? "",
@@ -198,21 +200,21 @@
             PartyAddress = party.PartyAddress ?? "",
             TranDate = tranDate,
             ServiceType = CartState.ServiceType,
-            CreatedBy = Globals.User.Id,
+            CreatedBy = MyGlobals.User.Id,
             CreatedOn = tranDate,
-            CreatedFrom = Functions.GetComputerDetails(),
-            LocationId = Globals.User.LocationId,
+            CreatedFrom = Environment.MachineName,
+            LocationId = MyGlobals.User.LocationId,
             Description = CartState.BillNote,
             BillAmount = Convert.ToDecimal(billDetails.Sum(d => d.Qty * Convert.ToDouble(d.UnitPrice)))
         };
 
-        var request = new BillsModel
+        var request = new InvoicesModel
         {
-            Bill = bill,
-            //BillDetails = new ObservableCollection<BillItemReportModel>(billDetails)
+            Invoice = bill,
+            InvoiceDetails = new ObservableCollection<InvoiceItemReportModel>(billDetails)
         };
 
-        var result = await Functions.PostAsync<BillsModel>("Bill/Insert", request, true);
+        var result = await MyFunctions.PostAsync<InvoicesModel>("Invoice/Insert", request, true);
 
         if (!result.Success)
         {
@@ -254,23 +256,34 @@
 
 <style>
     .cart-header {
-        font-weight: 600;
-        font-size: 1.2rem;
-        color: #333;
-        margin-bottom: 0;
+        padding: 16px 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .cart-header h4 {
+        color: white !important;
+    }
+
+    .cart-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
     }
 
     .cart-item {
         background-color: #fff;
-        border-radius: 0.5rem;
+        border-radius: 12px;
         padding: 1rem 1.25rem;
         margin-bottom: 1rem;
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
         transition: box-shadow 0.2s ease;
+        border: 1px solid #E0E0E0;
     }
 
         .cart-item:hover {
-            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 18px rgba(81, 43, 212, 0.2);
         }
 
         .cart-item h4 {
@@ -293,6 +306,8 @@
         .input-group .btn {
             padding: 0.25rem 0.5rem;
             font-size: 0.85rem;
+            border: 1px solid #512BD4;
+            color: #512BD4;
         }
 
         .input-group input {
@@ -307,8 +322,8 @@
         margin-left: auto;
         background-color: #f8f9fa;
         padding: 1rem 1.25rem;
-        border-radius: 0.5rem;
-        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        border: 1px solid #E0E0E0;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
     }
 
@@ -325,8 +340,8 @@
     .grand-total {
         font-weight: bold;
         font-size: 1.05rem;
-        color: #000;
-        border-top: 2px solid #555;
+        color: #512BD4;
+        border-top: 2px solid #512BD4;
         margin-top: 10px;
         padding-top: 8px;
     }

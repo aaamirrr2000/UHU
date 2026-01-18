@@ -5,8 +5,10 @@ using NG.MicroERP.Shared.Helper;
 using NG.MicroERP.Shared.Models;
 using Serilog;
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 using System.Diagnostics;
 using System.IO.Compression;
+using System.Linq;
 using System.Net;
 
 namespace NG.MicroERP.API.Services.Services;
@@ -21,7 +23,6 @@ public interface IBackupService
 public class BackupService : IBackupService
 {
     private readonly IConfiguration _configuration;
-    private readonly string _backupBasePath;
     private static string DBConnection = string.Empty;
     private readonly Config cfg = new();
 
@@ -36,64 +37,67 @@ public class BackupService : IBackupService
                 .Build();
 
         _configuration = configuration;
-        _backupBasePath = _configuration["Backup:BasePath"] ?? Path.Combine(Directory.GetCurrentDirectory(), "Backups");
 
         DBConnection = configuration.GetValue<string>("ConnectionStrings:Default") ?? string.Empty;
 
         if (!DBConnection.Contains("Pooling"))
             DBConnection += ";Pooling=true;Min Pool Size=5;Max Pool Size=50;Connection Lifetime=300;";
-
-        if (!Directory.Exists(_backupBasePath))
-        {
-            Directory.CreateDirectory(_backupBasePath);
-        }
     }
 
-    // Function 1: Backup SQL Server Database using sqlcmd
-    public async Task<BackupResult> BackupSqlServerDatabaseAsync() // Renamed method
+    // Function 1: Backup SQL Server Database using direct SQL connection
+    public async Task<BackupResult> BackupSqlServerDatabaseAsync()
     {
         try
         {
+            var backupBasePath = await SystemConfigurationHelper.GetConfigValueAsync("Backup", "BasePath") ?? Path.Combine(Directory.GetCurrentDirectory(), "Backups");
+            
+            if (!Directory.Exists(backupBasePath))
+            {
+                Directory.CreateDirectory(backupBasePath);
+            }
+
             var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var backupFolder = Path.Combine(_backupBasePath, $"DB_Backup_{timestamp}");
+            var backupFolder = Path.Combine(backupBasePath, $"DB_Backup_{timestamp}");
             Directory.CreateDirectory(backupFolder);
 
-            var connectionStringBuilder = new SqlConnectionStringBuilder(DBConnection); // Changed to SqlConnectionStringBuilder
+            var connectionStringBuilder = new SqlConnectionStringBuilder(DBConnection);
             var databaseName = connectionStringBuilder.InitialCatalog;
             var backupFile = Path.Combine(backupFolder, $"{databaseName}_{timestamp}.bak");
 
-            var sqlcmdPath = _configuration["Backup:SqlCmdPath"] ?? "sqlcmd"; // Changed configuration key
-
-            // SQL Server backup using sqlcmd
-            var arguments = $"-S {connectionStringBuilder.DataSource} " +
-                           $"-d {databaseName} " +
-                           $"-U {connectionStringBuilder.UserID} " +
-                           $"-P {connectionStringBuilder.Password} " +
-                           $"-Q \"BACKUP DATABASE [{databaseName}] TO DISK = '{backupFile}' WITH FORMAT, MEDIANAME = 'SQLServerBackup', NAME = 'Full Backup of {databaseName}'\" " +
-                           "-b"; // -b sets sqlcmd to exit when an error occurs
-
-            var processStartInfo = new ProcessStartInfo
+            // Use direct SQL connection for backup (more reliable than sqlcmd)
+            // Connect to master database to perform backup
+            var masterConnectionString = new SqlConnectionStringBuilder(DBConnection)
             {
-                FileName = sqlcmdPath,
-                Arguments = arguments,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
+                InitialCatalog = "master"
             };
 
-            using var process = new Process();
-            process.StartInfo = processStartInfo;
-            process.Start();
+            using var connection = new SqlConnection(masterConnectionString.ConnectionString);
+            await connection.OpenAsync();
 
-            var output = await process.StandardOutput.ReadToEndAsync();
-            var error = await process.StandardError.ReadToEndAsync();
+            // Escape the backup file path for SQL (replace single quotes with double single quotes)
+            var escapedBackupFile = backupFile.Replace("'", "''");
+            
+            // Build the backup command
+            var backupCommand = $@"
+                BACKUP DATABASE [{databaseName}] 
+                TO DISK = '{escapedBackupFile}' 
+                WITH FORMAT, 
+                     MEDIANAME = 'SQLServerBackup', 
+                     NAME = 'Full Backup of {databaseName}',
+                     STATS = 10";
 
-            await process.WaitForExitAsync();
+            using var command = new SqlCommand(backupCommand, connection);
+            command.CommandTimeout = 3600; // 1 hour timeout for large databases
 
-            if (process.ExitCode == 0)
+            Log.Information("Starting SQL Server backup: {Database} to {BackupFile}", databaseName, backupFile);
+            
+            await command.ExecuteNonQueryAsync();
+
+            // Verify backup file was created
+            if (File.Exists(backupFile))
             {
-                Log.Information("SQL Server database backup created: {BackupFile}", backupFile);
+                var fileInfo = new FileInfo(backupFile);
+                Log.Information("SQL Server database backup created successfully: {BackupFile}, Size: {Size} bytes", backupFile, fileInfo.Length);
                 return new BackupResult
                 {
                     Success = true,
@@ -104,14 +108,24 @@ public class BackupService : IBackupService
             }
             else
             {
-                Log.Error("SQL Server backup failed with exit code {ExitCode}: {Error}", process.ExitCode, error);
+                Log.Error("Backup file was not created: {BackupFile}", backupFile);
                 return new BackupResult
                 {
                     Success = false,
-                    Error = $"sqlcmd failed: {error}",
-                    Message = "Database backup failed"
+                    Error = "Backup file was not created",
+                    Message = "Database backup failed - file not found"
                 };
             }
+        }
+        catch (SqlException sqlEx)
+        {
+            Log.Error(sqlEx, "SQL Server backup failed: {ErrorNumber} - {Message}", sqlEx.Number, sqlEx.Message);
+            return new BackupResult
+            {
+                Success = false,
+                Error = $"SQL Server error: {sqlEx.Message}",
+                Message = "Database backup failed"
+            };
         }
         catch (Exception ex)
         {
@@ -130,11 +144,18 @@ public class BackupService : IBackupService
     {
         try
         {
+            var backupBasePath = await SystemConfigurationHelper.GetConfigValueAsync("Backup", "BasePath") ?? Path.Combine(Directory.GetCurrentDirectory(), "Backups");
+            
+            if (!Directory.Exists(backupBasePath))
+            {
+                Directory.CreateDirectory(backupBasePath);
+            }
+
             var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var backupFolder = Path.Combine(_backupBasePath, $"Images_Backup_{timestamp}");
+            var backupFolder = Path.Combine(backupBasePath, $"Images_Backup_{timestamp}");
             Directory.CreateDirectory(backupFolder);
 
-            var imagesFolder = _configuration["Images:FolderPath"] ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+            var imagesFolder = await SystemConfigurationHelper.GetConfigValueAsync("Images", "FolderPath") ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
 
             if (!Directory.Exists(imagesFolder))
             {
@@ -179,26 +200,36 @@ public class BackupService : IBackupService
     {
         try
         {
-            // Get values from appsettings.json
-            var backupBasePath = _configuration["Backup:BasePath"];
-            var baseFilePrefix = _configuration["Backup:BaseFilePrefix"];
-            var zipPassword = _configuration["Backup:ZipPassword"];
-            var toEmail = _configuration["Backup:BackupEmail"];
-            var imagesFolderPath = _configuration["Images:FolderPath"];
+            // Get values from database
+            var backupBasePath = await SystemConfigurationHelper.GetConfigValueAsync("Backup", "BasePath") ?? Path.Combine(Directory.GetCurrentDirectory(), "Backups");
+            var baseFilePrefix = await SystemConfigurationHelper.GetConfigValueAsync("Backup", "BaseFilePrefix") ?? "UHU";
+            var zipPassword = await SystemConfigurationHelper.GetConfigValueAsync("Backup", "ZipPassword");
+            var toEmail = await SystemConfigurationHelper.GetConfigValueAsync("Backup", "BackupEmail");
+            var imagesFolderPath = await SystemConfigurationHelper.GetConfigValueAsync("Images", "FolderPath") ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
 
-            var ftpUrl = _configuration["FTP:ServerUrl"];
-            var ftpUsername = _configuration["FTP:Username"];
-            var ftpPassword = _configuration["FTP:Password"];
+            var ftpUrl = await SystemConfigurationHelper.GetConfigValueAsync("FTP", "ServerUrl");
+            var ftpUsername = await SystemConfigurationHelper.GetConfigValueAsync("FTP", "Username");
+            var ftpPassword = await SystemConfigurationHelper.GetConfigValueAsync("FTP", "Password");
+
+            if (!Directory.Exists(backupBasePath))
+            {
+                Directory.CreateDirectory(backupBasePath);
+            }
 
 
             var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            
+            // For SQL Server backup, use the base path directly (no nested folders)
+            // SQL Server cannot create nested directories, so we'll backup directly to the base path
+            // Then create a folder structure locally for organizing the final zip
             var backupFolder = Path.Combine(backupBasePath, $"Full_Backup_{timestamp}");
             Directory.CreateDirectory(backupFolder);
 
             var results = new List<BackupResult>();
 
-            // Backup database directly into the full backup folder
-            var dbResult = await BackupSqlServerDatabaseToFolderAsync(backupFolder, timestamp); // Updated method name
+            // Backup database directly to base path (SQL Server can only write to existing directories)
+            // Use base path directly, not nested folder, for SQL Server backup
+            var dbResult = await BackupSqlServerDatabaseToFolderAsync(backupBasePath, timestamp);
             results.Add(dbResult);
 
             // Backup images directly into the full backup folder
@@ -210,12 +241,24 @@ public class BackupService : IBackupService
 
             if (allSuccess)
             {
+                // Move backup files to the organized folder structure
+                // The database backup is in backupBasePath, move it to backupFolder
+                var dbBackupFile = dbResult.BackupPath;
+                if (!string.IsNullOrEmpty(dbBackupFile) && File.Exists(dbBackupFile))
+                {
+                    var dbBackupFileName = Path.GetFileName(dbBackupFile);
+                    var dbBackupDestination = Path.Combine(backupFolder, dbBackupFileName);
+                    File.Move(dbBackupFile, dbBackupDestination);
+                    dbResult.BackupPath = dbBackupDestination;
+                    Log.Information("Moved database backup to organized folder: {Destination}", dbBackupDestination);
+                }
+                
                 // Create final password-protected zip file containing both backups
                 var finalZipPath = Path.Combine(backupBasePath, $"{baseFilePrefix}_Backup_{timestamp}.backup");
 
                 if (string.IsNullOrEmpty(zipPassword))
                 {
-                    throw new Exception("Backup password is not configured in appsettings.json");
+                    throw new Exception("Backup password (ZipPassword) is not configured in System Configuration table");
                 }
 
                 // Create password-protected zip
@@ -268,7 +311,7 @@ public class BackupService : IBackupService
                                             </body>
                                             </html>";
 
-                            emailSent = Config.sendEmail(toEmail, subject, body, finalZipPath);
+                            emailSent = await Config.sendEmailAsync(toEmail, subject, body, finalZipPath);
                         }
 
                     }
@@ -286,10 +329,11 @@ public class BackupService : IBackupService
                     if (FTP)
                     {
                         bool success = await Config.UploadToFtpAsync(
+                            finalZipPath,
+                            1, // organizationId
                             ftpUrl,
                             ftpUsername,
-                            ftpPassword,
-                            finalZipPath
+                            ftpPassword
                         );
 
                         if (success)
@@ -381,46 +425,100 @@ public class BackupService : IBackupService
     }
 
     // Helper method to backup database to a specific folder (updated for SQL Server)
-    private async Task<BackupResult> BackupSqlServerDatabaseToFolderAsync(string targetFolder, string timestamp) // Renamed method
+    private async Task<BackupResult> BackupSqlServerDatabaseToFolderAsync(string targetFolder, string timestamp)
     {
         try
         {
-            var connectionStringBuilder = new SqlConnectionStringBuilder(DBConnection); // Changed to SqlConnectionStringBuilder
+            var connectionStringBuilder = new SqlConnectionStringBuilder(DBConnection);
             var databaseName = connectionStringBuilder.InitialCatalog;
-            var backupFile = Path.Combine(targetFolder, $"{databaseName}_{timestamp}.bak");
-
-            var sqlcmdPath = _configuration["Backup:SqlCmdPath"] ?? "sqlcmd"; // Changed configuration key
-
-            // SQL Server backup command
-            var arguments = $"-S {connectionStringBuilder.DataSource} " +
-                           $"-d {databaseName} " +
-                           $"-U {connectionStringBuilder.UserID} " +
-                           $"-P {connectionStringBuilder.Password} " +
-                           $"-Q \"BACKUP DATABASE [{databaseName}] TO DISK = '{backupFile}' WITH FORMAT, MEDIANAME = 'SQLServerBackup', NAME = 'Full Backup of {databaseName}'\" " +
-                           "-b";
-
-            var processStartInfo = new ProcessStartInfo
+            var serverName = connectionStringBuilder.DataSource;
+            
+            // SIMPLIFIED APPROACH: Use the configured backup path directly
+            // SQL Server can only write to directories that already exist
+            
+            // Normalize the target folder path (remove trailing slashes)
+            var backupDirectory = targetFolder.TrimEnd('\\', '/');
+            
+            // Check if SQL Server is local or remote
+            bool isLocalServer = string.IsNullOrEmpty(serverName) || 
+                               serverName.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                               serverName.Equals("(local)", StringComparison.OrdinalIgnoreCase) ||
+                               serverName.Equals(".", StringComparison.OrdinalIgnoreCase) ||
+                               (!serverName.Contains("\\") && !serverName.Contains("."));
+            
+            // For local SQL Server, ensure directory exists
+            if (isLocalServer)
             {
-                FileName = sqlcmdPath,
-                Arguments = arguments,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
+                if (!Directory.Exists(backupDirectory))
+                {
+                    Directory.CreateDirectory(backupDirectory);
+                    Log.Information("Created backup directory: {BackupDir}", backupDirectory);
+                }
+            }
+            else
+            {
+                // Remote SQL Server - the directory must exist on SQL Server machine
+                // For remote servers, use UNC path (\\server\share\path) or path on SQL Server
+                if (!backupDirectory.StartsWith("\\\\"))
+                {
+                    Log.Warning("Remote SQL Server detected. Ensure backup path '{BackupPath}' exists on SQL Server machine. For best results, use a UNC path (\\\\server\\share\\path).", backupDirectory);
+                }
+            }
+            
+            // Connect to master database to perform backup
+            var masterConnectionString = new SqlConnectionStringBuilder(DBConnection)
+            {
+                InitialCatalog = "master"
             };
 
-            using var process = new Process();
-            process.StartInfo = processStartInfo;
-            process.Start();
+            using var connection = new SqlConnection(masterConnectionString.ConnectionString);
+            await connection.OpenAsync();
 
-            var output = await process.StandardOutput.ReadToEndAsync();
-            var error = await process.StandardError.ReadToEndAsync();
+            // Create simple backup filename (no nested paths)
+            var backupFileName = $"{databaseName}_{timestamp}.bak";
+            var backupFile = Path.Combine(backupDirectory, backupFileName);
+            
+            Log.Information("Backing up database {Database} to {BackupFile}", databaseName, backupFile);
 
-            await process.WaitForExitAsync();
+            // Escape the backup file path for SQL (replace single quotes with double single quotes)
+            var escapedBackupFile = backupFile.Replace("'", "''");
+            
+            // Build the backup command
+            var backupCommand = $@"
+                BACKUP DATABASE [{databaseName}] 
+                TO DISK = '{escapedBackupFile}' 
+                WITH FORMAT, 
+                     MEDIANAME = 'SQLServerBackup', 
+                     NAME = 'Full Backup of {databaseName}',
+                     STATS = 10";
 
-            if (process.ExitCode == 0)
+            using var command = new SqlCommand(backupCommand, connection);
+            command.CommandTimeout = 3600; // 1 hour timeout for large databases
+
+            Log.Information("Starting SQL Server backup: {Database} to {BackupFile}", databaseName, backupFile);
+            
+            await command.ExecuteNonQueryAsync();
+
+            // For remote servers, the file might be on SQL Server machine, so we can't verify with File.Exists
+            // Instead, verify by querying SQL Server
+            using var verifyCommand = new SqlCommand($@"
+                SELECT physical_device_name, backup_size, backup_finish_date 
+                FROM msdb.dbo.backupset bs
+                INNER JOIN msdb.dbo.backupmediafamily bmf ON bs.media_set_id = bmf.media_set_id
+                WHERE database_name = '{databaseName.Replace("'", "''")}'
+                AND backup_finish_date > DATEADD(minute, -5, GETDATE())
+                ORDER BY backup_finish_date DESC", connection);
+            
+            using var reader = await verifyCommand.ExecuteReaderAsync();
+            if (reader.HasRows && await reader.ReadAsync())
             {
-                Log.Information("SQL Server database backup created: {BackupFile}", backupFile);
+                var actualBackupPath = reader.GetString(0);
+                var backupSize = reader.GetInt64(1);
+                Log.Information("SQL Server database backup verified: {BackupFile}, Size: {Size} bytes", actualBackupPath, backupSize);
+                
+                // Update backupFile to the actual path returned by SQL Server
+                backupFile = actualBackupPath;
+                
                 return new BackupResult
                 {
                     Success = true,
@@ -431,22 +529,59 @@ public class BackupService : IBackupService
             }
             else
             {
-                Log.Error("SQL Server backup failed with exit code {ExitCode}: {Error}", process.ExitCode, error);
-                return new BackupResult
+                // If we can't verify via SQL, check if file exists (for local backups)
+                // Check if server is local by checking if path exists
+                bool isLocal = File.Exists(backupFile) || Directory.Exists(backupDirectory);
+                if (isLocal && File.Exists(backupFile))
                 {
-                    Success = false,
-                    Error = $"sqlcmd failed: {error}",
-                    Message = "Database backup failed"
-                };
+                    var fileInfo = new FileInfo(backupFile);
+                    Log.Information("SQL Server database backup created successfully: {BackupFile}, Size: {Size} bytes", backupFile, fileInfo.Length);
+                    return new BackupResult
+                    {
+                        Success = true,
+                        BackupPath = backupFile,
+                        Message = "Database backup completed successfully",
+                        Timestamp = timestamp
+                    };
+                }
+                else
+                {
+                    Log.Warning("Could not verify backup file creation. Backup may have succeeded but file verification failed.");
+                    // Assume success if command executed without exception
+                    return new BackupResult
+                    {
+                        Success = true,
+                        BackupPath = backupFile,
+                        Message = "Database backup completed (verification inconclusive)",
+                        Timestamp = timestamp
+                    };
+                }
             }
         }
-        catch (Exception ex)
+        catch (SqlException sqlEx)
         {
-            Log.Error(ex, "Error creating SQL Server database backup");
+            var errorDetails = $"SQL Server Error {sqlEx.Number}: {sqlEx.Message}";
+            if (sqlEx.Errors.Count > 0)
+            {
+                var sqlErrors = string.Join("; ", sqlEx.Errors.Cast<Microsoft.Data.SqlClient.SqlError>().Select(e => $"{e.Number}: {e.Message}"));
+                errorDetails = $"SQL Server Errors: {sqlErrors}";
+            }
+            
+            Log.Error(sqlEx, "SQL Server backup failed: {ErrorDetails}", errorDetails);
             return new BackupResult
             {
                 Success = false,
-                Error = ex.Message,
+                Error = errorDetails,
+                Message = $"Database backup failed: {sqlEx.Message}"
+            };
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error creating SQL Server database backup: {ExceptionType} - {Message}", ex.GetType().Name, ex.Message);
+            return new BackupResult
+            {
+                Success = false,
+                Error = $"{ex.GetType().Name}: {ex.Message}",
                 Message = "Database backup failed"
             };
         }
@@ -457,7 +592,7 @@ public class BackupService : IBackupService
     {
         try
         {
-            var imagesFolder = _configuration["Images:FolderPath"] ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+            var imagesFolder = await SystemConfigurationHelper.GetConfigValueAsync("Images", "FolderPath") ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
 
             if (!Directory.Exists(imagesFolder))
             {

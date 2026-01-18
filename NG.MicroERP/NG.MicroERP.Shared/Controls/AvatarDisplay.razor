@@ -1,9 +1,10 @@
 ﻿@using Microsoft.AspNetCore.Components
+@inject NG.MicroERP.Shared.Helper.Globals Globals
 
 <div>
     @if (!string.IsNullOrWhiteSpace(Pic))
     {
-        <img src="@Pic"
+        <img src="@Globals.GetImageUrl(Pic)"
              alt=""
              style="@ImageStyle" />
     }

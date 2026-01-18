@@ -100,6 +100,11 @@
                                         <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
                                         <span>View</span>
                                     </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => Print(row.Item.Id))"
+                                                 Class="menu-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Print" Class="menu-icon" />
+                                        <span>Print</span>
+                                    </MudMenuItem>
                                     @if (Globals.AccessLevel == 1 && row.Item.Status != "COMPLETED")
                                     {
                                         <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
@@ -120,8 +125,9 @@
                         </CellTemplate>
                     </TemplateColumn>
 
-                    <PropertyColumn Property="@(x => x.MovementNo)" Title="Movement No" Sortable="true" />
-                    <PropertyColumn Property="@(x => x.MovementType)" Title="Type" Sortable="true" />
+                    <PropertyColumn Property="@(x => x.MovementNo)" Title="Document No" Sortable="true" />
+                    <PropertyColumn Property="@(x => x.DocumentType)" Title="Doc Type" Sortable="true" />
+                    <PropertyColumn Property="@(x => x.MovementType)" Title="Movement Type" Sortable="true" />
                     <PropertyColumn Property="@(x => x.FromLocationName)" Title="From Location" Sortable="true" />
                     <PropertyColumn Property="@(x => x.ToLocationName)" Title="To Location" Sortable="true" />
                     <PropertyColumn Property="@(x => x.MovementDate)" Title="Movement Date" Format="yyyy-MM-dd" Sortable="true" />
@@ -298,6 +304,11 @@
         LoadingPanel = false;
         _myDialog?.Show();
         StateHasChanged();
+    }
+
+    protected void Print(int id)
+    {
+        NavManager.NavigateTo($"/StockMovementReport/{id}");
     }
 
     protected async Task Delete(int id)

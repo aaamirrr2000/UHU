@@ -27,9 +27,7 @@ public class FileUploadController : ControllerBase
             await file.CopyToAsync(stream);
         }
 
-        //string fileUrl = $"/files/{uniqueFileName}";
-        string fileUrl = $"{Request.Scheme}://{Request.Host}/files/{uniqueFileName}";
-
-        return Ok(new { fileUrl });
+        // Return only the filename, not the full URL
+        return Ok(new { fileName = uniqueFileName, fileUrl = uniqueFileName });
     }
 }

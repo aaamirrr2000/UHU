@@ -51,16 +51,16 @@
             */
         }
     
-        if (Globals.User == null)
+        if (MyGlobals.User == null)
             return;
 
-        if (Globals.User.DarKLightTheme == 1)
+        if (MyGlobals.User.DarKLightTheme == 1)
         {
-            Globals._isDarkMode = false;
+            MyGlobals._isDarkMode = false;
         }
         else
         {
-            Globals._isDarkMode = true;
+            MyGlobals._isDarkMode = true;
         }
     
     }

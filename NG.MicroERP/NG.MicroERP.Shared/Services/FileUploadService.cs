@@ -59,9 +59,35 @@ public class FileUploadService
             {
                 var result = await response.Content.ReadFromJsonAsync<JsonElement>();
 
-                if (result.TryGetProperty("fileUrl", out JsonElement fileUrlElement))
+                // Prefer fileName, fallback to fileUrl for backward compatibility
+                string? fileName = null;
+                if (result.TryGetProperty("fileName", out JsonElement fileNameElement))
                 {
-                    return (true, fileUrlElement.GetString());
+                    fileName = fileNameElement.GetString();
+                }
+                else if (result.TryGetProperty("fileUrl", out JsonElement fileUrlElement))
+                {
+                    // Backward compatibility: extract filename from full URL
+                    string? fullUrl = fileUrlElement.GetString();
+                    if (!string.IsNullOrEmpty(fullUrl))
+                    {
+                        // Extract just the filename from URL (e.g., "http://host/files/filename.jpg" -> "filename.jpg")
+                        fileName = System.IO.Path.GetFileName(fullUrl);
+                        // If it's already just a filename, use it as is
+                        if (fullUrl.Contains('/'))
+                        {
+                            fileName = fullUrl.Substring(fullUrl.LastIndexOf('/') + 1);
+                        }
+                        else
+                        {
+                            fileName = fullUrl;
+                        }
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(fileName))
+                {
+                    return (true, fileName);
                 }
                 else
                 {

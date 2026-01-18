@@ -54,37 +54,32 @@
                     <div class="col-12 col-md-8">
                         <div class="row">
                             <div class="col-12 col-md-6 mb-3">
-                                <label class="form-label fw-bold">Item Code *</label>
                                 <MudTextField id="Code" @bind-Value="record.Code" placeholder="Auto-generated"
-                                              ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true" Required="true"></MudTextField>
+                                              Label="Item Code *" ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true" Required="true"></MudTextField>
                                 <ValidationMessage For="@(() => record.Code)" />
                             </div>
 
                             <div class="col-12 col-md-6 mb-3">
-                                <label class="form-label fw-bold">HS Code</label>
                                 <MudTextField id="HsCode" @bind-Value="record.HsCode" placeholder="Harmonized System Code"
-                                              ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true"></MudTextField>
+                                              Label="HS Code" ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true"></MudTextField>
                                 <ValidationMessage For="@(() => record.HsCode)" />
                             </div>
 
                             <div class="col-12 mb-3">
-                                <label class="form-label fw-bold">Item Name *</label>
                                 <MudTextField id="Name" @bind-Value="record.Name" placeholder="Enter item name"
-                                              ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true" Required="true"></MudTextField>
+                                              Label="Item Name *" ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true" Required="true"></MudTextField>
                                 <ValidationMessage For="@(() => record.Name)" />
                             </div>
 
                             <div class="col-12 mb-3">
-                                <label class="form-label fw-bold">Description</label>
                                 <MudTextField id="Description" @bind-Value="record.Description" placeholder="Item description"
-                                              ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true" Lines="2"></MudTextField>
+                                              Label="Description" ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true" Lines="2"></MudTextField>
                                 <ValidationMessage For="@(() => record.Description)" />
                             </div>
 
                             <div class="col-12 col-md-6 mb-3">
-                                <label class="form-label fw-bold">Category *</label>
                                 <MudSelect @bind-Value="record.CategoryId" Placeholder="Select category"
-                                           Variant="Variant.Outlined" Clearable="true" FullWidth="true" Required="true">
+                                           Label="Category *" Variant="Variant.Outlined" Clearable="true" FullWidth="true" Required="true">
                                     @if (Cat != null && Cat.Any())
                                     {
                                         foreach (var i in Cat)
@@ -101,9 +96,8 @@
                             </div>
 
                             <div class="col-12 col-md-6 mb-3">
-                                <label class="form-label fw-bold">Stock Type</label>
                                 <MudSelect T="string" @bind-Value="record.StockType" Placeholder="Select stock type"
-                                           Variant="Variant.Outlined" Clearable="true" FullWidth="true">
+                                           Label="Stock Type" Variant="Variant.Outlined" Clearable="true" FullWidth="true">
                                     @if (Sto != null && Sto.Any())
                                     {
                                         if (string.IsNullOrWhiteSpace(record.StockType))
@@ -120,9 +114,8 @@
                             </div>
 
                             <div class="col-12 col-md-6 mb-3">
-                                <label class="form-label fw-bold">Unit of Measure</label>
                                 <MudSelect T="string" @bind-Value="record.Unit" Placeholder="Select unit"
-                                           Variant="Variant.Outlined" Clearable="true" FullWidth="true">
+                                           Label="Unit of Measure" Variant="Variant.Outlined" Clearable="true" FullWidth="true">
                                     @if (Unit != null && Unit.Any())
                                     {
                                         if (string.IsNullOrWhiteSpace(record.Unit))
@@ -139,9 +132,8 @@
                             </div>
 
                             <div class="col-12 col-md-6 mb-3">
-                                <label class="form-label fw-bold">Serving Size</label>
                                 <MudTextField id="ServingSize" @bind-Value="record.ServingSize" placeholder="Serving size details"
-                                              ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true"></MudTextField>
+                                              Label="Serving Size" ReadOnly="@isReadOnly" Variant="Variant.Outlined" FullWidth="true"></MudTextField>
                                 <ValidationMessage For="@(() => record.ServingSize)" />
                             </div>
                         </div>
@@ -157,7 +149,7 @@
                                     <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
                                         @if (!string.IsNullOrEmpty(record.Pic))
                                         {
-                                            <img src="@record.Pic"
+                                            <img src="@Globals.GetImageUrl(record.Pic)"
                                                  class="img-fluid rounded"
                                                  alt="Party Image"
                                                  style="max-height: 100%; max-width: 100%; object-fit: cover;" />
@@ -199,9 +191,8 @@
                 <div class="row">
                    
                     <div class="col-12 col-md-6 mb-3">
-                        <label class="form-label fw-bold">Favorite Item</label>
                         <MudSelect T="int" @bind-Value="record.IsFavorite" Placeholder="Select"
-                                   Variant="Variant.Outlined" Clearable="true" FullWidth="true">
+                                   Label="Favorite Item" Variant="Variant.Outlined" Clearable="true" FullWidth="true">
                             @if (record.IsFavorite != 0 && record.IsFavorite != 1)
                             {
                                 record.IsFavorite = 0;
@@ -225,25 +216,22 @@
                     </div>
 
                     <div class="col-12 col-md-4 mb-3">
-                        <label class="form-label fw-bold">Minimum Quantity *</label>
                         <MudNumericField @bind-Value="record.MinQty" placeholder="0.00" ReadOnly="@isReadOnly"
-                                         Variant="Variant.Outlined" FullWidth="true" Format="#,##0.00" Min="0" Required="true"></MudNumericField>
+                                         Label="Minimum Quantity *" Variant="Variant.Outlined" FullWidth="true" Format="#,##0.00" Min="0" Required="true"></MudNumericField>
                         <ValidationMessage For="@(() => record.MinQty)" />
                         <MudText Typo="Typo.caption" Class="text-muted mt-1">Alert when stock falls below this level</MudText>
                     </div>
 
                     <div class="col-12 col-md-4 mb-3">
-                        <label class="form-label fw-bold">Maximum Quantity</label>
                         <MudNumericField @bind-Value="record.MaxQty" placeholder="0.00" ReadOnly="@isReadOnly"
-                                         Variant="Variant.Outlined" FullWidth="true" Format="#,##0.00" Min="0"></MudNumericField>
+                                         Label="Maximum Quantity" Variant="Variant.Outlined" FullWidth="true" Format="#,##0.00" Min="0"></MudNumericField>
                         <ValidationMessage For="@(() => record.MaxQty)" />
                         <MudText Typo="Typo.caption" Class="text-muted mt-1">Maximum stock capacity</MudText>
                     </div>
 
                     <div class="col-12 col-md-4 mb-3">
-                        <label class="form-label fw-bold">Reorder Quantity *</label>
                         <MudNumericField @bind-Value="record.ReorderQty" placeholder="0.00" ReadOnly="@isReadOnly"
-                                         Variant="Variant.Outlined" FullWidth="true" Format="#,##0.00" Min="0" Required="true"></MudNumericField>
+                                         Label="Reorder Quantity *" Variant="Variant.Outlined" FullWidth="true" Format="#,##0.00" Min="0" Required="true"></MudNumericField>
                         <ValidationMessage For="@(() => record.ReorderQty)" />
                         <MudText Typo="Typo.caption" Class="text-muted mt-1">Quantity to order when restocking</MudText>
                     </div>
@@ -271,12 +259,9 @@
 
                     <!-- Cost Price -->
                     <div class="col-12 col-md-6">
-                        <label class="form-label fw-bold">
-                            <MudIcon Icon="@Icons.Material.Filled.Inventory2" Class="me-1" />
-                            Cost Price (Average) *
-                        </label>
                         <MudNumericField @bind-Value="record.CostPrice"
                                          Placeholder="0.00"
+                                         Label="Cost Price (Average) *"
                                          ReadOnly="@isReadOnly"
                                          Variant="Variant.Outlined"
                                          FullWidth="true"
@@ -291,12 +276,9 @@
 
                     <!-- Base Price -->
                     <div class="col-12 col-md-6">
-                        <label class="form-label fw-bold">
-                            <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Class="me-1" />
-                            Base Price (Current) *
-                        </label>
                         <MudNumericField @bind-Value="record.BasePrice"
                                          Placeholder="0.00"
+                                         Label="Base Price (Current) *"
                                          ReadOnly="@isReadOnly"
                                          Variant="Variant.Outlined"
                                          FullWidth="true"
@@ -318,12 +300,9 @@
 
                     <!-- Discount -->
                     <div class="col-12 col-md-6">
-                        <label class="form-label fw-bold">
-                            <MudIcon Icon="@Icons.Material.Filled.Percent" Class="me-1" />
-                            Overall Sale Invoice Discount (%)
-                        </label>
                         <MudNumericField @bind-Value="record.DefaultDiscount"
                                          Placeholder="0.00"
+                                         Label="Overall Sale Invoice Discount (%)"
                                          ReadOnly="@isReadOnly"
                                          Variant="Variant.Outlined"
                                          FullWidth="true"
@@ -338,13 +317,10 @@
 
                     <!-- Transaction Type -->
                     <div>
-                        <label class="form-label fw-bold">
-                            <MudIcon Icon="@Icons.Material.Filled.Sell" Class="me-1" />
-                            Tax Rule
-                        </label>
-                        <MudSelect T="int"
+                        <MudSelect T="int?"
                                    @bind-Value="record.TaxRuleId"
                                    Placeholder="Transaction Type"
+                                   Label="Tax Rule"
                                    Variant="Variant.Outlined"
                                    Clearable="true"
                                    FullWidth="true"
@@ -353,7 +329,7 @@
                             {
                                 @foreach (var rule in TaxRule)
                                 {
-                                    <MudSelectItem Value="@rule.Id">@rule.RuleName</MudSelectItem>
+                                    <MudSelectItem T="int?" Value="@rule.Id">@rule.RuleName</MudSelectItem>
                                 }
                             }
                         </MudSelect>
@@ -424,9 +400,8 @@
             <ChildContent>
                 <div class="row">
                     <div class="col-12 col-md-6 mb-3">
-                        <label class="form-label fw-bold">Status</label>
                         <MudSelect T="int" @bind-Value="record.IsActive" Placeholder="Select status"
-                                   Variant="Variant.Outlined" Clearable="true" FullWidth="true">
+                                   Label="Status" Variant="Variant.Outlined" Clearable="true" FullWidth="true">
                             @if (record.IsActive != 0 && record.IsActive != 1)
                             {
                                 record.IsActive = 1;
@@ -513,7 +488,14 @@
 
     private async Task OnTaxRuleChange()
     {
-        SelectedTaxRule = await Functions.GetAsync<List<TaxRuleDetailModel>>($"TaxRuleDetail/Search/a.TaxRuleId={record.TaxRuleId}",true) ?? new List<TaxRuleDetailModel>();
+        if (record.TaxRuleId.HasValue && record.TaxRuleId.Value > 0)
+        {
+            SelectedTaxRule = await Functions.GetAsync<List<TaxRuleDetailModel>>($"TaxRuleDetail/Search/a.TaxRuleId={record.TaxRuleId.Value}",true) ?? new List<TaxRuleDetailModel>();
+        }
+        else
+        {
+            SelectedTaxRule = new List<TaxRuleDetailModel>();
+        }
     }
 
     protected async Task Clear()
@@ -559,7 +541,10 @@
             var result = await Functions.PostAsync<ItemsModel>($"Items/{url}", record, true);
             if (result.Success == false)
             {
-                SnackbarService.Add($"Record Not Saved", Severity.Error);
+                string errorMessage = !string.IsNullOrWhiteSpace(result.Message) 
+                    ? result.Message 
+                    : "Record Not Saved";
+                SnackbarService.Add(errorMessage, Severity.Error);
             }
             else
             {

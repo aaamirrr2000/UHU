@@ -1,7 +1,9 @@
 ﻿@page "/OrderDetailsPage/{Action}/{id:int}"
+@using NG.MicroERP.App.SwiftServe.Helper
 @layout MyMenuLayout
 @inject NavigationManager Nav
 
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 8px;">
 <h2 class="text-center mb-4 text-dark" style="font-family: 'Orbitron', sans-serif; font-size: 30px;">
     <button class="btn btn-outline-primary rounded-pill px-3 py-2 me-2"
             @onclick="GoBack"
@@ -19,29 +21,29 @@
     }
 </h2>
 
-@if (Bills.Bill != null)
+@if (Invoices.Invoice != null)
 {
     <div class="container mb-4">
         <div class="row justify-content-center mb-2">
             <div class="col-6 col-md-4 col-lg-3 text-start">
-                <span><i class="fas fa-file-invoice me-1 text-info"></i><strong>Order #:</strong> @Bills.Bill.SeqNo</span>
+                <span><i class="fas fa-file-invoice me-1 text-info"></i><strong>Order #:</strong> @Invoices.Invoice.Code</span>
             </div>
             <div class="col-6 col-md-4 col-lg-3 text-start">
-                <span><i class="fas fa-chair me-1 text-primary"></i><strong>Table #:</strong> @Bills.Bill.TableName</span>
+                <span><i class="fas fa-chair me-1 text-primary"></i><strong>Table #:</strong> @Invoices.Invoice.TableName</span>
             </div>
         </div>
         <div class="row justify-content-center">
             <div class="col-6 col-md-4 col-lg-3 text-start">
-                <span><i class="fas fa-list-ol me-1 text-success"></i><strong># of Items:</strong> @BillDetails.Count</span>
+                <span><i class="fas fa-list-ol me-1 text-success"></i><strong># of Items:</strong> @InvoiceDetails.Count</span>
             </div>
             <div class="col-6 col-md-4 col-lg-3 text-start">
-                <span><i class="fas fa-boxes me-1 text-primary"></i><strong>Status:</strong> @Bills.Bill.Status</span>
+                <span><i class="fas fa-boxes me-1 text-primary"></i><strong>Status:</strong> @Invoices.Invoice.Status</span>
             </div>
         </div>
     </div>
 
 
-    @foreach (var group in BillDetails.OrderBy(x => x.Person).GroupBy(x => x.Person))
+    @foreach (var group in InvoiceDetails.OrderBy(x => x.Person).GroupBy(x => x.Person))
     {
         <div class="mb-4">
 
@@ -60,23 +62,23 @@
                         <!-- Left: Item Details -->
                         <div class="flex-grow-1 pe-3">
                             <div><strong><i class="fas fa-utensils text-primary me-1"></i>Item:</strong> 
-                                <span class="text-success">@item.Item</span> 
+                                <span class="text-success">@item.ItemName</span> 
                                 <span class="text-primary ms-2">@item.ServingSize</span>
                             </div>
                             <div><strong><i class="fas fa-calculator text-secondary me-1"></i>Total:</strong> 
                                 @item.Qty x @item.UnitPrice.ToString("N2") = 
-                                <strong>@item.Item_Amount.ToString("N2")</strong>
+                                <strong>@item.ItemTotalAmount.ToString("N2")</strong>
                             </div>
                             <div><strong><i class="fas fa-info-circle text-dark me-1"></i>Status:</strong>
-                                @if (item.BillDetailStatus == "COMPLETE")
+                                @if (item.Status == "COMPLETE")
                                 {
                                     <span class="badge bg-success">Completed</span>
                                 }
-                                else if (item.BillDetailStatus == "CANCEL")
+                                else if (item.Status == "CANCEL")
                                 {
                                     <span class="badge bg-danger text-dark">Cancelled</span>
                                 }
-                                else if (item.BillDetailStatus == "READY")
+                                else if (item.Status == "READY")
                                 {
                                     <span class="badge bg-info text-dark">Ready</span>
                                 }
@@ -90,16 +92,16 @@
                         <!-- Right: Action Buttons (fixed width for layout consistency) -->
                         <div class="d-flex flex-column gap-2 text-end mt-2 mt-md-0">
 
-                            @if (item.BillStatus != "COMPLETE" && item.BillStatus != "READY")
+                            @if (Invoices.Invoice.Status != "COMPLETE" && Invoices.Invoice.Status != "READY")
                             {
-                                @if (item.BillDetailStatus != "COMPLETE" && item.BillDetailStatus != "READY" && Globals.User.UserType != "KITCHEN")
+                                @if (item.Status != "COMPLETE" && item.Status != "READY" && MyGlobals.User.UserType != "KITCHEN")
                                 {
                                     <button class="btn btn-danger btn-sm" @onclick="@(() => OrderStatus(item, "CANCEL", 1))">
                                         <i class="fas fa-times-circle me-1"></i> Cancel
                                     </button>
                                 }
 
-                                @if (Globals.User.UserType == "KITCHEN" && item.BillDetailStatus == "PENDING")
+                                @if (MyGlobals.User.UserType == "KITCHEN" && item.Status == "PENDING")
                                 {
                                     <button class="btn btn-info btn-sm" @onclick="@(() => OrderStatus(item, "READY"))">
                                         <i class="fas fa-check-circle me-1"></i> Ready
@@ -118,16 +120,17 @@ else
 {
     <div class="text-muted text-center">Loading order details...</div>
 }
+</MudContainer>
 
 @code {
     [Parameter] public int id { get; set; }
     [Parameter] public string Action { get; set; } = "ORDER";
-    private BillsModel Bills = new();
-    private ObservableCollection<BillDetailModel> BillDetails = new();
+    private InvoicesModel Invoices = new();
+    private ObservableCollection<InvoiceItemReportModel> InvoiceDetails = new();
 
     protected override async Task OnInitializedAsync()
     {
-        Globals.PageTitle = "Order View";
+        MyGlobals.PageTitle = "Order View";
         await LoadBills(id);
     }
 
@@ -138,38 +141,55 @@ else
 
         if (Action == "ORDER")
         {
-            bill_url = $"Bill/Search/bill.Id={Id}";
-            billDetail_url = $"BillDetail/Search/BillDetail.BillId={Id}";
+            bill_url = $"Invoice/Search/i.Id={Id} AND i.InvoiceType='BILL'";
+            billDetail_url = $"InvoiceDetail/Search/InvoiceDetail.InvoiceId={Id}";
         }
         else if (Action == "TABLE")
         {
-            bill_url = $"Bill/Search/bill.TableId={Id}";
-            billDetail_url = $"BillDetail/Search/Bill.TableId={Id} and Bill.Status!='COMPLETE'";
+            bill_url = $"Invoice/Search/i.TableId={Id} AND i.InvoiceType='BILL' AND i.Status!='COMPLETE'";
         }
 
-        var res = await Functions.GetAsync<List<BillModel>>(bill_url, true);
+        var res = await MyFunctions.GetAsync<List<InvoiceModel>>(bill_url, true);
         if (res != null && res.Count > 0)
         {
-            Bills.Bill = res.First();
+            Invoices.Invoice = res.First();
 
-            var res1 = await Functions.GetAsync<List<BillDetailModel>>(billDetail_url, true);
-            if (res1 != null)
+            if (Action == "ORDER")
             {
-                BillDetails.Clear();
-                foreach (var item in res1)
+                var res1 = await MyFunctions.GetAsync<List<InvoiceItemReportModel>>(billDetail_url, true);
+                if (res1 != null)
                 {
-                    BillDetails.Add(item);
+                    InvoiceDetails.Clear();
+                    foreach (var item in res1)
+                    {
+                        InvoiceDetails.Add(item);
+                    }
+                }
+            }
+            else if (Action == "TABLE")
+            {
+                // For table view, get details from all invoices for this table
+                var invoiceIds = string.Join(",", res.Select(i => i.Id));
+                billDetail_url = $"InvoiceDetail/Search/InvoiceDetail.InvoiceId IN ({invoiceIds})";
+                var res1 = await MyFunctions.GetAsync<List<InvoiceItemReportModel>>(billDetail_url, true);
+                if (res1 != null)
+                {
+                    InvoiceDetails.Clear();
+                    foreach (var item in res1)
+                    {
+                        InvoiceDetails.Add(item);
+                    }
                 }
             }
         }
     }
 
-    private async void OrderStatus(BillDetailModel item, string Status, int IsSoftDelete = 0)
+    private async void OrderStatus(InvoiceItemReportModel item, string Status, int IsSoftDelete = 0)
     {
-        bool confirm = await App.Current.MainPage.DisplayAlert("Item Status", $"{Status} Item: {item.Item}?", "Yes", "No");
+        bool confirm = await App.Current.MainPage.DisplayAlert("Item Status", $"{Status} Item: {item.ItemName}?", "Yes", "No");
         if (!confirm) return;
 
-        var res = await Functions.PostAsync<BillDetailModel>($"BillDetail/BillItemStatus/{item.Id}/{Status}/{IsSoftDelete}", null, true);
+        var res = await MyFunctions.PostAsync<InvoiceItemReportModel>($"InvoiceDetail/InvoiceItemStatus/{item.InvoiceDetailId}/{Status}/{IsSoftDelete}", null, true);
         if (res.Success)
         {
             await Application.Current.MainPage.DisplayAlert("✅ Done", $"The item status is now set to {Status}.", "Great!");
@@ -181,7 +201,7 @@ else
 
         await LoadBills(id);
         StateHasChanged();
-        BillDetails.Remove(item);
+        InvoiceDetails.Remove(item);
     }
 
     private void GoBack()

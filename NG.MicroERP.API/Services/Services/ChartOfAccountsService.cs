@@ -121,22 +121,25 @@ public class ChartOfAccountsService : IChartOfAccountsService
         try
         {
             string SQLDuplicate = $@"SELECT * FROM ChartOfAccounts WHERE UPPER(code) = '{obj.Code!.ToUpper()}' and ID != {obj.Id};";
-            string SQLUpdate = $@"UPDATE ChartOfAccounts SET 
-					OrganizationId = {obj.OrganizationId}, 
-					Code = '{obj.Code!.ToUpper()}',
-                    Pic = '{obj.Pic}',
-					Name = '{obj.Name!.ToUpper()}', 
-					Type = '{obj.Type!.ToUpper()}', 
-					InterfaceType = '{obj.InterfaceType!.ToUpper()}', 
-					Description = '{obj.Description!.ToUpper()}', 
-					ParentId = {obj.ParentId}, 
-					OpeningBalance = {obj.OpeningBalance}, 
-					IsActive = {obj.IsActive}, 
-					UpdatedBy = {obj.UpdatedBy}, 
-					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
-					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
-					IsSoftDeleted = {obj.IsSoftDeleted} 
-				WHERE Id = {obj.Id};";
+            string SQLUpdate = $@"
+                                UPDATE ChartOfAccounts SET 
+                                    OrganizationId = {obj.OrganizationId}, 
+                                    Code = '{obj.Code?.ToUpper().Replace("'", "''")}',
+                                    Pic = '{obj.Pic?.Replace("'", "''")}',
+                                    [Name] = '{obj.Name?.ToUpper().Replace("'", "''")}', 
+                                    [Type] = '{obj.Type?.ToUpper().Replace("'", "''")}', 
+                                    InterfaceType = '{obj.InterfaceType?.ToUpper().Replace("'", "''")}', 
+                                    [Description] = '{obj.Description?.ToUpper().Replace("'", "''")}', 
+                                    ParentId = {obj.ParentId}, 
+                                    OpeningBalance = {obj.OpeningBalance.ToString(System.Globalization.CultureInfo.InvariantCulture)}, 
+                                    IsActive = {obj.IsActive}, 
+                                    UpdatedBy = {obj.UpdatedBy}, 
+                                    UpdatedOn = '{DateTime.Now:yyyy-MM-ddTHH:mm:ss}', 
+                                    UpdatedFrom = '{obj.UpdatedFrom?.ToUpper().Replace("'", "''")}', 
+                                    IsSoftDeleted = {obj.IsSoftDeleted}
+                                WHERE Id = {obj.Id};
+                                ";
+
 
             var res = await dapper.Update(SQLUpdate, SQLDuplicate);
             if (res.Item1 == true)

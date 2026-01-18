@@ -72,6 +72,7 @@
                                           IdProperty="@(p => p.Id)"
                                           @bind-SelectedId="record.ItemId"
                                           Variant="Variant.Outlined"
+                                          Label=""
                                           FullWidth="@true" />
                         }
                         <ValidationMessage For="@(() => record.ItemId)" />
@@ -79,7 +80,7 @@
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
                         <label class="form-label fw-bold mb-1">Location</label>
-                        @if (isReadOnly)
+                        @if (isReadOnly || Globals.User.GroupId != 1)
                         {
                             <MudTextField Value="@(Locations.FirstOrDefault(l => l.Id == record.LocationId)?.Name ?? "")"
                                           Variant="Variant.Outlined"
@@ -94,6 +95,7 @@
                                           IdProperty="@(p => p.Id)"
                                           @bind-SelectedId="record.LocationId"
                                           Variant="Variant.Outlined"
+                                          Label=""
                                           FullWidth="@true" />
                         }
                     </div>
@@ -166,6 +168,7 @@
                                           IdProperty="@(p => p.Id)"
                                           @bind-SelectedId="record.PartyId"
                                           Variant="Variant.Outlined"
+                                          Label=""
                                           FullWidth="@true" />
                         }
                     </div>
@@ -242,6 +245,11 @@
         {
             record = new SerializedItemModel();
             record.Status = "AVAILABLE";
+            // Set location for non-admin users
+            if (Globals.User.GroupId != 1)
+            {
+                record.LocationId = Globals.User.LocationId;
+            }
             isReadOnly = false;
         }
         else if (Action == "UPDATE")
@@ -262,6 +270,11 @@
     {
         LoadingPanel = true;
         record = await Functions.GetAsync<SerializedItemModel>($"SerializedItems/Get/{id}", true) ?? new SerializedItemModel();
+        // Lock location for non-admin users
+        if (Globals.User.GroupId != 1 && record.LocationId != Globals.User.LocationId)
+        {
+            record.LocationId = Globals.User.LocationId;
+        }
         LoadingPanel = false;
     }
 

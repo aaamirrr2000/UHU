@@ -31,55 +31,10 @@
     CONSTRAINT FK_Employees_Designations FOREIGN KEY (DesignationId) REFERENCES Designations(Id)
 );
 
-INSERT INTO Employees
-(
-    OrganizationId,
-    EmpId,
-    Fullname,
-    Pic,
-    Phone,
-    Email,
-    Cnic,
-    Address,
-    EmpType,
-    DepartmentId,
-    DesignationId,
-    ShiftId,
-    LocationId,
-    ParentId,
-    ExcludeFromAttendance,
-    IsActive,
-    CreatedBy,
-    CreatedOn,
-    CreatedFrom,
-    UpdatedBy,
-    UpdatedOn,
-    UpdatedFrom,
-    IsSoftDeleted
-)
-VALUES
-(
-    1,                                      -- OrganizationId
-    '00001',                             -- EmpId
-    'System Administrator',                 -- Fullname
-    NULL,                                   -- Pic
-    '0000000000',                            -- Phone
-    'admin@example.com',                     -- Email
-    '00000-0000000-0',                       -- Cnic
-    'Head Office, MOITT',                   -- Address
-    'PERMANENT',                             -- EmpType
-    1,                                      -- DepartmentId (e.g., MINISTER'S OFFICE)
-    1,                                      -- DesignationId (e.g., Head of Department)
-    1,                                      -- ShiftId (e.g., Morning Shift)
-    1,                                      -- LocationId (e.g., MOITT Head Office)
-    0,                                      -- ParentId
-    0,                                      -- ExcludeFromAttendance
-    1,                                      -- IsActive
-    1,                                      -- CreatedBy
-    GETDATE(),                               -- CreatedOn
-    'SYSTEM',                                -- CreatedFrom
-    1,                                      -- UpdatedBy
-    GETDATE(),                               -- UpdatedOn
-    'SYSTEM',                                -- UpdatedFrom
-    0                                       -- IsSoftDeleted
-);
+
+INSERT INTO Employees (EmpId, Fullname, Phone, Cnic, Address, EmpType, DepartmentId, DesignationId, ShiftId, LocationId) VALUES
+('00001', 'SYSTEM ADMINISTRATOR', '0000000000', '00000-0000000-0', 'Head Office, MOITT', 'PERMANENT', 1, 1, 1, 1),
+('00002', 'AAMIR RASHID', '03008813444', '3740504520207', 'House # 700, Street # 33, Bahria Town Phase 5.', 'PERMANENT', 1, 1, 2, 1),
+('00003', 'SHAH M TALHA TAHIR', '', '', '', 'PERMANENT', 1, 1, 2, 1),
+('00004', 'DR MAHNOOR', '', '', '', 'PERMANENT', 1, 3, 2, 1),
+('00005', 'ZUBAIR', '', '', '', 'PERMANENT', 1, 3, 2, 1);

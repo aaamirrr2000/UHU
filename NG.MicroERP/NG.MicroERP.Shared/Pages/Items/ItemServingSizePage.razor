@@ -19,7 +19,7 @@
     <MudExpansionPanel Expanded="true" Style="margin-bottom:10px;">
           <TitleContent>
             <div class="d-flex align-items-center p-2 rounded shadow-sm" style="gap: 10px;">
-                <img src="@record.Pic"
+                <img src="@Globals.GetImageUrl(record.Pic)"
                      alt="Item Image"
                      class="img-thumbnail"
                      style="width: 60px; height: 60px; object-fit: cover; border-radius: 10%;" />
@@ -57,7 +57,7 @@
                                 <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
                                     @if (!string.IsNullOrEmpty(servingSize.Pic))
                                     {
-                                        <img src="@servingSize.Pic"
+                                        <img src="@Globals.GetImageUrl(servingSize.Pic)"
                                              class="img-fluid rounded"
                                              alt="Items Image"
                                              style="max-height: 100%; max-width: 100%; object-fit: cover;" />
@@ -104,7 +104,7 @@
 
             </MudTd>
             <MudTd>
-                <img src="@(!string.IsNullOrWhiteSpace(item.Pic) ? item.Pic : "images/no-image.png")" alt="Picture" style="width:30px; height:30px; border-radius: 50%;" />
+                <img src="@(!string.IsNullOrWhiteSpace(item.Pic) ? Globals.GetImageUrl(item.Pic) : "images/no-image.png")" alt="Picture" style="width:30px; height:30px; border-radius: 50%;" />
             </MudTd>
             <MudTd>@item.Size</MudTd>
             <MudTd>@item.Price</MudTd>

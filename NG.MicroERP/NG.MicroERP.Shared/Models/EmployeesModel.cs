@@ -27,6 +27,24 @@ public class EmployeesModel
     public int ParentId { get; set; } = 0;
     public int ExcludeFromAttendance { get; set; } = 0;
     public int IsActive { get; set; }
+    
+    // HRMS Extended Fields
+    public string? Gender { get; set; } = string.Empty;
+    public string? MaritalStatus { get; set; } = string.Empty;
+    public DateTime? DateOfBirth { get; set; }
+    public string? Mobile { get; set; } = string.Empty;
+    public string? City { get; set; } = string.Empty;
+    public string? Country { get; set; } = string.Empty;
+    public string? PostalCode { get; set; } = string.Empty;
+    public DateTime? HireDate { get; set; }
+    public DateTime? TerminationDate { get; set; }
+    public decimal BasicSalary { get; set; } = 0;
+    public int BankAccountId { get; set; } = 0;
+    public string? BankAccountNumber { get; set; } = string.Empty;
+    public string? EmergencyContactName { get; set; } = string.Empty;
+    public string? EmergencyContactPhone { get; set; } = string.Empty;
+    public string? EmergencyContactRelation { get; set; } = string.Empty;
+    public string? Notes { get; set; } = string.Empty;
     public int CreatedBy { get; set; } = 0;
     public DateTime CreatedOn { get; set; } = DateTime.Today;
     public string? CreatedFrom { get; set; } = string.Empty;

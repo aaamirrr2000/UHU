@@ -6,6 +6,7 @@
 @inject IDialogService dialogService
 @inject NavigationManager NavManager
 @inject ISnackbar SnackbarService
+@inject FileUploadService FileUploadService
 @inject Functions Functions
 @inject Globals Globals
 
@@ -21,13 +22,12 @@
                 @(Action == "INSERT" ? "Save" : "Update")
             </MudButton>
 
-            @if (Action == "UPDATE" && CurrentRecord > 0)
-            {
-                <MudButton Variant="Variant.Filled" OnClick="ShowGLPreview" Color="Color.Info" Class="px-3 py-2 mr-2" Style="height:40px; min-width: 100px;">
-                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="mr-1" />
-                    Preview Entry
-                </MudButton>
-            }
+            <!-- Preview Entry - Available before and after saving -->
+            <MudButton Variant="Variant.Filled" OnClick="ShowGLPreview" Color="Color.Info" Class="px-3 py-2 mr-2" Style="height:40px; min-width: 100px;"
+                       Disabled="@(record?.Details == null || !record.Details.Any() || record.Details.All(d => d.DebitAmount == 0 && d.CreditAmount == 0))">
+                <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="mr-1" />
+                @(CurrentRecord > 0 && record?.IsPosted == 1 ? "View Entry" : "Preview Entry")
+            </MudButton>
 
             @if (Action == "UPDATE" && record.IsPosted == 0)
             {
@@ -60,9 +60,9 @@
                 <div class="col-12 col-md-3 col-lg-3">
                     <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Entry No</label>
                     <MudTextField id="EntryNo"
-                                  @bind-Value="record.EntryNo"
-                                  placeholder="Entry No"
-                                  ReadOnly="@isReadOnly"
+                                  Value="@(record.EntryNo ?? "Auto-generated")"
+                                  placeholder="Entry No (Auto-generated)"
+                                  ReadOnly="true"
                                   Variant="Variant.Outlined"
                                   Dense="@true"
                                   FullWidth="@true" />
@@ -91,7 +91,7 @@
 
                 <div class="col-12 col-md-3 col-lg-3">
                     <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Location</label>
-                    @if (isReadOnly)
+                    @if (isReadOnly || Globals.User.GroupId != 1)
                     {
                         <MudTextField Value="@(Loc.FirstOrDefault(l => l.Id == record.LocationId)?.Name ?? "")"
                                       Variant="Variant.Outlined"
@@ -107,17 +107,52 @@
                                       IdProperty="@(p => p.Id)"
                                       @bind-SelectedId="record.LocationId"
                                       Variant="Variant.Outlined"
+                                      Label=""
                                       FullWidth="@true" />
                     }
                 </div>
 
                 <div class="col-12 col-md-3 col-lg-3">
                     <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Reference Type</label>
-                    <MudTextField Value="@(record.ReferenceType ?? (record.Source?.ToUpper() == "MANUAL" ? "JOURNAL" : record.Source?.ToUpper() ?? "JOURNAL"))"
-                                  Variant="Variant.Outlined"
-                                  Dense="@true"
-                                  FullWidth="@true"
-                                  ReadOnly="@true" />
+                    @if (isReadOnly)
+                    {
+                        <MudTextField Value="@(record.ReferenceType ?? "JOURNAL")"
+                                      Variant="Variant.Outlined"
+                                      Dense="@true"
+                                      FullWidth="@true"
+                                      ReadOnly="@true" />
+                    }
+                    else
+                    {
+                        <MudSelect T="string"
+                                    @bind-Value="record.ReferenceType"
+                                    Placeholder="Reference Type"
+                                    Variant="Variant.Outlined"
+                                    Clearable="true"
+                                    Dense="@true"
+                                    FullWidth="@true">
+                            @if (RefTypes != null && RefTypes.Any())
+                            {
+                                if (string.IsNullOrWhiteSpace(record.ReferenceType))
+                                {
+                                    record.ReferenceType = RefTypes.First().ListValue;
+                                }
+                                foreach (var i in RefTypes)
+                                {
+                                    <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                }
+                            }
+                            else
+                            {
+                                <MudSelectItem T="string" Value="@("JOURNAL")">JOURNAL</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("INVOICE")">INVOICE</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("PAYMENT")">PAYMENT</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("RECEIPT")">RECEIPT</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("CASHBOOK")">CASHBOOK</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("ADJUSTMENT")">ADJUSTMENT</MudSelectItem>
+                            }
+                        </MudSelect>
+                    }
                 </div>
 
                 <div class="col-12 col-md-3 col-lg-3">
@@ -132,7 +167,7 @@
                 </div>
 
                 <div class="col-12 col-md-3 col-lg-3">
-                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Party</label>
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Party (Optional)</label>
                     @if (isReadOnly)
                     {
                         <MudTextField Value="@(Par.FirstOrDefault(p => p.Id == record.PartyId)?.DisplayName ?? "")"
@@ -149,6 +184,7 @@
                                       IdProperty="@(p => p.Id)"
                                       @bind-SelectedId="record.PartyId"
                                       Variant="Variant.Outlined"
+                                      Label=""
                                       FullWidth="@true" />
                     }
                 </div>
@@ -166,24 +202,11 @@
 
                 <div class="col-12 col-md-3 col-lg-3">
                     <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Base Currency</label>
-                    @if (isReadOnly)
-                    {
-                        <MudTextField Value="@(Currencies.FirstOrDefault(c => c.Id == record.BaseCurrencyId)?.DisplayName ?? "")"
-                                      Variant="Variant.Outlined"
-                                      Dense="@true"
-                                      FullWidth="@true"
-                                      ReadOnly="@true" />
-                    }
-                    else
-                    {
-                        <AutoComplete TItem="CurrenciesModel"
-                                      DataList="@Currencies"
-                                      DisplayProperty="@(p => p.DisplayName)"
-                                      IdProperty="@(p => p.Id)"
-                                      @bind-SelectedId="record.BaseCurrencyId"
-                                      Variant="Variant.Outlined"
-                                      FullWidth="@true" />
-                    }
+                    <MudTextField Value="@(Currencies.FirstOrDefault(c => c.Id == record.BaseCurrencyId)?.DisplayName ?? "")"
+                                  Variant="Variant.Outlined"
+                                  Dense="@true"
+                                  FullWidth="@true"
+                                  ReadOnly="true" />
                 </div>
 
                 <div class="col-12 col-md-3 col-lg-3">
@@ -203,9 +226,22 @@
                                       DisplayProperty="@(p => p.DisplayName)"
                                       IdProperty="@(p => p.Id)"
                                       @bind-SelectedId="record.EnteredCurrencyId"
+                                      @bind-SelectedId:after="OnEnteredCurrencyChanged"
+                                      Label=""
                                       Variant="Variant.Outlined"
                                       FullWidth="@true" />
                     }
+                </div>
+
+                <div class="col-12 col-md-3 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Exchange Rate</label>
+                    <MudNumericField @bind-Value="record.ExchangeRate"
+                                     Format="#,##0.000000"
+                                     placeholder="Exchange Rate"
+                                     ReadOnly="@isReadOnly"
+                                     Variant="Variant.Outlined"
+                                     Dense="@true"
+                                     FullWidth="@true" />
                 </div>
             </div>
         </MudCardContent>
@@ -297,6 +333,7 @@
                                               IdProperty="@(p => p.Id)"
                                               @bind-SelectedId="detail.AccountId"
                                               Variant="Variant.Outlined"
+                                              Label=""
                                               FullWidth="@true" />
                             }
                         </MudTd>
@@ -342,6 +379,7 @@
                                               IdProperty="@(p => p.Id)"
                                               @bind-SelectedId="detail.PartyId"
                                               Variant="Variant.Outlined"
+                                              Label=""
                                               FullWidth="@true" />
                             }
                         </MudTd>
@@ -355,7 +393,7 @@
     <MudCard Elevation="1" Class="mb-2" Style="padding: 8px;">
         <MudCardContent Style="padding: 12px !important;">
             <div class="row">
-                <div class="col-12">
+                <div class="col-12 mb-3">
                     <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Notes</label>
                     <MudTextField @bind-Value="record.Notes"
                                   placeholder="Additional notes"
@@ -365,11 +403,40 @@
                                   Lines="2"
                                   FullWidth="@true" />
                 </div>
+                <div class="col-12">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Document Attachment (Optional)</label>
+                    <div class="mt-2">
+                        @if (!isReadOnly)
+                        {
+                            <InputFile class="form-control" OnChange="OnFileInputChanged" />
+                        }
+                        @if (!string.IsNullOrWhiteSpace(record.FileAttachment))
+                        {
+                            <a href="@record.FileAttachment" download class="btn btn-link" style="font-size: 12px; margin-top: 5px;">
+                                <i class="fas fa-download me-1"></i>@record.FileAttachment
+                            </a>
+                        }
+                    </div>
+                </div>
             </div>
         </MudCardContent>
     </MudCard>
 
 </div>
+
+<style>
+    .gl-preview-dialog {
+        z-index: 10000 !important;
+    }
+    
+    .mud-dialog-container {
+        z-index: 10000 !important;
+    }
+    
+    .mud-snackbar-container {
+        z-index: 10001 !important;
+    }
+</style>
 
 @code
 {
@@ -378,6 +445,7 @@
     List<PartiesModel> Par = new();
     List<ChartOfAccountsModel> Acc = new();
     List<CurrenciesModel> Currencies = new();
+    List<TypeCodeModel> RefTypes = new();
 
     [Parameter] public string? Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
@@ -425,6 +493,7 @@
             Par = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search", true) ?? new List<PartiesModel>();
             Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search", true) ?? new List<ChartOfAccountsModel>();
             Currencies = await Functions.GetAsync<List<CurrenciesModel>>($"Currencies/Search", true) ?? new List<CurrenciesModel>();
+            RefTypes = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/REFERENCE TYPE", true) ?? new List<TypeCodeModel>();
 
             if (Action == "INSERT")
             {
@@ -457,6 +526,20 @@
         {
             record.Source = "MANUAL";
         }
+        // Set base currency and entered currency to default
+        if (Currencies != null && Currencies.Any())
+        {
+            var baseCurrency = Currencies.FirstOrDefault(c => c.IsBaseCurrency == 1);
+            if (baseCurrency != null)
+            {
+                if (record.BaseCurrencyId == 0)
+                    record.BaseCurrencyId = baseCurrency.Id;
+                if (record.EnteredCurrencyId == 0)
+                    record.EnteredCurrencyId = baseCurrency.Id;
+            }
+        }
+        if (record.ExchangeRate == 0)
+            record.ExchangeRate = 1.0;
 
         StateHasChanged();
     }
@@ -471,6 +554,14 @@
                 record.Details = new ObservableCollection<GeneralLedgerDetailModel>();
             if (string.IsNullOrWhiteSpace(record.Source))
                 record.Source = "MANUAL";
+            // Lock location for non-admin users
+            if (Globals.User.GroupId != 1 && record.LocationId != Globals.User.LocationId)
+            {
+                record.LocationId = Globals.User.LocationId;
+            }
+            // Set default exchange rate if not set
+            if (record.ExchangeRate == 0)
+                record.ExchangeRate = 1.0;
             // Set read-only if posted or in VIEW mode
             isReadOnly = Action == "VIEW" || record.IsPosted == 1;
             await ValidatePeriodAsync();
@@ -498,9 +589,30 @@
         // Set base currency (get from organization or first base currency)
         var baseCurrency = Currencies.FirstOrDefault(c => c.IsBaseCurrency == 1);
         if (baseCurrency != null)
+        {
             record.BaseCurrencyId = baseCurrency.Id;
+            record.EnteredCurrencyId = baseCurrency.Id; // Default entered currency to base currency
+        }
+        record.ExchangeRate = 1.0; // Default exchange rate to 1.0
         AddDetailLine(); // Add one empty line
         await ValidatePeriodAsync();
+    }
+
+    private void OnEnteredCurrencyChanged()
+    {
+        // When entered currency changes, auto-populate exchange rate
+        // If entered currency is same as base currency, set rate to 1.0
+        if (record.EnteredCurrencyId == record.BaseCurrencyId)
+        {
+            record.ExchangeRate = 1.0;
+        }
+        else if (record.EnteredCurrencyId > 0 && record.BaseCurrencyId > 0)
+        {
+            // If different currency, set default rate to 1.0 (user can change it)
+            // In a real scenario, you might fetch the exchange rate from an API here
+            record.ExchangeRate = 1.0;
+        }
+        StateHasChanged();
     }
 
     private async Task OnEntryDateChanged()
@@ -663,48 +775,98 @@
     {
         try
         {
-            if (CurrentRecord == 0)
+            // Validate required fields for preview (works before saving)
+            if (record?.Details == null || !record.Details.Any())
             {
-                SnackbarService.Add("Please save the entry first", Severity.Warning);
+                SnackbarService.Add("Please add at least one account entry first", Severity.Warning);
                 return;
             }
 
-            // Ensure we have the latest entry data
-            await Get(CurrentRecord);
-
-            // Get the full entry with details
-            var result = await Functions.GetAsync<GeneralLedgerHeaderModel>($"GeneralLedger/Get/{CurrentRecord}", true);
-            
-            if (result != null)
+            if (record.Details.All(d => d.DebitAmount == 0 && d.CreditAmount == 0))
             {
-                var parameters = new DialogParameters<InvoiceGLPreviewDialog>
-                {
-                    { x => x.PreviewData, result },
-                    { x => x.RecordId, CurrentRecord },
-                    { x => x.IsPostedToGL, record.IsPosted == 1 },
-                    { x => x.OnPostToGL, EventCallback.Factory.Create(this, async () => 
-                    {
-                        await PostEntry();
-                        // Refresh preview after posting
-                        await ShowGLPreview();
-                    }) }
-                };
+                SnackbarService.Add("Please enter debit or credit amounts for at least one entry", Severity.Warning);
+                return;
+            }
 
-                var options = new DialogOptions()
-                {
-                    MaxWidth = MaxWidth.Large,
-                    FullWidth = true,
-                    CloseButton = true,
-                    CloseOnEscapeKey = true,
-                    BackdropClick = false
-                };
+            // Validate organization is set
+            if (record.OrganizationId == 0)
+            {
+                record.OrganizationId = Globals.User.OrganizationId;
+            }
 
-                await dialogService.ShowAsync<InvoiceGLPreviewDialog>("General Ledger Entry Preview", parameters, options);
+            // If record is saved, ensure we have latest data, otherwise use current form data
+            GeneralLedgerHeaderModel previewData;
+            if (CurrentRecord > 0)
+            {
+                // Get the full entry with details from database
+                previewData = await Functions.GetAsync<GeneralLedgerHeaderModel>($"GeneralLedger/Get/{CurrentRecord}", true);
+                if (previewData == null)
+                {
+                    SnackbarService.Add("Unable to load entry details", Severity.Error);
+                    return;
+                }
             }
             else
             {
-                SnackbarService.Add("Unable to load entry details", Severity.Error);
+                // Use current form data for preview
+                previewData = new GeneralLedgerHeaderModel
+                {
+                    Id = 0,
+                    EntryNo = record.EntryNo ?? "PREVIEW",
+                    EntryDate = record.EntryDate ?? DateTime.Today,
+                    OrganizationId = record.OrganizationId,
+                    LocationId = record.LocationId,
+                    Source = record.Source ?? "MANUAL",
+                    Description = record.Description,
+                    ReferenceNo = record.ReferenceNo,
+                    ReferenceType = record.ReferenceType,
+                    PartyId = record.PartyId,
+                    BaseCurrencyId = record.BaseCurrencyId,
+                    EnteredCurrencyId = record.EnteredCurrencyId,
+                    Details = new ObservableCollection<GeneralLedgerDetailModel>(record.Details.Select(d => new GeneralLedgerDetailModel
+                    {
+                        Id = d.Id,
+                        AccountId = d.AccountId,
+                        AccountCode = d.AccountCode,
+                        AccountName = d.AccountName,
+                        AccountType = d.AccountType,
+                        DebitAmount = d.DebitAmount,
+                        CreditAmount = d.CreditAmount,
+                        Description = d.Description,
+                        PartyId = d.PartyId
+                    }))
+                };
             }
+
+            var parameters = new DialogParameters<InvoiceGLPreviewDialog>
+            {
+                { x => x.PreviewData, previewData },
+                { x => x.RecordId, CurrentRecord },
+                { x => x.IsPostedToGL, record.IsPosted == 1 },
+                { x => x.OnPostToGL, EventCallback.Factory.Create(this, async () => 
+                {
+                    if (CurrentRecord == 0)
+                    {
+                        SnackbarService.Add("Please save the entry before posting", Severity.Warning);
+                        return;
+                    }
+                    await PostEntry();
+                    // Refresh preview after posting
+                    await ShowGLPreview();
+                }) }
+            };
+
+            var options = new DialogOptions()
+            {
+                MaxWidth = MaxWidth.Large,
+                FullWidth = true,
+                CloseButton = true,
+                CloseOnEscapeKey = true,
+                BackdropClick = false,
+                Position = DialogPosition.Center
+            };
+
+            await dialogService.ShowAsync<InvoiceGLPreviewDialog>("General Ledger Entry Preview", parameters, options);
         }
         catch (Exception ex)
         {
@@ -751,6 +913,29 @@
         {
             LoadingPanel = false;
             SnackbarService.Add($"Error posting entry: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnFileInputChanged(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var result = await Functions.FileUpload(e, FileUploadService, 25);
+
+            if (result.Item1 == true)
+            {
+                record.FileAttachment = result.Item2;
+                SnackbarService.Add("Document uploaded successfully", Severity.Success);
+            }
+            else
+            {
+                SnackbarService.Add($"Error: {result.Item2}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Exception: {ex.Message}", Severity.Error);
+            record.FileAttachment = null;
         }
     }
 }

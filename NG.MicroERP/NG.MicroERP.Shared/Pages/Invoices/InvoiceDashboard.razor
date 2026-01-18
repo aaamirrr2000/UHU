@@ -93,7 +93,7 @@
     else
     {
         <MudPaper Elevation="3" Style="border-radius: 12px; overflow: hidden;">
-            <MudDataGrid T="InvoiceModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
+            <MudDataGrid T="InvoicesAllModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true">
 
                 <Columns>
                     <TemplateColumn Title="Actions" CellStyle="width: 80px; min-width: 80px;" HeaderClass="grid-header">
@@ -103,50 +103,37 @@
                                          Color="Color.Primary"
                                          Dense="true"
                                          Class="actions-menu">
-                                    <MudMenuItem OnClick="@(async () => await View(row.Item.Id))"
+                                    <MudMenuItem OnClick="@(async () => await View(row.Item.ID))"
                                                  Class="menu-item view-item">
                                         <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
                                         <span>View Details</span>
                                     </MudMenuItem>
-                                    @if (row.Item.IsPostedToGL == 1 && !string.IsNullOrWhiteSpace(row.Item.GLEntryNo))
-                                    {
-                                        <MudMenuItem OnClick="@(() => ViewGLEntry(row.Item.GLEntryNo))"
-                                                     Class="menu-item gl-item">
-                                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="menu-icon" />
-                                            <span>View GL Entry: @row.Item.GLEntryNo</span>
-                                        </MudMenuItem>
-                                    }
                                     @if (Globals.AccessLevel == 1)
                                     {
-                                        @if (row.Item.IsPostedToGL == 0)
-                                        {
-                                            <MudMenuItem OnClick="@(async () => await Edit(row.Item.Id))"
-                                                         Class="menu-item edit-item">
-                                                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
-                                                <span>Edit</span>
-                                            </MudMenuItem>
-                                            <MudMenuItem OnClick="@(async () => await Delete(row.Item.Id))"
-                                                         Color="Color.Error"
-                                                         Class="menu-item delete-item">
-                                                <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
-                                                <span>Delete</span>
-                                            </MudMenuItem>
-                                            <hr />
-                                            <MudMenuItem OnClick="@(async () => await PostToGL(row.Item.Id))"
-                                                         Class="menu-item post-item">
-                                                <MudIcon Icon="@Icons.Material.Filled.PostAdd" Class="menu-icon" />
-                                                <span>Post to General Ledger</span>
-                                            </MudMenuItem>
-                                        }
-                                        else
-                                        {
-                                            <MudMenuItem Disabled="true"
-                                                         Class="menu-item disabled-item">
-                                                <MudIcon Icon="@Icons.Material.Filled.Lock" Class="menu-icon" />
-                                                <span>Posted to GL - Cannot Edit/Delete</span>
-                                            </MudMenuItem>
-                                        }
+                                        <MudMenuItem OnClick="@(async () => await Edit(row.Item.ID))"
+                                                     Class="menu-item edit-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
+                                            <span>Edit</span>
+                                        </MudMenuItem>
+                                        <MudMenuItem OnClick="@(async () => await Delete(row.Item.ID))"
+                                                     Color="Color.Error"
+                                                     Class="menu-item delete-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
+                                            <span>Delete</span>
+                                        </MudMenuItem>
+                                        <hr />
+                                        <MudMenuItem OnClick="@(async () => await PostToGL(row.Item.ID))"
+                                                     Class="menu-item post-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.PostAdd" Class="menu-icon" />
+                                            <span>Post to General Ledger</span>
+                                        </MudMenuItem>
                                     }
+                                    <hr />
+                                    <MudMenuItem OnClick="@(() => Print(row.Item.ID))"
+                                                 Class="menu-item print-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Print" Class="menu-icon" />
+                                        <span>Print</span>
+                                    </MudMenuItem>
                                 </MudMenu>
                             </div>
                         </CellTemplate>
@@ -165,7 +152,7 @@
 
                 <PagerContent>
                     <div class="pager-container">
-                        <MudDataGridPager T="InvoiceModel" />
+                        <MudDataGridPager T="InvoicesAllModel" />
                     </div>
                 </PagerContent>
             </MudDataGrid>
@@ -260,8 +247,8 @@
 
 @code
 {
-    List<InvoiceModel> AllData = new();
-    List<InvoiceModel> data = new();
+    List<InvoicesAllModel> AllData = new();
+    List<InvoicesAllModel> data = new();
     InvoiceModel record = new();
     [Parameter] public string InvoiceType { get; set; } = "SALE";
     public string Action { get; set; } = "INSERT";
@@ -323,14 +310,14 @@
             var formattedStartDate = startDate?.ToString("yyyy-MM-dd") ?? DateTime.Today.AddDays(-30).ToString("yyyy-MM-dd");
             var formattedEndDate = endDate?.ToString("yyyy-MM-dd") ?? DateTime.Today.ToString("yyyy-MM-dd");
 
-            string ThisInvoiceType = $"InvoiceType = '{InvoiceType}' and TranDate >= '{formattedStartDate}' and TranDate <= '{formattedEndDate}'";
-            AllData = await Functions.GetAsync<List<InvoiceModel>>($"Invoice/Search/{Uri.EscapeDataString(ThisInvoiceType)}", true) ?? new List<InvoiceModel>();
+            string ThisInvoiceType = $"i.InvoiceType = '{InvoiceType}' and CAST(ISNULL(i.TranDate, i.CreatedOn) AS DATE) >= '{formattedStartDate}' and CAST(ISNULL(i.TranDate, i.CreatedOn) AS DATE) <= '{formattedEndDate}'";
+            AllData = await Functions.GetAsync<List<InvoicesAllModel>>($"Invoice/Search/{Uri.EscapeDataString(ThisInvoiceType)}", true) ?? new List<InvoicesAllModel>();
             data = AllData;
         }
         catch (Exception ex)
         {
             SnackbarService.Add($"Error loading data: {ex.Message}", Severity.Error);
-            data = new List<InvoiceModel>();
+            data = new List<InvoicesAllModel>();
         }
         finally
         {
@@ -510,6 +497,11 @@
     protected void ViewGLEntry(string glEntryNo)
     {
         NavManager.NavigateTo($"/GeneralLedgerDashboard");
+    }
+
+    protected void Print(int id)
+    {
+        NavManager.NavigateTo($"/InvoiceReport/{id}");
     }
 }
 

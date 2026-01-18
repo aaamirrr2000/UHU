@@ -348,7 +348,7 @@
                                 <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
                                     @if (!string.IsNullOrEmpty(record.Logo))
                                     {
-                                        <img src="@record.Logo"
+                                        <img src="@Globals.GetImageUrl(record.Logo)"
                                              class="img-fluid rounded"
                                              alt="Company Logo"
                                              style="max-height: 100%; max-width: 100%; object-fit: cover;" />
@@ -374,7 +374,7 @@
                                 <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
                                     @if (!string.IsNullOrEmpty(record.Wallpaper))
                                     {
-                                        <img src="@record.Wallpaper"
+                                        <img src="@Globals.GetImageUrl(record.Wallpaper)"
                                              class="img-fluid rounded"
                                              alt="Wallpaper"
                                              style="max-height: 100%; max-width: 100%; object-fit: cover;" />

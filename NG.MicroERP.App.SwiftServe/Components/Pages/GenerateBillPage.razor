@@ -4,13 +4,14 @@
 @using System.Collections.ObjectModel
 @using NG.MicroERP.Shared.Services
 
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 8px;">
 <div class="invoice-container" id="billContent">
     <header class="invoice-header">
         <h2>B I L L</h2>
         <div class="invoice-info">
-            <div class="info-row"><strong>Bill #:</strong> @Bills.Bill?.SeqNo</div>
-            <div class="info-row"><strong>Date:</strong> @Bills.Bill?.TranDate.ToString("dd-MMM-yyyy")</div>
-            <div class="info-row"><strong>Location:</strong> @Bills.Bill?.Location</div>
+            <div class="info-row"><strong>Bill #:</strong> @Invoices.Invoice?.Code</div>
+            <div class="info-row"><strong>Date:</strong> @Invoices.Invoice?.TranDate?.ToString("dd-MMM-yyyy")</div>
+            <div class="info-row"><strong>Location:</strong> @Invoices.Invoice?.Location</div>
         </div>
     </header>
 
@@ -24,13 +25,13 @@
             <div class="col-right">Total</div>
         </div>
 
-        @foreach (var item in BillDetails)
+        @foreach (var item in InvoiceDetails)
         {
             <div class="table-row">
-                <div class="col-item">@item.Item @item.ServingSize</div>
+                <div class="col-item">@item.ItemName @item.ServingSize</div>
                 <div class="col-center">@item.Qty</div>
                 <div class="col-right">@item.UnitPrice.ToString("N2")</div>
-                <div class="col-right">@item.Item_Amount.ToString("N2")</div>
+                <div class="col-right">@item.ItemTotalAmount.ToString("N2")</div>
             </div>
         }
     </section>
@@ -41,22 +42,22 @@
             <div class="readonly">@GetSubTotal().ToString("N2")</div>
         </div>
        @*  <div class="total-row">
-            <label>Service Charges @@ @Globals.ServiceCharge.Amount%:</label>
+            <label>Service Charges @@ @MyGlobals.ServiceCharge.Amount%:</label>
             <div class="readonly">@Bills.Bill!.ServiceCharge.ToString("N2")</div>
         </div>
         <div class="total-row">
-            <label>GST  @@ @Globals.GST%:</label>
+            <label>GST  @@ @MyGlobals.GST%:</label>
             <div class="readonly">@Bills.Bill!.TaxAmount.ToString("N2")</div>
         </div> *@
         <div class="total-row">
             <label>Discount:</label>
             @if (BillGenerated == false)
             {
-                <input type="number" step="1" class="editable" @bind="Bills.Bill!.DiscountAmount" @oninput="RecalculateTotal" disabled="@BillGenerated" />
+                <input type="number" step="1" class="editable" @bind="Invoices.Invoice!.DiscountAmount" @oninput="RecalculateTotal" disabled="@BillGenerated" />
             }
             else
             {
-                <div class="readonly">@Bills.Bill!.DiscountAmount.ToString("N2")</div>
+                <div class="readonly">@Invoices.Invoice!.DiscountAmount.ToString("N2")</div>
             }
         </div>
         <div class="grand-total">
@@ -66,7 +67,7 @@
     </section>
 
     <div class="invoice-actions">
-        @if (Bills.Bill.Status != "COMPLETE")
+        @if (Invoices.Invoice.Status != "COMPLETE")
         {
             <button class="btn btn-primary" @onclick="GenerateBill" disabled="@BillGenerated">Generate Bill</button>
         }
@@ -77,13 +78,14 @@
         <p>Thank you for your business!</p>
     </footer>
 </div>
+</MudContainer>
 
 @code {
     [Parameter] public int id { get; set; }
     [CascadingParameter] private List<ItemsModel> _cart { get; set; }
 
-    private BillsModel Bills = new();
-    private ObservableCollection<BillDetailModel> BillDetails = new();
+    private InvoicesModel Invoices = new();
+    private ObservableCollection<InvoiceItemReportModel> InvoiceDetails = new();
 
     private List<TypeCodeModel> GST = new();
 
@@ -94,9 +96,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        Globals.PageTitle = "Generate Bill";
+        MyGlobals.PageTitle = "Generate Bill";
 
-        GST = await Functions.GetAsync<List<TypeCodeModel>>("TypeCode/Search/GST", true) ?? new List<TypeCodeModel>();
+        GST = await MyFunctions.GetAsync<List<TypeCodeModel>>("TypeCode/Search/GST", true) ?? new List<TypeCodeModel>();
 
         await LoadBills(id);
         StateHasChanged();
@@ -104,27 +106,27 @@
 
     private async Task LoadBills(int Id)
     {
-        var res = await Functions.GetAsync<List<BillModel>>($"Bill/Search/bill.Id={Id}", true);
+        var res = await MyFunctions.GetAsync<List<InvoiceModel>>($"Invoice/Search/i.Id={Id}", true);
         if (res is { Count: > 0 })
         {
-            Bills.Bill = res.First();
+            Invoices.Invoice = res.First();
 
-            if (Bills.Bill.Status == "COMPLETE")
+            if (Invoices.Invoice.Status == "COMPLETE")
                 BillGenerated = true;
 
-            var detailRes = await Functions.GetAsync<List<BillDetailModel>>($"BillDetail/Search/BillDetail.BillId={Id}", true);
+            var detailRes = await MyFunctions.GetAsync<List<InvoiceItemReportModel>>($"InvoiceDetail/Search/InvoiceDetail.InvoiceId={Id}", true);
             if (detailRes != null)
             {
-                BillDetails.Clear();
+                InvoiceDetails.Clear();
                 foreach (var item in detailRes)
                 {
-                    BillDetails.Add(item);
+                    InvoiceDetails.Add(item);
                 }
             }
         }
     }
 
-    private double GetSubTotal() => BillDetails.Sum(x => x.Item_Amount);
+    private double GetSubTotal() => InvoiceDetails.Sum(x => x.ItemTotalAmount);
 
     private double GetGrandTotal()
     {
@@ -133,21 +135,21 @@
 
         // ✅ Calculate Service Amount based on type
         double serviceAmount = 0;
-        if (Globals.ServiceCharge.ChargeType == "PERCENTAGE")
+        if (MyGlobals.ServiceCharge.ChargeType == "PERCENTAGE")
         {
-            serviceAmount = (Globals.ServiceCharge.Amount / 100) * subTotal;
+            serviceAmount = (MyGlobals.ServiceCharge.Amount / 100) * subTotal;
         }
-        else if (Globals.ServiceCharge.ChargeType == "AMOUNT")
+        else if (MyGlobals.ServiceCharge.ChargeType == "FLAT")
         {
-            serviceAmount = Globals.ServiceCharge.Amount;
+            serviceAmount = MyGlobals.ServiceCharge.Amount;
         }
 
         // ✅ Discount
-        double discount = Convert.ToDouble(Bills.Bill?.DiscountAmount ?? 0);
+        double discount = Convert.ToDouble(Invoices.Invoice?.DiscountAmount ?? 0);
 
-
-        // ✅ Calculate tax and store it
-        double tax = (subTotal + serviceAmount - discount) * Globals.GST / 100;
+        // ✅ Calculate tax on base amount (subtotal + service charge - discount)
+        double taxBase = subTotal + serviceAmount - discount;
+        double tax = (MyGlobals.GST / 100) * taxBase;
         //Bills.Bill!.TaxAmount = Convert.ToDecimal(tax);
 
         // ✅ Optional: Store service amount too
@@ -155,7 +157,7 @@
 
 
 
-        //var res = Globals.CalculateBillAmounts(Bills.Bill.Id);
+        //var res = MyGlobals.CalculateBillAmounts(Bills.Bill.Id);
 
         return subTotal + serviceAmount + tax - discount;
     }
@@ -168,16 +170,14 @@
     private async Task GenerateBill()
     {
         var tranDate = DateTime.Now;
-        var bill = new BillModel
+        var invoice = new InvoiceModel
         {
             Id = id,
-            //ServiceCharge = Globals.ServiceCharge!.Amount,
-            //TaxAmount = Convert.ToDecimal(Globals.GST),
-            DiscountAmount = Bills.Bill.DiscountAmount,
+            DiscountAmount = Invoices.Invoice.DiscountAmount,
         };
 
 
-        var result = await Functions.PostAsync<string>("Bill/GenerateBill", bill, true);
+        var result = await MyFunctions.PostAsync<string>("Invoice/GenerateBill", invoice, true);
 
         if (!result.Success)
         {
@@ -198,8 +198,8 @@
     }
 
     public static void ApplyChargesToItems(
-     List<BillItemReportModel> items,
-     List<BillChargesReportModel> charges)
+     List<InvoiceItemReportModel> items,
+     List<InvoiceChargesReportModel> charges)
     {
         if (items == null || charges == null || !items.Any() || !charges.Any()) return;
 
@@ -215,7 +215,7 @@
 
                 if (charge.AmountType?.ToUpper() == "FIXED")
                 {
-                    chargeAmount = Convert.ToDecimal(charge.CalculatedAmount) * proportion;
+                    chargeAmount = Convert.ToDecimal(charge.AppliedAmount) * proportion;
                 }
                 else if (charge.AmountType?.ToUpper() == "PERCENTAGE")
                 {

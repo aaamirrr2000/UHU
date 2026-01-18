@@ -121,20 +121,20 @@ public class OrganizationsService : IOrganizationsService
 			) 
 			VALUES 
 			(
-				'{obj.Code!.ToUpper()}', 
-				'{obj.EntraId!.ToUpper()}', 
-				'{obj.Logo!}', 
-				'{obj.Wallpaper!}', 
-				'{obj.Name!.ToUpper()}', 
-				'{obj.Description!.ToUpper()}', 
-				'{obj.Phone!.ToUpper()}', 
-				'{obj.Email!}', 
-				'{obj.Address!.ToUpper()}', 
+				'{obj.Code?.Replace("'", "''").ToUpper() ?? string.Empty}', 
+				'{obj.EntraId?.Replace("'", "''").ToUpper() ?? string.Empty}', 
+				'{obj.Logo?.Replace("'", "''") ?? string.Empty}', 
+				'{obj.Wallpaper?.Replace("'", "''") ?? string.Empty}', 
+				'{obj.Name?.Replace("'", "''").ToUpper() ?? string.Empty}', 
+				'{obj.Description?.Replace("'", "''").ToUpper() ?? string.Empty}', 
+				'{obj.Phone?.Replace("'", "''").ToUpper() ?? string.Empty}', 
+				'{obj.Email?.Replace("'", "''") ?? string.Empty}', 
+				'{obj.Address?.Replace("'", "''").ToUpper() ?? string.Empty}', 
 				{obj.MaxUsers},
 				{obj.DbSize},
-				'{obj.Industry!.ToUpper()}', 
-				'{obj.Website!}', 
-				'{obj.TimeZone!.ToUpper()}', 
+				'{obj.Industry?.Replace("'", "''").ToUpper() ?? string.Empty}', 
+				'{obj.Website?.Replace("'", "''") ?? string.Empty}', 
+				'{obj.TimeZone?.Replace("'", "''").ToUpper() ?? string.Empty}', 
 				{obj.GMT},
 				{obj.IsVerified},
 				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
@@ -142,7 +142,7 @@ public class OrganizationsService : IOrganizationsService
 				{obj.IsActive},
 				{obj.CreatedBy},
 				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
-				'{obj.CreatedFrom!.ToUpper()}', 
+				'{obj.CreatedFrom?.Replace("'", "''").ToUpper() ?? string.Empty}', 
 				{obj.IsSoftDeleted}
 			);";
 
@@ -181,29 +181,29 @@ public class OrganizationsService : IOrganizationsService
 
 			}
 
-			string SQLDuplicate = $@"SELECT * FROM Organizations WHERE UPPER(Code) = '{obj.Code!.ToUpper()}' and ID != {obj.Id};";
+			string SQLDuplicate = $@"SELECT * FROM Organizations WHERE UPPER(Code) = '{obj.Code?.ToUpper() ?? string.Empty}' and ID != {obj.Id};";
             string SQLUpdate = $@"UPDATE Organizations SET 
-					Code = '{obj.Code!.ToUpper()}', 
-					EntraId = '{obj.EntraId!.ToUpper()}', 
-					Logo = '{obj.Logo!.ToUpper()}',		
-					Wallpaper = '{obj.Wallpaper!.ToUpper()}', 
-					Name = '{obj.Name!.ToUpper()}', 
-					Description = '{obj.Description!.ToUpper()}', 
-					Phone = '{obj.Phone!.ToUpper()}', 
-					Email = '{obj.Email!}', 
-					Address = '{obj.Address!.ToUpper()}', 
+					Code = '{obj.Code?.Replace("'", "''").ToUpper() ?? string.Empty}', 
+					EntraId = '{obj.EntraId?.Replace("'", "''").ToUpper() ?? string.Empty}', 
+					Logo = '{obj.Logo?.Replace("'", "''") ?? string.Empty}',		
+					Wallpaper = '{obj.Wallpaper?.Replace("'", "''") ?? string.Empty}', 
+					Name = '{obj.Name?.Replace("'", "''").ToUpper() ?? string.Empty}', 
+					Description = '{obj.Description?.Replace("'", "''").ToUpper() ?? string.Empty}', 
+					Phone = '{obj.Phone?.Replace("'", "''").ToUpper() ?? string.Empty}', 
+					Email = '{obj.Email?.Replace("'", "''") ?? string.Empty}', 
+					Address = '{obj.Address?.Replace("'", "''").ToUpper() ?? string.Empty}', 
 					MaxUsers = {obj.MaxUsers}, 
 					DbSize = {obj.DbSize}, 
-					Industry = '{obj.Industry!.ToUpper()}', 
-					Website = '{obj.Website!}', 
-					TimeZone = '{obj.TimeZone!.ToUpper()}', 
+					Industry = '{obj.Industry?.Replace("'", "''").ToUpper() ?? string.Empty}', 
+					Website = '{obj.Website?.Replace("'", "''") ?? string.Empty}', 
+					TimeZone = '{obj.TimeZone?.Replace("'", "''").ToUpper() ?? string.Empty}', 
 					GMT = {obj.GMT},
 					IsVerified = {obj.IsVerified}, 
 					ParentId = {obj.ParentId}, 
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
-					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
+					UpdatedFrom = '{obj.UpdatedFrom?.Replace("'", "''").ToUpper() ?? string.Empty}', 
 					IsSoftDeleted = {obj.IsSoftDeleted} 
 				WHERE Id = {obj.Id};";
 
@@ -266,7 +266,7 @@ public class OrganizationsService : IOrganizationsService
     {
         string SQLUpdate = $@"UPDATE Organizations SET 
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
-					UpdatedBy = '{obj.UpdatedBy!}',
+					UpdatedBy = {obj.UpdatedBy},
 					IsSoftDeleted = 1 
 				WHERE Id = {obj.Id};";
 

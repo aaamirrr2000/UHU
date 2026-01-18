@@ -26,6 +26,7 @@ public static class DependencyInjection
 
         services.AddSingleton<IAreasService, AreasService>();
         services.AddSingleton<IBankService, BankService>();
+        services.AddSingleton<IBankReconciliationService, BankReconciliationService>();
         services.AddSingleton<IChartOfAccountsService, ChartOfAccountsService>();
         services.AddSingleton<IGeneralLedgerService, GeneralLedgerService>();
         services.AddSingleton<IPeriodCloseService, PeriodCloseService>();
@@ -49,6 +50,7 @@ public static class DependencyInjection
         services.AddSingleton<IScannerDevicesService, ScannerDevicesService>();
         services.AddSingleton<IInvoiceChargesRulesService, InvoiceChargesRulesService>();
         services.AddSingleton<IShiftsService, ShiftsService>();
+        services.AddSingleton<IRestaurantTablesService, RestaurantTablesService>();
 
         services.AddSingleton<ITaxMasterService, TaxMasterService>();
         services.AddSingleton<ITaxRuleService, TaxRuleService>();

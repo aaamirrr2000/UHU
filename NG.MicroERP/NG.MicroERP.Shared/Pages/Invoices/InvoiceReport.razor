@@ -6,9 +6,10 @@
 @using NG.MicroERP.Shared.Models
 @inject NavigationManager NavManager
 @inject IJSRuntime JSRuntime
-@layout BlankLayout
+@* @layout BlankLayout *@
 @inject Globals Globals
 @inject Functions Functions
+@inject ISnackbar SnackbarService
 
 @if (isLoading)
 {
@@ -25,8 +26,16 @@ else if (!string.IsNullOrEmpty(errorMessage))
 }
 else if (ReportData?.Invoice != null)
 {
-    <div class="invoice-actions no-print">
-        <button class="btn btn-primary" @onclick="PrintReport">Print</button>
+    <div class="invoice-actions no-print text-end mb-3">
+        <button class="btn btn-outline-secondary me-2" @onclick="GoBack">
+            <i class="fas fa-arrow-left me-1"></i> Back
+        </button>
+        <button class="btn btn-primary me-2" @onclick="PrintReport">
+            <i class="fas fa-print me-1"></i> Print
+        </button>
+        <button class="btn btn-success" @onclick="SendEmail" disabled="@(string.IsNullOrWhiteSpace(ReportData?.Invoice?.PartyEmail) || isSendingEmail)">
+            <i class="fas fa-envelope me-1"></i> @(isSendingEmail ? "Sending..." : "Email")
+        </button>
     </div>
 
     <div class="invoice-container">
@@ -34,7 +43,7 @@ else if (ReportData?.Invoice != null)
         <div class="invoice-header text-center">
             <div class="row">
                 <div class="col-md-2">
-                    <img src="@Globals.Organization.Logo" class="company-logo" style="width: 60px; height:60px;" />
+                    <img src="@Globals.GetImageUrl(Globals.Organization.Logo)" class="company-logo" style="width: 60px; height:60px;" />
                 </div>
                 <div class="col-md-8">
                     <h1 style="font-size:18px;">@Globals.Organization.Name</h1>
@@ -323,6 +332,7 @@ else
     private InvoiceCompleteReportModel? ReportData;
     private bool isLoading = true;
     private string? errorMessage;
+    private bool isSendingEmail = false;
     
     // Dictionary to store recalculated tax amounts per invoice detail (ItemId, PartyId, Qty) -> TaxAmount
     private Dictionary<(int ItemId, int PartyId, double Qty), double> _recalculatedTaxes = new();
@@ -482,10 +492,9 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        //Globals.AccessLevel = Globals.PageAccess(NavManager, "InvoiceDashboard");
         // Parse withTax from query string
         ParseWithTaxParameter();
-        // Try to load token from sessionStorage if Globals.Token is empty
-        await LoadTokenFromSessionStorage();
         await LoadInvoiceData();
     }
 
@@ -493,8 +502,6 @@ else
     {
         // Parse withTax from query string
         ParseWithTaxParameter();
-        // Try to load token from sessionStorage if Globals.Token is empty
-        await LoadTokenFromSessionStorage();
         await LoadInvoiceData();
     }
     
@@ -509,26 +516,6 @@ else
         else
         {
             WithTax = false; // Default to false if not provided
-        }
-    }
-
-    private async Task LoadTokenFromSessionStorage()
-    {
-        try
-        {
-            // If Globals.Token is empty, try to get it from sessionStorage
-            if (string.IsNullOrEmpty(Globals.Token))
-            {
-                var token = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "authToken");
-                if (!string.IsNullOrEmpty(token))
-                {
-                    Globals.Token = token;
-                }
-            }
-        }
-        catch
-        {
-            // Ignore errors - token might not be in sessionStorage
         }
     }
 
@@ -592,10 +579,124 @@ else
         }
     }
 
+    private void GoBack()
+    {
+        // Navigate back to the appropriate dashboard based on invoice type
+        if (ReportData?.Invoice != null)
+        {
+            var invoiceType = ReportData.Invoice.InvoiceType?.ToUpper() ?? "SALE";
+            if (invoiceType.Contains("PURCHASE"))
+            {
+                NavManager.NavigateTo("/InvoiceDashboard/PURCHASE");
+            }
+            else
+            {
+                NavManager.NavigateTo("/InvoiceDashboard/SALE");
+            }
+        }
+        else
+        {
+            NavManager.NavigateTo("/InvoiceDashboard/SALE");
+        }
+    }
 
     private async Task PrintReport()
     {
         await JSRuntime.InvokeVoidAsync("printInvoice");
+    }
+
+    private async Task SendEmail()
+    {
+        if (ReportData?.Invoice == null)
+        {
+            SnackbarService.Add("Invoice data not available", Severity.Error);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(ReportData.Invoice.PartyEmail))
+        {
+            SnackbarService.Add("Party email address is not available", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            isSendingEmail = true;
+            StateHasChanged();
+
+            // Get HTML content of invoice container
+            string htmlContent = await JSRuntime.InvokeAsync<string>("getInvoiceHtmlContent");
+
+            if (string.IsNullOrWhiteSpace(htmlContent))
+            {
+                SnackbarService.Add("Failed to get invoice content", Severity.Error);
+                return;
+            }
+
+            // Prepare email request
+            var emailRequest = new
+            {
+                ToEmail = ReportData.Invoice.PartyEmail,
+                Subject = $"{ReportData.Invoice.InvoiceType} - {ReportData.Invoice.SeqNo}",
+                Body = htmlContent,
+                Attachment = ""
+            };
+
+            // Send email via API
+            var (success, result, message) = await Functions.PostAsync<EmailResponseModel>("Email/Send", emailRequest, true);
+
+            if (success && result != null)
+            {
+                // Check if the API response indicates success
+                if (result.Success)
+                {
+                    string responseMessage = !string.IsNullOrWhiteSpace(result.Message) 
+                        ? result.Message 
+                        : "Email sent successfully";
+                    
+                    SnackbarService.Add(responseMessage, Severity.Success);
+                }
+                else
+                {
+                    // API returned success HTTP status but success=false in response
+                    string errorMessage = !string.IsNullOrWhiteSpace(result.Message) 
+                        ? result.Message 
+                        : (!string.IsNullOrWhiteSpace(result.Error) 
+                            ? result.Error 
+                            : "Failed to send email");
+                    
+                    SnackbarService.Add(errorMessage, Severity.Error);
+                }
+            }
+            else
+            {
+                // HTTP request failed or result is null
+                string errorMessage = "Failed to send email";
+                
+                if (result != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(result.Message))
+                        errorMessage = result.Message;
+                    else if (!string.IsNullOrWhiteSpace(result.Error))
+                        errorMessage = result.Error;
+                }
+                else if (!string.IsNullOrWhiteSpace(message))
+                {
+                    errorMessage = message;
+                }
+                
+                SnackbarService.Add(errorMessage, Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error sending email: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSendingEmail = false;
+            StateHasChanged();
+        }
     }
 }
 
@@ -681,5 +782,27 @@ else
         document.body.innerHTML = originalContent;
     }
 
+    function getInvoiceHtmlContent() {
+        var invoiceContainer = document.querySelector('.invoice-container');
+        if (!invoiceContainer) {
+            return '';
+        }
+
+        // Create a wrapper with inline styles for email
+        var htmlContent = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' +
+            'body { font-family: Arial, sans-serif; margin: 20px; } ' +
+            '.invoice-container { max-width: 900px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; } ' +
+            '.invoice-header { margin-bottom: 20px; text-align: center; } ' +
+            '.invoice-table { width: 100%; border-collapse: collapse; } ' +
+            '.invoice-table th, .invoice-table td { padding: 8px; text-align: right; border: 1px solid #ddd; } ' +
+            '.invoice-table th { background-color: #f2f2f2; } ' +
+            '.invoice-table th.text-left, .invoice-table td.text-left { text-align: left !important; } ' +
+            '.invoice-footer { border-top: 1px solid #ddd; padding-top: 10px; } ' +
+            '</style></head><body>' +
+            invoiceContainer.innerHTML +
+            '</body></html>';
+
+        return htmlContent;
+    }
 
 </script>

@@ -119,20 +119,30 @@
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
                         <label class="form-label fw-bold mb-1">Location</label>
-                        <MudSelect @bind-Value="record.LocationId"
-                                   Placeholder="Location"
-                                   Variant="Variant.Outlined"
-                                   Clearable="true"
-                                   FullWidth="true"
-                                   Class="flex-grow-1">
-                            @if (Loc != null && Loc.Any())
-                            {
-                                foreach (var i in Loc)
+                        @if (Globals.User.GroupId == 1)
+                        {
+                            <MudSelect @bind-Value="record.LocationId"
+                                       Placeholder="Location"
+                                       Variant="Variant.Outlined"
+                                       Clearable="true"
+                                       FullWidth="true"
+                                       Class="flex-grow-1">
+                                @if (Loc != null && Loc.Any())
                                 {
-                                    <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                                    foreach (var i in Loc)
+                                    {
+                                        <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                                    }
                                 }
-                            }
-                        </MudSelect>
+                            </MudSelect>
+                        }
+                        else
+                        {
+                            <MudTextField Value="@(Loc?.FirstOrDefault(l => l.Id == record.LocationId)?.Name ?? "")"
+                                          Variant="Variant.Outlined"
+                                          ReadOnly="true"
+                                          FullWidth="true" />
+                        }
                         <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.LocationId)" />
                         </div>
@@ -369,7 +379,14 @@
         if (Org != null && Org.Any() && record.OrganizationId == 0)
             record.OrganizationId = Org.First().Id;
         if (Loc != null && Loc.Any() && record.LocationId == 0)
-            record.LocationId = Loc.First().Id;
+        {
+            record.LocationId = Globals.User.GroupId == 1 ? Loc.First().Id : Globals.User.LocationId;
+        }
+        // Lock location for non-admin users
+        if (Globals.User.GroupId != 1)
+        {
+            record.LocationId = Globals.User.LocationId;
+        }
 
 
         StateHasChanged();

@@ -1,43 +1,60 @@
 ﻿@page "/"
 @page "/OrdersPage"
 @using System.Text
+@using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.Maui.Storage
+@using NG.MicroERP.App.SwiftServe.Helper
 
 @layout MyMenuLayout
 @inject NavigationManager Nav
-@inject Globals Globals
 @implements IDisposable
 
-<div class="row g-2 align-items-end mb-3">
-    <!-- Date Input -->
-    <div class="col-4 col-md-4 col-sm-6">
-        <label class="form-label fw-semibold text-muted">Date</label>
-        <input type="date" class="form-control form-control-sm"
-               @bind="FromDate" @bind:event="oninput" />
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 8px;">
+    <div class="orders-header mb-3">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <h4 class="mb-0 fw-bold" style="color: white;">
+                    <i class="fas fa-list-alt me-2"></i>
+                    @(MyGlobals.PageTitle ?? "Orders History")
+                </h4>
+                <p class="text-muted mt-1 mb-0" style="color: rgba(255,255,255,0.85) !important;">View and manage all orders</p>
+            </div>
+        </div>
     </div>
 
-    <!-- Search Input -->
-    <div class="col-5 col-md-6 col-sm-6">
-        <label class="form-label fw-semibold text-muted">Search</label>
-        <input type="text" class="form-control form-control-sm"
-               placeholder="Search"
-               @bind="SearchQuery" @bind:event="oninput" />
-    </div>
+    <div class="row g-2 align-items-end mb-3">
+        <!-- Date Input -->
+        <div class="col-4 col-md-4 col-sm-6">
+            <label class="form-label fw-semibold text-muted">Date</label>
+            <input type="date" class="form-control form-control-sm" style="border-radius: 8px; border: 1px solid #E0E0E0;"
+                   @bind="FromDate" @bind:event="oninput" />
+        </div>
 
-    <!-- Refresh Button -->
-    <div class="col-1 col-md-1">
-        <button class="btn btn-info" @onclick="LoadBills"> <i class="fas fa-search m-2"></i></button>
+        <!-- Search Input -->
+        <div class="col-5 col-md-6 col-sm-6">
+            <label class="form-label fw-semibold text-muted">Search</label>
+            <input type="text" class="form-control form-control-sm" style="border-radius: 8px; border: 1px solid #E0E0E0;"
+                   placeholder="Search"
+                   @bind="SearchQuery" @bind:event="oninput" />
+        </div>
+
+        <!-- Refresh Button -->
+        <div class="col-1 col-md-1">
+            <button class="btn btn-sm" style="background-color: #512BD4; color: white; border-radius: 8px; margin-top: 24px;" @onclick="LoadBills"> 
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
     </div>
-</div>
 
 
 <div class="orders-container">
 
 
-    @if (FilteredBills?.Any() == true)
+    @if (FilteredInvoices?.Any() == true)
     {
-        @foreach (var bill in FilteredBills)
+        @foreach (var invoice in FilteredInvoices)
         {
-            <div class="bill-card p-3 border rounded shadow-sm mb-4 bg-white">
+            <div class="bill-card p-3 border rounded shadow-sm mb-4 bg-white" style="border-radius: 12px; border: 1px solid #E0E0E0;">
                 <div class="d-flex justify-content-between align-items-stretch">
                     <!-- Left Column: Bill Info -->
                     <div class="pe-3 flex-grow-1 d-flex flex-column justify-content-between">
@@ -45,18 +62,18 @@
 
                             <div class="pb-2 mb-2 border-bottom text-muted small d-flex align-items-center" style="font-size: 16px;">
                                 <i class="fas fa-chair text-primary me-2"></i>
-                                <strong class="text-dark me-1">Table:</strong> @bill.TableName
+                                <strong class="text-dark me-1">Table:</strong> @invoice.TableName
                                 <div class="pb-2 ml-5 d-flex align-items-center" style="font-size: 16px;">
                                     @* <i class="fas fa-flag text-warning me-2"></i> *@
-                                    @if (bill.Status == "COMPLETE")
+                                    @if (invoice.Status == "COMPLETE")
                                     {
                                         <span class="badge rounded-pill bg-success px-3 py-1">Completed</span>
                                     }
-                                    else if (bill.Status == "CANCEL")
+                                    else if (invoice.Status == "CANCEL")
                                     {
                                         <span class="badge rounded-pill bg-danger px-3 py-1">Cancelled</span>
                                     }
-                                    else if (bill.Status == "READY")
+                                    else if (invoice.Status == "READY")
                                     {
                                         <span class="badge rounded-pill bg-info px-3 py-1">Ready</span>
                                     }
@@ -69,33 +86,33 @@
 
                             <div class="pb-2 mb-2 border-bottom text-muted small d-flex align-items-center" style="font-size: 16px;">
                                 <i class="fas fa-utensils text-primary me-2"></i>
-                                <strong class="text-dark me-1">Service:</strong> @bill.ServiceType
+                                <strong class="text-dark me-1">Service:</strong> @invoice.ServiceType
                             </div>
 
 
                             <div class="pb-2 mb-2 border-bottom text-muted small d-flex align-items-center" style="font-size: 16px;">
                                 <i class="fas fa-file-invoice text-info me-2"></i>
-                                <strong class="text-dark me-1">Bill:</strong> @bill.SeqNo
+                                <strong class="text-dark me-1">Bill:</strong> @invoice.Code
                             </div>
 
-                            @if(@bill.PartyName != string.Empty)
+                            @if(@invoice.PartyName != string.Empty)
                             {
                                 <div class="pb-2 mb-2 border-bottom text-muted small d-flex align-items-center" style="font-size: 16px;">
                                     <i class="fas fa-user text-secondary me-2"></i>
-                                    <strong class="text-dark me-1">Customer:</strong> @bill.PartyName
+                                    <strong class="text-dark me-1">Customer:</strong> @invoice.PartyName
                                 </div>
                             }
 
-                            @if (bill.Status != "COMPLETE" && bill.Status != "READY")
+                            @if (invoice.Status != "COMPLETE" && invoice.Status != "READY")
                             {
                                 <div class="pb-2 mb-2 border-bottom text-muted small d-flex align-items-center" style="font-size: 16px;">
                                     <i class="far fa-clock text-primary me-2"></i>
-                                    <strong class="me-1" style="color: red;">Waiting Time: @bill.ElapsedTime</strong> 
+                                    <strong class="me-1" style="color: red;">Waiting Time: @invoice.ElapsedTime</strong> 
                                 </div>
                             }
                             <div class="pb-2 mb-2 border-bottom text-muted small d-flex align-items-center" style="font-size: 16px;">
                                 <i class="fas fa-user text-primary me-2"></i>
-                                <strong class="text-dark me-1">Nico:</strong> @Globals.User.FullName
+                                <strong class="text-dark me-1">Nico:</strong> @MyGlobals.User.FullName
                             </div>
 
                         </div>
@@ -106,37 +123,37 @@
                     <div class="d-flex flex-column align-items-center gap-2">
 
                         <!-- View Button -->
-                        <button class="btn btn-info btn-sm" @onclick="@(() => EditBill(bill))">
+                        <button class="btn btn-info btn-sm" @onclick="@(() => EditBill(invoice))">
                             <i class="fas fa-eye fa-sm me-1"></i> View
                         </button>
 
-                        @if (Globals.User.UserType == "WAITER")
+                        @if (MyGlobals.User.UserType == "WAITER")
                         {
-                            @if (bill.Status != "COMPLETE" && bill.Status != "READY")
+                            @if (invoice.Status != "COMPLETE" && invoice.Status != "READY")
                             {
                                 <!-- Delete Button -->
-                                <button class="btn btn-danger btn-sm" @onclick="@(() => DeleteBill(bill))">
+                                <button class="btn btn-danger btn-sm" @onclick="@(() => DeleteBill(invoice))">
                                     <i class="fas fa-trash fa-sm me-1"></i> Delete
                                 </button>
                             }
 
                             <!-- Generate Bill Button -->
-                            <button class="btn btn-success btn-sm" @onclick="@(() => OnGenerateBill(bill))">
-                                <i class="fas fa-file-invoice fa-sm me-1"></i> @(bill.Status != "COMPLETE" ? "Gen. Bill" : "Bill")
+                            <button class="btn btn-success btn-sm" @onclick="@(() => OnGenerateBill(invoice))">
+                                <i class="fas fa-file-invoice fa-sm me-1"></i> @(invoice.Status != "COMPLETE" ? "Gen. Bill" : "Bill")
                             </button>
 
                             <!-- Notes Button -->
-                            <button class="btn btn-primary btn-sm" @onclick="@(() => ClientComments(bill))">
+                            <button class="btn btn-primary btn-sm" @onclick="@(() => ClientComments(invoice))">
                                 <i class="fas fa-comment-dots fa-sm me-1"></i> Notes
                             </button>
 
                         }
-                        else if (Globals.User.UserType == "KITCHEN")
+                        else if (MyGlobals.User.UserType == "KITCHEN")
                         {
-                            @if (bill.Status != "READY")
+                            @if (invoice.Status != "READY")
                             {
                                 <!-- Ready Button -->
-                                <button class="btn btn-info btn-sm" @onclick="@(() => OrderStatusUpdate(bill, "READY"))">
+                                <button class="btn btn-info btn-sm" @onclick="@(() => OrderStatusUpdate(invoice, "READY"))">
                                     <i class="fas fa-check-circle me-1"></i> Ready
                                 </button>
                             }
@@ -154,27 +171,124 @@
     }
 
 </div>
+</MudContainer>
 
 @code {
     private DateTime FromDate = DateTime.Today;
     private string SearchQuery = string.Empty;
     private string status = "READY";
 
-    private List<BillModel> AllBills = new();
-    private List<BillModel> FilteredBills = new();
+    private List<InvoiceModel> AllInvoices = new();
+    private List<InvoiceModel> FilteredInvoices = new();
+    private string? ServiceTypeFilter = null;
     private System.Timers.Timer? _refreshTimer;
 
     protected override async Task OnInitializedAsync()
     {
-        Globals.PageTitle = "Orders";
+        MyGlobals.PageTitle = "Orders";
+        
+        // Authenticate if token is not available (read username/password from Preferences)
+        await AuthenticateIfNeeded();
+        
+        // Read query parameters
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("serviceType", out var serviceType))
+        {
+            ServiceTypeFilter = serviceType.ToString();
+            MyGlobals.PageTitle = "Online Orders";
+        }
+
         await LoadBills();
         StartTimer();
+    }
+
+
+    private async Task AuthenticateIfNeeded()
+    {
+        // Check if token is already available
+        if (!string.IsNullOrEmpty(MyGlobals.Token))
+        {
+            Serilog.Log.Information("Token already available in Globals, skipping authentication");
+            return;
+        }
+
+        try
+        {
+            // Read username and password from Preferences (stored by LoginPage.xaml.cs)
+            string username = Preferences.Get("Username", "");
+            string password = Preferences.Get("Password", "");
+
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            {
+                Serilog.Log.Warning("Username or password not found in Preferences");
+                return;
+            }
+
+            Serilog.Log.Information($"Authenticating in OrdersPage with username: {username}");
+
+            // URL encode username and password
+            string encodedUsername = Uri.EscapeDataString(username);
+            string encodedPassword = Uri.EscapeDataString(password);
+
+            // Call login API to get token
+            var user = await MyFunctions.GetAsync<UsersModel>($"api/Login/Login/{encodedUsername}/{encodedPassword}", false);
+
+            if (user != null && !string.IsNullOrEmpty(user.Token))
+            {
+                // Store token and user data in Globals singleton
+                MyGlobals.Token = user.Token;
+                MyGlobals.User = user;
+                
+                // Ensure BaseURI is set
+                if (string.IsNullOrEmpty(MyGlobals.BaseURI))
+                {
+                    string savedUrl = Preferences.Get("BaseURI", "").Trim();
+                    MyGlobals.BaseURI = !string.IsNullOrEmpty(savedUrl) ? savedUrl : "https://localhost:7019/api/";
+                }
+
+                // Load organization
+                var org = await MyFunctions.GetAsync<List<OrganizationsModel>>($"api/Organizations/Search", true) ?? new List<OrganizationsModel>();
+                if (org != null && org.Any())
+                {
+                    MyGlobals.Organization = org.FirstOrDefault()!;
+                }
+
+                Serilog.Log.Information($"Authentication successful in OrdersPage - Token length: {MyGlobals.Token?.Length ?? 0}");
+                StateHasChanged();
+            }
+            else
+            {
+                Serilog.Log.Warning("Authentication failed in OrdersPage - Invalid credentials");
+            }
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Error(ex, $"Error during authentication in OrdersPage: {ex.Message}");
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Re-read query parameters when navigation occurs
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("serviceType", out var serviceType))
+        {
+            ServiceTypeFilter = serviceType.ToString();
+            MyGlobals.PageTitle = "Online Orders";
+        }
+        else
+        {
+            ServiceTypeFilter = null;
+            MyGlobals.PageTitle = "Orders";
+        }
+
+        await LoadBills();
     }
 
     private async Task LoadBills()
     {
         // Use organization's GMT offset to convert local date to UTC range
-        double gmtOffset = Convert.ToDouble( Globals.Organization.GMT); // e.g., 5
+        double gmtOffset = Convert.ToDouble( MyGlobals.Organization.GMT); // e.g., 5
 
         var localStart = FromDate.Date;
         var localEnd = localStart.AddDays(1);
@@ -184,21 +298,24 @@
         var utcEnd = localEnd.AddHours(-gmtOffset);
 
         // Create SQL-friendly range based on UTC
-        string criteria = $"bill.TranDate >= '{utcStart:yyyy-MM-dd HH:mm:ss}' AND bill.TranDate < '{utcEnd:yyyy-MM-dd HH:mm:ss}'";
+        string criteria = $"i.TranDate >= '{utcStart:yyyy-MM-dd HH:mm:ss}' AND i.TranDate < '{utcEnd:yyyy-MM-dd HH:mm:ss}' AND i.InvoiceType = 'BILL'";
 
-        var res = await Functions.GetAsync<List<BillModel>>($"Bill/Search/{criteria}", true);
+        // Log token state before API call
+        Serilog.Log.Information($"OrdersPage.LoadBills - Before API call - MyGlobals.Token length: {MyGlobals.Token?.Length ?? 0}, Criteria: {criteria}");
+        
+        var res = await MyFunctions.GetAsync<List<InvoiceModel>>($"Invoice/Search/{criteria}", true);
         if (res != null)
         {
-            AllBills = res;
+            AllInvoices = res;
 
-            foreach (var item in AllBills)
+            foreach (var item in AllInvoices)
             {
                 item.ElapsedTime = GetElapsedTime(item.CreatedOn);
             }
         }
         else
         {
-            AllBills.Clear();
+            AllInvoices.Clear();
         }
 
         ApplySearch();
@@ -207,24 +324,28 @@
     private void ApplySearch()
     {
         string query = SearchQuery.ToLowerInvariant();
-        FilteredBills = AllBills.Where(b =>
-            string.IsNullOrEmpty(query) ||
-            (b.SeqNo?.ToLower().Contains(query) ?? false) ||
+        FilteredInvoices = AllInvoices.Where(b =>
+            // Service type filter
+            (string.IsNullOrEmpty(ServiceTypeFilter) || 
+             (b.ServiceType?.Equals(ServiceTypeFilter, StringComparison.OrdinalIgnoreCase) ?? false)) &&
+            // Search query filter
+            (string.IsNullOrEmpty(query) ||
+            (b.Code?.ToLower().Contains(query) ?? false) ||
             (b.PartyName?.ToLower().Contains(query) ?? false) ||
-            (b.Party?.ToLower().Contains(query) ?? false)
+            (b.Party?.ToLower().Contains(query) ?? false))
         ).ToList();
     }
 
-    private async Task DeleteBill(BillModel bill)
+    private async Task DeleteBill(InvoiceModel invoice)
     {
-        bool confirm = await App.Current.MainPage.DisplayAlert("Delete", $"Delete Bill ID: {bill.SeqNo}?", "Yes", "No");
+        bool confirm = await App.Current.MainPage.DisplayAlert("Delete", $"Delete Bill ID: {invoice.Code}?", "Yes", "No");
 
         if (confirm)
         {
             try
             {
-                bill.UpdatedBy = Globals.User.Id;
-                await Functions.PostAsync<List<BillModel>>("Bill/SoftDelete", bill, true);
+                invoice.UpdatedBy = MyGlobals.User.Id;
+                await MyFunctions.PostAsync<InvoiceModel>("Invoice/SoftDelete", invoice, true);
                 await LoadBills();
             }
             catch (Exception ex)
@@ -255,7 +376,7 @@
     {
         await InvokeAsync(() =>
         {
-            foreach (var item in AllBills)
+            foreach (var item in AllInvoices)
             {
                 item.ElapsedTime = GetElapsedTime(item.CreatedOn);
             }
@@ -270,28 +391,28 @@
         _refreshTimer?.Dispose();
     }
 
-    private async Task ClientComments(BillModel bill)
+    private async Task ClientComments(InvoiceModel invoice)
     {
-        Nav.NavigateTo($"/ClientFeedbackPage/{bill.Id}");
+        Nav.NavigateTo($"/ClientFeedbackPage/{invoice.Id}");
     }
 
-    private void EditBill(BillModel bill)
+    private void EditBill(InvoiceModel invoice)
     {
-        Nav.NavigateTo($"/OrderDetailsPage/ORDER/{bill.Id}");
+        Nav.NavigateTo($"/OrderDetailsPage/ORDER/{invoice.Id}");
     }
 
-    private void OnGenerateBill(BillModel bill)
+    private void OnGenerateBill(InvoiceModel invoice)
     {
-        Nav.NavigateTo($"/GenerateBillPage/{bill.Id}");
+        Nav.NavigateTo($"/GenerateBillPage/{invoice.Id}");
     }
 
-     private async void OrderStatusUpdate(BillModel item, string Status)
+     private async void OrderStatusUpdate(InvoiceModel item, string Status)
     {
-        bool confirm = await App.Current.MainPage.DisplayAlert("Status", $"Update Bill Status ID: {item.SeqNo}?", "Yes", "No");
+        bool confirm = await App.Current.MainPage.DisplayAlert("Status", $"Update Bill Status ID: {item.Code}?", "Yes", "No");
         if (!confirm)
             return;
 
-        var res = await Functions.PostAsync<BillModel>($"Bill/BillStatus/{item.Id}/{Status}/0", null, true);
+        var res = await MyFunctions.PostAsync<InvoiceModel>($"Invoice/InvoiceStatus/{item.Id}/{Status}/0", null, true);
         if (res.Success)
            await Application.Current.MainPage.DisplayAlert("✅ Done", $"The item status is now set to {Status}.", "Great!");
         else
@@ -304,6 +425,23 @@
 
 
 <style>
+    .orders-header {
+        padding: 16px 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .orders-header h4 {
+        color: white !important;
+    }
+
+    .orders-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
     .orders-container {
         padding: 1rem;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;

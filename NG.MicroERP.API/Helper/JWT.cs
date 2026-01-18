@@ -20,6 +20,7 @@ public class JWT
         byte[] key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]!);
         Claim[] claims = new[]
         {
+            new Claim(ClaimTypes.Name, username), // Required for User.Identity.Name
             new Claim(JwtRegisteredClaimNames.Sub, username),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };

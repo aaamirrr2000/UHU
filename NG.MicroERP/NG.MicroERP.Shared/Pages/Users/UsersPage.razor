@@ -125,7 +125,7 @@
                                           DisplayProperty="@(e => e.Fullname)"
                                           @bind-SelectedId="record.EmpId"
                                           Variant="Variant.Outlined"
-                                          Label="Employee"
+                                          Label=""
                                           FullWidth="@true"
                                           Class="mb-3" />
                         }
@@ -172,23 +172,35 @@
 
                 <MudGrid>
                     <MudItem xs="12" md="6">
-                        <MudSelect T="int"
-                                   Label="Location"
-                                   @bind-Value="record.LocationId"
-                                   Placeholder="Select location"
-                                   Variant="Variant.Outlined"
-                                   Clearable="@true"
-                                   ReadOnly="@isReadOnly"
-                                   FullWidth="@true"
-                                   Class="mb-3">
-                            @if (Loc != null && Loc.Any())
-                            {
-                                foreach (var i in Loc)
+                        @if (isReadOnly || Globals.User.GroupId != 1)
+                        {
+                            <MudTextField Label="Location"
+                                          Value="@(Loc?.FirstOrDefault(l => l.Id == record.LocationId)?.Name ?? "")"
+                                          ReadOnly="@true"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="@true"
+                                          Class="mb-3" />
+                        }
+                        else
+                        {
+                            <MudSelect T="int"
+                                       Label="Location"
+                                       @bind-Value="record.LocationId"
+                                       Placeholder="Select location"
+                                       Variant="Variant.Outlined"
+                                       Clearable="@true"
+                                       ReadOnly="@isReadOnly"
+                                       FullWidth="@true"
+                                       Class="mb-3">
+                                @if (Loc != null && Loc.Any())
                                 {
-                                    <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                                    foreach (var i in Loc)
+                                    {
+                                        <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                                    }
                                 }
-                            }
-                        </MudSelect>
+                            </MudSelect>
+                        }
                         <ValidationMessage For="@(() => record.LocationId)" />
                     </MudItem>
 
@@ -295,7 +307,14 @@
         if (Gro != null && Gro.Any() && record.GroupId == 0)
             record.GroupId = Gro.First().Id;
         if (Loc != null && Loc.Any() && record.LocationId == 0)
-            record.LocationId = Loc.First().Id;
+        {
+            record.LocationId = Globals.User.GroupId == 1 ? Loc.First().Id : Globals.User.LocationId;
+        }
+        // Lock location for non-admin users
+        if (Globals.User.GroupId != 1)
+        {
+            record.LocationId = Globals.User.LocationId;
+        }
 
         StateHasChanged();
     }

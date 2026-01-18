@@ -18,11 +18,11 @@ public class EmployeesController : ControllerBase
     public async Task<IActionResult> Search(string Criteria = "")
     {
         if (!string.IsNullOrEmpty(Criteria) && !SQLInjectionHelper.IsSafeSearchCriteria(Criteria))
-            return BadRequest("Invalid search criteria");
+            return BadRequest("Invalid search criteria. The search criteria contains potentially unsafe characters.");
 
         var result = await Srv.Search(Criteria)!;
         if (result.Item1 == false)
-            return NotFound("Record Not Found");
+            return NotFound("No employees found matching the search criteria.");
 
         return Ok(result.Item2);
     }
@@ -30,9 +30,12 @@ public class EmployeesController : ControllerBase
     [HttpGet("Get/{id}")]
     public async Task<IActionResult> Get(int id)
     {
+        if (id <= 0)
+            return BadRequest($"Invalid employee ID: {id}. Employee ID must be greater than zero.");
+
         var result = await Srv.Get(id)!;
         if (result.Item1 == false)
-            return NotFound("Record Not Found");
+            return NotFound($"Employee with ID {id} not found. The employee may have been deleted or does not exist.");
 
         return Ok(result.Item2);
 

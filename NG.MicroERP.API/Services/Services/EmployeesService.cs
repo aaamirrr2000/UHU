@@ -7,6 +7,7 @@ using NG.MicroERP.Shared.Helper;
 using NG.MicroERP.Shared.Models;
 using NG.MicroERP.API.Services;
 using NG.MicroERP.API.Helper;
+using Serilog;
 
 namespace NG.MicroERP.API.Services;
 
@@ -29,8 +30,8 @@ public class EmployeesService : IEmployeesService
     {
         string SQL = $@"SELECT a.*, b.DepartmentName, c.DesignationName
                         FROM employees as a
-                        LEFT JOIN departments as b on b.Id=a.DepartmentId
-                        LEFT JOIN designations as c on c.Id=a.DesignationId
+                        LEFT JOIN Departments as b on b.Id=a.DepartmentId
+                        LEFT JOIN Designations as c on c.Id=a.DesignationId
                         Where a.IsSoftDeleted=0";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
@@ -61,52 +62,89 @@ public class EmployeesService : IEmployeesService
 
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM employees WHERE UPPER(EmpId) = '{obj.EmpId!.ToUpper()}';";
+            string Code = dapper.GetCode("", "Employees", "EmpId", 5)!;
+            
+            string SQLDuplicate = $@"SELECT * FROM employees WHERE UPPER(EmpId) = '{obj.EmpId!.ToUpper()}' OR (UPPER(Cnic) = '{obj.Cnic?.ToUpper()}' AND Cnic IS NOT NULL AND Cnic != '');";
+            
+            string dateOfBirth = obj.DateOfBirth.HasValue ? $"'{obj.DateOfBirth.Value.ToString("yyyy-MM-dd")}'" : "NULL";
+            string hireDate = obj.HireDate.HasValue ? $"'{obj.HireDate.Value.ToString("yyyy-MM-dd")}'" : "NULL";
+            string terminationDate = obj.TerminationDate.HasValue ? $"'{obj.TerminationDate.Value.ToString("yyyy-MM-dd")}'" : "NULL";
+            
             string SQLInsert = $@"INSERT INTO employees 
 			(
 				OrganizationId, 
 				EmpId, 
 				Fullname, 
 				Pic, 
-				Phone, 
+				Phone,
+				Mobile, 
 				Email, 
-				Cnic, 
-				Address, 
+				Cnic,
+				Gender,
+				MaritalStatus,
+				DateOfBirth,
+				Address,
+				City,
+				Country,
+				PostalCode,
 				EmpType, 
 				DepartmentId, 
 				DesignationId, 
 				ShiftId, 
-				LocationId, 
+				LocationId,
+				HireDate,
+				TerminationDate,
+				BasicSalary,
+				BankAccountId,
+				BankAccountNumber,
+				EmergencyContactName,
+				EmergencyContactPhone,
+				EmergencyContactRelation,
+				Notes,
 				ParentId, 
 				ExcludeFromAttendance, 
 				IsActive, 
 				CreatedBy, 
 				CreatedOn, 
-				CreatedFrom, 
-				IsSoftDeleted
+				CreatedFrom
 			) 
 			VALUES 
 			(
 				{obj.OrganizationId},
-				'{obj.EmpId!.ToUpper()}', 
-				'{obj.Fullname!.ToUpper()}', 
-				'{obj.Pic!.ToUpper()}', 
-				'{obj.Phone!.ToUpper()}', 
-				'{obj.Email!}', 
-				'{obj.Cnic!.ToUpper()}', 
-				'{obj.Address!.ToUpper()}', 
-				'{obj.EmpType!.ToUpper()}', 
+				'{Code}', 
+				'{obj.Fullname?.Replace("'", "''").ToUpper() ?? string.Empty}', 
+				'{obj.Pic?.Replace("'", "''") ?? string.Empty}', 
+				'{obj.Phone?.Replace("'", "''") ?? string.Empty}',
+				'{obj.Mobile?.Replace("'", "''") ?? string.Empty}', 
+				'{obj.Email?.Replace("'", "''") ?? string.Empty}', 
+				'{obj.Cnic?.Replace("'", "''") ?? string.Empty}',
+				'{obj.Gender?.ToUpper() ?? string.Empty}',
+				'{obj.MaritalStatus?.ToUpper() ?? string.Empty}',
+				{dateOfBirth},
+				'{obj.Address?.Replace("'", "''") ?? string.Empty}', 
+				'{obj.City?.Replace("'", "''") ?? string.Empty}',
+				'{obj.Country?.Replace("'", "''") ?? string.Empty}',
+				'{obj.PostalCode?.Replace("'", "''") ?? string.Empty}',
+				'{obj.EmpType?.ToUpper() ?? string.Empty}', 
 				{obj.DepartmentId},
 				{obj.DesignationId},
 				{obj.ShiftId},
 				{obj.LocationId},
+				{hireDate},
+				{terminationDate},
+				{obj.BasicSalary},
+				{(obj.BankAccountId > 0 ? obj.BankAccountId.ToString() : "NULL")},
+				'{obj.BankAccountNumber?.Replace("'", "''") ?? string.Empty}',
+				'{obj.EmergencyContactName?.Replace("'", "''") ?? string.Empty}',
+				'{obj.EmergencyContactPhone?.Replace("'", "''") ?? string.Empty}',
+				'{obj.EmergencyContactRelation?.Replace("'", "''") ?? string.Empty}',
+				'{obj.Notes?.Replace("'", "''") ?? string.Empty}',
 				{obj.ParentId},
 				{obj.ExcludeFromAttendance},
 				{obj.IsActive},
 				{obj.CreatedBy},
 				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
-				'{obj.CreatedFrom!.ToUpper()}', 
-				0
+				'{obj.CreatedFrom?.Replace("'", "''") ?? string.Empty}'
 			);";
 
             var res = await dapper.Insert(SQLInsert, SQLDuplicate);
@@ -119,12 +157,38 @@ public class EmployeesService : IEmployeesService
             }
             else
             {
-                return (false, null!, "Duplicate Record Found.");
+                // Check which field is duplicate
+                if (!string.IsNullOrEmpty(res.Item3) && !res.Item3.Contains("Duplicate"))
+                {
+                    return (false, null!, $"Failed to create employee. {res.Item3}");
+                }
+                
+                // Check duplicate conditions to provide specific message
+                if (!string.IsNullOrEmpty(obj.EmpId))
+                {
+                    var existingEmpId = await dapper.SearchByQuery<dynamic>($"SELECT * FROM employees WHERE UPPER(EmpId) = '{obj.EmpId.ToUpper()}' AND IsSoftDeleted = 0", "Default");
+                    if (existingEmpId != null && existingEmpId.Any())
+                    {
+                        return (false, null!, $"Employee ID '{obj.EmpId}' already exists. Please use a different Employee ID.");
+                    }
+                }
+                
+                if (!string.IsNullOrEmpty(obj.Cnic))
+                {
+                    var existingCnic = await dapper.SearchByQuery<dynamic>($"SELECT * FROM employees WHERE UPPER(Cnic) = '{obj.Cnic.ToUpper()}' AND Cnic IS NOT NULL AND Cnic != '' AND IsSoftDeleted = 0", "Default");
+                    if (existingCnic != null && existingCnic.Any())
+                    {
+                        return (false, null!, $"CNIC '{obj.Cnic}' is already registered with another employee. Please verify the CNIC number.");
+                    }
+                }
+                
+                return (false, null!, $"Employee could not be created. A duplicate record was found (Employee ID or CNIC already exists).");
             }
         }
         catch (Exception ex)
         {
-            return (false, null!, ex.Message);
+            Log.Error(ex, "EmployeesService.Post Error for Employee: {EmpId}", obj.EmpId);
+            return (false, null!, $"Failed to create employee: {ex.Message}");
         }
     }
 
@@ -132,27 +196,48 @@ public class EmployeesService : IEmployeesService
     {
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM employees WHERE UPPER(EmpId) = '{obj.EmpId!.ToUpper()}' and Id != {obj.Id};";
+            string SQLDuplicate = $@"SELECT * FROM employees WHERE (UPPER(EmpId) = '{obj.EmpId!.ToUpper()}' AND ID != {obj.Id}) OR (UPPER(Cnic) = '{obj.Cnic?.ToUpper()}' AND Cnic IS NOT NULL AND Cnic != '' AND ID != {obj.Id});";
+            
+            string dateOfBirth = obj.DateOfBirth.HasValue ? $"'{obj.DateOfBirth.Value.ToString("yyyy-MM-dd")}'" : "NULL";
+            string hireDate = obj.HireDate.HasValue ? $"'{obj.HireDate.Value.ToString("yyyy-MM-dd")}'" : "NULL";
+            string terminationDate = obj.TerminationDate.HasValue ? $"'{obj.TerminationDate.Value.ToString("yyyy-MM-dd")}'" : "NULL";
+            
             string SQLUpdate = $@"UPDATE employees SET 
 					OrganizationId = {obj.OrganizationId}, 
 					EmpId = '{obj.EmpId!.ToUpper()}', 
-					Fullname = '{obj.Fullname!.ToUpper()}', 
-					Pic = '{obj.Pic!.ToUpper()}', 
-					Phone = '{obj.Phone!.ToUpper()}', 
-					Email = '{obj.Email!}', 
-					Cnic = '{obj.Cnic!.ToUpper()}', 
-					Address = '{obj.Address!.ToUpper()}', 
-					EmpType = '{obj.EmpType!.ToUpper()}', 
+					Fullname = '{obj.Fullname?.Replace("'", "''").ToUpper() ?? string.Empty}', 
+					Pic = '{obj.Pic?.Replace("'", "''") ?? string.Empty}', 
+					Phone = '{obj.Phone?.Replace("'", "''") ?? string.Empty}',
+					Mobile = '{obj.Mobile?.Replace("'", "''") ?? string.Empty}', 
+					Email = '{obj.Email?.Replace("'", "''") ?? string.Empty}', 
+					Cnic = '{obj.Cnic?.Replace("'", "''") ?? string.Empty}',
+					Gender = '{obj.Gender?.ToUpper() ?? string.Empty}',
+					MaritalStatus = '{obj.MaritalStatus?.ToUpper() ?? string.Empty}',
+					DateOfBirth = {dateOfBirth},
+					Address = '{obj.Address?.Replace("'", "''") ?? string.Empty}', 
+					City = '{obj.City?.Replace("'", "''") ?? string.Empty}',
+					Country = '{obj.Country?.Replace("'", "''") ?? string.Empty}',
+					PostalCode = '{obj.PostalCode?.Replace("'", "''") ?? string.Empty}',
+					EmpType = '{obj.EmpType?.ToUpper() ?? string.Empty}', 
 					DepartmentId = {obj.DepartmentId}, 
 					DesignationId = {obj.DesignationId}, 
 					ShiftId = {obj.ShiftId}, 
-					LocationId = {obj.LocationId}, 
+					LocationId = {obj.LocationId},
+					HireDate = {hireDate},
+					TerminationDate = {terminationDate},
+					BasicSalary = {obj.BasicSalary},
+					BankAccountId = {(obj.BankAccountId > 0 ? obj.BankAccountId.ToString() : "NULL")},
+					BankAccountNumber = '{obj.BankAccountNumber?.Replace("'", "''") ?? string.Empty}',
+					EmergencyContactName = '{obj.EmergencyContactName?.Replace("'", "''") ?? string.Empty}',
+					EmergencyContactPhone = '{obj.EmergencyContactPhone?.Replace("'", "''") ?? string.Empty}',
+					EmergencyContactRelation = '{obj.EmergencyContactRelation?.Replace("'", "''") ?? string.Empty}',
+					Notes = '{obj.Notes?.Replace("'", "''") ?? string.Empty}',
 					ParentId = {obj.ParentId}, 
 					ExcludeFromAttendance = {obj.ExcludeFromAttendance}, 
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
-					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}' 
+					UpdatedFrom = '{obj.UpdatedFrom?.Replace("'", "''") ?? string.Empty}' 
 				WHERE Id = {obj.Id};";
 
             var res = await dapper.Update(SQLUpdate, SQLDuplicate);
@@ -165,12 +250,43 @@ public class EmployeesService : IEmployeesService
             }
             else
             {
-                return (false, null!, "Duplicate Record Found.");
+                // Check which field is duplicate or what went wrong
+                if (!string.IsNullOrEmpty(res.Item2) && !res.Item2.Contains("Duplicate") && !res.Item2.Contains("Record Not Saved"))
+                {
+                    return (false, null!, $"Failed to update employee (ID: {obj.Id}). {res.Item2}");
+                }
+                
+                if (!string.IsNullOrEmpty(res.Item2) && res.Item2.Contains("Record Not Saved"))
+                {
+                    return (false, null!, $"Employee record (ID: {obj.Id}) could not be updated. The record may not exist, no changes were made, or the update query failed.");
+                }
+                
+                // Check duplicate conditions to provide specific message
+                if (!string.IsNullOrEmpty(obj.EmpId))
+                {
+                    var existingEmpId = await dapper.SearchByQuery<dynamic>($"SELECT * FROM employees WHERE UPPER(EmpId) = '{obj.EmpId.ToUpper()}' AND ID != {obj.Id} AND IsSoftDeleted = 0", "Default");
+                    if (existingEmpId != null && existingEmpId.Any())
+                    {
+                        return (false, null!, $"Employee ID '{obj.EmpId}' is already assigned to another employee (ID: {existingEmpId.FirstOrDefault()?.Id}). Please use a different Employee ID.");
+                    }
+                }
+                
+                if (!string.IsNullOrEmpty(obj.Cnic))
+                {
+                    var existingCnic = await dapper.SearchByQuery<dynamic>($"SELECT * FROM employees WHERE UPPER(Cnic) = '{obj.Cnic.ToUpper()}' AND Cnic IS NOT NULL AND Cnic != '' AND ID != {obj.Id} AND IsSoftDeleted = 0", "Default");
+                    if (existingCnic != null && existingCnic.Any())
+                    {
+                        return (false, null!, $"CNIC '{obj.Cnic}' is already registered with another employee (ID: {existingCnic.FirstOrDefault()?.Id}). Please verify the CNIC number.");
+                    }
+                }
+                
+                return (false, null!, $"Employee record (ID: {obj.Id}) could not be updated. A duplicate record was found (Employee ID or CNIC already exists).");
             }
         }
         catch (Exception ex)
         {
-            return (false, null!, ex.Message);
+            Log.Error(ex, "EmployeesService.Put Error for Employee ID: {EmpId}, Record ID: {Id}", obj.EmpId, obj.Id);
+            return (false, null!, $"Failed to update employee (ID: {obj.Id}): {ex.Message}");
         }
 
     }

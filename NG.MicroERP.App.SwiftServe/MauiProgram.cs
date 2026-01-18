@@ -4,7 +4,7 @@ using MudBlazor;
 using MudBlazor.Services;
 
 using NG.MicroERP.App.SwiftServe.Services;
-using NG.MicroERP.Shared.Helper;
+using NG.MicroERP.App.SwiftServe.Helper;
 using NG.MicroERP.Shared.Services;
 
 namespace NG.MicroERP.App.SwiftServe
@@ -29,7 +29,9 @@ namespace NG.MicroERP.App.SwiftServe
                  });
 
             builder.Services.AddSingleton<CartStateService>();
-            builder.Services.AddScoped<Globals>();
+            // Register SwiftServe Helper classes as singleton/scoped
+            // MyGlobals and MyFunctions are now static, no need to register
+            builder.Services.AddHttpClient();
             builder.Services.AddSingleton<INavigationService, NavigationService>();
             builder.Services.AddMudServices();
             builder.Services.AddMauiBlazorWebView();

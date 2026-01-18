@@ -33,7 +33,17 @@
                 </MudText>
                 <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">Manage journal entries and accounting records</MudText>
             </div>
-            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 flex-wrap">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <MudDatePicker @bind-Date="startDate"
+                                   Label="Start Date"
+                                   DateFormat="dd MMM yyyy"
+                                   Variant="Variant.Outlined" />
+                    <MudDatePicker @bind-Date="endDate"
+                                   Label="End Date"
+                                   DateFormat="dd MMM yyyy"
+                                   Variant="Variant.Outlined" />
+                </div>
                 <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
                            Size="Size.Small" 
                            Variant="Variant.Filled" 
@@ -41,6 +51,14 @@
                            Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
                            OnClick="Clear">
                     New
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.TwoTone.Search" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Primary"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => GetAll())">
+                    Search
                 </MudButton>
                 <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
                            Size="Size.Small" 
@@ -245,6 +263,9 @@
     GeneralLedgerHeaderModel record = new();
     List<GeneralLedgerHeaderModel> data = new();
 
+    public DateTime? startDate { get; set; } = DateTime.Today.AddDays(-30);
+    public DateTime? endDate { get; set; } = DateTime.Today;
+
     [Parameter] public string? Action { get; set; } = "INSERT";
     private bool LoadingPanel { get; set; } = false;
     private MyModelDialog? _myDialog;
@@ -267,7 +288,28 @@
         try
         {
             LoadingPanel = true;
-            data = await Functions.GetAsync<List<GeneralLedgerHeaderModel>>($"GeneralLedger/Search", true) ?? new List<GeneralLedgerHeaderModel>();
+            
+            string criteria = string.Empty;
+            if (startDate.HasValue && endDate.HasValue)
+            {
+                criteria = $"EntryDate >= '{startDate.Value:yyyy-MM-dd}' AND EntryDate <= '{endDate.Value:yyyy-MM-dd}'";
+            }
+            else if (startDate.HasValue)
+            {
+                criteria = $"EntryDate >= '{startDate.Value:yyyy-MM-dd}'";
+            }
+            else if (endDate.HasValue)
+            {
+                criteria = $"EntryDate <= '{endDate.Value:yyyy-MM-dd}'";
+            }
+            
+            string url = "GeneralLedger/Search";
+            if (!string.IsNullOrEmpty(criteria))
+            {
+                url += $"/{Uri.EscapeDataString(criteria)}";
+            }
+            
+            data = await Functions.GetAsync<List<GeneralLedgerHeaderModel>>(url, true) ?? new List<GeneralLedgerHeaderModel>();
         }
         catch (Exception ex)
         {

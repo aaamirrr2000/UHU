@@ -75,7 +75,13 @@ VALUES
 (24, 1, '10009', 'CREDIT CARD', 'ASSET', 'PAYMENT METHOD', 'Credit card payments', 9, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
 (25, 1, '10010', 'DEBIT CARD', 'ASSET', 'PAYMENT METHOD', 'Debit card payments', 9, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
 (26, 1, '10011', 'JAZZCASH', 'ASSET', 'PAYMENT METHOD', 'JazzCash mobile wallet', 9, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
-(27, 1, '10012', 'EASYPAISA', 'ASSET', 'PAYMENT METHOD', 'Easypaisa mobile wallet', 9, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0);
+(27, 1, '10012', 'EASYPAISA', 'ASSET', 'PAYMENT METHOD', 'Easypaisa mobile wallet', 9, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+(28, 1, '30004', 'SALES REVENUE', 'REVENUE', 'REVENUE', 'Sales revenue account', 3, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+(29, 1, '30005', 'SERVICE REVENUE', 'REVENUE', 'REVENUE', 'Service revenue account', 3, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+(30, 1, '40003', 'OPERATING EXPENSE', 'EXPENSE', 'EXPENSE', 'General operating expenses', 4, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+(31, 1, '40004', 'PURCHASE EXPENSE', 'EXPENSE', 'EXPENSE', 'Purchase and procurement expenses', 4, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+(32, 1, '20005', 'B2C SUPPLIER', 'LIABILITY', 'ACCOUNTS PAYABLE', 'B2C supplier accounts payable', 14, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0),
+(33, 1, '10013', 'ADVANCE', 'ASSET', 'ADVANCE', 'Employee Advances Account', 1, 0.00, 1, 1, GETDATE(), NULL, 1, GETDATE(), NULL, 0);
 GO
 
 SET IDENTITY_INSERT dbo.ChartOfAccounts OFF;

@@ -17,9 +17,22 @@ public class PhysicalCashCountController : ControllerBase
     public async Task<IActionResult> Search(string Criteria = "")
     {
         if (!string.IsNullOrEmpty(Criteria) && !SQLInjectionHelper.IsSafeSearchCriteria(Criteria))
-            return BadRequest("Invalid search criteria");
+            return BadRequest("Invalid search criteria. The search criteria contains potentially unsafe characters.");
 
         var result = await Srv.Search(Criteria)!;
+        if (result.Item1 == false)
+            return Ok(new List<PhysicalCashCountModel>());
+
+        return Ok(result.Item2);
+    }
+
+    [HttpGet("SearchIndividual/{Criteria?}")]
+    public async Task<IActionResult> SearchIndividual(string Criteria = "")
+    {
+        if (!string.IsNullOrEmpty(Criteria) && !SQLInjectionHelper.IsSafeSearchCriteria(Criteria))
+            return BadRequest("Invalid search criteria. The search criteria contains potentially unsafe characters.");
+
+        var result = await Srv.SearchIndividual(Criteria)!;
         if (result.Item1 == false)
             return Ok(new List<PhysicalCashCountModel>());
 
@@ -31,7 +44,7 @@ public class PhysicalCashCountController : ControllerBase
     {
         var result = await Srv.Get(id)!;
         if (result.Item1 == false)
-            return NotFound("Record Not Found");
+            return NotFound($"Physical cash count with ID {id} not found. The record may have been deleted or does not exist.");
 
         return Ok(result.Item2);
     }

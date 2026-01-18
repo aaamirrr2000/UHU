@@ -201,7 +201,7 @@
                                           DisplayProperty="@(e => e.DepartmentName)"
                                           @bind-SelectedId="record.DepartmentId"
                                           Variant="Variant.Outlined"
-                                          Label="Department"
+                                          Label=""
                                           FullWidth="@true"
                                           Class="mb-3" />
                         }
@@ -226,7 +226,7 @@
                                           DisplayProperty="@(e => e.DesignationName)"
                                           @bind-SelectedId="record.DesignationId"
                                           Variant="Variant.Outlined"
-                                          Label="Designation"
+                                          Label=""
                                           FullWidth="@true"
                                           Class="mb-3" />
                         }
@@ -255,7 +255,7 @@
                     </MudItem>
 
                     <MudItem xs="12" md="6">
-                        @if (isReadOnly)
+                        @if (isReadOnly || Globals.User.GroupId != 1)
                         {
                             <MudTextField Label="Location"
                                           Value="@(Loc?.FirstOrDefault(l => l.Id == record.LocationId)?.Name ?? "")"
@@ -272,7 +272,7 @@
                                           DisplayProperty="@(e => e.Name)"
                                           @bind-SelectedId="record.LocationId"
                                           Variant="Variant.Outlined"
-                                          Label="Location"
+                                          Label=""
                                           FullWidth="@true"
                                           Class="mb-3" />
                         }
@@ -327,7 +327,7 @@
                         <div class="d-flex justify-content-center align-items-center mb-3" style="height: 200px; background: var(--mud-palette-grey-lighteren); border-radius: 8px;">
                             @if (!string.IsNullOrEmpty(record.Pic))
                             {
-                                <img src="@record.Pic"
+                                <img src="@Globals.GetImageUrl(record.Pic)"
                                      class="img-fluid rounded"
                                      alt="Employee Picture"
                                      style="max-height: 100%; max-width: 100%; object-fit: cover; border-radius: 8px;" />
@@ -497,7 +497,14 @@
         if (Shi != null && Shi.Any() && record.ShiftId == 0)
             record.ShiftId = Shi.First().Id;
         if (Loc != null && Loc.Any() && record.LocationId == 0)
-            record.LocationId = Loc.First().Id;
+        {
+            record.LocationId = Globals.User.GroupId == 1 ? Loc.First().Id : Globals.User.LocationId;
+        }
+        // Lock location for non-admin users
+        if (Globals.User.GroupId != 1)
+        {
+            record.LocationId = Globals.User.LocationId;
+        }
         if (Par != null && Par.Any() && record.ParentId == 0)
             record.ParentId = Par.First().Id;
 

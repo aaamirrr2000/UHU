@@ -88,7 +88,7 @@
                                     HeaderClass="grid-header"
                                     CellClass="grid-cell">
                         <CellTemplate Context="row">
-                            <img src="@(!string.IsNullOrWhiteSpace(row.Item.Logo) ? row.Item.Logo : "images/no-image.png")"
+                            <img src="@(!string.IsNullOrWhiteSpace(row.Item.Logo) ? Globals.GetImageUrl(row.Item.Logo) : "images/no-image.png")"
                                  alt="Logo"
                                  style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd;" />
                         </CellTemplate>

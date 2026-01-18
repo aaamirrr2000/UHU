@@ -1,4 +1,5 @@
 ﻿@using System.Text.Json
+@inject NG.MicroERP.Shared.Helper.Globals Globals
 
 <MudDialog @bind-Visible="Visible" Options="_dialogOptions" Class="item-detail-dialog">
     <TitleContent>
@@ -119,7 +120,7 @@
 
                                         <!-- Image -->
                                         <MudTooltip Text="@size.Size">
-                                            <MudImage Src="@size.Pic"
+                                            <MudImage Src="@Globals.GetImageUrl(size.Pic)"
                                                       Width="72"
                                                       Height="64"
                                                       Class="rounded-lg mx-auto mb-2"

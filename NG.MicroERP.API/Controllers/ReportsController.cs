@@ -130,4 +130,46 @@ public class ReportsController : ControllerBase
             return BadRequest($"Error generating report: {ex.Message}");
         }
     }
+
+    [HttpGet("CashReconciliation/{organizationId}/{reportDate}")]
+    public async Task<IActionResult> GetCashReconciliation(int organizationId, DateTime reportDate, [FromQuery] int? locationId = null, [FromQuery] int? countedBy = null, [FromQuery] DateTime? countedOn = null)
+    {
+        try
+        {
+            var result = await Srv.GetCashReconciliation(organizationId, reportDate, locationId, countedBy, countedOn);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"Error generating report: {ex.Message}");
+        }
+    }
+
+    [HttpGet("PhysicalCashCountSessions/{organizationId}/{reportDate}")]
+    public async Task<IActionResult> GetPhysicalCashCountSessions(int organizationId, DateTime reportDate, [FromQuery] int? locationId = null)
+    {
+        try
+        {
+            var result = await Srv.GetPhysicalCashCountSessions(organizationId, reportDate, locationId);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"Error getting physical cash count sessions: {ex.Message}");
+        }
+    }
+
+    [HttpGet("EmployeeAdvances/{organizationId}")]
+    public async Task<IActionResult> GetEmployeeAdvances(int organizationId, [FromQuery] int? locationId = null, [FromQuery] int? employeeId = null)
+    {
+        try
+        {
+            var result = await Srv.GetEmployeeAdvances(organizationId, locationId, employeeId);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"Error generating report: {ex.Message}");
+        }
+    }
 }

@@ -24,6 +24,7 @@ public class GeneralLedgerHeaderModel
     public string? LocationName { get; set; } = string.Empty;
     public int BaseCurrencyId { get; set; } = 0;
     public int EnteredCurrencyId { get; set; } = 0;
+    public double ExchangeRate { get; set; } = 1.0;
     public double TotalDebit { get; set; } = 0;
     public double TotalCredit { get; set; } = 0;
     public int IsReversed { get; set; } = 0;

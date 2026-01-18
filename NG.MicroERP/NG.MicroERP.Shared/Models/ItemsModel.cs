@@ -25,7 +25,7 @@ public class ItemsModel
     public string? StockType { get; set; } = string.Empty;
     public string? SaleType { get; set; } = string.Empty;
     public string? Unit { get; set; } = string.Empty;
-    public int TaxRuleId { get; set; }
+    public int? TaxRuleId { get; set; }
     public string? ServingSize { get; set; }
     public int IsFavorite { get; set; } = 0;
     public int IsActive { get; set; } = 0;

@@ -38,12 +38,93 @@ public class InvoiceService : IInvoiceService
 
     public async Task<(bool, List<InvoicesAllModel>)>? Search(string Criteria = "")
     {
-        string SQL = @"SELECT * FROM Invoice ";
+        string SQL = @"SELECT 
+            i.Id AS ID,
+            i.Code,
+            i.InvoiceType,
+            i.Source,
+            i.SalesId,
+            ISNULL(e.Fullname, '') AS Fullname,
+            0 AS TableId,
+            '' AS TableName,
+            i.LocationId,
+            ISNULL(loc.Name, '') AS Location,
+            i.PartyId,
+            ISNULL(p.Name, '') AS Party,
+            ISNULL(i.PartyName, ISNULL(p.Name, '')) AS PartyName,
+            ISNULL(i.PartyPhone, ISNULL((SELECT TOP 1 pc.ContactValue FROM PartyContacts pc WHERE pc.PartyId = i.PartyId AND pc.ContactType IN ('PHONE', 'MOBILE') AND pc.IsPrimary = 1 AND pc.IsSoftDeleted = 0 ORDER BY CASE WHEN pc.ContactType = 'PHONE' THEN 1 ELSE 2 END), '')) AS PartyPhone,
+            ISNULL(i.PartyEmail, ISNULL((SELECT TOP 1 pc.ContactValue FROM PartyContacts pc WHERE pc.PartyId = i.PartyId AND pc.ContactType = 'EMAIL' AND pc.IsPrimary = 1 AND pc.IsSoftDeleted = 0), '')) AS PartyEmail,
+            ISNULL(i.PartyAddress, ISNULL(p.Address, '')) AS PartyAddress,
+            NULL AS ScenarioId,
+            ISNULL(i.TranDate, i.CreatedOn) AS TranDate,
+            0 AS PreprationTime,
+            ISNULL((
+                SELECT SUM((id.UnitPrice * id.Qty) - id.DiscountAmount + ISNULL(tax.TaxAmount, 0))
+                FROM InvoiceDetail id
+                LEFT JOIN (SELECT InvoiceDetailId, SUM(TaxAmount) AS TaxAmount FROM InvoiceDetailTax GROUP BY InvoiceDetailId) tax ON id.Id = tax.InvoiceDetailId
+                WHERE id.InvoiceId = i.Id AND id.IsSoftDeleted = 0
+            ), 0) AS SubTotalAmount,
+            ISNULL((
+                SELECT SUM(ic.AppliedAmount)
+                FROM InvoiceCharges ic
+                WHERE ic.InvoiceId = i.Id AND ic.ChargeCategory = 'SERVICE' AND ic.IsSoftDeleted = 0
+            ), 0) AS TotalChargeAmount,
+            ISNULL((
+                SELECT SUM(ic.AppliedAmount)
+                FROM InvoiceCharges ic
+                WHERE ic.InvoiceId = i.Id AND ic.ChargeCategory = 'DISCOUNT' AND ic.IsSoftDeleted = 0
+            ), 0) AS DiscountAmount,
+            (ISNULL((
+                SELECT SUM((id.UnitPrice * id.Qty) - id.DiscountAmount + ISNULL(tax.TaxAmount, 0))
+                FROM InvoiceDetail id
+                LEFT JOIN (SELECT InvoiceDetailId, SUM(TaxAmount) AS TaxAmount FROM InvoiceDetailTax GROUP BY InvoiceDetailId) tax ON id.Id = tax.InvoiceDetailId
+                WHERE id.InvoiceId = i.Id AND id.IsSoftDeleted = 0
+            ), 0) 
+            + ISNULL((
+                SELECT SUM(ic.AppliedAmount)
+                FROM InvoiceCharges ic
+                WHERE ic.InvoiceId = i.Id AND ic.ChargeCategory = 'SERVICE' AND ic.IsSoftDeleted = 0
+            ), 0)
+            - ISNULL((
+                SELECT SUM(ic.AppliedAmount)
+                FROM InvoiceCharges ic
+                WHERE ic.InvoiceId = i.Id AND ic.ChargeCategory = 'DISCOUNT' AND ic.IsSoftDeleted = 0
+            ), 0)) AS BillAmount,
+            ISNULL((SELECT SUM(Amount) FROM InvoicePayments WHERE InvoiceId = i.Id AND IsSoftDeleted = 0), 0) AS TotalPaidAmount,
+            ((ISNULL((
+                SELECT SUM((id.UnitPrice * id.Qty) - id.DiscountAmount + ISNULL(tax.TaxAmount, 0))
+                FROM InvoiceDetail id
+                LEFT JOIN (SELECT InvoiceDetailId, SUM(TaxAmount) AS TaxAmount FROM InvoiceDetailTax GROUP BY InvoiceDetailId) tax ON id.Id = tax.InvoiceDetailId
+                WHERE id.InvoiceId = i.Id AND id.IsSoftDeleted = 0
+            ), 0) 
+            + ISNULL((
+                SELECT SUM(ic.AppliedAmount)
+                FROM InvoiceCharges ic
+                WHERE ic.InvoiceId = i.Id AND ic.ChargeCategory = 'SERVICE' AND ic.IsSoftDeleted = 0
+            ), 0)
+            - ISNULL((
+                SELECT SUM(ic.AppliedAmount)
+                FROM InvoiceCharges ic
+                WHERE ic.InvoiceId = i.Id AND ic.ChargeCategory = 'DISCOUNT' AND ic.IsSoftDeleted = 0
+            ), 0))
+            - ISNULL((SELECT SUM(Amount) FROM InvoicePayments WHERE InvoiceId = i.Id AND IsSoftDeleted = 0), 0)) AS BalanceAmount,
+            i.Description,
+            i.CreatedBy,
+            i.CreatedOn,
+            ISNULL(i.Status, '') AS Status,
+            ISNULL(u.Username, '') AS Username,
+            ISNULL(i.ClientComments, '') AS ClientComments
+        FROM Invoice i
+        LEFT JOIN Parties p ON p.Id = i.PartyId
+        LEFT JOIN Locations loc ON loc.Id = i.LocationId
+        LEFT JOIN Employees e ON e.Id = i.SalesId
+        LEFT JOIN Users u ON u.Id = i.CreatedBy
+        WHERE i.IsSoftDeleted = 0";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
-            SQL += " WHERE " + Criteria;
+            SQL += " AND " + Criteria;
 
-        SQL += " ORDER BY Id DESC";
+        SQL += " ORDER BY i.Id DESC";
 
         List<InvoicesAllModel> result = (await dapper.SearchByQuery<InvoicesAllModel>(SQL)) ?? new List<InvoicesAllModel>();
         return result == null || result.Count == 0 ? (false, null!) : (true, result);

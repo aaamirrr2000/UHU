@@ -160,6 +160,7 @@ CREATE TABLE dbo.StockMovements
     Id                  INT IDENTITY(1,1) PRIMARY KEY,
     OrganizationId      INT NOT NULL,
     MovementNo          VARCHAR(50) NOT NULL,
+    DocumentType        VARCHAR(10) NULL, -- GRN (Goods Receipt Note), SIR (Stock Issue Requisition), STN (Stock Transfer Note), ADJ (Adjustment), RTN (Return), DMG (Damage), LSS (Loss)
     MovementType        VARCHAR(50) NOT NULL, -- TRANSFER, ADJUSTMENT, RETURN, DAMAGE, LOSS
     FromLocationId      INT NULL, -- NULL for adjustments/receipts
     ToLocationId        INT NULL, -- NULL for adjustments/issues

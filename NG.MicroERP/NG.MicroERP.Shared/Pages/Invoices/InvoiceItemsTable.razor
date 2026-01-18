@@ -88,7 +88,7 @@
                          Class="me-1" />
                 <MudText Typo="Typo.caption" Class="fw-bold mb-0" Style="font-size: 0.7rem;">Invoice Amount</MudText>
             </div>
-            <MudText Typo="Typo.body1" Class="fw-bold text-end mb-0" Color="Color.Warning" Style="font-size: 0.9rem;">
+            <MudText Typo="Typo.h5" Class="fw-bold text-end mb-0 digital-display" Color="Color.Warning" Style="font-family: 'Courier New', monospace; letter-spacing: 1px;">
                 @Record.Invoice.TotalInvoiceAmount.ToString("#,##0.00")
             </MudText>
         </MudPaper>
@@ -112,7 +112,7 @@
                                Variant="Variant.Text"
                                Style="min-width: 24px; width: 24px; height: 24px; padding: 0;" />
             </div>
-            <MudText Typo="Typo.body1" Class="fw-bold text-end mb-0" Color="Color.Primary" Style="font-size: 0.9rem;">
+            <MudText Typo="Typo.h5" Class="fw-bold text-end mb-0 digital-display" Color="Color.Primary" Style="font-family: 'Courier New', monospace; letter-spacing: 1px;">
                 @Record.Invoice.TotalPayments.ToString("#,##0.00")
             </MudText>
         </MudPaper>
@@ -128,7 +128,7 @@
                          Class="me-1" />
                 <MudText Typo="Typo.caption" Class="fw-bold mb-0" Style="font-size: 0.7rem;">Balance</MudText>
             </div>
-            <MudText Typo="Typo.body1" Class="fw-bold text-end mb-0" Color="Color.Error" Style="font-size: 0.9rem;">
+            <MudText Typo="Typo.h5" Class="fw-bold text-end mb-0 digital-display" Color="Color.Error" Style="font-family: 'Courier New', monospace; letter-spacing: 1px;">
                 @Record.Invoice.BalanceAmount.ToString("#,##0.00")
             </MudText>
         </MudPaper>
@@ -449,8 +449,19 @@
     }
 
     .amount-input-modern input {
-        font-size: 1.1rem;
-        font-weight: 600;
+        font-size: 1.5rem;
+        font-weight: 700;
+        font-family: 'Courier New', monospace;
+        letter-spacing: 1px;
+    }
+
+    /* Digital Display Style for Card Values */
+    .digital-display {
+        font-family: 'Courier New', 'Consolas', 'Monaco', monospace !important;
+        font-weight: 700 !important;
+        letter-spacing: 2px !important;
+        text-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
+        line-height: 1.2 !important;
     }
 
     /* Summary Cards Container - Flexbox with no wrap */

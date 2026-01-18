@@ -28,7 +28,7 @@ public class StockMovementService : IStockMovementService
 
     public async Task<(bool, List<StockMovementModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT sm.*, fl.Name as FromLocationName, tl.Name as ToLocationName, u.Fullname as ApprovedByName
+        string SQL = $@"SELECT sm.*, ISNULL(sm.DocumentType, '') as DocumentType, fl.Name as FromLocationName, tl.Name as ToLocationName, u.Fullname as ApprovedByName
                         FROM StockMovements as sm
                         LEFT JOIN Locations as fl on fl.Id=sm.FromLocationId
                         LEFT JOIN Locations as tl on tl.Id=sm.ToLocationId
@@ -51,7 +51,7 @@ public class StockMovementService : IStockMovementService
     public async Task<(bool, StockMovementModel?)>? Get(int id)
     {
         // Get Header
-        string SQLHeader = $@"SELECT sm.*, fl.Name as FromLocationName, tl.Name as ToLocationName, u.Fullname as ApprovedByName
+        string SQLHeader = $@"SELECT sm.*, ISNULL(sm.DocumentType, '') as DocumentType, fl.Name as FromLocationName, tl.Name as ToLocationName, u.Fullname as ApprovedByName
                              FROM StockMovements as sm
                              LEFT JOIN Locations as fl on fl.Id=sm.FromLocationId
                              LEFT JOIN Locations as tl on tl.Id=sm.ToLocationId
@@ -80,7 +80,35 @@ public class StockMovementService : IStockMovementService
     {
         try
         {
-            string movementNo = dapper.GetCode("MOV", "StockMovements", "MovementNo")!;
+            // Auto-determine DocumentType from MovementType if not provided
+            if (string.IsNullOrWhiteSpace(obj.DocumentType))
+            {
+                obj.DocumentType = obj.MovementType?.ToUpper() switch
+                {
+                    "TRANSFER" => "STN",  // Stock Transfer Note
+                    "ADJUSTMENT" => "ADJ", // Adjustment
+                    "RETURN" => "RTN",     // Return
+                    "DAMAGE" => "DMG",     // Damage
+                    "LOSS" => "LSS",       // Loss
+                    _ => "MOV"             // Default Movement
+                };
+            }
+
+            // Determine document prefix based on DocumentType
+            string docPrefix = obj.DocumentType?.ToUpper() switch
+            {
+                "GRN" => "GRN",  // Goods Receipt Note
+                "SIR" => "SIR",  // Stock Issue Requisition
+                "STN" => "STN",  // Stock Transfer Note
+                "ADJ" => "ADJ",  // Adjustment
+                "RTN" => "RTN",  // Return
+                "DMG" => "DMG",  // Damage
+                "LSS" => "LSS",  // Loss
+                _ => "MOV"       // Default Movement
+            };
+
+            // Generate document number based on document type
+            string movementNo = dapper.GetCode(docPrefix, "StockMovements", "MovementNo")!;
             string SQLDuplicate = $@"SELECT * FROM StockMovements WHERE UPPER(MovementNo) = '{movementNo.ToUpper()}' AND OrganizationId = {obj.OrganizationId};";
             
             // Insert Header
@@ -88,6 +116,7 @@ public class StockMovementService : IStockMovementService
 			(
 				OrganizationId, 
 				MovementNo,
+				DocumentType,
 				MovementType,
 				FromLocationId,
 				ToLocationId,
@@ -109,6 +138,7 @@ public class StockMovementService : IStockMovementService
 			(
 				{obj.OrganizationId},
 				'{movementNo.ToUpper()}', 
+				'{obj.DocumentType?.ToUpper() ?? docPrefix}',
 				'{obj.MovementType?.ToUpper() ?? "TRANSFER"}',
 				{(obj.FromLocationId > 0 ? obj.FromLocationId.ToString() : "NULL")},
 				{(obj.ToLocationId > 0 ? obj.ToLocationId.ToString() : "NULL")},
@@ -211,8 +241,23 @@ public class StockMovementService : IStockMovementService
             var existing = await dapper.SearchByQuery<StockMovementModel>($"SELECT * FROM StockMovements WHERE Id = {obj.Id}");
             string oldStatus = existing?.FirstOrDefault()?.Status ?? "";
 
+            // Auto-determine DocumentType from MovementType if not provided
+            if (string.IsNullOrWhiteSpace(obj.DocumentType))
+            {
+                obj.DocumentType = obj.MovementType?.ToUpper() switch
+                {
+                    "TRANSFER" => "STN",  // Stock Transfer Note
+                    "ADJUSTMENT" => "ADJ", // Adjustment
+                    "RETURN" => "RTN",     // Return
+                    "DAMAGE" => "DMG",     // Damage
+                    "LOSS" => "LSS",       // Loss
+                    _ => "MOV"             // Default Movement
+                };
+            }
+
             // Update Header
             string SQLUpdateHeader = $@"UPDATE StockMovements SET 
+					DocumentType = '{obj.DocumentType?.ToUpper() ?? "MOV"}',
 					MovementType = '{obj.MovementType?.ToUpper() ?? "TRANSFER"}',
 					FromLocationId = {(obj.FromLocationId > 0 ? obj.FromLocationId.ToString() : "NULL")},
 					ToLocationId = {(obj.ToLocationId > 0 ? obj.ToLocationId.ToString() : "NULL")},

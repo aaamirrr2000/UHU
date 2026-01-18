@@ -69,8 +69,7 @@ public class DesignationsService : IDesignationsService
 				IsActive, 
 				CreatedBy, 
 				CreatedOn, 
-				CreatedFrom, 
-				IsSoftDeleted
+				CreatedFrom
 			) 
 			VALUES 
 			(
@@ -82,8 +81,7 @@ public class DesignationsService : IDesignationsService
 				{obj.IsActive},
 				{obj.CreatedBy},
 				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
-				'{obj.CreatedFrom!.ToUpper()}', 
-				{obj.IsSoftDeleted}
+				'{obj.CreatedFrom!.ToUpper()}'
 			);";
 
             var res = await dapper.Insert(SQLInsert, SQLDuplicate);
@@ -119,8 +117,7 @@ public class DesignationsService : IDesignationsService
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
-					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
-					IsSoftDeleted = {obj.IsSoftDeleted} 
+					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}'
 				WHERE Id = {obj.Id};";
 
             var res = await dapper.Update(SQLUpdate, SQLDuplicate);

@@ -19,6 +19,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Remove="Scripts\0005_CreateControlCenterTable.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
 	  <PackageReference Include="dbup-mysql" Version="6.0.4" />
 	  <PackageReference Include="DinkToPdf" Version="1.0.8" />
 	  <PackageReference Include="DotNetZip" Version="1.16.0" />
@@ -39,6 +43,10 @@
 
   <ItemGroup>
     <Folder Include="logs\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Scripts\0005_CreateControlCenterTable.sql" />
   </ItemGroup>
 
 </Project>
