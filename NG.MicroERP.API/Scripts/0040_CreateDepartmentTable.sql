@@ -25,11 +25,12 @@ INSERT INTO Departments
     CreatedFrom
 )
 VALUES
-(
-    'Admin',        -- Department name
-    NULL,           -- Top-level department, no parent
-    'Administrative Department',  -- Description
-    1,              -- IsActive = true
-    1,              -- CreatedBy (e.g., admin user id)
-    'System'        -- CreatedFrom
-);
+('ADMIN',        NULL, 'ADMINISTRATIVE DEPARTMENT', 1, 1, 'SYSTEM'),
+('ACCOUNTS',     NULL, 'ACCOUNTS / FINANCE DEPARTMENT', 1, 1, 'SYSTEM'),
+('SALES',        NULL, 'SALES AND MARKETING DEPARTMENT', 1, 1, 'SYSTEM'),
+('PURCHASE',     NULL, 'PROCUREMENT / PURCHASE DEPARTMENT', 1, 1, 'SYSTEM'),
+('WAREHOUSE',    NULL, 'WAREHOUSE / INVENTORY DEPARTMENT', 1, 1, 'SYSTEM'),
+('PRODUCTION',   NULL, 'PRODUCTION / MANUFACTURING DEPARTMENT', 1, 1, 'SYSTEM'),
+('TECHNOLOGY',   NULL, 'INFORMATION TECHNOLOGY DEPARTMENT', 1, 1, 'SYSTEM'),
+('HR',           NULL, 'HUMAN RESOURCES DEPARTMENT', 1, 1, 'SYSTEM'),
+('R&D',          NULL, 'RESEARCH AND DEVELOPMENT', 1, 1, 'SYSTEM');

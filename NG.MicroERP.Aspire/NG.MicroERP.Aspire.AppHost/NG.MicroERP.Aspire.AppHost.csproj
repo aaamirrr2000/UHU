@@ -14,6 +14,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\NG.ControlCenter.WebSite\NG.ControlCenter.WebSite.csproj" />
     <ProjectReference Include="..\..\NG.MicroERP.API\NG.MicroERP.API.csproj" />
+    <!-- Note: MAUI apps (NG.MicroERP.WorkHub, NG.MicroERP.App, NG.MicroERP.App.SwiftServe, etc.) -->
+    <!-- are excluded from Aspire as they are desktop/mobile applications, not web services. -->
+    <!-- Aspire is designed for orchestrating web services and APIs, not desktop/mobile apps. -->
     <ProjectReference Include="..\..\NG.MicroERP\NG.MicroERP.Web\NG.MicroERP.Web.csproj" />
     <ProjectReference Include="..\NG.MicroERP.Aspire.ApiService\NG.MicroERP.Aspire.ApiService.csproj" />
     <ProjectReference Include="..\NG.MicroERP.Aspire.ServiceDefaults\NG.MicroERP.Aspire.ServiceDefaults.csproj" />

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using NG.MicroERP.API.Helper;
 using NG.MicroERP.Shared.Models;
 using NG.MicroERP.API.Services;
+using Serilog;
 
 namespace NG.MicroERP.API.Controllers;
 
@@ -53,12 +54,20 @@ public class LoginController : ControllerBase
     [HttpGet("ChangePassword/{UserId}/{NewPassword}")]
     public async Task<IActionResult> ChangePassword(int UserId, string NewPassword)
     {
-        var result = await Srv.ChangePassword(UserId, NewPassword)!;
-        if (result.Item1 == true)
+        try
         {
-            return Ok();
+            var result = await Srv.ChangePassword(UserId, NewPassword)!;
+            if (result.Item1 == true)
+            {
+                return Ok(new { success = true, message = result.Item2 });
+            }
+            return BadRequest(new { success = false, message = result.Item2 });
         }
-        return NotFound("Record Not Found");
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error changing password for UserId: {UserId}", UserId);
+            return BadRequest(new { success = false, message = $"Error changing password: {ex.Message}" });
+        }
     }
 
     [HttpGet("ResetPassword/{UserId}")]

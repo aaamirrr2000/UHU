@@ -1,8 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-
-using MySqlX.XDevAPI.Common;
 using NG.MicroERP.API.Helper;
 using NG.MicroERP.API.Services;
 using NG.MicroERP.Shared.Models;
@@ -25,8 +23,9 @@ public class InvoiceController : ControllerBase
             return BadRequest("Invalid search criteria");
 
         var result = await Srv.Search(Criteria)!;
-        if (result.Item1 == false)
-            return NotFound("Record Not Found");
+        // Return empty list instead of NotFound when no records found
+        if (result.Item1 == false || result.Item2 == null)
+            return Ok(new List<InvoicesAllModel>());
 
         return Ok(result.Item2);
     }

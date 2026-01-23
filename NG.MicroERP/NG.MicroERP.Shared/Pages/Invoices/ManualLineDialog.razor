@@ -1,0 +1,149 @@
+@using NG.MicroERP.Shared.Models
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="manual-line-dialog-container">
+            <MudGrid Spacing="3" GutterSize="GutterSize.Small">
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="Data.ItemName"
+                                  Label="Item Name / Description *"
+                                  Variant="Variant.Outlined"
+                                  FullWidth="true"
+                                  Margin="Margin.Normal"
+                                  Required="true"
+                                  RequiredError="Item name is required"
+                                  Class="manual-line-field" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudNumericField T="double"
+                                    @bind-Value="Data.Qty"
+                                    Label="Quantity *"
+                                    Variant="Variant.Outlined"
+                                    FullWidth="true"
+                                    Margin="Margin.Normal"
+                                    Min="0.01"
+                                    Format="#,##0.00"
+                                    Required="true"
+                                    RequiredError="Quantity is required"
+                                    Class="manual-line-field" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudNumericField T="double"
+                                    @bind-Value="Data.UnitPrice"
+                                    Label="Unit Price *"
+                                    Variant="Variant.Outlined"
+                                    FullWidth="true"
+                                    Margin="Margin.Normal"
+                                    Min="0"
+                                    Format="#,##0.00"
+                                    Required="true"
+                                    RequiredError="Unit price is required"
+                                    Class="manual-line-field" />
+                </MudItem>
+
+                @if (!IsPurchaseInvoice)
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="double"
+                                        @bind-Value="Data.DiscountAmount"
+                                        Label="Discount Amount"
+                                        Variant="Variant.Outlined"
+                                        FullWidth="true"
+                                        Margin="Margin.Normal"
+                                        Min="0"
+                                        Format="#,##0.00"
+                                        Class="manual-line-field" />
+                    </MudItem>
+                }
+
+                <MudItem xs="12" sm="@(IsPurchaseInvoice ? 12 : 6)">
+                    <MudNumericField T="double"
+                                    @bind-Value="Data.TaxAmount"
+                                    Label="Tax Amount"
+                                    Variant="Variant.Outlined"
+                                    FullWidth="true"
+                                    Margin="Margin.Normal"
+                                    Min="0"
+                                    Format="#,##0.00"
+                                    Class="manual-line-field" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="manual-line-total-paper">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <MudText Typo="Typo.h6" Class="fw-bold mb-0" Style="color: var(--mud-palette-text-primary);">
+                                Line Total:
+                            </MudText>
+                            <MudText Typo="Typo.h5" Class="fw-bold mb-0" Style="color: var(--mud-palette-primary); font-family: 'Courier New', monospace;">
+                                @LineTotal.ToString("#,##0.00")
+                            </MudText>
+                        </div>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text" Color="Color.Default">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Save" Disabled="@(!CanAddLine)">Add Line</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<style>
+    .manual-line-dialog-container {
+        padding: 24px !important;
+    }
+
+    .manual-line-field {
+        margin-bottom: 8px;
+    }
+
+    .manual-line-total-paper {
+        padding: 16px 20px;
+        background: linear-gradient(135deg, rgba(63, 81, 181, 0.08) 0%, rgba(63, 81, 181, 0.04) 100%);
+        border: 1px solid rgba(63, 81, 181, 0.2);
+        border-radius: 8px;
+        margin-top: 8px;
+    }
+
+    /* Style dialog actions using MudDialog's built-in structure */
+    :deep(.mud-dialog-actions) {
+        padding: 16px 24px;
+        border-top: 1px solid rgba(0, 0, 0, 0.12);
+        gap: 12px;
+    }
+</style>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string InvoiceType { get; set; } = "SALE";
+
+    public ManualLineData Data { get; set; } = new ManualLineData();
+
+    private bool IsPurchaseInvoice => !string.IsNullOrEmpty(InvoiceType) && InvoiceType.ToUpper().Contains("PURCHASE");
+
+    private double LineTotal => (Data.Qty * Data.UnitPrice) - Data.DiscountAmount + Data.TaxAmount;
+
+    private bool CanAddLine => Data.Qty > 0 && Data.UnitPrice > 0 && !string.IsNullOrWhiteSpace(Data.ItemName);
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(Data.ItemName))
+        {
+            return;
+        }
+        if (Data.Qty <= 0 || Data.UnitPrice < 0)
+        {
+            return;
+        }
+        // Convert item name to uppercase
+        Data.ItemName = Data.ItemName.ToUpper();
+        MudDialog.Close(DialogResult.Ok(Data));
+    }
+}

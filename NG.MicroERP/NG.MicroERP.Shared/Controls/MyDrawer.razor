@@ -1,5 +1,5 @@
-﻿<MudDrawer @bind-Open="Open"
-           Width="1000px"
+<MudDrawer @bind-Open="Open"
+           Width="@Width"
            Anchor="Anchor.Right"
            Elevation="3"
            Variant="DrawerVariant.Temporary"
@@ -40,6 +40,7 @@
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
     [Parameter] public string? Title { get; set; } = string.Empty;
     [Parameter] public string? FaIcon { get; set; } = string.Empty;
+    [Parameter] public string Width { get; set; } = "1000px";
     [Parameter] public RenderFragment HeaderContent { get; set; } = null!;
     [Parameter] public RenderFragment ChildContent { get; set; } = null!;
     [Parameter] public RenderFragment FooterContent { get; set; } = null!;

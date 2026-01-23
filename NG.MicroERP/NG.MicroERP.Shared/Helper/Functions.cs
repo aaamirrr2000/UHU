@@ -773,29 +773,120 @@ public class Functions
 
     public  List<string> GetFilesFromFolder()
     {
-        IConfigurationBuilder builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json", optional: false);
-        _ = builder.Build();
-
-        IConfiguration configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: false)
-                .Build();
-
-        var folderPath = configuration.GetValue<string>("DashboardPages:DashboardPagesPath") ?? string.Empty;
-
         var pageList = new List<string>();
-
-        if (!string.IsNullOrWhiteSpace(folderPath) && Directory.Exists(folderPath))
+        
+        try
         {
-            var files = Directory.GetFiles(folderPath, "*.razor", SearchOption.AllDirectories);
+            // First, try using GetPageNamesInFolder to get routes from Dashboards namespace
+            var dashboardRoutes = GetPageNamesInFolder("NG.MicroERP.Shared.Pages.Dashboards");
+            if (dashboardRoutes != null && dashboardRoutes.Any())
+            {
+                foreach (var route in dashboardRoutes)
+                {
+                    if (!string.IsNullOrWhiteSpace(route))
+                    {
+                        // Extract page name from route (e.g., "/AdminDashboardPage" -> "AdminDashboardPage")
+                        string routeTrimmed = route.TrimStart('/');
+                        string pageName = routeTrimmed.Split('/')[0];
+                        
+                        // Only add if it ends with DashboardPage
+                        if (pageName.EndsWith("DashboardPage", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (!pageList.Contains(pageName))
+                            {
+                                pageList.Add(pageName);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // If that didn't work, try direct reflection
+            if (!pageList.Any())
+            {
+                Assembly assembly = Assembly.GetExecutingAssembly();
+                Type[] types = assembly.GetTypes();
 
-            pageList = files
-                .Select(file => Path.GetFileNameWithoutExtension(file))
-                .OrderBy(name => name)
-                .ToList();
+                foreach (Type type in types)
+                {
+                    // Check if the type is a Blazor component
+                    if (typeof(ComponentBase).IsAssignableFrom(type) && !type.IsAbstract)
+                    {
+                        // Check namespace for Dashboards folder
+                        if (type.Namespace != null && 
+                            (type.Namespace.Contains("Pages.Dashboards", StringComparison.OrdinalIgnoreCase) ||
+                             type.Namespace.EndsWith(".Dashboards", StringComparison.OrdinalIgnoreCase)))
+                        {
+                            // Use class name directly
+                            string className = type.Name;
+                            if (className.EndsWith("DashboardPage", StringComparison.OrdinalIgnoreCase))
+                            {
+                                if (!pageList.Contains(className))
+                                {
+                                    pageList.Add(className);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // If reflection didn't find anything, try reading from folder path
+            if (!pageList.Any())
+            {
+                try
+                {
+                    IConfigurationBuilder builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json", optional: false);
+                    _ = builder.Build();
+
+                    IConfiguration configuration = new ConfigurationBuilder()
+                            .SetBasePath(Directory.GetCurrentDirectory())
+                            .AddJsonFile("appsettings.json", optional: false)
+                            .Build();
+
+                    var folderPath = configuration.GetValue<string>("DashboardPages:DashboardPagesPath") ?? string.Empty;
+
+                    if (!string.IsNullOrWhiteSpace(folderPath) && Directory.Exists(folderPath))
+                    {
+                        var files = Directory.GetFiles(folderPath, "*.razor", SearchOption.AllDirectories);
+
+                        var folderPages = files
+                            .Select(file => Path.GetFileNameWithoutExtension(file))
+                            .Where(name => name.EndsWith("DashboardPage", StringComparison.OrdinalIgnoreCase))
+                            .ToList();
+                        
+                        if (folderPages.Any())
+                        {
+                            pageList.AddRange(folderPages);
+                            pageList = pageList.Distinct().OrderBy(name => name).ToList();
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignore folder reading errors
+                }
+            }
+            
+            // Fallback: Provide default dashboard pages if nothing found
+            if (!pageList.Any())
+            {
+                pageList = new List<string>
+                {
+                    "AdminDashboardPage"
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            // Fallback to default list on error
+            pageList = new List<string>
+            {
+                "AdminDashboardPage"
+            };
         }
 
-        return pageList;
+        return pageList.OrderBy(name => name).ToList();
     }
 
 }

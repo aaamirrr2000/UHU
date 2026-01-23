@@ -14,7 +14,7 @@
     <div class="dashboard-header">
         <div class="d-flex align-items-center justify-content-between flex-wrap">
             <div>
-                <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
                     <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="me-2" Style="color: white;" />
                     Employee Advance Report
                 </MudText>
@@ -29,7 +29,7 @@
                                   @bind-SelectedId="selectedLocationId"
                                   @bind-SelectedId:after="OnFilterChanged"
                                   Variant="Variant.Outlined"
-                                  Label=""
+                                  Label="Location"
                                   Placeholder="All Locations"
                                   Style="background: rgba(255,255,255,0.95); width: 180px;" />
                     <AutoComplete TItem="EmployeesModel"
@@ -39,7 +39,7 @@
                                   @bind-SelectedId="selectedEmployeeId"
                                   @bind-SelectedId:after="OnFilterChanged"
                                   Variant="Variant.Outlined"
-                                  Label=""
+                                  Label="Employee"
                                   Placeholder="All Employees"
                                   Clearable="true"
                                   Style="background: rgba(255,255,255,0.95); width: 200px;" />

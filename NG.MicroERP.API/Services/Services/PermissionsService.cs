@@ -1,14 +1,12 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
-using MySql.Data.MySqlClient;
 using NG.MicroERP.API.Helper;
 using NG.MicroERP.API.Services;
 using NG.MicroERP.Shared.Helper;
 using NG.MicroERP.Shared.Models;
+using Serilog;
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -62,16 +60,24 @@ public class PermissionsService : IPermissionsService
     {
         try
         {
-            Config cfg = new Config();
-            string SQLExistYN = $"SELECT * FROM Permissions where MenuId={obj.MenuId} and GroupId={obj.GroupId} and OrganizationId={obj.OrganizationId}";
-            string DBConnection = cfg.DefaultDB();
+            // Set default values if not provided
+            if (obj.IsActive == 0)
+                obj.IsActive = 1;
+            if (obj.IsSoftDeleted == 0)
+                obj.IsSoftDeleted = 0;
 
-            using IDbConnection cnn = new MySqlConnection(DBConnection);
-
-            int count = await cnn.ExecuteScalarAsync<int>(SQLExistYN);
-
-            if (count > 0)
+            // Check if record exists using DapperFunctions (consistent with rest of service)
+            string SQLExistYN = $"SELECT * FROM Permissions WHERE MenuId={obj.MenuId} AND GroupId={obj.GroupId} AND OrganizationId={obj.OrganizationId} AND IsSoftDeleted=0";
+            var existingRecords = await dapper.SearchByQuery<PermissionsModel>(SQLExistYN);
+            
+            if (existingRecords != null && existingRecords.Count > 0)
             {
+                // Update existing record - set Id from existing record
+                var existingRecord = existingRecords.FirstOrDefault();
+                if (existingRecord != null)
+                {
+                    obj.Id = existingRecord.Id;
+                }
                 var res = await Put(obj);
                 return res.Item1;
             }
@@ -81,8 +87,9 @@ public class PermissionsService : IPermissionsService
                 return res.Item1;
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Log.Error(ex, "Error saving permission: {Message}", ex.Message);
             return false;
         }
     }

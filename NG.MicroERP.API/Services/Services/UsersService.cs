@@ -8,6 +8,7 @@ using NG.MicroERP.Shared.Helper;
 using NG.MicroERP.Shared.Models;
 using NG.MicroERP.API.Services;
 using NG.MicroERP.API.Helper;
+using Serilog;
 
 namespace NG.MicroERP.API.Services;
 
@@ -320,31 +321,60 @@ public class UsersService : IUsersService
 
     public async Task<(bool, string)> ChangePassword(int UserId, string NewPassword)
     {
-        string SQL = $@"Select * from Users where Id = {UserId};";
-        List<UsersModel>? Users = await dapper.SearchByQuery<UsersModel>(SQL);
-        UsersModel User = Users.FirstOrDefault();
-
-        if(User!=null)
+        try
         {
+            string SQL = $@"Select * from Users where Id = {UserId};";
+            List<UsersModel>? Users = await dapper.SearchByQuery<UsersModel>(SQL);
+            UsersModel? User = Users?.FirstOrDefault();
 
-            SQL = $@"Select * from Employees where Id = {User!.EmpId};";
+            if (User == null)
+            {
+                return (false, "User Not Found");
+            }
+
+            SQL = $@"Select * from Employees where Id = {User.EmpId};";
             List<EmployeesModel>? Employees = await dapper.SearchByQuery<EmployeesModel>(SQL);
-            EmployeesModel Employee = Employees.FirstOrDefault();
+            EmployeesModel? Employee = Employees?.FirstOrDefault();
 
-            //Changing Password and Sending Email
+            // Changing Password
             SQL = $@"Update Users set password = '" + Config.Encrypt(NewPassword) + "' where Id = " + UserId + ";";
             (bool, string) result = await dapper.ExecuteQuery(SQL);
+            
             if (result.Item1 == false)
             {
-                return (false, "User Not Updated");
+                return (false, "Failed to update password. Please try again.");
+            }
+
+            // Send Email if employee email exists
+            if (Employee != null && !string.IsNullOrWhiteSpace(Employee.Email))
+            {
+                try
+                {
+                    bool emailSent = Config.sendEmail(Employee.Email, $"Password Reset", $"Your new Password is {NewPassword}.");
+                    if (emailSent)
+                    {
+                        return (true, "Password saved successfully and emailed to user.");
+                    }
+                    else
+                    {
+                        return (true, "Password saved successfully, but failed to send email. Please contact administrator.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error sending password reset email to {Email}", Employee.Email);
+                    return (true, "Password saved successfully, but failed to send email. Please contact administrator.");
+                }
             }
             else
             {
-                Config.sendEmail(Employee.Email, $"Password Reset", $"Your new Passord is {NewPassword}.");
-                return (true, "Password Saved and Emailed to User.");
+                return (true, "Password saved successfully. Email not sent - employee email not found.");
             }
         }
-        else
-            return (false, "User Not Found");
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error changing password for UserId: {UserId}", UserId);
+            return (false, $"Error changing password: {ex.Message}");
+        }
     }
 }

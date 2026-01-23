@@ -1,4 +1,4 @@
-﻿@page "/PartiesPage/{Action}/{CurrentRecord?}"
+@page "/PartiesPage/{Action}/{CurrentRecord?}"
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
@@ -79,7 +79,8 @@
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
                         <label class="form-label fw-bold mb-1">Party Type <span style='color:red;'>*</span></label>
                         <MudSelect T="string"
-                                   @bind-Value="record.PartyType"
+                                   Value="record.PartyType"
+                                   ValueChanged="@((string v) => { record.PartyType = v; OnPartyTypeChange(); })"
                                    Placeholder="Party Type"
                                    Variant="Variant.Outlined"
                                    Clearable="true"
@@ -101,6 +102,7 @@
                                       IdProperty="@(p => p.Id)"
                                       @bind-SelectedId="record.ParentId"
                                       Variant="Variant.Outlined"
+                                      Label="Parent Party"
                                       FullWidth="true" />
                     </div>
 
@@ -272,6 +274,7 @@
                                       IdProperty="@(p => p.Id)"
                                       @bind-SelectedId="record.SalesPersonId"
                                       Variant="Variant.Outlined"
+                                      Label="Sales Person"
                                       FullWidth="true" />
                     </div>
 
@@ -290,6 +293,7 @@
                                       IdProperty="@(p => p.Id)"
                                       @bind-SelectedId="record.PaymentTermsId"
                                       Variant="Variant.Outlined"
+                                      Label="Payment Terms"
                                       FullWidth="true" />
                     </div>
 
@@ -302,6 +306,7 @@
                                       IdProperty="@(p => p.Id)"
                                       @bind-SelectedId="record.AccountId"
                                       Variant="Variant.Outlined"
+                                      Label="Account"
                                       FullWidth="true" />
                     </div>
                 </div>
@@ -346,6 +351,7 @@
                                       IdProperty="@(p => p.Id)"
                                       @bind-SelectedId="record.CityId"
                                       Variant="Variant.Outlined"
+                                      Label="City/Area"
                                       FullWidth="true" />
                     </div>
 
@@ -480,31 +486,61 @@
 
     protected async Task GetAll()
     {
-        LoadingPanel = true;
-         Par = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search", true) ?? new List<PartiesModel>();
-         Sal = await Functions.GetAsync<List<EmployeesModel>>($"Employees/Search", true) ?? new List<EmployeesModel>();
-         Pay = await Functions.GetAsync<List<PaymentTermsModel>>($"PaymentTerms/Search", true) ?? new List<PaymentTermsModel>();
-         Cit = await Functions.GetAsync<List<AreasModel>>($"Areas/Search", true) ?? new List<AreasModel>();
-         Cc = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PARTY CLASS", true) ?? new List<TypeCodeModel>();
+        try
+        {
+            LoadingPanel = true;
+            Par = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search", true) ?? new List<PartiesModel>();
+            Sal = await Functions.GetAsync<List<EmployeesModel>>($"Employees/Search", true) ?? new List<EmployeesModel>();
+            Pay = await Functions.GetAsync<List<PaymentTermsModel>>($"PaymentTerms/Search", true) ?? new List<PaymentTermsModel>();
+            Cit = await Functions.GetAsync<List<AreasModel>>($"Areas/Search", true) ?? new List<AreasModel>();
+            Cc = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PARTY CLASS", true) ?? new List<TypeCodeModel>();
 
-        if (Action == "INSERT")
-        {
-            record = new PartiesModel();
-            record.IsActive = 1;
-            isReadOnly = false;
-        }
-        else if (Action == "EDIT")
-        {
-            await Get(CurrentRecord);
-            isReadOnly = false;
-        }
-        else if (Action == "VIEW")
-        {
-            await Get(CurrentRecord);
-            isReadOnly = true;
-        }
+            // Load accounts based on party type if set
+            if (!string.IsNullOrWhiteSpace(record.PartyType))
+            {
+                await OnPartyTypeChange();
+            }
+            else
+            {
+                // Load all active accounts if no party type is set
+                Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search", true) ?? new List<ChartOfAccountsModel>();
+            }
 
-        LoadingPanel = false;
+            if (Action == "INSERT")
+            {
+                record = new PartiesModel();
+                record.IsActive = 1;
+                isReadOnly = false;
+            }
+            else if (Action == "EDIT" || Action == "UPDATE")
+            {
+                await Get(CurrentRecord);
+                isReadOnly = false;
+                // Reload accounts based on party type after getting the record
+                if (!string.IsNullOrWhiteSpace(record.PartyType))
+                {
+                    await OnPartyTypeChange();
+                }
+            }
+            else if (Action == "VIEW")
+            {
+                await Get(CurrentRecord);
+                isReadOnly = true;
+                // Reload accounts based on party type after getting the record
+                if (!string.IsNullOrWhiteSpace(record.PartyType))
+                {
+                    await OnPartyTypeChange();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading data: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
     }
 
     protected async Task Get(int id)
@@ -583,12 +619,11 @@
 
         var errors = new List<string>();
         if (string.IsNullOrWhiteSpace(record.Code))
-
             errors.Add("• Code is required");
         if (string.IsNullOrWhiteSpace(record.Name))
-
             errors.Add("• Name is required");
-
+        if (string.IsNullOrWhiteSpace(record.PartyType))
+            errors.Add("• Party Type is required");
 
         if (errors.Count > 0)
         {
@@ -600,13 +635,16 @@
         {
             LoadingPanel = true;
 
-            record.OrganizationId = Globals.User.OrganizationId;
-            record.CreatedBy = Globals.User.Id;
+            if (Globals.User != null)
+            {
+                record.OrganizationId = Globals.User.OrganizationId;
+                record.CreatedBy = Globals.User.Id;
+                record.UpdatedBy = Globals.User.Id;
+            }
             record.CreatedOn = DateTime.Now;
-            record.CreatedFrom = Globals.ClientInfo;
-            record.UpdatedBy = Globals.User.Id;
+            record.CreatedFrom = Globals.ClientInfo ?? string.Empty;
             record.UpdatedOn = DateTime.Now;
-            record.UpdatedFrom = Globals.ClientInfo;
+            record.UpdatedFrom = Globals.ClientInfo ?? string.Empty;
 
             string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
             var result = await Functions.PostAsync<PartiesModel>($"Parties/{url}", record, true);
@@ -638,30 +676,55 @@
 
     private async Task OnPartyTypeChange()
     {
-        LoadingPanel = true;
-        string filter_Acc = "";
-
-        switch (record.PartyType)
+        try
         {
-            case "CUSTOMER":
-                filter_Acc = "InterfaceType='ACCOUNTS RECEIVABLE'";
-                break;
+            if (string.IsNullOrWhiteSpace(record.PartyType))
+            {
+                Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search", true) ?? new List<ChartOfAccountsModel>();
+                return;
+            }
 
-            case "SUPPLIER":
-                filter_Acc = "InterfaceType='ACCOUNTS PAYABLE'";
-                break;
+            string filter_Acc = "";
 
-            case "BANK":
-                filter_Acc = "InterfaceType='ACCOUNTS PAYABLE'";
-                break;
-            default:
-                filter_Acc = "InterfaceType='BANK'";
-                break;
+            switch (record.PartyType.ToUpper())
+            {
+                case "CUSTOMER":
+                    filter_Acc = "InterfaceType='ACCOUNTS RECEIVABLE'";
+                    break;
+
+                case "SUPPLIER":
+                    filter_Acc = "InterfaceType='ACCOUNTS PAYABLE'";
+                    break;
+
+                case "BANK":
+                    filter_Acc = "InterfaceType='BANK'";
+                    break;
+                default:
+                    filter_Acc = "";
+                    break;
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter_Acc))
+            {
+                Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/{filter_Acc}", true) ?? new List<ChartOfAccountsModel>();
+            }
+            else
+            {
+                Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search", true) ?? new List<ChartOfAccountsModel>();
+            }
+
+            // Reset AccountId if current selection is not in the filtered list
+            if (record.AccountId > 0 && !Acc.Any(a => a.Id == record.AccountId))
+            {
+                record.AccountId = 0;
+            }
+
+            StateHasChanged();
         }
-
-        Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/{filter_Acc}", true) ?? new List<ChartOfAccountsModel>();
-
-        LoadingPanel = false;
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading accounts: {ex.Message}", Severity.Error);
+        }
     }
 }
 

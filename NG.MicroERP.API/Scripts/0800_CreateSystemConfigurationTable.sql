@@ -23,7 +23,7 @@ INSERT INTO SystemConfiguration (OrganizationId, Category, ConfigKey, ConfigValu
 VALUES
 (1, 'Backup', 'BasePath', 'D:\Backups', 'Base path for backup files', 1, 1, 'System'),
 (1, 'Backup', 'BaseFilePrefix', 'UHU', 'Prefix for backup file names', 1, 1, 'System'),
-(1, 'Backup', 'MySqlDumpPath', 'C:\xampp\mysql\bin\mysqldump.exe', 'Path to MySQL dump executable', 1, 1, 'System'),
+(1, 'Backup', 'SqlServerBackupPath', 'C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\Backup', 'Path to SQL Server backup directory', 1, 1, 'System'),
 (1, 'Backup', 'ZipPassword', '12345', 'Password for backup zip files', 1, 1, 'System'),
 (1, 'Backup', 'BackupEmail', 'aamir.rashid.1973@gmail.com', 'Email address for backup notifications', 1, 1, 'System');
 

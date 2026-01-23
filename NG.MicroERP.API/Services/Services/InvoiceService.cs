@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Serilog;
 
 using NG.MicroERP.API.Helper;
@@ -52,11 +52,10 @@ public class InvoiceService : IInvoiceService
             i.PartyId,
             ISNULL(p.Name, '') AS Party,
             ISNULL(i.PartyName, ISNULL(p.Name, '')) AS PartyName,
-            ISNULL(i.PartyPhone, ISNULL((SELECT TOP 1 pc.ContactValue FROM PartyContacts pc WHERE pc.PartyId = i.PartyId AND pc.ContactType IN ('PHONE', 'MOBILE') AND pc.IsPrimary = 1 AND pc.IsSoftDeleted = 0 ORDER BY CASE WHEN pc.ContactType = 'PHONE' THEN 1 ELSE 2 END), '')) AS PartyPhone,
-            ISNULL(i.PartyEmail, ISNULL((SELECT TOP 1 pc.ContactValue FROM PartyContacts pc WHERE pc.PartyId = i.PartyId AND pc.ContactType = 'EMAIL' AND pc.IsPrimary = 1 AND pc.IsSoftDeleted = 0), '')) AS PartyEmail,
-            ISNULL(i.PartyAddress, ISNULL(p.Address, '')) AS PartyAddress,
             NULL AS ScenarioId,
             ISNULL(i.TranDate, i.CreatedOn) AS TranDate,
+            i.AccountId,
+            ISNULL(coa.Name, '') AS AccountName,
             0 AS PreprationTime,
             ISNULL((
                 SELECT SUM((id.UnitPrice * id.Qty) - id.DiscountAmount + ISNULL(tax.TaxAmount, 0))
@@ -113,12 +112,19 @@ public class InvoiceService : IInvoiceService
             i.CreatedOn,
             ISNULL(i.Status, '') AS Status,
             ISNULL(u.Username, '') AS Username,
-            ISNULL(i.ClientComments, '') AS ClientComments
+            ISNULL(i.ClientComments, '') AS ClientComments,
+            i.BaseCurrencyId,
+            i.EnteredCurrencyId,
+            ISNULL(i.ExchangeRate, 1.0) AS ExchangeRate,
+            ISNULL(c.Code, '') AS CurrencyCode,
+            ISNULL(c.Name, '') AS CurrencyName
         FROM Invoice i
         LEFT JOIN Parties p ON p.Id = i.PartyId
         LEFT JOIN Locations loc ON loc.Id = i.LocationId
         LEFT JOIN Employees e ON e.Id = i.SalesId
         LEFT JOIN Users u ON u.Id = i.CreatedBy
+        LEFT JOIN Currencies c ON c.Id = i.EnteredCurrencyId
+        LEFT JOIN ChartOfAccounts coa ON coa.Id = i.AccountId
         WHERE i.IsSoftDeleted = 0";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
@@ -127,7 +133,8 @@ public class InvoiceService : IInvoiceService
         SQL += " ORDER BY i.Id DESC";
 
         List<InvoicesAllModel> result = (await dapper.SearchByQuery<InvoicesAllModel>(SQL)) ?? new List<InvoicesAllModel>();
-        return result == null || result.Count == 0 ? (false, null!) : (true, result);
+        // Always return true with the result (even if empty) so API returns Ok with empty list instead of NotFound
+        return (true, result);
     }
 
     // ===== Helpers to read properties safely from model objects =====
@@ -223,10 +230,18 @@ public class InvoiceService : IInvoiceService
                                 detail.SeqNo = item.Code ?? string.Empty;
                             }
                         }
-                        else if (string.IsNullOrWhiteSpace(detail.ItemName))
+                        else if (detail.ItemId == 0 || string.IsNullOrWhiteSpace(detail.ItemName))
                         {
-                            // Fallback to Description if item not found
-                            detail.ItemName = detail.ItemName ?? string.Empty;
+                            // For manual items (ItemId = 0), use ManualItem as ItemName
+                            // For catalog items not found, also use ManualItem as fallback
+                            if (!string.IsNullOrWhiteSpace(detail.ManualItem))
+                            {
+                                detail.ItemName = detail.ManualItem;
+                            }
+                            else if (string.IsNullOrWhiteSpace(detail.ItemName))
+                            {
+                                detail.ItemName = string.Empty;
+                            }
                         }
                         
                         // Calculate TaxAmount if not already set
@@ -340,11 +355,15 @@ public class InvoiceService : IInvoiceService
             
             int accountId = GetIntProp(obj.Invoice, "AccountId");
             
+            // Convert SalesId and LocationId to NULL if 0 or invalid
+            string salesIdValue = (obj.Invoice.SalesId > 0) ? obj.Invoice.SalesId.ToString() : "NULL";
+            string locationIdValue = (obj.Invoice.LocationId > 0) ? obj.Invoice.LocationId.ToString() : "NULL";
+            
             string SQLInsert = $@"
                 INSERT INTO Invoice (OrganizationId, Code, InvoiceType, Source, SalesId, LocationId, PartyId, AccountId, PartyName, PartyPhone, PartyEmail,
                 PartyAddress, TranDate, Description, Status, CreatedBy, CreatedOn, CreatedFrom, IsSoftDeleted, BaseCurrencyId, EnteredCurrencyId, ExchangeRate)
-                VALUES ({obj.Invoice.OrganizationId}, '{S(code)}', '{S(obj.Invoice.InvoiceType)}', '{S(obj.Invoice.Source)}', {obj.Invoice.SalesId},
-                {obj.Invoice.LocationId}, {obj.Invoice.PartyId}, {(accountId > 0 ? accountId.ToString() : "NULL")}, '{S(obj.Invoice.PartyName)}', '{S(obj.Invoice.PartyPhone)}',
+                VALUES ({obj.Invoice.OrganizationId}, '{S(code)}', '{S(obj.Invoice.InvoiceType)}', '{S(obj.Invoice.Source)}', {salesIdValue},
+                {locationIdValue}, {obj.Invoice.PartyId}, {(accountId > 0 ? accountId.ToString() : "NULL")}, '{S(obj.Invoice.PartyName)}', '{S(obj.Invoice.PartyPhone)}',
                 '{S(obj.Invoice.PartyEmail)}', '{S(obj.Invoice.PartyAddress)}',
                 '{tranDateStr}',
                 '{S(obj.Invoice.Description)}',
@@ -377,13 +396,33 @@ public class InvoiceService : IInvoiceService
 
                 string descr = S(GetStringProp(detail, "Description", "Instructions"));
                 string stockCond = S(GetStringProp(detail, "StockCondition"));
+                string manualItem = S(GetStringProp(detail, "ManualItem"));
                 string serving = S(GetStringProp(detail, "ServingSize"));
                 string status = S(GetStringProp(detail, "Status"));
+                
+                // For manual items (ItemId = 0), save ItemName to ManualItem (convert to uppercase)
+                if (itemId == 0)
+                {
+                    string itemName = S(GetStringProp(detail, "ItemName"));
+                    if (!string.IsNullOrWhiteSpace(itemName))
+                    {
+                        manualItem = itemName.ToUpperInvariant();
+                    }
+                }
+                
+                // Convert ManualItem to uppercase if it exists
+                if (!string.IsNullOrWhiteSpace(manualItem))
+                {
+                    manualItem = manualItem.ToUpperInvariant();
+                }
+
+                // Convert ItemId = 0 to NULL for manual entries (foreign key constraint)
+                string itemIdValue = itemId > 0 ? itemId.ToString() : "NULL";
 
                 string detailInsert = $@"
-                    INSERT INTO InvoiceDetail (ItemId, StockCondition, ServingSize, Qty, UnitPrice, DiscountAmount,
+                    INSERT INTO InvoiceDetail (ItemId, StockCondition, ManualItem, ServingSize, Qty, UnitPrice, DiscountAmount,
                     InvoiceId, Description, Status, Rating, TranDate, IsSoftDeleted)
-                    VALUES ({itemId}, '{stockCond}', '{serving}', {qty.ToString(CultureInfo.InvariantCulture)},
+                    VALUES ({itemIdValue}, '{stockCond}', '{manualItem}', '{serving}', {qty.ToString(CultureInfo.InvariantCulture)},
                     {unitPrice.ToString(CultureInfo.InvariantCulture)}, {discountAmt.ToString(CultureInfo.InvariantCulture)}, {insertedInvoiceId}, '{descr}',
                     '{status}', {rating}, '{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', {isSoftDeleted})";
 
@@ -584,10 +623,14 @@ public class InvoiceService : IInvoiceService
             if (exchangeRate == 0) exchangeRate = 1.0; // Default to 1.0 if not provided
             int accountId = GetIntProp(obj.Invoice, "AccountId");
             
+            // Convert SalesId and LocationId to NULL if 0 or invalid
+            string salesIdValue = (obj.Invoice.SalesId > 0) ? obj.Invoice.SalesId.ToString() : "NULL";
+            string locationIdValue = (obj.Invoice.LocationId > 0) ? obj.Invoice.LocationId.ToString() : "NULL";
+            
             string SQLUpdate = $@"
                 UPDATE Invoice SET OrganizationId = {obj.Invoice.OrganizationId}, Code = '{S(obj.Invoice.Code)}',
-                InvoiceType = '{S(obj.Invoice.InvoiceType)}', Source = '{S(obj.Invoice.Source)}', SalesId = {obj.Invoice.SalesId},
-                LocationId = {obj.Invoice.LocationId}, PartyId = {obj.Invoice.PartyId}, AccountId = {(accountId > 0 ? accountId.ToString() : "NULL")}, PartyName = '{S(obj.Invoice.PartyName)}',
+                InvoiceType = '{S(obj.Invoice.InvoiceType)}', Source = '{S(obj.Invoice.Source)}', SalesId = {salesIdValue},
+                LocationId = {locationIdValue}, PartyId = {obj.Invoice.PartyId}, AccountId = {(accountId > 0 ? accountId.ToString() : "NULL")}, PartyName = '{S(obj.Invoice.PartyName)}',
                 PartyPhone = '{S(obj.Invoice.PartyPhone)}', PartyEmail = '{S(obj.Invoice.PartyEmail)}',
                 PartyAddress = '{S(obj.Invoice.PartyAddress)}',
                 TranDate = '{tranDateStr}',
@@ -637,10 +680,30 @@ public class InvoiceService : IInvoiceService
                     int isSoftDeleted = GetIntProp(detail, "IsSoftDeleted");
                     string descr = S(GetStringProp(detail, "Description", "Instructions"));
                     string stockCond = S(GetStringProp(detail, "StockCondition"));
+                    string manualItem = S(GetStringProp(detail, "ManualItem"));
                     string serving = S(GetStringProp(detail, "ServingSize"));
                     string status = S(GetStringProp(detail, "Status"));
                     
-                    detailValues.Add($"({itemId}, '{stockCond}', '{serving}', {qty.ToString(CultureInfo.InvariantCulture)}, " +
+                    // For manual items (ItemId = 0), save ItemName to ManualItem (convert to uppercase)
+                    if (itemId == 0)
+                    {
+                        string itemName = S(GetStringProp(detail, "ItemName"));
+                        if (!string.IsNullOrWhiteSpace(itemName))
+                        {
+                            manualItem = itemName.ToUpperInvariant();
+                        }
+                    }
+                    
+                    // Convert ManualItem to uppercase if it exists
+                    if (!string.IsNullOrWhiteSpace(manualItem))
+                    {
+                        manualItem = manualItem.ToUpperInvariant();
+                    }
+                    
+                    // Convert ItemId = 0 to NULL for manual entries (foreign key constraint)
+                    string itemIdValue = itemId > 0 ? itemId.ToString() : "NULL";
+                    
+                    detailValues.Add($"({itemIdValue}, '{stockCond}', '{manualItem}', '{serving}', {qty.ToString(CultureInfo.InvariantCulture)}, " +
                                    $"{unitPrice.ToString(CultureInfo.InvariantCulture)}, {discountAmt.ToString(CultureInfo.InvariantCulture)}, " +
                                    $"{obj.Invoice.Id}, '{descr}', '{status}', {rating}, " +
                                    $"'{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}', {isSoftDeleted})");
@@ -648,7 +711,7 @@ public class InvoiceService : IInvoiceService
                 
                 // Insert all details in one batch
                 string batchDetailInsert = $@"
-                    INSERT INTO InvoiceDetail (ItemId, StockCondition, ServingSize, Qty, UnitPrice, DiscountAmount, 
+                    INSERT INTO InvoiceDetail (ItemId, StockCondition, ManualItem, ServingSize, Qty, UnitPrice, DiscountAmount, 
                     InvoiceId, Description, Status, Rating, TranDate, IsSoftDeleted)
                     VALUES {string.Join(",", detailValues)};";
                 
@@ -659,7 +722,7 @@ public class InvoiceService : IInvoiceService
                 }
                 
                 var insertedDetailList = await dapper.SearchByQuery<InvoiceItemReportModel>(
-                    $"SELECT Id AS InvoiceDetailId, InvoiceId, ItemId, StockCondition, ServingSize, Qty, UnitPrice, DiscountAmount, " +
+                    $"SELECT Id AS InvoiceDetailId, InvoiceId, ItemId, StockCondition, ManualItem, ServingSize, Qty, UnitPrice, DiscountAmount, " +
                     $"Description, Status, Rating, TranDate, IsSoftDeleted FROM InvoiceDetail WHERE InvoiceId = {obj.Invoice.Id} ORDER BY Id");
                 if (insertedDetailList != null && insertedDetailList.Count == details.Count)
                 {

@@ -1,4 +1,4 @@
-﻿@page "/CashBookPage/{Action}/{CurrentRecord?}"
+@page "/CashBookPage/{Action}/{CurrentRecord?}"
 
 @using NG.MicroERP.Shared.Models
 @using NG.MicroERP.Shared.Pages.Invoices
@@ -55,31 +55,28 @@
 
     <br />
 
-    <MudExpansionPanels MultiExpansion="true">
-
-        <!-- Basic Mandatory Details Panel -->
-        <MudExpansionPanel Text="Basic Details" Expanded="true" Style="margin-bottom:10px;">
-            <TitleContent>
-                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
-                    <i class="fa fa-check-circle"
-                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
-                    </i>
-                    <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">Basic Details</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted">Required mandatory information</MudText>
-                    </div>
+    <MudExpansionPanel Text="Transaction Details" Expanded="true" Style="margin-bottom:10px;">
+        <TitleContent>
+            <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                <i class="fa fa-file-invoice"
+                   style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                </i>
+                <div class="ms-2">
+                    <MudText Typo="Typo.h6" Class="fw-bold">Transaction Details</MudText>
+                    <MudText Typo="Typo.caption" Class="text-muted">Enter all transaction information</MudText>
                 </div>
-                <hr style="height: 6px; border: none; background: #4CAF50; border-radius: 10px;" />
-            </TitleContent>
+            </div>
+            <hr style="height: 6px; border: none; background: #4CAF50; border-radius: 10px;" />
+        </TitleContent>
 
-            <ChildContent>
+        <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Transaction Type <span style='color:red;'>*</span></label>
                         <MudSelect T="string"
                                    @bind-Value="record.TranType"
                                    Placeholder="Transaction Type"
                                    Variant="Variant.Outlined"
+                                   Label="Transaction Type *"
                                    Clearable="true"
                                    FullWidth="true"
                                    Class="flex-grow-1"
@@ -102,13 +99,13 @@
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Transaction Date <span style='color:red;'>*</span></label>
                         <MudDatePicker @bind-Date="record.TranDate"
                                        @bind-Date:after="OnTranDateChanged"
                                        DateFormat="dd MMM yyyy"
                                        placeholder="Transaction Date"
                                        ReadOnly="@isReadOnly"
                                        Variant="Variant.Outlined"
+                                       Label="Transaction Date *"
                                        Class="flex-grow-1"></MudDatePicker>
                         <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.TranDate)" />
@@ -116,12 +113,12 @@
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Amount <span style='color:red;'>*</span></label>
                         <MudNumericField @bind-Value="record.Amount"
                                          placeholder="Amount"
                                          ReadOnly="@isReadOnly"
                                          Format="#,##0.00"
                                          Variant="Variant.Outlined"
+                                         Label="Amount *"
                                          FullWidth="true"
                                          Class="flex-grow-1"></MudNumericField>
                         <div class="validation-container" style="min-height: 22px;">
@@ -130,7 +127,6 @@
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Location <span style='color:red;'>*</span></label>
                         @if (Globals.User.GroupId == 1)
                         {
                             <AutoComplete TItem="LocationsModel"
@@ -139,13 +135,14 @@
                                           IdProperty="@(p => p.Id)"
                                           @bind-SelectedId="record.LocationId"
                                           Variant="Variant.Outlined"
-                                          Label=""
+                                          Label="Location *"
                                           FullWidth="true" />
                         }
                         else
                         {
                             <MudTextField Value="@(Loc.FirstOrDefault(l => l.Id == record.LocationId)?.Name ?? "")"
                                           Variant="Variant.Outlined"
+                                          Label="Location *"
                                           ReadOnly="true"
                                           FullWidth="true" />
                         }
@@ -155,11 +152,12 @@
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Account <span style='color:red;'>*</span></label>
                         <MudSelect @bind-Value="record.AccountId"
                                    @key="record.AccountId"
+                                   @bind-Value:after="OnAccountChanged"
                                    Placeholder="@filterCOA.Replace("'", "").Replace("InterfaceType=", "")"
                                    Variant="Variant.Outlined"
+                                   Label="Account *"
                                    Clearable="true"
                                    FullWidth="true"
                                    Class="flex-grow-1">
@@ -177,11 +175,11 @@
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Payment Method <span style='color:red;'>*</span></label>
                         <MudSelect T="string"
                                    @bind-Value="record.PaymentMethod"
                                    Placeholder="Payment Method"
                                    Variant="Variant.Outlined"
+                                   Label="Payment Method *"
                                    Clearable="true"
                                    FullWidth="true"
                                    Class="flex-grow-1">
@@ -189,11 +187,11 @@
                             {
                                 if (string.IsNullOrWhiteSpace(record.PaymentMethod))
                                 {
-                                    record.PaymentMethod = pm.First().ListValue;
+                                    record.PaymentMethod = pm.First().Name ?? "";
                                 }
                                 foreach (var i in pm)
                                 {
-                                    <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                    <MudSelectItem T="string" Value="@i.Name">@i.Name</MudSelectItem>
                                 }
                             }
                         </MudSelect>
@@ -202,50 +200,94 @@
                         </div>
                     </div>
 
+                    <div class="col-12 col-md-4 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Currency</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <MudText Typo="Typo.body2" Class="fw-bold">
+                                @(Currencies.FirstOrDefault(c => c.Id == record.EnteredCurrencyId)?.DisplayName ?? Currencies.FirstOrDefault(c => c.Id == record.BaseCurrencyId)?.DisplayName ?? "N/A")
+                            </MudText>
+                            @if (!isReadOnly)
+                            {
+                                <MudButton Size="Size.Small" 
+                                           Variant="Variant.Text" 
+                                           Color="Color.Primary"
+                                           OnClick="ToggleCurrencySelection"
+                                           StartIcon="@Icons.Material.Filled.Edit">
+                                    Change
+                                </MudButton>
+                            }
+                        </div>
+                    </div>
+
+                    @if (showCurrencySelection && !isReadOnly)
+                    {
+                        <div class="col-12 col-md-4 mb-3 d-flex flex-column" style="height: 95px;">
+                            <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Select Currency</label>
+                            <AutoComplete TItem="CurrenciesModel"
+                                          DataList="@Currencies"
+                                          DisplayProperty="@(p => p.DisplayName)"
+                                          IdProperty="@(p => p.Id)"
+                                          @bind-SelectedId="record.EnteredCurrencyId"
+                                          @bind-SelectedId:after="OnEnteredCurrencyChanged"
+                                          Label="Currency"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="@true" />
+                        </div>
+                    }
+
+                    @if (record.EnteredCurrencyId != record.BaseCurrencyId || showCurrencySelection)
+                    {
+                        <div class="col-12 col-md-4 mb-3 d-flex flex-column" style="height: 95px;">
+                            <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Exchange Rate</label>
+                            <MudNumericField @bind-Value="record.ExchangeRate"
+                                             Format="#,##0.000000"
+                                             placeholder="Exchange Rate"
+                                             ReadOnly="@isReadOnly"
+                                             Variant="Variant.Outlined"
+                                             Dense="@true"
+                                             FullWidth="@true" />
+                        </div>
+                    }
+
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">@GetPartyLabel()</label>
-                        <AutoComplete TItem="PartiesModel"
-                                      DataList="@Par"
-                                      DisplayProperty="@(p => p.DisplayName)"
-                                      IdProperty="@(p => p.Id)"
-                                      @bind-SelectedId="record.PartyId"
-                                      Variant="Variant.Outlined"
-                                      Label=""
-                                      FullWidth="true"
-                                      @bind-SelectedId:after="OnPartyChanged" />
+                        @if (isEmployeeAccount)
+                        {
+                            <AutoComplete TItem="EmployeesModel"
+                                          DataList="@Emp"
+                                          DisplayProperty="@(e => e.DisplayName ?? e.Fullname ?? "")"
+                                          IdProperty="@(e => e.Id)"
+                                          @bind-SelectedId="record.PartyId"
+                                          Variant="Variant.Outlined"
+                                          Label="@GetPartyLabel()"
+                                          FullWidth="true"
+                                          @bind-SelectedId:after="OnPartyChanged" />
+                        }
+                        else
+                        {
+                            <AutoComplete TItem="PartiesModel"
+                                          DataList="@Par"
+                                          DisplayProperty="@(p => p.DisplayName)"
+                                          IdProperty="@(p => p.Id)"
+                                          @bind-SelectedId="record.PartyId"
+                                          Variant="Variant.Outlined"
+                                          Label="@GetPartyLabel()"
+                                          FullWidth="true"
+                                          @bind-SelectedId:after="OnPartyChanged" />
+                        }
                         <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.PartyId)" />
                         </div>
                     </div>
                 </div>
-            </ChildContent>
-        </MudExpansionPanel>
 
-        <!-- Additional Details Panel -->
-        <MudExpansionPanel Text="Additional Details" Style="margin-bottom:10px;">
-            <TitleContent>
-                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
-                    <i class="fa fa-info-circle"
-                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
-                    </i>
-                    <div class="ms-2">
-                        <MudText Typo="Typo.h6" Class="fw-bold">Additional Details</MudText>
-                        <MudText Typo="Typo.caption" Class="text-muted">Optional transaction information</MudText>
-                    </div>
-                </div>
-                <hr style="height: 6px; border: none; background: #FF9800; border-radius: 10px;" />
-            </TitleContent>
-
-            <ChildContent>
                 <!-- Transaction Information Group -->
-                <h5 class="fw-bold mt-3 mb-3" style="color: var(--mud-palette-primary); border-bottom: 2px solid var(--mud-palette-primary); padding-bottom: 8px;">
+                <h5 class="fw-bold mt-4 mb-3" style="color: var(--mud-palette-primary); border-bottom: 2px solid var(--mud-palette-primary); padding-bottom: 8px;">
                     <i class="fa fa-exchange-alt me-2"></i>Transaction Information
                 </h5>
                 <div class="row" style="width:100%; display: flex;">
                     @if (record.TranType == "RECEIPT" || record.TranType == "PAYMENT")
                     {
                         <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                            <label class="form-label fw-bold mb-1">Invoice Reference (Optional)</label>
                             <AutoComplete TItem="InvoicesAllModel"
                                           DataList="@Invoices"
                                           DisplayProperty="@(i => $"{i.Code} - {i.PartyName} - {i.BillAmount:N2}")"
@@ -253,19 +295,19 @@
                                           SelectedId="selectedInvoiceId"
                                           SelectedIdChanged="OnInvoiceIdChanged"
                                           Variant="Variant.Outlined"
-                                          Label=""
+                                          Label="Invoice Reference (Optional)"
                                           FullWidth="true" />
                             <div class="validation-container" style="min-height: 22px;">
                             </div>
                         </div>
                     }
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Transaction #</label>
                         <MudTextField id="SeqNo"
                                       @bind-Value="record.SeqNo"
                                       placeholder="Transaction #"
                                       ReadOnly="@isReadOnly"
                                       Variant="Variant.Outlined"
+                                      Label="Transaction #"
                                       FullWidth="true"
                                       Class="flex-grow-1"></MudTextField>
                         <div class="validation-container" style="min-height: 22px;">
@@ -274,12 +316,12 @@
                     </div>
 
                     <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Description</label>
                         <MudTextField id="Description"
                                       @bind-Value="record.Description"
                                       placeholder="Description"
                                       ReadOnly="@isReadOnly"
                                       Variant="Variant.Outlined"
+                                      Label="Description"
                                       FullWidth="true"
                                       Class="flex-grow-1"></MudTextField>
                         <div class="validation-container" style="min-height: 22px;">
@@ -309,9 +351,8 @@
                         </div>
                     </div>
                 </div>
-            </ChildContent>
-        </MudExpansionPanel>
-    </MudExpansionPanels>
+        </ChildContent>
+    </MudExpansionPanel>
 
 </div>
 
@@ -320,11 +361,15 @@
     CashBookModel record = new();
     List<LocationsModel> Loc = new();
     List<PartiesModel> Par = new();
+    List<EmployeesModel> Emp = new();
     List<ChartOfAccountsModel> Acc = new();
     List<TypeCodeModel> Tra = null!;
-    List<TypeCodeModel> pm = null!;
+    List<ChartOfAccountsModel> pm = new();
     List<InvoicesAllModel> Invoices = new();
+    List<CurrenciesModel> Currencies = new();
     int selectedInvoiceId = 0;
+    bool isEmployeeAccount = false;
+    private bool showCurrencySelection = false;
 
     public bool isReportVisible { get; set; } = false;
     public int Report_id { get; set; }
@@ -357,8 +402,10 @@
         LoadingPanel = true;
         Loc = await Functions.GetAsync<List<LocationsModel>>($"Locations/Search", true) ?? new List<LocationsModel>();
         Tra = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/CASHBOOK TRAN TYPE", true) ?? new List<TypeCodeModel>();
-        pm = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PAYMENT METHOD", true) ?? new List<TypeCodeModel>();
+        string PaymentMethods = "InterfaceType = 'PAYMENT METHOD'";
+        pm = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/{PaymentMethods}", true) ?? new List<ChartOfAccountsModel>();
         Par = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search", true) ?? new List<PartiesModel>();
+        Currencies = await Functions.GetAsync<List<CurrenciesModel>>($"Currencies/Search", true) ?? new List<CurrenciesModel>();
 
         if (Action == "INSERT")
         {
@@ -382,10 +429,35 @@
             record.AccountId = Acc.First().Id;
         }
 
-        if (Par != null && Par.Any() && record.PartyId == 0)
+        if (isEmployeeAccount)
         {
-            record.PartyId = Par.First().Id;
+            if (Emp != null && Emp.Any() && record.PartyId == 0)
+            {
+                record.PartyId = Emp.First().Id;
+            }
         }
+        else
+        {
+            if (Par != null && Par.Any() && record.PartyId == 0)
+            {
+                record.PartyId = Par.First().Id;
+            }
+        }
+
+        // Initialize currency fields if not set
+        if (Currencies != null && Currencies.Any())
+        {
+            var baseCurrency = Currencies.FirstOrDefault(c => c.IsBaseCurrency == 1);
+            if (baseCurrency != null)
+            {
+                if (record.BaseCurrencyId == 0)
+                    record.BaseCurrencyId = baseCurrency.Id;
+                if (record.EnteredCurrencyId == 0)
+                    record.EnteredCurrencyId = baseCurrency.Id;
+            }
+        }
+        if (record.ExchangeRate == 0)
+            record.ExchangeRate = 1.0;
 
         StateHasChanged();
     }
@@ -400,7 +472,13 @@
             record.LocationId = Globals.User.LocationId;
         }
         selectedInvoiceId = 0; // Reset invoice selection when loading existing record
+        
+        // Show currency selection if different from base currency
+        showCurrencySelection = record.EnteredCurrencyId != record.BaseCurrencyId;
+        
+        // Load accounts and parties/employees based on transaction type and account
         await OnTransactionTypeChanged();
+        
         // Set read-only if posted to GL
         isReadOnly = record.IsPostedToGL == 1;
         await ValidatePeriodAsync();
@@ -416,6 +494,20 @@
         record.LocationId = Globals.User.LocationId;
         record.TranDate = DateTime.Now;
         selectedInvoiceId = 0;
+        
+        // Initialize currency fields
+        if (Currencies != null && Currencies.Any())
+        {
+            var baseCurrency = Currencies.FirstOrDefault(c => c.IsBaseCurrency == 1);
+            if (baseCurrency != null)
+            {
+                record.BaseCurrencyId = baseCurrency.Id;
+                record.EnteredCurrencyId = baseCurrency.Id;
+            }
+        }
+        record.ExchangeRate = 1.0;
+        showCurrencySelection = false; // Hide currency selection by default
+        
         await OnTransactionTypeChanged();
         await _drawer.OpenDrawerAsync();
     }
@@ -524,27 +616,110 @@
         switch (record.TranType)
         {
             case "RECEIPT":
-                filterCOA = "(InterfaceType='REVENUE' OR InterfaceType='ACCOUNTS RECEIVABLE')";
-                filterParties = "a.partytype='Customer'";
+                filterCOA = "(InterfaceType='REVENUE' OR InterfaceType='ACCOUNTS RECEIVABLE' OR InterfaceType='EMPLOYEE')";
                 await LoadInvoices("SALE");
                 break;
 
             case "PAYMENT":
-                filterCOA = "(InterfaceType='EXPENSE' OR InterfaceType='ACCOUNTS PAYABLE')";
-                filterParties = "a.partytype='Supplier'";
+                filterCOA = "(InterfaceType='EXPENSE' OR InterfaceType='ACCOUNTS PAYABLE' OR InterfaceType='EMPLOYEE')";
                 await LoadInvoices("PURCHASE");
                 break;
 
             default:
-                filterCOA = "InterfaceType='Bank'";
-                filterParties = "a.partytype='Bank'";
+                filterCOA = "(InterfaceType='Bank' OR InterfaceType='EMPLOYEE')";
                 Invoices = new List<InvoicesAllModel>();
                 selectedInvoiceId = 0;
                 break;
         }
 
         Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/{filterCOA.ToUpper()}", true) ?? new List<ChartOfAccountsModel>();
-        Par = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search/{filterParties.ToUpper()}", true) ?? new List<PartiesModel>();
+        await LoadPartiesOrEmployees();
+
+        LoadingPanel = false;
+    }
+
+    private async Task OnAccountChanged()
+    {
+        await LoadPartiesOrEmployees();
+        StateHasChanged();
+    }
+
+    private async Task LoadPartiesOrEmployees()
+    {
+        LoadingPanel = true;
+        isEmployeeAccount = false;
+        
+        // Check if selected account is EMPLOYEE type
+        if (record.AccountId > 0)
+        {
+            var selectedAccount = Acc.FirstOrDefault(a => a.Id == record.AccountId);
+            if (selectedAccount != null && !string.IsNullOrWhiteSpace(selectedAccount.InterfaceType) && 
+                selectedAccount.InterfaceType.ToUpper() == "EMPLOYEE")
+            {
+                // If account is EMPLOYEE type, load employees from Employees table
+                isEmployeeAccount = true;
+                Emp = await Functions.GetAsync<List<EmployeesModel>>($"Employees/Search", true) ?? new List<EmployeesModel>();
+                Par = new List<PartiesModel>(); // Clear parties list
+            }
+            else if (selectedAccount != null && !string.IsNullOrWhiteSpace(selectedAccount.InterfaceType))
+            {
+                // Check account InterfaceType to determine party type
+                string interfaceType = selectedAccount.InterfaceType.ToUpper();
+                if (interfaceType == "ACCOUNTS RECEIVABLE")
+                {
+                    // Show Customers from Parties table
+                    filterParties = "a.partytype='Customer'";
+                    isEmployeeAccount = false;
+                }
+                else if (interfaceType == "ACCOUNTS PAYABLE")
+                {
+                    // Show Suppliers from Parties table
+                    filterParties = "a.partytype='Supplier'";
+                    isEmployeeAccount = false;
+                }
+                else
+                {
+                    // Use existing filter based on transaction type
+                    filterParties = record.TranType switch
+                    {
+                        "RECEIPT" => "a.partytype='Customer'",
+                        "PAYMENT" => "a.partytype='Supplier'",
+                        _ => "a.partytype='Bank'"
+                    };
+                    isEmployeeAccount = false;
+                }
+                
+                if (!isEmployeeAccount)
+                {
+                    Par = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search/{filterParties.ToUpper()}", true) ?? new List<PartiesModel>();
+                    Emp = new List<EmployeesModel>(); // Clear employees list
+                }
+            }
+            else
+            {
+                // No InterfaceType, use transaction type filter
+                filterParties = record.TranType switch
+                {
+                    "RECEIPT" => "a.partytype='Customer'",
+                    "PAYMENT" => "a.partytype='Supplier'",
+                    _ => "a.partytype='Bank'"
+                };
+                Par = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search/{filterParties.ToUpper()}", true) ?? new List<PartiesModel>();
+                Emp = new List<EmployeesModel>();
+            }
+        }
+        else
+        {
+            // No account selected, use transaction type filter
+            filterParties = record.TranType switch
+            {
+                "RECEIPT" => "a.partytype='Customer'",
+                "PAYMENT" => "a.partytype='Supplier'",
+                _ => "a.partytype='Bank'"
+            };
+            Par = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search/{filterParties.ToUpper()}", true) ?? new List<PartiesModel>();
+            Emp = new List<EmployeesModel>();
+        }
 
         LoadingPanel = false;
     }
@@ -623,11 +798,33 @@
 
     private string GetPartyLabel()
     {
+        // Check if selected account is EMPLOYEE type
+        if (record.AccountId > 0)
+        {
+            var selectedAccount = Acc.FirstOrDefault(a => a.Id == record.AccountId);
+            if (selectedAccount != null && !string.IsNullOrWhiteSpace(selectedAccount.InterfaceType))
+            {
+                string interfaceType = selectedAccount.InterfaceType.ToUpper();
+                if (interfaceType == "EMPLOYEE")
+                {
+                    return "Employee *";
+                }
+                else if (interfaceType == "ACCOUNTS RECEIVABLE")
+                {
+                    return "Customer *";
+                }
+                else if (interfaceType == "ACCOUNTS PAYABLE")
+                {
+                    return "Supplier *";
+                }
+            }
+        }
+        
         return record.TranType switch
         {
-            "RECEIPT" => "Customer",
-            "PAYMENT" => "Supplier",
-            _ => "Bank"
+            "RECEIPT" => "Customer *",
+            "PAYMENT" => "Supplier *",
+            _ => "Bank *"
         };
     }
 
@@ -824,6 +1021,35 @@
         }
         
         await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnEnteredCurrencyChanged()
+    {
+        // When entered currency changes, auto-populate exchange rate
+        // If entered currency is same as base currency, set rate to 1.0
+        if (record.EnteredCurrencyId == record.BaseCurrencyId)
+        {
+            record.ExchangeRate = 1.0;
+            showCurrencySelection = false; // Hide selection when back to base currency
+        }
+        else if (record.EnteredCurrencyId > 0 && record.BaseCurrencyId > 0)
+        {
+            // If different currency, set default rate to 1.0 (user can change it)
+            // In a real scenario, you might fetch the exchange rate from an API here
+            record.ExchangeRate = 1.0;
+        }
+        StateHasChanged();
+    }
+
+    private void ToggleCurrencySelection()
+    {
+        showCurrencySelection = !showCurrencySelection;
+        // If hiding and currency is base, reset to base
+        if (!showCurrencySelection && record.EnteredCurrencyId == record.BaseCurrencyId)
+        {
+            record.ExchangeRate = 1.0;
+        }
+        StateHasChanged();
     }
 
 }

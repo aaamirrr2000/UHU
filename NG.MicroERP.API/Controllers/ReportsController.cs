@@ -172,4 +172,49 @@ public class ReportsController : ControllerBase
             return BadRequest($"Error generating report: {ex.Message}");
         }
     }
+
+    [HttpGet("GetDashboardData/{organizationId}")]
+    public async Task<IActionResult> GetDashboardData(int organizationId)
+    {
+        try
+        {
+            var result = await Srv.GetDashboardData(organizationId);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"Error getting dashboard data: {ex.Message}");
+        }
+    }
+
+    [HttpGet("CashMovement/{organizationId}/{startDate}/{endDate}")]
+    public async Task<IActionResult> GetCashMovement(int organizationId, DateTime startDate, DateTime endDate, [FromQuery] int? locationId = null)
+    {
+        try
+        {
+            if (startDate > endDate)
+                return BadRequest("Start date cannot be after end date");
+
+            var result = await Srv.GetCashMovement(organizationId, startDate, endDate, locationId);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"Error generating report: {ex.Message}");
+        }
+    }
+
+    [HttpGet("PartyReceivablePayable/{organizationId}")]
+    public async Task<IActionResult> GetPartyReceivablePayable(int organizationId, [FromQuery] string? partyType = null)
+    {
+        try
+        {
+            var result = await Srv.GetPartyReceivablePayable(organizationId, partyType);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"Error generating report: {ex.Message}");
+        }
+    }
 }

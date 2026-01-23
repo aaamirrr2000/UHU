@@ -14,7 +14,7 @@
     <div class="dashboard-header">
         <div class="d-flex align-items-center justify-content-between flex-wrap">
             <div>
-                <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
                     <MudIcon Icon="@Icons.Material.Filled.Receipt" Class="me-2" Style="color: white;" />
                     @InvoiceType Invoice Management
                 </MudText>
@@ -140,14 +140,93 @@
                     </TemplateColumn>
 
                     <PropertyColumn Property="x => x.Code" Title="Code" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.Source" Title="Source" Sortable="true" Filterable="true" />
+                    <TemplateColumn Title="Source" Sortable="true" Filterable="true" HeaderClass="grid-header" CellClass="grid-cell" Width="120px">
+                        <CellTemplate>
+                            @if (!string.IsNullOrWhiteSpace(context.Item.Source))
+                            {
+                                <MudChip Size="Size.Small" Variant="Variant.Text" Color="Color.Secondary">
+                                    @context.Item.Source
+                                </MudChip>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
                     <PropertyColumn Property="x => x.PartyName" Title="Party Name" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.PartyPhone" Title="Party Phone" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.PartyEmail" Title="Party Email" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.PartyAddress" Title="Party Address" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.TranDate" Title="Tran Date" Sortable="true" Filterable="true" Format="dd-MMM-yyy" />
-                    <PropertyColumn Property="x => x.Description" Title="Description" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.Status" Title="Status" Sortable="true" Filterable="true" />
+                    <TemplateColumn Title="Account" Sortable="true" Filterable="true" HeaderClass="grid-header" CellClass="grid-cell" Width="150px">
+                        <CellTemplate>
+                            @if (!string.IsNullOrWhiteSpace(context.Item.AccountName))
+                            {
+                                <MudChip Size="Size.Small" Variant="Variant.Text" Color="Color.Info">
+                                    @context.Item.AccountName
+                                </MudChip>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Invoice Total" Sortable="true" Filterable="false" HeaderClass="grid-header" CellClass="grid-cell text-end" Width="120px">
+                        <CellTemplate>
+                            <MudText Typo="Typo.body2" Class="fw-semibold" Style="color: var(--mud-palette-primary);">
+                                @context.Item.BillAmount.ToString("#,##0.00")
+                            </MudText>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Payment Total" Sortable="true" Filterable="false" HeaderClass="grid-header" CellClass="grid-cell text-end" Width="120px">
+                        <CellTemplate>
+                            <MudText Typo="Typo.body2" Class="fw-semibold" Style="color: var(--mud-palette-success);">
+                                @context.Item.TotalPaidAmount.ToString("#,##0.00")
+                            </MudText>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="@(InvoiceType == "PURCHASE" ? "Payable" : "Receivable")" Sortable="true" Filterable="false" HeaderClass="grid-header" CellClass="grid-cell text-end" Width="120px">
+                        <CellTemplate>
+                            @{
+                                var balanceAmount = context.Item.BalanceAmount;
+                                var balanceColor = balanceAmount > 0 
+                                    ? (InvoiceType == "PURCHASE" ? "var(--mud-palette-error)" : "var(--mud-palette-success)")
+                                    : (balanceAmount < 0 
+                                        ? (InvoiceType == "PURCHASE" ? "var(--mud-palette-success)" : "var(--mud-palette-error)")
+                                        : "var(--mud-palette-text-primary)");
+                                var styleValue = $"color: {balanceColor};";
+                            }
+                            <MudText Typo="Typo.body2" Class="fw-bold" Style="@styleValue">
+                                @balanceAmount.ToString("#,##0.00")
+                            </MudText>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Currency" Sortable="true" Filterable="true" HeaderClass="grid-header" CellClass="grid-cell" Width="100px">
+                        <CellTemplate>
+                            @if (!string.IsNullOrWhiteSpace(context.Item.CurrencyCode))
+                            {
+                                <MudChip Size="Size.Small" Variant="Variant.Text" Color="Color.Info">
+                                    @context.Item.CurrencyCode
+                                </MudChip>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Ex. Rate" Sortable="true" Filterable="false" HeaderClass="grid-header" CellClass="grid-cell text-end" Width="100px">
+                        <CellTemplate>
+                            @if (context.Item.ExchangeRate != 1.0)
+                            {
+                                <span class="fw-semibold">@context.Item.ExchangeRate.ToString("N6")</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
                 </Columns>
 
                 <PagerContent>
@@ -250,10 +329,11 @@
     List<InvoicesAllModel> AllData = new();
     List<InvoicesAllModel> data = new();
     InvoiceModel record = new();
+    List<CurrenciesModel> Currencies = new();
     [Parameter] public string InvoiceType { get; set; } = "SALE";
     public string Action { get; set; } = "INSERT";
     private string searchString = "";
-    public DateTime? startDate { get; set; } = DateTime.Today.AddDays(-30);
+    public DateTime? startDate { get; set; } = DateTime.Today.AddMonths(-6);
     public DateTime? endDate { get; set; } = DateTime.Today;
 
     private bool LoadingPanel { get; set; } = false;
@@ -276,8 +356,15 @@
         else if (InvoiceType == "PURCHASE")
             Globals.AccessLevel = Globals.PageAccess(NavManager, "PurchaseDashboard");
        
-
+        Currencies = await Functions.GetAsync<List<CurrenciesModel>>($"Currencies/Search", true) ?? new List<CurrenciesModel>();
         await GetAll();
+    }
+
+    private string GetCurrencyCode(int currencyId)
+    {
+        if (currencyId == 0) return "-";
+        var currency = Currencies.FirstOrDefault(c => c.Id == currencyId);
+        return currency?.Code ?? "-";
     }
     
     protected override async Task OnParametersSetAsync()
@@ -307,10 +394,25 @@
                 return;
             }
 
-            var formattedStartDate = startDate?.ToString("yyyy-MM-dd") ?? DateTime.Today.AddDays(-30).ToString("yyyy-MM-dd");
-            var formattedEndDate = endDate?.ToString("yyyy-MM-dd") ?? DateTime.Today.ToString("yyyy-MM-dd");
+            // Format dates for SQL comparison - use CAST to ensure proper date comparison
+            string formattedStartDate = startDate?.ToString("yyyy-MM-dd") ?? DateTime.Today.AddMonths(-6).ToString("yyyy-MM-dd");
+            // Add 1 day to end date to include the entire end date in the range
+            string formattedEndDateNextDay = (endDate?.Date ?? DateTime.Today).AddDays(1).ToString("yyyy-MM-dd");
 
-            string ThisInvoiceType = $"i.InvoiceType = '{InvoiceType}' and CAST(ISNULL(i.TranDate, i.CreatedOn) AS DATE) >= '{formattedStartDate}' and CAST(ISNULL(i.TranDate, i.CreatedOn) AS DATE) <= '{formattedEndDate}'";
+            string ThisInvoiceType = $"i.InvoiceType = '{InvoiceType}' AND CAST(ISNULL(i.TranDate, i.CreatedOn) AS DATE) >= CAST('{formattedStartDate}' AS DATE) AND CAST(ISNULL(i.TranDate, i.CreatedOn) AS DATE) < CAST('{formattedEndDateNextDay}' AS DATE)";
+            
+            // Add LocationId filter for non-admin users (same as InvoiceSummary)
+            if (Globals.User.GroupId != 1)
+            {
+                ThisInvoiceType += $" AND i.LocationId = {Globals.User.LocationId}";
+            }
+            
+            // Add OrganizationId filter
+            if (Globals.User.OrganizationId > 0)
+            {
+                ThisInvoiceType += $" AND i.OrganizationId = {Globals.User.OrganizationId}";
+            }
+            
             AllData = await Functions.GetAsync<List<InvoicesAllModel>>($"Invoice/Search/{Uri.EscapeDataString(ThisInvoiceType)}", true) ?? new List<InvoicesAllModel>();
             data = AllData;
         }
@@ -347,14 +449,11 @@
                 ContainsIgnoreCase(x.InvoiceType, search) ||
                 ContainsIgnoreCase(x.Location, search) ||
                 ContainsIgnoreCase(x.Party, search) ||
-                ContainsIgnoreCase(x.PartyAddress, search) ||
-                ContainsIgnoreCase(x.PartyEmail, search) ||
-                ContainsIgnoreCase(x.PartyPhone, search) ||
                 ContainsIgnoreCase(x.PartyName, search) ||
                 ContainsIgnoreCase(x.Code, search) ||
                 ContainsIgnoreCase(x.Source, search) ||
                 ContainsIgnoreCase(x.Status, search) ||
-                ContainsIgnoreCase(x.Description, search)
+                ContainsIgnoreCase(x.AccountName, search)
             ).ToList();
         }
 

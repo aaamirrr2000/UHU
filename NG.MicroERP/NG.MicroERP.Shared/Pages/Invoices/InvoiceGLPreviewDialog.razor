@@ -22,6 +22,23 @@
                 </MudAlert>
             }
 
+            @if (PreviewData != null && PreviewData.HasWarnings)
+            {
+                <MudAlert Severity="Severity.Warning" Class="mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Warning" Class="me-2" />
+                    <MudText Typo="Typo.body2" Class="fw-bold mb-2">Missing Accounts or Configuration Issues Detected:</MudText>
+                    <ul style="margin: 0; padding-left: 20px;">
+                        @foreach (var warning in PreviewData.Warnings)
+                        {
+                            <li><MudText Typo="Typo.body2">@warning</MudText></li>
+                        }
+                    </ul>
+                    <MudText Typo="Typo.body2" Class="mt-2 fw-semibold">
+                        Please configure the missing accounts in Chart of Accounts before posting to GL. The "Transfer to GL" button is disabled until all accounts are configured.
+                    </MudText>
+                </MudAlert>
+            }
+
             @if (PreviewData != null)
             {
                 <MudPaper Elevation="2" Class="pa-3 mb-3">
@@ -43,8 +60,24 @@
                 </MudPaper>
 
                 <MudPaper Elevation="2" Class="pa-3">
-                    <MudText Typo="Typo.subtitle1" Class="mb-3 fw-bold">Account Entries</MudText>
-                    <MudTable Items="@SortedDetails" Hover="true" Dense="true" Bordered="true">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <MudText Typo="Typo.subtitle1" Class="mb-0 fw-bold">Account Entries</MudText>
+                        <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small">
+                            <MudButton Variant="@(IsDetailedView ? Variant.Filled : Variant.Text)"
+                                      Color="@(IsDetailedView ? Color.Primary : Color.Default)"
+                                      OnClick="() => IsDetailedView = true"
+                                      StartIcon="@Icons.Material.Filled.List">
+                                Detailed
+                            </MudButton>
+                            <MudButton Variant="@(!IsDetailedView ? Variant.Filled : Variant.Text)"
+                                      Color="@(!IsDetailedView ? Color.Primary : Color.Default)"
+                                      OnClick="() => IsDetailedView = false"
+                                      StartIcon="@Icons.Material.Filled.ViewList">
+                                Consolidated
+                            </MudButton>
+                        </MudButtonGroup>
+                    </div>
+                    <MudTable Items="@DisplayDetails" Hover="true" Dense="true" Bordered="true">
                         <HeaderContent>
                             <MudTh>Account</MudTh>
                             <MudTh Class="text-end">Debit</MudTh>
@@ -54,7 +87,17 @@
                         <RowTemplate>
                             <MudTd>
                                 <div>
-                                    <MudText Typo="Typo.body2" Class="fw-semibold">@context.AccountCode - @context.AccountName</MudText>
+                                    @if (context.AccountId == 0 || context.AccountCode == "MISSING")
+                                    {
+                                        <MudText Typo="Typo.body2" Class="fw-semibold" Color="Color.Warning">
+                                            <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="me-1" />
+                                            @context.AccountCode - @context.AccountName
+                                        </MudText>
+                                    }
+                                    else
+                                    {
+                                        <MudText Typo="Typo.body2" Class="fw-semibold">@context.AccountCode - @context.AccountName</MudText>
+                                    }
                                     <MudText Typo="Typo.caption" Color="Color.Secondary">@context.AccountType</MudText>
                                 </div>
                             </MudTd>
@@ -125,9 +168,15 @@
                       Color="Color.Success"
                       StartIcon="@Icons.Material.Filled.AccountBalance"
                       OnClick="PostToGL"
-                      Disabled="@(IsPosting || RecordId == 0)">
+                      Disabled="@(IsPosting || RecordId == 0 || (PreviewData != null && PreviewData.HasWarnings))">
                 @(IsPosting ? "Posting..." : "Transfer to GL")
             </MudButton>
+            @if (PreviewData != null && PreviewData.HasWarnings)
+            {
+                <MudTooltip Text="Cannot post to GL when there are missing accounts or configuration issues. Please resolve all warnings first.">
+                    <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Warning" Class="ms-2" />
+                </MudTooltip>
+            }
         }
         <MudButton OnClick="Close">Close</MudButton>
     </DialogActions>
@@ -145,6 +194,7 @@
     [Inject] private ISnackbar SnackbarService { get; set; } = null!;
     
     private bool IsPosting { get; set; } = false;
+    private bool IsDetailedView { get; set; } = false; // Default to consolidated view
 
     /// <summary>
     /// Returns sorted details with debits first, then credits
@@ -178,6 +228,40 @@
 
             // Debits first, then credits, then invalid entries (if any)
             return debits.Concat(credits).Concat(invalidEntries);
+        }
+    }
+
+    /// <summary>
+    /// Returns either detailed or consolidated view based on IsDetailedView flag
+    /// </summary>
+    private IEnumerable<GeneralLedgerDetailModel> DisplayDetails
+    {
+        get
+        {
+            if (IsDetailedView)
+            {
+                return SortedDetails;
+            }
+            else
+            {
+                // Consolidated view: Group by AccountId and sum amounts
+                return SortedDetails
+                    .GroupBy(d => d.AccountId)
+                    .Select(g => new GeneralLedgerDetailModel
+                    {
+                        AccountId = g.Key,
+                        AccountCode = g.First().AccountCode,
+                        AccountName = g.First().AccountName,
+                        AccountType = g.First().AccountType,
+                        DebitAmount = g.Sum(d => d.DebitAmount),
+                        CreditAmount = g.Sum(d => d.CreditAmount),
+                        Description = g.Count() > 1 
+                            ? $"{g.Count()} entries consolidated" 
+                            : g.First().Description
+                    })
+                    .OrderByDescending(d => d.DebitAmount > 0 ? d.DebitAmount : d.CreditAmount)
+                    .ThenBy(d => d.AccountCode ?? string.Empty);
+            }
         }
     }
 

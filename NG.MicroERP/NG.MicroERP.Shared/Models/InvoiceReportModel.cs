@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -59,11 +59,13 @@ public class InvoiceItemReportModel
     public bool IsInventoryItem { get; set; }
     public string ServingSize { get; set; } = string.Empty;
     public string StockCondition { get; set; } = string.Empty;
+    public string ManualItem { get; set; } = string.Empty;
     public double Qty { get; set; }
     public double UnitPrice { get; set; }
     public double DiscountAmount { get; set; }
     public double TaxAmount { get; set; }
     public double ItemTotalAmount { get; set; }
+    public string Description { get; set; } = string.Empty;
     public string Instructions { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public int Person { get; set; } = 0;
@@ -137,4 +139,14 @@ public class BillChargesReportModel : InvoiceChargesReportModel
     public int BillId { get => InvoiceId; set => InvoiceId = value; }
     public string RuleType { get; set; } = string.Empty;
     public double CalculatedAmount { get => AppliedAmount; set => AppliedAmount = value; }
+}
+
+// Manual Line Entry Data Model
+public class ManualLineData
+{
+    public string ItemName { get; set; } = string.Empty;
+    public double Qty { get; set; } = 1.0;
+    public double UnitPrice { get; set; } = 0;
+    public double DiscountAmount { get; set; } = 0;
+    public double TaxAmount { get; set; } = 0;
 }

@@ -1,4 +1,4 @@
-﻿using Serilog;
+using Serilog;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -75,12 +75,128 @@ public static class SQLInjectionHelper
         var upperInput = input.ToUpperInvariant();
 
         // SQL comment and statement separators
+        // Allow CAST and CONVERT only when used in safe date comparison patterns
         var sqlSyntaxPatterns = new[]
         {
         ";", "--", "/*", "*/", "#", "@@",
         "CHAR(", "NCHAR(", "VARCHAR(", "NVARCHAR(",
-        "CAST(", "CONVERT(", "DECLARE", "BEGIN", "END"
+        "DECLARE", "BEGIN", "END"
     };
+        
+        // Check for CAST/CONVERT - allow only in safe date comparison patterns
+        if (upperInput.Contains("CAST(") || upperInput.Contains("CONVERT("))
+        {
+            // Allow CAST/CONVERT only in safe date comparison patterns like:
+            // CAST('date' AS DATE), CAST('date' AS DATETIME), CAST(ISNULL(...) AS DATE)
+            // CONVERT(DATE, 'date'), CONVERT(DATE, ISNULL(...))
+            // Allow CAST with ISNULL containing table aliases like i.TranDate, i.CreatedOn
+            // Pattern: CAST(ISNULL(i.TranDate, i.CreatedOn) AS DATE)
+            // Also allow simple date strings: CAST('2025-01-20' AS DATE)
+            // Match ISNULL with nested parentheses - allow table aliases with periods (e.g., i.TranDate)
+            // Pattern matches: ISNULL(identifier.identifier, identifier.identifier)
+            var safeCastPattern = new Regex(@"CAST\s*\(\s*(ISNULL\s*\([a-zA-Z0-9_]+\.[a-zA-Z0-9_]+\s*,\s*[a-zA-Z0-9_]+\.[a-zA-Z0-9_]+\)|'[0-9]{4}-[0-9]{2}-[0-9]{2}')\s+AS\s+(DATE|DATETIME)\s*\)", RegexOptions.IgnoreCase);
+            var safeConvertPattern = new Regex(@"CONVERT\s*\(\s*(DATE|DATETIME)\s*,\s*(ISNULL\s*\([a-zA-Z0-9_]+\.[a-zA-Z0-9_]+\s*,\s*[a-zA-Z0-9_]+\.[a-zA-Z0-9_]+\)|'[0-9]{4}-[0-9]{2}-[0-9]{2}')\s*\)", RegexOptions.IgnoreCase);
+            
+            // Extract CAST/CONVERT expressions by finding opening and matching closing parentheses
+            // Handle nested parentheses by counting them
+            var castMatches = new List<string>();
+            var convertMatches = new List<string>();
+            
+            // Find all CAST expressions with proper parenthesis matching
+            int castIndex = 0;
+            while ((castIndex = input.IndexOf("CAST(", castIndex, StringComparison.OrdinalIgnoreCase)) >= 0)
+            {
+                int start = castIndex;
+                int parenCount = 0;
+                int pos = castIndex + 4; // After "CAST"
+                
+                // Find the opening parenthesis
+                while (pos < input.Length && char.IsWhiteSpace(input[pos]))
+                    pos++;
+                
+                if (pos < input.Length && input[pos] == '(')
+                {
+                    parenCount = 1;
+                    pos++;
+                    
+                    // Match parentheses
+                    while (pos < input.Length && parenCount > 0)
+                    {
+                        if (input[pos] == '(') parenCount++;
+                        else if (input[pos] == ')') parenCount--;
+                        pos++;
+                    }
+                    
+                    if (parenCount == 0)
+                    {
+                        castMatches.Add(input.Substring(start, pos - start));
+                    }
+                }
+                castIndex = pos;
+            }
+            
+            // Find all CONVERT expressions with proper parenthesis matching
+            int convertIndex = 0;
+            while ((convertIndex = input.IndexOf("CONVERT(", convertIndex, StringComparison.OrdinalIgnoreCase)) >= 0)
+            {
+                int start = convertIndex;
+                int parenCount = 0;
+                int pos = convertIndex + 7; // After "CONVERT"
+                
+                // Find the opening parenthesis
+                while (pos < input.Length && char.IsWhiteSpace(input[pos]))
+                    pos++;
+                
+                if (pos < input.Length && input[pos] == '(')
+                {
+                    parenCount = 1;
+                    pos++;
+                    
+                    // Match parentheses
+                    while (pos < input.Length && parenCount > 0)
+                    {
+                        if (input[pos] == '(') parenCount++;
+                        else if (input[pos] == ')') parenCount--;
+                        pos++;
+                    }
+                    
+                    if (parenCount == 0)
+                    {
+                        convertMatches.Add(input.Substring(start, pos - start));
+                    }
+                }
+                convertIndex = pos;
+            }
+            
+            // Check if all CAST/CONVERT usages are safe date patterns
+            bool allSafe = true;
+            foreach (var castExpr in castMatches)
+            {
+                if (!safeCastPattern.IsMatch(castExpr))
+                {
+                    Log.Warning("Unsafe CAST pattern detected: {Pattern} in input: {Input}", castExpr, input);
+                    allSafe = false;
+                    break;
+                }
+            }
+            
+            foreach (var convertExpr in convertMatches)
+            {
+                if (!safeConvertPattern.IsMatch(convertExpr))
+                {
+                    Log.Warning("Unsafe CONVERT pattern detected: {Pattern} in input: {Input}", convertExpr, input);
+                    allSafe = false;
+                    break;
+                }
+            }
+            
+            if (!allSafe)
+            {
+                return true; // Block unsafe CAST/CONVERT usage
+            }
+            // If all CAST/CONVERT usages are safe date patterns, allow it
+        }
+        
 
         foreach (var pattern in sqlSyntaxPatterns)
         {

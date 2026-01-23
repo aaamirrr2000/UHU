@@ -109,6 +109,93 @@ public class EmployeeAdvanceReportModel
     public DateTime? LastTransactionDate { get; set; }
 }
 
+public class DashboardModel
+{
+    public decimal TotalInventoryValue { get; set; }
+    public decimal FundsAvailable { get; set; }
+    public decimal OutstandingPayments { get; set; }
+    public int StockAlertsCount { get; set; }
+    public List<InventoryCategoryModel> InventoryByCategory { get; set; } = new();
+    public List<MonthlyFundsModel> MonthlyFundsFlow { get; set; } = new();
+    public List<LowStockItemModel> LowStockItems { get; set; } = new();
+    public List<RecentTransactionModel> RecentTransactions { get; set; } = new();
+    public CashPositionModel CashPosition { get; set; } = new();
+}
+
+public class CashPositionModel
+{
+    public decimal TotalReceipts { get; set; }
+    public decimal TotalPayments { get; set; }
+    public decimal NetCashFlow { get; set; }
+    public List<CashSourceModel> ReceiptsBySource { get; set; } = new();
+    public List<CashSourceModel> PaymentsBySource { get; set; } = new();
+}
+
+public class CashSourceModel
+{
+    public string? Source { get; set; }
+    public decimal Amount { get; set; }
+    public int TransactionCount { get; set; }
+}
+
+public class InventoryCategoryModel
+{
+    public string? CategoryName { get; set; }
+    public decimal TotalValue { get; set; }
+}
+
+public class MonthlyFundsModel
+{
+    public string? Month { get; set; }
+    public decimal Receipts { get; set; }
+    public decimal Payments { get; set; }
+    public decimal NetFlow { get; set; }
+}
+
+public class LowStockItemModel
+{
+    public string? ItemName { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal ReorderLevel { get; set; }
+}
+
+public class RecentTransactionModel
+{
+    public DateTime Date { get; set; }
+    public string? Description { get; set; }
+    public decimal Amount { get; set; }
+    public string? TransactionType { get; set; }
+}
+
+public class CashMovementModel
+{
+    public DateTime TranDate { get; set; }
+    public string? LocationName { get; set; }
+    public string? Source { get; set; }
+    public string? Description { get; set; }
+    public string? Reference { get; set; }
+    public decimal Receipts { get; set; }
+    public decimal Payments { get; set; }
+    public decimal Balance { get; set; }
+}
+
+public class PartyReceivablePayableModel
+{
+    public int PartyId { get; set; }
+    public string? PartyCode { get; set; }
+    public string? PartyName { get; set; }
+    public string? PartyType { get; set; }
+    public string? Phone { get; set; }
+    public string? Email { get; set; }
+    public decimal TotalInvoiceAmount { get; set; }
+    public decimal TotalPaidAmount { get; set; }
+    public decimal ReceivableAmount { get; set; }
+    public decimal PayableAmount { get; set; }
+    public decimal OutstandingBalance { get; set; }
+    public int InvoiceCount { get; set; }
+    public DateTime? LastTransactionDate { get; set; }
+}
+
 public class CashReconciliationReportModel
 {
     public DateTime? CountDate { get; set; }

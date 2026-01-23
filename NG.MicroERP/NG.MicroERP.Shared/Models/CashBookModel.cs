@@ -21,6 +21,7 @@ public class CashBookModel
     public string? Description { get; set; } = string.Empty;
     public double Amount { get; set; } = 0;
     public int AccountId { get; set; } = 0;
+    public string? AccountName { get; set; }
     public string? TranType { get; set; } = string.Empty;
     public string? PaymentMethod { get; set; } = string.Empty;
     public string? RefNo { get; set; } = string.Empty;

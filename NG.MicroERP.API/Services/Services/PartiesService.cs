@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -64,6 +64,13 @@ public class PartiesService : IPartiesService
         {
             string Code = dapper.GetCode("", "Parties", "Code")!;
             string SQLDuplicate = $@"SELECT * FROM Parties WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
+            // Convert 0 to NULL for nullable foreign key fields to avoid FK constraint violations
+            string parentIdValue = obj.ParentId > 0 ? obj.ParentId.ToString() : "NULL";
+            string salesPersonIdValue = obj.SalesPersonId > 0 ? obj.SalesPersonId.ToString() : "NULL";
+            string paymentTermsIdValue = obj.PaymentTermsId > 0 ? obj.PaymentTermsId.ToString() : "NULL";
+            string accountIdValue = obj.AccountId > 0 ? obj.AccountId.ToString() : "NULL";
+            string cityIdValue = obj.CityId > 0 ? obj.CityId.ToString() : "NULL";
+            
             string SQLInsert = $@"INSERT INTO Parties 
 			(
 				OrganizationId, 
@@ -98,31 +105,31 @@ public class PartiesService : IPartiesService
 			(
 				{obj.OrganizationId},
 				'{Code}', 
-				'{obj.Name!.ToUpper()}', 
-				'{obj.PartyType!.ToUpper()}', 
-				{obj.ParentId},
+				'{obj.Name?.ToUpper().Replace("'", "''") ?? ""}', 
+				'{obj.PartyType?.ToUpper().Replace("'", "''") ?? ""}', 
+				{parentIdValue},
 				{obj.CustomerRating},
-				'{obj.CustomerClass!.ToUpper()}', 
-				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
-				{obj.SalesPersonId},
+				'{obj.CustomerClass?.ToUpper().Replace("'", "''") ?? ""}', 
+				'{(obj.CustomerSince?.ToString("yyyy-MM-dd HH:mm:ss") ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"))}',
+				{salesPersonIdValue},
 				{obj.CreditLimit},
-				{obj.PaymentTermsId},
-				{obj.AccountId},
-				'{obj.NTN!.ToUpper()}',
-				'{obj.STN!.ToUpper()}',
-				'{obj.Address!.ToUpper()}', 
-				{obj.CityId},
-				'{obj.Latitude!.ToUpper()}', 
-				'{obj.Longitude!.ToUpper()}', 
+				{paymentTermsIdValue},
+				{accountIdValue},
+				'{obj.NTN?.ToUpper().Replace("'", "''") ?? ""}',
+				'{obj.STN?.ToUpper().Replace("'", "''") ?? ""}',
+				'{obj.Address?.ToUpper().Replace("'", "''") ?? ""}', 
+				{cityIdValue},
+				'{obj.Latitude?.ToUpper().Replace("'", "''") ?? ""}', 
+				'{obj.Longitude?.ToUpper().Replace("'", "''") ?? ""}', 
 				{obj.Radius},
-				'{obj.ContactPerson!.ToUpper()}', 
-				'{obj.ContactDesignation!.ToUpper()}', 
-				'{obj.ContactEmail!.ToUpper()}', 
-				'{obj.Pic!.ToUpper()}', 
+				'{obj.ContactPerson?.ToUpper().Replace("'", "''") ?? ""}', 
+				'{obj.ContactDesignation?.ToUpper().Replace("'", "''") ?? ""}', 
+				'{obj.ContactEmail?.ToUpper().Replace("'", "''") ?? ""}', 
+				'{obj.Pic?.Replace("'", "''") ?? ""}', 
 				{obj.IsActive},
 				{obj.CreatedBy},
 				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
-				'{obj.CreatedFrom!.ToUpper()}'
+				'{obj.CreatedFrom?.ToUpper().Replace("'", "''") ?? ""}'
 			);";
 
             var res = await dapper.Insert(SQLInsert, SQLDuplicate);
@@ -148,34 +155,42 @@ public class PartiesService : IPartiesService
     {
         try
         {
+            // Convert 0 to NULL for nullable foreign key fields to avoid FK constraint violations
+            string parentIdValue = obj.ParentId > 0 ? obj.ParentId.ToString() : "NULL";
+            string salesPersonIdValue = obj.SalesPersonId > 0 ? obj.SalesPersonId.ToString() : "NULL";
+            string paymentTermsIdValue = obj.PaymentTermsId > 0 ? obj.PaymentTermsId.ToString() : "NULL";
+            string accountIdValue = obj.AccountId > 0 ? obj.AccountId.ToString() : "NULL";
+            string cityIdValue = obj.CityId > 0 ? obj.CityId.ToString() : "NULL";
+            
             string SQLDuplicate = $@"SELECT * FROM Parties WHERE UPPER(code) = '{obj.Code!.ToUpper()}' and Id != {obj.Id};";
             string SQLUpdate = $@"UPDATE Parties SET 
 					OrganizationId = {obj.OrganizationId}, 
-					Code = '{obj.Code!.ToUpper()}', 
-					Name = '{obj.Name!.ToUpper()}', 
-					PartyType = '{obj.PartyType!.ToUpper()}', 
-					ParentId = {obj.ParentId}, 
+					Code = '{obj.Code?.ToUpper().Replace("'", "''") ?? ""}', 
+					Name = '{obj.Name?.ToUpper().Replace("'", "''") ?? ""}', 
+					PartyType = '{obj.PartyType?.ToUpper().Replace("'", "''") ?? ""}', 
+					ParentId = {parentIdValue}, 
 					CustomerRating = {obj.CustomerRating}, 
-					CustomerClass = '{obj.CustomerClass!.ToUpper()}', 
-					CustomerSince = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
-					SalesPersonId = {obj.SalesPersonId}, 
+					CustomerClass = '{obj.CustomerClass?.ToUpper().Replace("'", "''") ?? ""}', 
+					CustomerSince = '{(obj.CustomerSince?.ToString("yyyy-MM-dd HH:mm:ss") ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"))}', 
+					SalesPersonId = {salesPersonIdValue}, 
 					CreditLimit = {obj.CreditLimit}, 
-					PaymentTermsId = {obj.PaymentTermsId}, 
-					AccountId = {obj.AccountId}, 
-					NTN = '{obj.NTN!.ToUpper()}', 
-					Address = '{obj.Address!.ToUpper()}', 
-					CityId = {obj.CityId}, 
-					Latitude = '{obj.Latitude!.ToUpper()}', 
-					Longitude = '{obj.Longitude!.ToUpper()}', 
+					PaymentTermsId = {paymentTermsIdValue}, 
+					AccountId = {accountIdValue}, 
+					NTN = '{obj.NTN?.ToUpper().Replace("'", "''") ?? ""}', 
+					STN = '{obj.STN?.ToUpper().Replace("'", "''") ?? ""}', 
+					Address = '{obj.Address?.ToUpper().Replace("'", "''") ?? ""}', 
+					CityId = {cityIdValue}, 
+					Latitude = '{obj.Latitude?.ToUpper().Replace("'", "''") ?? ""}', 
+					Longitude = '{obj.Longitude?.ToUpper().Replace("'", "''") ?? ""}', 
 					Radius = {obj.Radius}, 
-					ContactPerson = '{obj.ContactPerson!.ToUpper()}', 
-					ContactDesignation = '{obj.ContactDesignation!.ToUpper()}', 
-					ContactEmail = '{obj.ContactEmail!.ToUpper()}', 
-					Pic = '{obj.Pic!.ToUpper()}', 
+					ContactPerson = '{obj.ContactPerson?.ToUpper().Replace("'", "''") ?? ""}', 
+					ContactDesignation = '{obj.ContactDesignation?.ToUpper().Replace("'", "''") ?? ""}', 
+					ContactEmail = '{obj.ContactEmail?.ToUpper().Replace("'", "''") ?? ""}', 
+					Pic = '{obj.Pic?.Replace("'", "''") ?? ""}', 
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
-					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}'
+					UpdatedFrom = '{obj.UpdatedFrom?.ToUpper().Replace("'", "''") ?? ""}'
 				WHERE Id = {obj.Id};";
 
             var res = await dapper.Update(SQLUpdate, SQLDuplicate);

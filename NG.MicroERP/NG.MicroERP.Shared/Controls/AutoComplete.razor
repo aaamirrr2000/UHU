@@ -1,4 +1,4 @@
-﻿@using MudBlazor
+@using MudBlazor
 @typeparam TItem where TItem : class
 
 <MudAutocomplete T="TItem"
@@ -9,6 +9,7 @@
                  Adornment="Adornment.End"
                  Clearable="@Clearable"
                  ReadOnly="@ReadOnly"
+                 Disabled="@Disabled"
                  CoerceText="true"
                  CoerceValue="true"
                  ResetValueOnEmptyText="true"
@@ -35,6 +36,7 @@
     [Parameter] public string? Style { get; set; }
     [Parameter] public bool Clearable { get; set; } = true;
     [Parameter] public bool ReadOnly { get; set; } = false;
+    [Parameter] public bool Disabled { get; set; } = false;
 
     [Parameter] public TItem? SelectedValue { get; set; }
     [Parameter] public EventCallback<TItem?> SelectedValueChanged { get; set; }

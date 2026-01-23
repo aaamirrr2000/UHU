@@ -1,12 +1,19 @@
 -- Create PettyCashReport View
-CREATE VIEW vw_PettyCashReport AS
+-- Drop view if exists to recreate with EmployeeId
+IF OBJECT_ID('dbo.vw_PettyCashReport', 'V') IS NOT NULL
+BEGIN
+    DROP VIEW dbo.vw_PettyCashReport;
+END
+GO
+
+CREATE VIEW dbo.vw_PettyCashReport AS
 SELECT
   a.Id,
   a.SeqNo,
   a.LocationId,
   b.Name as LocationName,
-  a.PartyId,
-  c.Name as PartyName,
+  a.EmployeeId,
+  c.Fullname as EmployeeName,
   a.TranDate,
   a.Description,
   a.Amount,
@@ -28,7 +35,7 @@ SELECT
   g.Fullname as UpdatedByName
 FROM PettyCash as a
 LEFT JOIN Locations as b on b.Id=a.LocationId
-LEFT JOIN Parties as c on c.Id=a.PartyId
+LEFT JOIN Employees as c on c.Id=a.EmployeeId
 LEFT JOIN Users as d on d.Id=a.CreatedBy
 LEFT JOIN Employees as e on e.Id=d.EmpId
 LEFT JOIN Users as f on f.Id=a.UpdatedBy

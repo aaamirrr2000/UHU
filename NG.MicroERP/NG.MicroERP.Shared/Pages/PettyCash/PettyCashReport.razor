@@ -1,0 +1,304 @@
+@page "/PettyCashReport/{id:int}"
+@* @layout BlankLayout *@
+@inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime
+@inject Functions Functions
+@inject Globals Globals
+@inject ISnackbar SnackbarService
+
+@if (LoadingPanel)
+{
+    <div class="text-center pa-4">
+        <p>Loading petty cash data...</p>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="text-center pa-4">
+        <p style="color: red;">@errorMessage</p>
+        <p>PettyCash ID: @id</p>
+        <button class="btn btn-outline-secondary" @onclick="GoBack">
+            <i class="fas fa-arrow-left me-1"></i> Back
+        </button>
+    </div>
+}
+else if (pettyCash != null && pettyCash.Id > 0)
+{
+    <div class="invoice-actions no-print text-end mb-3">
+        <div class="invoice-actions no-print text-end mb-3">
+            <!-- Add Back Button Here -->
+            <button class="btn btn-outline-secondary me-2" @onclick="GoBack">
+                <i class="fas fa-arrow-left me-1"></i> Back
+            </button>
+
+            <button class="btn btn-primary" @onclick="PrintReport">
+                <i class="fas fa-print me-1"></i> Print
+            </button>
+        </div>
+    </div>
+
+    <div class="receipt shadow p-4 bg-white rounded">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <div class="row align-items-center">
+                <div class="col-md-2">
+                    <img src="@Globals.GetImageUrl(Globals.Organization.Logo)" alt="Logo" class="img-fluid rounded" style="height: 60px;" />
+                </div>
+                <div class="col-md-8">
+                    <h2 class="fw-bold m-0">@Globals.Organization.Name</h2>
+                    <h5 class="text-muted mt-1">Petty Cash @pettyCash.TranType</h5>
+                </div>
+            </div>
+            <p class="text-muted mt-2">Date: @(pettyCash.TranDate != DateTime.MinValue ? pettyCash.TranDate.ToString("dd-MMM-yyyy") : "N/A")</p>
+        </div>
+
+        <!-- Info Table -->
+        <table class="table table-bordered table-sm">
+            <tbody>
+                <tr>
+                    <th style="width: 35%;">Document #</th>
+                    <td>@pettyCash.SeqNo</td>
+                </tr>
+                <tr>
+                    <th>Transaction Location</th>
+                    <td>@pettyCash.LocationName</td>
+                </tr>
+                <tr>
+                    <th>Employee</th>
+                    <td>@pettyCash.EmployeeName</td>
+                </tr>
+                <tr>
+                    <th>Description</th>
+                    <td>@pettyCash.Description</td>
+                </tr>
+                <tr>
+                    <th>Amount</th>
+                    <td><strong class="text-success">@pettyCash.Amount.ToString("N2")</strong></td>
+                </tr>
+                <tr>
+                    <th>Account</th>
+                    <td>@pettyCash.AccountName</td>
+                </tr>
+                <tr>
+                    <th>Transaction Type</th>
+                    <td>@pettyCash.TranType</td>
+                </tr>
+                <tr>
+                    <th>Payment Method</th>
+                    <td>@pettyCash.PaymentMethod</td>
+                </tr>
+                <tr>
+                    <th>Payment Reference #</th>
+                    <td>@pettyCash.RefNo</td>
+                </tr>
+                <tr>
+                    <th>Transaction Reference #</th>
+                    <td>@pettyCash.TranRef</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Amount in Words -->
+        <div class="mt-3 mb-4">
+            <strong>Amount in Words:</strong>
+            <em>@Functions.ConvertMoneyToWords((decimal)@pettyCash!.Amount)</em>
+        </div>
+
+        <!-- Footer -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <p><strong>Created By:</strong> @pettyCash.CreatedByName @pettyCash.CreatedByUser</p>
+                <p><strong>Created Date:</strong> @pettyCash.CreatedOn.ToString("dd-MMM-yyyy HH:mm:ss tt")</p>
+            </div>
+            <div class="col-md-6">
+                @if (pettyCash.UpdatedOn.HasValue && pettyCash.UpdatedOn.Value != DateTime.MinValue)
+                {
+                    <p><strong>Modified By:</strong> @pettyCash.UpdatedByName @pettyCash.UpdatedByUser</p>
+                    <p><strong>Modified Date:</strong> @pettyCash.UpdatedOn.Value.ToString("dd-MMM-yyyy HH:mm:ss tt")</p>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int id { get; set; }
+    private PettyCashReportModel pettyCash = new();
+    private bool LoadingPanel { get; set; } = true;
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Globals.AccessLevel = Globals.PageAccess(NavManager, "PettyCashDashboard");
+            
+            // Try to get report data first from view
+            var reportData = await Functions.GetAsync<PettyCashReportModel>($"PettyCash/GetPettyCashReport/{id}", true);
+            
+            if (reportData != null && reportData.Id > 0)
+            {
+                pettyCash = reportData;
+            }
+            else
+            {
+                // Fallback to regular Get endpoint if report view doesn't return data
+                var regularData = await Functions.GetAsync<PettyCashModel>($"PettyCash/Get/{id}", true);
+                if (regularData != null && regularData.Id > 0)
+                {
+                    // Map PettyCashModel to PettyCashReportModel
+                    pettyCash = new PettyCashReportModel
+                    {
+                        Id = regularData.Id,
+                        SeqNo = regularData.SeqNo,
+                        LocationId = regularData.LocationId,
+                        LocationName = regularData.LocationName,
+                        EmployeeId = regularData.EmployeeId,
+                        EmployeeName = regularData.EmployeeName,
+                        TranDate = regularData.TranDate ?? DateTime.Today,
+                        Description = regularData.Description,
+                        Amount = regularData.Amount,
+                        AccountId = regularData.AccountId,
+                        AccountName = regularData.AccountName ?? "",
+                        TranType = regularData.TranType,
+                        PaymentMethod = regularData.PaymentMethod,
+                        RefNo = regularData.RefNo,
+                        TranRef = regularData.TranRef,
+                        CreatedOn = regularData.CreatedOn,
+                        CreatedBy = regularData.CreatedBy,
+                        CreatedFrom = regularData.CreatedFrom,
+                        UpdatedOn = regularData.UpdatedOn != DateTime.MinValue ? regularData.UpdatedOn : (DateTime?)null,
+                        UpdatedBy = regularData.UpdatedBy,
+                        UpdatedFrom = regularData.UpdatedFrom
+                    };
+                    
+                    // Load user names if needed
+                    if (regularData.CreatedBy > 0)
+                    {
+                        var createdUser = await Functions.GetAsync<UsersModel>($"Users/Get/{regularData.CreatedBy}", true);
+                        if (createdUser != null)
+                        {
+                            pettyCash.CreatedByUser = createdUser.Username ?? "";
+                            if (createdUser.EmpId > 0)
+                            {
+                                var createdEmp = await Functions.GetAsync<EmployeesModel>($"Employees/Get/{createdUser.EmpId}", true);
+                                pettyCash.CreatedByName = createdEmp?.Fullname ?? "";
+                            }
+                        }
+                    }
+                    
+                    if (regularData.UpdatedBy > 0 && regularData.UpdatedOn != DateTime.MinValue)
+                    {
+                        var updatedUser = await Functions.GetAsync<UsersModel>($"Users/Get/{regularData.UpdatedBy}", true);
+                        if (updatedUser != null)
+                        {
+                            pettyCash.UpdatedByUser = updatedUser.Username ?? "";
+                            if (updatedUser.EmpId > 0)
+                            {
+                                var updatedEmp = await Functions.GetAsync<EmployeesModel>($"Employees/Get/{updatedUser.EmpId}", true);
+                                pettyCash.UpdatedByName = updatedEmp?.Fullname ?? "";
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    errorMessage = $"PettyCash entry with ID {id} not found.";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading petty cash data: {ex.Message}";
+            SnackbarService.Add(errorMessage, Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    private async Task PrintReport()
+    {
+        await JSRuntime.InvokeVoidAsync("printReceipt");
+    }
+
+    private void GoBack()
+    {
+        NavManager.NavigateTo("/PettyCashDashboard");
+    }
+}
+
+<style>
+    .receipt {
+        max-width: 800px;
+        width:100%;
+        margin: auto;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+    }
+
+        .receipt .header {
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+
+        .receipt .footer {
+            border-top: 1px solid #ddd;
+            margin-top: 20px;
+            padding-top: 10px;
+        }
+
+        .receipt .table th, .receipt .table td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        .receipt .table th {
+            background-color: #f2f2f2;
+            width: 40%;
+        }
+
+    .text-center {
+        text-align: center;
+    }
+
+    @@media print {
+        .no-print {
+            display: none !important;
+        }
+
+        .receipt {
+            border: none;
+            box-shadow: none;
+            padding: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+        }
+    }
+
+</style>
+
+<script>
+    function printReceipt() {
+        var receiptElement = document.querySelector('.receipt');
+        if (!receiptElement) {
+            alert('No receipt content found to print.');
+            return;
+        }
+        
+        var receiptContent = receiptElement.innerHTML;
+        var originalContent = document.body.innerHTML;
+
+        document.body.innerHTML = '<div>' + receiptContent + '</div>';
+        window.print();
+        document.body.innerHTML = originalContent;
+        window.location.reload();
+    }
+</script>

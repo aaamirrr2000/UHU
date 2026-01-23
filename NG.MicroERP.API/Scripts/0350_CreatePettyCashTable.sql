@@ -6,7 +6,7 @@ CREATE TABLE PettyCash
     SeqNo               VARCHAR(50)      NOT NULL,
     FileAttachment      VARCHAR(255),
     LocationId          INT,
-    PartyId             INT,
+    EmployeeId          INT,
     TranDate            DATE             NOT NULL,
     Description         VARCHAR(255)     NOT NULL,
     Amount              DECIMAL(10, 2)   NOT NULL,
@@ -35,10 +35,11 @@ CREATE TABLE PettyCash
     FOREIGN KEY (LocationId)   REFERENCES Locations(Id),
     FOREIGN KEY (CreatedBy)    REFERENCES Users(Id),
     FOREIGN KEY (UpdatedBy)    REFERENCES Users(Id),
-    FOREIGN KEY (PartyId)      REFERENCES Parties(Id),
+    FOREIGN KEY (EmployeeId)   REFERENCES Employees(Id),
     FOREIGN KEY (AccountId)    REFERENCES ChartOfAccounts(Id),
     FOREIGN KEY (OrganizationId)   REFERENCES Organizations(Id),
     FOREIGN KEY (PostedToGLBy)  REFERENCES Users(Id),
     FOREIGN KEY (BaseCurrencyId) REFERENCES Currencies(Id),
-    FOREIGN KEY (EnteredCurrencyId) REFERENCES Currencies(Id)
+    FOREIGN KEY (EnteredCurrencyId) REFERENCES Currencies(Id),
+    FOREIGN KEY (PostedToGLBy) REFERENCES dbo.Users(Id)
 );

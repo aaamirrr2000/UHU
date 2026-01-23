@@ -1,0 +1,116 @@
+@page "/login"
+@using NG.ControlCenter.WebSite.Models
+@using NG.ControlCenter.WebSite.Services
+@inject IStateService StateService
+@inject NavigationManager NavigationManager
+@inject INotificationService NotificationService
+
+<PageTitle>Login - MicroERP</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="py-8">
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudText Typo="Typo.h4" Class="mb-4" Align="Align.Center">
+            Sign In to MicroERP
+        </MudText>
+
+        <EditForm Model="loginModel" OnSubmit="HandleLoginAsync">
+            <DataAnnotationsValidator />
+            
+            @if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-4">
+                    @ErrorMessage
+                </MudAlert>
+            }
+
+            <MudTextField 
+                @bind-Value="loginModel.Email" 
+                Label="Email" 
+                Type="InputType.Email"
+                Required="true"
+                For="@(() => loginModel.Email)"
+                Class="mb-4" />
+            
+            <MudTextField 
+                @bind-Value="loginModel.Password" 
+                Label="Password" 
+                Type="InputType.Password"
+                Required="true"
+                For="@(() => loginModel.Password)"
+                Class="mb-4" />
+
+            <MudCheckBox T="bool"
+                @bind-Checked="loginModel.RememberMe" 
+                Label="Remember me"
+                Class="mb-6" />
+
+            <MudButton 
+                ButtonType="ButtonType.Submit" 
+                Variant="Variant.Filled" 
+                Color="Color.Primary" 
+                FullWidth="true"
+                Loading="isLoading"
+                Disabled="isLoading">
+                Sign In
+            </MudButton>
+        </EditForm>
+
+        <MudDivider Class="my-4" />
+
+        <MudText Align="Align.Center">
+            Don't have an account? 
+            <MudLink Href="/register">Sign Up</MudLink>
+        </MudText>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private LoginModel loginModel = new();
+    private bool isLoading = false;
+    private string? ErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Try to load saved login data if user chose "Remember me"
+        var savedEmail = await StateService.LoadStateAsync<string>("login_email");
+        if (!string.IsNullOrEmpty(savedEmail))
+        {
+            loginModel.Email = savedEmail;
+            loginModel.RememberMe = true;
+        }
+    }
+
+    private async Task HandleLoginAsync()
+    {
+        try
+        {
+            isLoading = true;
+            ErrorMessage = null;
+
+            // TODO: Call API to authenticate
+            // var response = await AuthService.LoginAsync(loginModel);
+
+            // Save email if remember me is checked
+            if (loginModel.RememberMe)
+            {
+                await StateService.SaveStateAsync("login_email", loginModel.Email);
+            }
+            else
+            {
+                await StateService.RemoveStateAsync("login_email");
+            }
+
+            NotificationService.ShowSuccess("Login successful!");
+            // NavigationManager.NavigateTo("/dashboard");
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+            NotificationService.ShowError("Login failed", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

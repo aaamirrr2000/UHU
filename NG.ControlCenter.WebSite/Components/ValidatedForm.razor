@@ -1,0 +1,46 @@
+@using System.ComponentModel.DataAnnotations
+@using MudBlazor
+
+@*
+Reusable validated form component
+Usage:
+<ValidatedForm Model="myModel" OnSubmit="HandleSubmit">
+    <MudTextField @bind-Value="Model.Email" />
+    <MudPasswordField @bind-Value="Model.Password" />
+    <MudButton ButtonType="ButtonType.Submit">Submit</MudButton>
+</ValidatedForm>
+*@
+
+<EditForm Model="Model" OnSubmit="OnSubmitAsync">
+    <DataAnnotationsValidator />
+    
+    @if (ShowValidationSummary)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-3">
+            <ValidationSummary />
+        </MudAlert>
+    }
+    
+    <div class="form-content">
+        @ChildContent
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public object? Model { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    [Parameter]
+    public bool ShowValidationSummary { get; set; } = true;
+
+    private async Task OnSubmitAsync()
+    {
+        await OnSubmit.InvokeAsync();
+    }
+}

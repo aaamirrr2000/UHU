@@ -1,0 +1,212 @@
+@using NG.MicroERP.Shared.Models
+@using MudBlazor
+@inject Functions Functions
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4">
+            <MudGrid Spacing="3" GutterSize="GutterSize.Small">
+                <MudItem xs="12">
+                    <MudText Typo="Typo.h6" Class="fw-bold mb-3">Add New Party</MudText>
+                    <MudDivider Class="mb-3" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="NewParty.Name"
+                                  Label="Party Name"
+                                  Variant="Variant.Outlined"
+                                  FullWidth="true"
+                                  Required="true"
+                                  RequiredError="Party name is required"
+                                  Margin="Margin.Normal"
+                                  Class="new-party-field" />
+                </MudItem>
+
+
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="NewParty.ContactEmail"
+                                  Label="Email"
+                                  InputType="InputType.Email"
+                                  Variant="Variant.Outlined"
+                                  FullWidth="true"
+                                  Margin="Margin.Normal"
+                                  Class="new-party-field" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="NewParty.Address"
+                                  Label="Address"
+                                  Variant="Variant.Outlined"
+                                  FullWidth="true"
+                                  Margin="Margin.Normal"
+                                  Lines="2"
+                                  Class="new-party-field" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="NewParty.ContactPerson"
+                                  Label="Contact Person / Phone"
+                                  Variant="Variant.Outlined"
+                                  FullWidth="true"
+                                  Margin="Margin.Normal"
+                                  Class="new-party-field" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudSelect T="int"
+                               @bind-Value="NewParty.AccountId"
+                               Label="Account"
+                               Variant="Variant.Outlined"
+                               FullWidth="true"
+                               Margin="Margin.Normal"
+                               Required="true"
+                               RequiredError="Account is required"
+                               Clearable="@false"
+                               Class="new-party-field">
+                        @if (Accounts != null && Accounts.Any())
+                        {
+                            @foreach (var account in Accounts)
+                            {
+                                <MudSelectItem T="int" Value="@account.Id">@account.Code - @account.Name</MudSelectItem>
+                            }
+                        }
+                        else
+                        {
+                            <MudSelectItem T="int" Value="0" Disabled="true">No accounts available</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text" Color="Color.Default">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Save">Save Party</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<style>
+    .new-party-field {
+        margin-bottom: 8px;
+    }
+
+    :deep(.mud-dialog-actions) {
+        padding: 16px 24px;
+        border-top: 1px solid rgba(0, 0, 0, 0.12);
+        gap: 12px;
+    }
+</style>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public int OrganizationId { get; set; }
+    [Parameter] public int CreatedBy { get; set; }
+    [Parameter] public string CreatedFrom { get; set; } = string.Empty;
+    [Parameter] public string InvoiceType { get; set; } = string.Empty;
+
+    public PartiesModel NewParty { get; set; } = new PartiesModel();
+    private List<ChartOfAccountsModel> Accounts { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        NewParty.OrganizationId = OrganizationId;
+        NewParty.CreatedBy = CreatedBy;
+        NewParty.CreatedFrom = CreatedFrom;
+        NewParty.IsActive = 1;
+        
+        // Automatically set PartyType based on InvoiceType
+        if (!string.IsNullOrWhiteSpace(InvoiceType))
+        {
+            string invoiceTypeUpper = InvoiceType.ToUpperInvariant();
+            if (invoiceTypeUpper == "SALE" || invoiceTypeUpper == "SALE RETURN")
+            {
+                NewParty.PartyType = "CUSTOMER";
+            }
+            else if (invoiceTypeUpper == "PURCHASE" || invoiceTypeUpper == "PURCHASE RETURN")
+            {
+                NewParty.PartyType = "SUPPLIER";
+            }
+        }
+        
+        // Load accounts based on PartyType
+        await LoadAccounts();
+    }
+
+    private async Task LoadAccounts()
+    {
+        try
+        {
+            string filter_Acc = "";
+
+            // Determine account type based on InvoiceType (more reliable than PartyType which might not be set yet)
+            if (!string.IsNullOrWhiteSpace(InvoiceType))
+            {
+                string invoiceTypeUpper = InvoiceType.ToUpperInvariant();
+                if (invoiceTypeUpper == "SALE" || invoiceTypeUpper == "SALE RETURN")
+                {
+                    filter_Acc = "InterfaceType='ACCOUNTS RECEIVABLE'";
+                }
+                else if (invoiceTypeUpper == "PURCHASE" || invoiceTypeUpper == "PURCHASE RETURN")
+                {
+                    filter_Acc = "InterfaceType='ACCOUNTS PAYABLE'";
+                }
+            }
+            else
+            {
+                // Fallback to PartyType if InvoiceType is not available
+                switch (NewParty.PartyType?.ToUpperInvariant())
+                {
+                    case "CUSTOMER":
+                        filter_Acc = "InterfaceType='ACCOUNTS RECEIVABLE'";
+                        break;
+
+                    case "SUPPLIER":
+                        filter_Acc = "InterfaceType='ACCOUNTS PAYABLE'";
+                        break;
+
+                    case "BANK":
+                        filter_Acc = "InterfaceType='ACCOUNTS PAYABLE'";
+                        break;
+
+                    default:
+                        filter_Acc = "";
+                        break;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter_Acc))
+            {
+                Accounts = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/{filter_Acc}", true) ?? new List<ChartOfAccountsModel>();
+            }
+            else
+            {
+                Accounts = await Functions.GetAsync<List<ChartOfAccountsModel>>("ChartOfAccounts/Search", true) ?? new List<ChartOfAccountsModel>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Accounts = new List<ChartOfAccountsModel>();
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(NewParty.Name))
+        {
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(NewParty.PartyType))
+        {
+            return;
+        }
+        if (NewParty.AccountId == 0)
+        {
+            return;
+        }
+
+        MudDialog.Close(DialogResult.Ok(NewParty));
+    }
+}

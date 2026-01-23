@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using NG.MicroERP.Shared.Models;
 using NG.MicroERP.API.Services;
 using NG.MicroERP.API.Helper;
+using Serilog;
 
 namespace NG.MicroERP.API.Controllers;
 
@@ -51,11 +52,19 @@ public class PermissionsController : ControllerBase
     [HttpPost("Save")]
     public async Task<IActionResult> Save(PermissionsModel obj)
     {
-        var result = await Srv.Save(obj)!;
-        if (result == true)
-            return Ok(result);
-        else
-            return BadRequest(result);
+        try
+        {
+            var result = await Srv.Save(obj)!;
+            if (result == true)
+                return Ok(new { success = true, message = "Permission saved successfully" });
+            else
+                return BadRequest(new { success = false, message = "Failed to save permission. Please try again." });
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error saving permission for GroupId: {GroupId}, MenuId: {MenuId}", obj.GroupId, obj.MenuId);
+            return BadRequest(new { success = false, message = $"Error saving permission: {ex.Message}" });
+        }
     }
 
 

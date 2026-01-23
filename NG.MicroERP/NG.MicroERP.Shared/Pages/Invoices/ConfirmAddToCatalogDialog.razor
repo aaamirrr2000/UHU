@@ -1,0 +1,44 @@
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Small" Class="pa-4">
+            <div class="d-flex align-items-center mb-3">
+                <MudIcon Icon="@Icons.Material.Filled.Info" 
+                         Size="Size.Large" 
+                         Color="Color.Info" 
+                         Class="me-3" />
+                <MudText Typo="Typo.h6" Class="fw-bold mb-0">Add to Item Catalog?</MudText>
+            </div>
+            
+            <MudDivider Class="mb-3" />
+            
+            <MudText Typo="Typo.body1" Class="mb-3">
+                Would you like to add "<strong>@ItemName</strong>" to the item catalog? 
+                This will allow you to select it from the catalog in future invoices.
+            </MudText>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text" Color="Color.Default">No, Skip</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Confirm">Yes, Add to Catalog</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<style>
+    :deep(.mud-dialog-actions) {
+        padding: 16px 24px;
+        border-top: 1px solid rgba(0, 0, 0, 0.12);
+        gap: 12px;
+    }
+</style>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string ItemName { get; set; } = string.Empty;
+
+    private void Cancel() => MudDialog.Close(DialogResult.Cancel());
+
+    private void Confirm() => MudDialog.Close(DialogResult.Ok(true));
+}

@@ -107,7 +107,7 @@
                                       IdProperty="@(p => p.Id)"
                                       @bind-SelectedId="record.LocationId"
                                       Variant="Variant.Outlined"
-                                      Label=""
+                                      Label="Location"
                                       FullWidth="@true" />
                     }
                 </div>
@@ -184,7 +184,7 @@
                                       IdProperty="@(p => p.Id)"
                                       @bind-SelectedId="record.PartyId"
                                       Variant="Variant.Outlined"
-                                      Label=""
+                                      Label="Party (Optional)"
                                       FullWidth="@true" />
                     }
                 </div>
@@ -201,48 +201,53 @@
                 </div>
 
                 <div class="col-12 col-md-3 col-lg-3">
-                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Base Currency</label>
-                    <MudTextField Value="@(Currencies.FirstOrDefault(c => c.Id == record.BaseCurrencyId)?.DisplayName ?? "")"
-                                  Variant="Variant.Outlined"
-                                  Dense="@true"
-                                  FullWidth="@true"
-                                  ReadOnly="true" />
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Currency</label>
+                    <div class="d-flex align-items-center gap-2">
+                        <MudText Typo="Typo.body2" Class="fw-bold">
+                            @(Currencies.FirstOrDefault(c => c.Id == record.EnteredCurrencyId)?.DisplayName ?? Currencies.FirstOrDefault(c => c.Id == record.BaseCurrencyId)?.DisplayName ?? "N/A")
+                        </MudText>
+                        @if (!isReadOnly)
+                        {
+                            <MudButton Size="Size.Small" 
+                                       Variant="Variant.Text" 
+                                       Color="Color.Primary"
+                                       OnClick="ToggleCurrencySelection"
+                                       StartIcon="@Icons.Material.Filled.Edit">
+                                Change
+                            </MudButton>
+                        }
+                    </div>
                 </div>
 
-                <div class="col-12 col-md-3 col-lg-3">
-                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Entered Currency</label>
-                    @if (isReadOnly)
-                    {
-                        <MudTextField Value="@(Currencies.FirstOrDefault(c => c.Id == record.EnteredCurrencyId)?.DisplayName ?? "")"
-                                      Variant="Variant.Outlined"
-                                      Dense="@true"
-                                      FullWidth="@true"
-                                      ReadOnly="@true" />
-                    }
-                    else
-                    {
+                @if (showCurrencySelection && !isReadOnly)
+                {
+                    <div class="col-12 col-md-3 col-lg-3">
+                        <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Select Currency</label>
                         <AutoComplete TItem="CurrenciesModel"
                                       DataList="@Currencies"
                                       DisplayProperty="@(p => p.DisplayName)"
                                       IdProperty="@(p => p.Id)"
                                       @bind-SelectedId="record.EnteredCurrencyId"
                                       @bind-SelectedId:after="OnEnteredCurrencyChanged"
-                                      Label=""
+                                      Label="Currency"
                                       Variant="Variant.Outlined"
                                       FullWidth="@true" />
-                    }
-                </div>
+                    </div>
+                }
 
-                <div class="col-12 col-md-3 col-lg-3">
-                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Exchange Rate</label>
-                    <MudNumericField @bind-Value="record.ExchangeRate"
-                                     Format="#,##0.000000"
-                                     placeholder="Exchange Rate"
-                                     ReadOnly="@isReadOnly"
-                                     Variant="Variant.Outlined"
-                                     Dense="@true"
-                                     FullWidth="@true" />
-                </div>
+                @if (record.EnteredCurrencyId != record.BaseCurrencyId || showCurrencySelection)
+                {
+                    <div class="col-12 col-md-3 col-lg-3">
+                        <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Exchange Rate</label>
+                        <MudNumericField @bind-Value="record.ExchangeRate"
+                                         Format="#,##0.000000"
+                                         placeholder="Exchange Rate"
+                                         ReadOnly="@isReadOnly"
+                                         Variant="Variant.Outlined"
+                                         Dense="@true"
+                                         FullWidth="@true" />
+                    </div>
+                }
             </div>
         </MudCardContent>
     </MudCard>
@@ -333,7 +338,7 @@
                                               IdProperty="@(p => p.Id)"
                                               @bind-SelectedId="detail.AccountId"
                                               Variant="Variant.Outlined"
-                                              Label=""
+                                              Label="Account"
                                               FullWidth="@true" />
                             }
                         </MudTd>
@@ -379,7 +384,7 @@
                                               IdProperty="@(p => p.Id)"
                                               @bind-SelectedId="detail.PartyId"
                                               Variant="Variant.Outlined"
-                                              Label=""
+                                              Label="Party"
                                               FullWidth="@true" />
                             }
                         </MudTd>
@@ -455,6 +460,7 @@
     private bool LoadingPanel { get; set; } = false;
     private string PeriodValidationMessage { get; set; } = string.Empty;
     private bool PeriodValidationChecked { get; set; } = false;
+    private bool showCurrencySelection = false;
 
     private double TotalDebit => record.Details?.Sum(d => d.DebitAmount) ?? 0;
     private double TotalCredit => record.Details?.Sum(d => d.CreditAmount) ?? 0;
@@ -562,6 +568,8 @@
             // Set default exchange rate if not set
             if (record.ExchangeRate == 0)
                 record.ExchangeRate = 1.0;
+            // Show currency selection if different from base currency
+            showCurrencySelection = record.EnteredCurrencyId != record.BaseCurrencyId;
             // Set read-only if posted or in VIEW mode
             isReadOnly = Action == "VIEW" || record.IsPosted == 1;
             await ValidatePeriodAsync();
@@ -594,6 +602,7 @@
             record.EnteredCurrencyId = baseCurrency.Id; // Default entered currency to base currency
         }
         record.ExchangeRate = 1.0; // Default exchange rate to 1.0
+        showCurrencySelection = false; // Hide currency selection by default
         AddDetailLine(); // Add one empty line
         await ValidatePeriodAsync();
     }
@@ -605,11 +614,23 @@
         if (record.EnteredCurrencyId == record.BaseCurrencyId)
         {
             record.ExchangeRate = 1.0;
+            showCurrencySelection = false; // Hide selection when back to base currency
         }
         else if (record.EnteredCurrencyId > 0 && record.BaseCurrencyId > 0)
         {
             // If different currency, set default rate to 1.0 (user can change it)
             // In a real scenario, you might fetch the exchange rate from an API here
+            record.ExchangeRate = 1.0;
+        }
+        StateHasChanged();
+    }
+
+    private void ToggleCurrencySelection()
+    {
+        showCurrencySelection = !showCurrencySelection;
+        // If hiding and currency is base, reset to base
+        if (!showCurrencySelection && record.EnteredCurrencyId == record.BaseCurrencyId)
+        {
             record.ExchangeRate = 1.0;
         }
         StateHasChanged();

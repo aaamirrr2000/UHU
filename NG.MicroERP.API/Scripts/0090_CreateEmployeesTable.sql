@@ -32,9 +32,27 @@
 );
 
 
-INSERT INTO Employees (EmpId, Fullname, Phone, Cnic, Address, EmpType, DepartmentId, DesignationId, ShiftId, LocationId) VALUES
+INSERT INTO Employees
+(
+    EmpId,
+    Fullname,
+    Phone,
+    Cnic,
+    Address,
+    EmpType,
+    DepartmentId,
+    DesignationId,
+    ShiftId,
+    LocationId
+)
+VALUES
 ('00001', 'SYSTEM ADMINISTRATOR', '0000000000', '00000-0000000-0', 'Head Office, MOITT', 'PERMANENT', 1, 1, 1, 1),
 ('00002', 'AAMIR RASHID', '03008813444', '3740504520207', 'House # 700, Street # 33, Bahria Town Phase 5.', 'PERMANENT', 1, 1, 2, 1),
 ('00003', 'SHAH M TALHA TAHIR', '', '', '', 'PERMANENT', 1, 1, 2, 1),
-('00004', 'DR MAHNOOR', '', '', '', 'PERMANENT', 1, 3, 2, 1),
-('00005', 'ZUBAIR', '', '', '', 'PERMANENT', 1, 3, 2, 1);
+('00004', 'DR MAHNOOR', '', '', '', 'PERMANENT', 3, 3, 2, 1),
+('00005', 'ZUBAIR', '', '', '', 'PERMANENT', 1, 3, 2, 1),
+('00006', 'HASNAIN ARSHAD', '', '', '', 'PERMANENT', 1, 3, 2, 1),
+('00007', 'USMAN HABIB', '', '', '', 'PERMANENT', 1, 3, 2, 1),
+('00008', 'M MUBASHIR', '', '', '', 'PERMANENT', 1, 3, 2, 1),
+('00009', 'MALIK UMAIR', '', '', '', 'PERMANENT', 1, 3, 2, 1);
+

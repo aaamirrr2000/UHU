@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:helper="clr-namespace:NG.MicroERP.WorkHub.Helper"
+             x:Class="NG.MicroERP.WorkHub.Pages.RosterPage"
+             Title="My Roster">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <Color x:Key="PrimaryColor">#512BD4</Color>
+            <Color x:Key="WhiteColor">#FFFFFF</Color>
+            <Color x:Key="TextPrimary">#212121</Color>
+            <Color x:Key="TextSecondary">#666666</Color>
+            <Color x:Key="BackgroundLight">#F5F5F5</Color>
+            <helper:TimeRangeConverter x:Key="TimeRangeConverter"/>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ContentPage.Background>
+        <SolidColorBrush Color="{StaticResource BackgroundLight}"/>
+    </ContentPage.Background>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Filter Section -->
+        <Frame Grid.Row="0"
+               BackgroundColor="{StaticResource WhiteColor}"
+               BorderColor="#E0E0E0"
+               HasShadow="True"
+               CornerRadius="12"
+               Padding="15"
+               Margin="20,20,20,10">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                <DatePicker x:Name="datePicker"
+                            Grid.Column="0"
+                            DateSelected="OnDateSelected"
+                            Format="dd MMM yyyy"/>
+                <Button Text="Refresh"
+                        Grid.Column="1"
+                        BackgroundColor="{StaticResource PrimaryColor}"
+                        TextColor="{StaticResource WhiteColor}"
+                        Clicked="OnRefreshClicked"
+                        Padding="15,8"
+                        CornerRadius="8"/>
+            </Grid>
+        </Frame>
+
+        <!-- Roster List -->
+        <CollectionView x:Name="rosterCollectionView"
+                        Grid.Row="1"
+                        Margin="20,0,20,20"
+                        SelectionMode="None">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Frame BackgroundColor="{StaticResource WhiteColor}"
+                           BorderColor="#E0E0E0"
+                           HasShadow="True"
+                           CornerRadius="12"
+                           Padding="15"
+                           Margin="0,0,0,10">
+                        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="15" RowSpacing="8">
+                            <Label Grid.Row="0" Grid.Column="0" Grid.RowSpan="3"
+                                   Text="📅"
+                                   FontSize="32"
+                                   VerticalOptions="Center"/>
+                            
+                            <Label Grid.Row="0" Grid.Column="1"
+                                   Text="{Binding RosterDate, StringFormat='{0:dd MMM yyyy}'}"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   FontFamily="OpenSansSemibold"/>
+                            
+                            <Label Grid.Row="1" Grid.Column="1"
+                                   Text="{Binding ShiftName}"
+                                   FontSize="16"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   FontFamily="OpenSansRegular"/>
+                            
+                            <Label Grid.Row="2" Grid.Column="1"
+                                   Text="{Binding ., Converter={StaticResource TimeRangeConverter}}"
+                                   FontSize="14"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   FontFamily="OpenSansRegular"/>
+                            
+                            <Label Grid.Row="0" Grid.Column="2" Grid.RowSpan="3"
+                                   Text="{Binding LocationName}"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   VerticalOptions="Center"
+                                   HorizontalOptions="End"
+                                   FontFamily="OpenSansRegular"/>
+                        </Grid>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator x:Name="LoadingSpinner"
+                          Grid.Row="1"
+                          IsVisible="False"
+                          IsRunning="False"
+                          Color="{StaticResource PrimaryColor}"
+                          HeightRequest="40"
+                          WidthRequest="40"
+                          VerticalOptions="Center"
+                          HorizontalOptions="Center"/>
+
+        <!-- Empty State -->
+        <Label x:Name="lblEmpty"
+               Grid.Row="1"
+               Text="No roster entries found"
+               FontSize="16"
+               TextColor="{StaticResource TextSecondary}"
+               VerticalOptions="Center"
+               HorizontalOptions="Center"
+               IsVisible="False"
+               FontFamily="OpenSansRegular"/>
+    </Grid>
+</ContentPage>

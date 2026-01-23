@@ -281,9 +281,11 @@
             isLoading = true;
             StateHasChanged();
 
+            // Format dates for SQL comparison - use CAST to ensure proper date comparison
             string formattedStartDate = startDate.ToString("yyyy-MM-dd");
-            string formattedEndDate = endDate.ToString("yyyy-MM-dd");
-            string criteria = $"i.InvoiceType = '{InvoiceType}' and CAST(ISNULL(i.TranDate, i.CreatedOn) AS DATE) >= '{formattedStartDate}' and CAST(ISNULL(i.TranDate, i.CreatedOn) AS DATE) <= '{formattedEndDate}'";
+            // Add 1 day to end date to include the entire end date in the range
+            string formattedEndDateNextDay = endDate.Date.AddDays(1).ToString("yyyy-MM-dd");
+            string criteria = $"i.InvoiceType = '{InvoiceType}' AND CAST(ISNULL(i.TranDate, i.CreatedOn) AS DATE) >= CAST('{formattedStartDate}' AS DATE) AND CAST(ISNULL(i.TranDate, i.CreatedOn) AS DATE) < CAST('{formattedEndDateNextDay}' AS DATE)";
 
             if (Globals.User.GroupId != 1)
             {

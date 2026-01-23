@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="NG.MicroERP.WorkHub.Pages.AttendancePage"
+             Title="Attendance">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <Color x:Key="PrimaryColor">#512BD4</Color>
+            <Color x:Key="WhiteColor">#FFFFFF</Color>
+            <Color x:Key="TextPrimary">#212121</Color>
+            <Color x:Key="TextSecondary">#666666</Color>
+            <Color x:Key="SuccessColor">#4CAF50</Color>
+            <Color x:Key="BackgroundLight">#F5F5F5</Color>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ContentPage.Background>
+        <SolidColorBrush Color="{StaticResource BackgroundLight}"/>
+    </ContentPage.Background>
+
+    <ScrollView>
+        <Grid Padding="20">
+            <VerticalStackLayout Spacing="20">
+                
+                <!-- Header -->
+                <Label Text="Mark Attendance"
+                       FontSize="24"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextPrimary}"
+                       FontFamily="OpenSansSemibold"/>
+
+                <!-- Current Date Display -->
+                <Frame BackgroundColor="{StaticResource WhiteColor}"
+                       BorderColor="#E0E0E0"
+                       HasShadow="True"
+                       CornerRadius="12"
+                       Padding="20">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Today's Date"
+                               FontSize="14"
+                               TextColor="{StaticResource TextSecondary}"
+                               FontFamily="OpenSansRegular"/>
+                        <Label x:Name="lblCurrentDate"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource TextPrimary}"
+                               FontFamily="OpenSansSemibold"/>
+                        <Label x:Name="lblCurrentTime"
+                               FontSize="16"
+                               TextColor="{StaticResource TextSecondary}"
+                               FontFamily="OpenSansRegular"/>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Clock In/Out Buttons -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="15">
+                    <Button x:Name="btnClockIn"
+                            Grid.Column="0"
+                            Text="Clock In"
+                            BackgroundColor="{StaticResource SuccessColor}"
+                            TextColor="{StaticResource WhiteColor}"
+                            FontSize="18"
+                            FontAttributes="Bold"
+                            HeightRequest="60"
+                            CornerRadius="12"
+                            Clicked="OnClockInClicked"
+                            FontFamily="OpenSansSemibold"/>
+                    
+                    <Button x:Name="btnClockOut"
+                            Grid.Column="1"
+                            Text="Clock Out"
+                            BackgroundColor="{StaticResource PrimaryColor}"
+                            TextColor="{StaticResource WhiteColor}"
+                            FontSize="18"
+                            FontAttributes="Bold"
+                            HeightRequest="60"
+                            CornerRadius="12"
+                            Clicked="OnClockOutClicked"
+                            FontFamily="OpenSansSemibold"/>
+                </Grid>
+
+                <!-- Today's Attendance Status -->
+                <Frame BackgroundColor="{StaticResource WhiteColor}"
+                       BorderColor="#E0E0E0"
+                       HasShadow="True"
+                       CornerRadius="12"
+                       Padding="20">
+                    <VerticalStackLayout Spacing="15">
+                        <Label Text="Today's Status"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource TextPrimary}"
+                               FontFamily="OpenSansSemibold"/>
+                        
+                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="10">
+                            <Label Grid.Row="0" Grid.Column="0"
+                                   Text="Clock In:"
+                                   FontSize="14"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   FontFamily="OpenSansRegular"/>
+                            <Label x:Name="lblClockInTime"
+                                   Grid.Row="0" Grid.Column="1"
+                                   Text="--:--"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   HorizontalOptions="End"
+                                   FontFamily="OpenSansSemibold"/>
+                            
+                            <Label Grid.Row="1" Grid.Column="0"
+                                   Text="Clock Out:"
+                                   FontSize="14"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   FontFamily="OpenSansRegular"/>
+                            <Label x:Name="lblClockOutTime"
+                                   Grid.Row="1" Grid.Column="1"
+                                   Text="--:--"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   HorizontalOptions="End"
+                                   FontFamily="OpenSansSemibold"/>
+                            
+                            <Label Grid.Row="2" Grid.Column="0"
+                                   Text="Status:"
+                                   FontSize="14"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   FontFamily="OpenSansRegular"/>
+                            <Label x:Name="lblStatus"
+                                   Grid.Row="2" Grid.Column="1"
+                                   Text="Not Marked"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   HorizontalOptions="End"
+                                   FontFamily="OpenSansSemibold"/>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Loading Indicator -->
+                <ActivityIndicator x:Name="LoadingSpinner"
+                                  IsVisible="False"
+                                  IsRunning="False"
+                                  Color="{StaticResource PrimaryColor}"
+                                  HeightRequest="40"
+                                  WidthRequest="40"
+                                  HorizontalOptions="Center"/>
+
+            </VerticalStackLayout>
+        </Grid>
+    </ScrollView>
+</ContentPage>

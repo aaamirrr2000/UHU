@@ -1,0 +1,347 @@
+@page "/RosterDashboard"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 2px;">
+    <div class="dashboard-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Class="me-2" Style="color: white;" />
+                    Roster Management
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">Manage employee schedules and shift assignments</MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 flex-wrap">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <MudDatePicker @bind-Date="filterFromDate"
+                                   Label="Start Date"
+                                   DateFormat="dd MMM yyyy"
+                                   Variant="Variant.Outlined" />
+                    <MudDatePicker @bind-Date="filterToDate"
+                                   Label="End Date"
+                                   DateFormat="dd MMM yyyy"
+                                   Variant="Variant.Outlined" />
+                </div>
+                @if (Globals.AccessLevel == 1)
+                {
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
+                               Size="Size.Small" 
+                               Variant="Variant.Filled" 
+                               Color="Color.Success" 
+                               Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                               OnClick="@(() => Clear())">
+                        New
+                    </MudButton>
+                }
+                <MudButton StartIcon="@Icons.Material.TwoTone.Search" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Primary"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => GetAll())">
+                    Search
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Info"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => Refresh())">
+                    Refresh
+                </MudButton>
+            </div>
+        </div>
+    </div>
+
+    <MyDrawer @ref="_drawer" Title="Roster" FaIcon="fas fa-calendar-alt">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <RosterPage Action="@Action" CurrentRecord="record.Id" OnSaved="ChildSaved"/>
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    @if (data == null)
+    {
+        <SimpleLoading />
+    }
+    else
+    {
+        <MudPaper Elevation="3" Style="border-radius: 12px; overflow: hidden;">
+            <MudDataGrid T="RosterModel"
+                         MultiSelection="false"
+                         Items="@data"
+                         SortMode="SortMode.Multiple"
+                         Filterable="true"
+                         Hideable="true"
+                         RowsPerPage="20"
+                         Dense="true"
+                         Striped="true"
+                         Hover="true"
+                         Class="professional-grid elevation-8">
+
+                <Columns>
+                    <TemplateColumn Title="Actions"
+                                    CellStyle="width: 80px; min-width: 80px;"
+                                    HeaderClass="grid-header">
+                        <CellTemplate Context="row">
+                            <div class="actions-cell">
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                         Color="Color.Primary"
+                                         Dense="true"
+                                         Class="actions-menu">
+                                    <MudMenuItem OnClick="@(() => View(row.Item.Id))"
+                                                 Class="menu-item view-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
+                                        <span>View</span>
+                                    </MudMenuItem>
+                                    @if (Globals.AccessLevel == 1)
+                                    {
+                                        <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
+                                                     Class="menu-item edit-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
+                                            <span>Edit</span>
+                                        </MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => Delete(row.Item.Id))"
+                                                     Color="Color.Error"
+                                                     Class="menu-item delete-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
+                                            <span>Delete</span>
+                                        </MudMenuItem>
+                                    }
+                                </MudMenu>
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="x => x.EmployeeName"
+                                    Title="Employee"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.EmployeeCode"
+                                    Title="Employee Code"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.ShiftName"
+                                    Title="Shift"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.StartTime"
+                                    Title="Start Time"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.EndTime"
+                                    Title="End Time"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.RosterDate"
+                                    Title="Roster Date"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    Format="dd-MMM-yyyy"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.LocationName"
+                                    Title="Location"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.Notes"
+                                    Title="Notes"
+                                    Sortable="false"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <TemplateColumn Title="Status"
+                                    CellStyle="width: 70px; min-width: 70px;"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell">
+                        <CellTemplate Context="row">
+                            @if (row.Item.IsActive == 1)
+                            {
+                                <MudChip Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">Active</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">Inactive</MudChip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        </MudPaper>
+    }
+</MudContainer>
+
+<style>
+    .dashboard-header {
+        padding: 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 8px;
+    }
+
+    .dashboard-header .mud-typography {
+        color: white !important;
+    }
+
+    .dashboard-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .dashboard-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+</style>
+
+@code
+{
+    RosterModel record = new();
+    List<RosterModel> data = new();
+
+    DateTime? filterFromDate = DateTime.Today.AddDays(-30);
+    DateTime? filterToDate = DateTime.Today.AddDays(30);
+
+    [Parameter] public string? Action { get; set; } = "INSERT";
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "RosterDashboard");
+        await GetAll();
+    }
+
+    protected async Task GetAll()
+    {
+        try
+        {
+            if (filterFromDate > filterToDate)
+            {
+                SnackbarService.Add("Start date must be earlier than end date.", Severity.Warning);
+                return;
+            }
+
+            // Format dates for SQL comparison - use CAST to ensure proper date comparison
+            string formattedStartDate = filterFromDate.Value.ToString("yyyy-MM-dd");
+            // Add 1 day to end date to include the entire end date in the range
+            string formattedEndDateNextDay = filterToDate.Value.Date.AddDays(1).ToString("yyyy-MM-dd");
+
+            string criteria = string.Empty;
+            LoadingPanel = true;
+
+            // Use CAST for explicit date type conversion
+            criteria = $"r.RosterDate >= CAST('{formattedStartDate}' AS DATE) AND r.RosterDate < CAST('{formattedEndDateNextDay}' AS DATE)";
+
+            string encodedCriteria = Uri.EscapeDataString(criteria);
+            string apiUrl = $"Roster/Search/{encodedCriteria}";
+
+            data = await Functions.GetAsync<List<RosterModel>>(apiUrl, true) ?? new List<RosterModel>();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading data: {ex.Message}", Severity.Error);
+            data = new List<RosterModel>();
+        }
+        finally
+        {
+            LoadingPanel = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    protected async Task Refresh()
+    {
+        await GetAll();
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new RosterModel();
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task View(int id)
+    {
+        Action = "VIEW";
+        record.Id = id;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        Action = "UPDATE";
+        record.Id = id;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete this roster entry?");
+        if (res == false)
+            return;
+
+        LoadingPanel = true;
+        var recordToDelete = new RosterModel { Id = id, UpdatedBy = Globals.User.Id };
+        var result = await Functions.PostAsync<RosterModel>($"Roster/SoftDelete", recordToDelete, true);
+        LoadingPanel = false;
+
+        if (result.Success == false)
+        {
+            SnackbarService.Add($"Record Not Deleted: {result.Message}", Severity.Error);
+        }
+        else
+        {
+            SnackbarService.Add("Record Deleted Successfully", Severity.Success);
+            await Refresh();
+        }
+    }
+
+    protected async Task Save()
+    {
+        // Save is handled by the child component (RosterPage) through OnSaved callback
+        // This method exists to satisfy EditForm OnSubmit requirement
+    }
+
+    protected async Task ChildSaved()
+    {
+        await _drawer.CloseDrawerAsync();
+        await Refresh();
+    }
+}

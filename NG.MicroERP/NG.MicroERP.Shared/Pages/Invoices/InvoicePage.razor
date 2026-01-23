@@ -1,8 +1,9 @@
-﻿@page "/InvoicePage/{InvoiceType}/{Action}/{CurrentRecord:int?}"
+@page "/InvoicePage/{InvoiceType}/{Action}/{CurrentRecord:int?}"
 
 @using System.Text.Json
 @using NG.MicroERP.Shared.Pages.TaxRule
 @using NG.MicroERP.Shared.Models
+@using NG.MicroERP.Shared.Pages.Invoices
 @inject NavigationManager NavManager
 @inject IDialogService dialogService
 @inject ISnackbar Snackbar
@@ -99,17 +100,6 @@
                         @(CurrentRecord.GetValueOrDefault() > 0 && record?.Invoice?.IsPostedToGL == 1 ? "View GL Entry" : "Preview GL Entry")
                     </MudButton>
 
-                    @if (CurrentRecord.GetValueOrDefault() > 0 && record.Invoice.IsPostedToGL == 0)
-                    {
-                        <MudButton StartIcon="@Icons.Material.TwoTone.AccountBalance"
-                                   Variant="Variant.Filled"
-                                   Color="Color.Info"
-                                   Size="Size.Small"
-                                   OnClick="PostToGL"
-                                   Class="invoice-header-btn">
-                            Post to GL
-                        </MudButton>
-                    }
                 </div>
             </div>
         </div>
@@ -123,9 +113,9 @@
         }
 
         <!-- Invoice Details Card -->
-        <MudPaper Elevation="2" Class="pa-2 mb-2" Style="border-radius: 12px;">
+        <MudPaper Elevation="2" Class="pa-2 mb-2 invoice-details-paper" Style="border-radius: 12px; background: linear-gradient(135deg, rgba(63, 81, 181, 0.05) 0%, rgba(63, 81, 181, 0.02) 100%); border: 1px solid rgba(63, 81, 181, 0.12);">
             <div class="invoice-details-row">
-                <div class="invoice-field invoice-field-type">
+                <div class="invoice-field invoice-field-equal">
                     <MudSelect T="string"
                                Label="Invoice Type"
                                @bind-Value="record.Invoice.InvoiceType"
@@ -133,7 +123,8 @@
                                Dense="@true"
                                Disabled="@(Disabled || IsInvoiceTypeAndDateLocked)"
                                FullWidth="@true"
-                               Margin="Margin.Dense">
+                               Margin="Margin.Dense"
+                               Class="invoice-field-input">
                         @foreach (var option in InvoiceTypeList ?? Enumerable.Empty<string>())
                         {
                             <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
@@ -141,22 +132,36 @@
                     </MudSelect>
                 </div>
 
-                <div class="invoice-field invoice-field-party">
-                    <MudAutocomplete T="PartiesModel"
-                                     Label="Party / Customer"
-                                     Value="SelectedParty"
-                                     ValueChanged="OnPartyChanged"
-                                     ToStringFunc="@(p => p?.DisplayName)"
-                                     SearchFunc="@SearchParties"
-                                     Clearable="@true"
-                                     Variant="Variant.Outlined"
-                                     Dense="@true"
-                                     Disabled="@(record?.InvoiceDetails?.Count > 0)"
-                                     FullWidth="@true"
-                                     Margin="Margin.Dense" />
+                <div class="invoice-field invoice-field-equal">
+                    <div class="d-flex align-items-center gap-1">
+                        <MudAutocomplete T="PartiesModel"
+                                         Label="Party / Customer"
+                                         Value="SelectedParty"
+                                         ValueChanged="OnPartyChanged"
+                                         ToStringFunc="@(p => p?.DisplayName)"
+                                         SearchFunc="@SearchParties"
+                                         Clearable="@true"
+                                         Variant="Variant.Outlined"
+                                         Dense="@true"
+                                         Disabled="@(record?.InvoiceDetails?.Count > 0)"
+                                         FullWidth="@true"
+                                         Margin="Margin.Dense"
+                                         Class="invoice-field-input flex-grow-1" />
+                        @if (!Disabled && record?.InvoiceDetails?.Count == 0)
+                        {
+                            <MudTooltip Text="Add New Party">
+                                <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                               Size="Size.Small"
+                                               Variant="Variant.Text"
+                                               Color="Color.Primary"
+                                               OnClick="OpenNewPartyDialog"
+                                               Style="margin-top: 8px;" />
+                            </MudTooltip>
+                        }
+                    </div>
                 </div>
 
-                <div class="invoice-field invoice-field-date">
+                <div class="invoice-field invoice-field-equal">
                     <MudDatePicker Label="Transaction Date"
                                    @bind-Date="record.Invoice.TranDate"
                                    @bind-Date:after="OnTranDateChanged"
@@ -166,26 +171,102 @@
                                    DateFormat="yyyy-MM-dd"
                                    Disabled="@(Disabled || IsInvoiceTypeAndDateLocked)"
                                    FullWidth="@true"
-                                   Margin="Margin.Dense" />
+                                   Margin="Margin.Dense"
+                                   Class="invoice-field-input" />
                 </div>
 
-                <div class="invoice-field invoice-field-number">
+                <div class="invoice-field invoice-field-equal">
                     <MudTextField Label="Invoice Number"
                                   Value="@record.Invoice.Code"
                                   ReadOnly="@true"
                                   Variant="Variant.Outlined"
                                   Dense="@true"
                                   FullWidth="@true"
-                                  Margin="Margin.Dense" />
+                                  Margin="Margin.Dense"
+                                  Class="invoice-field-input" />
                 </div>
+
+                <!-- Currency Display (read-only, edit in drawer) -->
+                <div class="invoice-field invoice-field-equal">
+                    <MudTextField Value="@(Currencies.FirstOrDefault(c => c.Id == record.Invoice.EnteredCurrencyId)?.DisplayName ?? Currencies.FirstOrDefault(c => c.Id == record.Invoice.BaseCurrencyId)?.DisplayName ?? "N/A")"
+                                  ReadOnly="@true"
+                                  Variant="Variant.Outlined"
+                                  Dense="@true"
+                                  FullWidth="@true"
+                                  Margin="Margin.Dense"
+                                  HelperText="@(record.Invoice.EnteredCurrencyId != record.Invoice.BaseCurrencyId ? $"Rate: {record.Invoice.ExchangeRate:N6}" : null)"
+                                  Class="invoice-field-input" />
+                </div>
+            </div>
+
+            <!-- Description Field -->
+            <div class="invoice-field" style="width: 100%; margin-top: 8px;">
+                <MudTextField Label="Description"
+                              @bind-Value="record.Invoice.Description"
+                              Placeholder="Enter invoice description or notes"
+                              Variant="Variant.Outlined"
+                              Dense="@true"
+                              Disabled="@Disabled"
+                              FullWidth="@true"
+                              Margin="Margin.Dense"
+                              MaxLength="255"
+                              Class="invoice-field-input" />
             </div>
         </MudPaper>
     </MudContainer>
 
 
-    <MudMainContent Class="p-2" Style="margin-left:0; overflow-x: hidden;">
+    <!-- Items Drawer (Right Side) -->
+    <MyDrawer @ref="_itemsDrawer"
+              Title="Items Catalog"
+              FaIcon="fas fa-box-open"
+              @bind-Open="_itemsDrawerOpen">
+        <HeaderContent>
+            <!-- Barcode Search -->
+            <MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius: 12px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%); border: 1px solid rgba(255, 255, 255, 0.2);">
+                <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                    <MudTextField T="string"
+                                  Dense="@true"
+                                  Variant="Variant.Outlined"
+                                  Placeholder="Scan or Enter Barcode"
+                                  @bind-Value="ClickedItem.Code"
+                                  Style="flex: 1; min-width: 0; background: white;"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.QrCodeScanner"
+                                  @onkeypress="@(async (e) => { if (e.Key == "Enter" || e.Key == "\r") await AddItemDialogShowWithType(ClickedItem.Code, "s"); })" />
+                    <MudTooltip Text="Search by barcode">
+                        <MudIconButton Icon="@Icons.Material.Filled.Search"
+                                       Size="Size.Medium"
+                                       Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       OnClick='async () => await AddItemDialogShowWithType(ClickedItem.Code, "s")' />
+                    </MudTooltip>
+                </div>
+            </MudPaper>
+        </HeaderContent>
+        <ChildContent>
+            <InvoiceItemsTabs Categories="_categories"
+                              SelectedItems="SelectedItems"
+                              FavItemsData="FavItemsData"
+                              RecentItemsData="RecentItemsData"
+                              MaxItems="MaxItems"
+                              ClickedItem="ClickedItem"
+                              SelectedFavItem="SelectedFavItem"
+                              SelectedRecentItem="SelectedRecentItem"
+                              OnCategorySelected="LoadItemsByCategory"
+                              OnItemSelected="HandleItemSelected"
+                              ActiveCategory="_activeCategory"
+                              InvoiceType="InvoiceType"
+                              GetDisplayPrice="GetDisplayPrice"
+                              HasTaxRule="HasTaxRule" />
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    <MudMainContent Class="p-3 invoice-main-content" Style="margin-left:0; margin-right: 16px; overflow-x: hidden; overflow-y: auto; max-height: calc(100vh - 280px);">
         <MudGrid Spacing="2" GutterSize="GutterSize.Small">
-            <MudItem xs="12" md="7" Style="min-width: 0;">
+            <MudItem xs="12">
                 <InvoiceItemsTable Record="record"
                                    Disabled="Disabled"
                                    Action="Action"
@@ -204,44 +285,9 @@
                                    ChargesManuallyOverridden="_chargesManuallyOverridden"
                                    DiscountManuallyOverridden="_discountManuallyOverridden"
                                    OnResetChargesClick="ResetChargesToAuto"
-                                   OnResetDiscountClick="ResetDiscountToAuto" />
-            </MudItem>
-
-            <MudItem xs="12" md="5" Style="min-width: 0;">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%;">
-                    <MudTextField T="string"
-                                  Dense="@true"
-                                  Variant="Variant.Filled"
-                                  Placeholder="Scan or Enter Barcode"
-                                  @bind-Value="ClickedItem.Code"
-                                  Style="flex: 1; min-width: 0;"
-                                  @onkeypress="@(async (e) => { if (e.Key == "Enter" || e.Key == "\r") await AddItemDialogShowWithType(ClickedItem.Code, "s"); })" />
-                    <MudTooltip Text="Search">
-                        <MudButton StartIcon="@Icons.Material.TwoTone.Search"
-                                   Size="MudBlazor.Size.Small"
-                                   Class="mx-1"
-                                   Variant="Variant.Filled"
-                                   Color="Color.Primary"
-                                   OnClick='async () => await AddItemDialogShowWithType(ClickedItem.Code, "s")'>
-                            Search
-                        </MudButton>
-                    </MudTooltip>
-                </div>
-
-                <InvoiceItemsTabs Categories="_categories"
-                                  SelectedItems="SelectedItems"
-                                  FavItemsData="FavItemsData"
-                                  RecentItemsData="RecentItemsData"
-                                  MaxItems="MaxItems"
-                                  ClickedItem="ClickedItem"
-                                  SelectedFavItem="SelectedFavItem"
-                                  SelectedRecentItem="SelectedRecentItem"
-                                  OnCategorySelected="LoadItemsByCategory"
-                                  OnItemSelected="AddItemDialogShow"
-                                  ActiveCategory="_activeCategory"
-                                  InvoiceType="InvoiceType"
-                                  GetDisplayPrice="GetDisplayPrice"
-                                  HasTaxRule="HasTaxRule" />
+                                   OnResetDiscountClick="ResetDiscountToAuto"
+                                   OnAddManualLineClick="AddManualLine"
+                                   OnBrowseItemsClick="OpenItemsDrawer" />
             </MudItem>
         </MudGrid>
     </MudMainContent>
@@ -252,7 +298,9 @@
                           SalesId="SalesId"
                           InvoiceStatus="InvoiceStatus"
                           Accounts="Accounts"
-                          Disabled="Disabled" />
+                          Currencies="Currencies"
+                          Disabled="Disabled"
+                          IsInvoiceTypeAndDateLocked="IsInvoiceTypeAndDateLocked" />
 
     <InvoicePaymentDialog @ref="_paymentDialog"
                           Record="record"
@@ -261,7 +309,8 @@
                           OnPaymentMethodChange="OnPaymentMethodChange"
                           OnAddPayment="AddPayment"
                           OnDeletePayment="DeletePayment"
-                          OnClose="ClosePaymentDialog" />
+                          OnClose="ClosePaymentDialog"
+                          Disabled="Disabled" />
 
     <InvoiceTaxDialog @ref="_tax_dialog"
                       Record="record" />
@@ -294,6 +343,8 @@
     private InvoicePaymentDialog _paymentDialog = new();
     private InvoiceTaxDialog _tax_dialog = new();
     private InvoiceItemDetailsDialog _itemDetailsDialog = new();
+    private MyDrawer _itemsDrawer = new();
+    private bool _itemsDrawerOpen = false;
 
     // Supporting Lists
     private List<PartiesModel> Parties = new();
@@ -304,6 +355,7 @@
     private List<ChartOfAccountsModel> PaymentMethod = new();
     private List<ChartOfAccountsModel> Accounts = new();
     private List<TypeCodeModel> InvoiceStatus = new();
+    private List<CurrenciesModel> Currencies = new();
 
     // Items Data
     private List<ItemsModel> ItemsData { get; set; } = new();
@@ -328,7 +380,7 @@
     private bool _hasChanges = false;
     private InvoicesModel _originalRecord = new();
     private HashSet<int> _originalItemIds = new();
-    private bool IsInvoiceTypeAndDateLocked => CurrentRecord.GetValueOrDefault() > 0 || _isInvoiceSaved;
+    private bool IsInvoiceTypeAndDateLocked => Disabled || (record?.Invoice?.IsPostedToGL == 1);
     private List<ItemPartyTaxCalculationModel> SelectedItemTaxes { get; set; } = new();
     private double SelectedItemTaxTotal { get; set; } = 0;
     private static int _tempDetailIdCounter = -1;
@@ -402,6 +454,7 @@
 
         try
         {
+            Currencies = await Functions.GetAsync<List<CurrenciesModel>>($"Currencies/Search", true) ?? new List<CurrenciesModel>();
             await LoadCategories();
             await LoadAllItemsData();
             await LoadReferenceData();
@@ -909,10 +962,19 @@
     }
 
     // ========== Cart Operations ==========
+    private readonly object _invoiceDetailsLock = new object();
+    private bool _isAddingToCart = false;
+    
     private async Task AddToCart(ItemsModel selectedItem)
     {
         EnsureInvoiceInitialized();
         if (selectedItem == null || selectedItem.BasePrice == 0) return;
+        
+        // Prevent concurrent additions
+        if (_isAddingToCart)
+        {
+            return;
+        }
         
         // Prevent adding items when no party is selected
         if (SelectedParty == null || SelectedParty.Id == 0)
@@ -923,21 +985,36 @@
 
         try
         {
+            _isAddingToCart = true;
+            
             double taxAmount = await CalculateItemTax(selectedItem, selectedItem.Qty);
             double discountAmount = CalculateItemDiscount(selectedItem);
             double itemTotalAmount = CalculateItemTotal(selectedItem, selectedItem.Qty, discountAmount, taxAmount);
 
             var row = CreateInvoiceItem(selectedItem, taxAmount, discountAmount, itemTotalAmount);
-            record.InvoiceDetails.Add(row);
+            
+            // Ensure collection modification is thread-safe
+            lock (_invoiceDetailsLock)
+            {
+                if (record.InvoiceDetails == null)
+                {
+                    record.InvoiceDetails = new ObservableCollection<InvoiceItemReportModel>();
+                }
+                record.InvoiceDetails.Add(row);
+            }
 
             await _itemDetailsDialog.Close();
             await CalculateInvoiceTotalsAsync();
             CheckForChanges();
-            StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
             ShowError($"Error adding item to cart: {ex.Message}");
+        }
+        finally
+        {
+            _isAddingToCart = false;
         }
     }
 
@@ -961,6 +1038,163 @@
             TaxAmount = taxAmount,
             ItemTotalAmount = itemTotalAmount
         };
+    }
+
+    private InvoiceItemReportModel CreateManualInvoiceItem(string itemName, double qty, double unitPrice, double discountAmount = 0, double taxAmount = 0)
+    {
+        double itemTotalAmount = (qty * unitPrice) - discountAmount + taxAmount;
+        return new InvoiceItemReportModel
+        {
+            ItemId = 0, // Manual entry has no item ID
+            ItemName = itemName,
+            ManualItem = itemName, // Save ItemName to ManualItem for manual items
+            UnitPrice = unitPrice,
+            ServingSize = "",
+            Qty = qty,
+            DiscountAmount = discountAmount,
+            TaxAmount = taxAmount,
+            ItemTotalAmount = itemTotalAmount
+        };
+    }
+
+    private async Task AddManualLine()
+    {
+        EnsureInvoiceInitialized();
+        
+        // Prevent adding manual lines when no party is selected
+        if (SelectedParty == null || SelectedParty.Id == 0)
+        {
+            Snackbar.Add("Please select a party before adding items", Severity.Warning);
+            return;
+        }
+
+        // Show dialog for manual entry
+        var parameters = new DialogParameters<ManualLineDialog>
+        {
+            { x => x.InvoiceType, InvoiceType }
+        };
+
+        var options = new DialogOptions
+        {
+            CloseButton = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+
+        var dialog = await dialogService.ShowAsync<ManualLineDialog>("Add Manual Line Item", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is ManualLineData manualData)
+        {
+            try
+            {
+                // Ask user if they want to add this item to the catalog
+                var confirmParameters = new DialogParameters<ConfirmAddToCatalogDialog>
+                {
+                    { x => x.ItemName, manualData.ItemName }
+                };
+
+                var confirmOptions = new DialogOptions
+                {
+                    CloseButton = true,
+                    MaxWidth = MaxWidth.Small,
+                    FullWidth = true
+                };
+
+                var confirmDialog = await dialogService.ShowAsync<ConfirmAddToCatalogDialog>("Add to Catalog?", confirmParameters, confirmOptions);
+                var confirmResult = await confirmDialog.Result;
+
+                if (!confirmResult.Canceled && confirmResult.Data is bool addToCatalog && addToCatalog)
+                {
+                    // Show dialog to add item to catalog
+                    var addItemParameters = new DialogParameters<AddItemToCatalogDialog>
+                    {
+                        { x => x.ItemName, manualData.ItemName },
+                        { x => x.UnitPrice, manualData.UnitPrice },
+                        { x => x.Categories, _categories },
+                        { x => x.OrganizationId, Globals.User.OrganizationId },
+                        { x => x.CreatedBy, Globals.User.Id },
+                        { x => x.CreatedFrom, Functions.GetComputerDetails() }
+                    };
+
+                    var addItemOptions = new DialogOptions
+                    {
+                        CloseButton = true,
+                        MaxWidth = MaxWidth.Medium,
+                        FullWidth = true
+                    };
+
+                    var addItemDialog = await dialogService.ShowAsync<AddItemToCatalogDialog>("Add Item to Catalog", addItemParameters, addItemOptions);
+                    var addItemResult = await addItemDialog.Result;
+
+                    if (!addItemResult.Canceled && addItemResult.Data is ItemsModel newItem)
+                    {
+                        LoadingPanel = true;
+                        try
+                        {
+                            // Save the new item
+                            var saveResult = await Functions.PostAsync<ItemsModel>("Items/Insert", newItem, true);
+                            
+                            if (saveResult.Success && saveResult.Result != null)
+                            {
+                                var savedItem = saveResult.Result;
+                                
+                                // Reload items data to include the new item
+                                await LoadAllItemsData();
+                                
+                                // Reload items by category if category is selected
+                                if (_activeCategory != null)
+                                {
+                                    await LoadItemsByCategory(_activeCategory);
+                                }
+                                
+                                Snackbar.Add("Item added to catalog successfully", Severity.Success);
+                            }
+                            else
+                            {
+                                Snackbar.Add($"Failed to add item to catalog: {saveResult.Message ?? "Unknown error"}", Severity.Warning);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Snackbar.Add($"Error adding item to catalog: {ex.Message}", Severity.Warning);
+                        }
+                        finally
+                        {
+                            LoadingPanel = false;
+                        }
+                    }
+                }
+
+                // Add the manual line item regardless of catalog addition
+                var manualItem = CreateManualInvoiceItem(
+                    manualData.ItemName,
+                    manualData.Qty,
+                    manualData.UnitPrice,
+                    manualData.DiscountAmount,
+                    manualData.TaxAmount
+                );
+                
+                // Ensure collection modification is thread-safe
+                lock (_invoiceDetailsLock)
+                {
+                    if (record.InvoiceDetails == null)
+                    {
+                        record.InvoiceDetails = new ObservableCollection<InvoiceItemReportModel>();
+                    }
+                    record.InvoiceDetails.Add(manualItem);
+                }
+                
+                await CalculateInvoiceTotalsAsync();
+                CheckForChanges();
+                await InvokeAsync(StateHasChanged);
+                Snackbar.Add("Manual line item added successfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                ShowError($"Error adding manual line: {ex.Message}");
+            }
+        }
     }
 
     private async Task OnRowQtyChangedAsync(QtyChangedEventArgs args)
@@ -987,12 +1221,6 @@
         if (quantity <= 0)
         {
             Snackbar.Add("Quantity must be greater than 0", Severity.Warning);
-            return false;
-        }
-
-        if (quantity > 1000)
-        {
-            Snackbar.Add("Maximum quantity exceeded", Severity.Warning);
             return false;
         }
 
@@ -1065,7 +1293,16 @@
         if (res == false) return;
 
         EnsureInvoiceInitialized();
-        record.InvoiceDetails.Remove(item);
+        
+        // Ensure collection modification is thread-safe
+        lock (_invoiceDetailsLock)
+        {
+            if (record.InvoiceDetails != null)
+            {
+                record.InvoiceDetails.Remove(item);
+            }
+        }
+        
         await CalculateInvoiceTotalsAsync();
         CheckForChanges();
     }
@@ -1121,6 +1358,70 @@
     }
 
     // ========== Party Methods ==========
+    private async Task OpenNewPartyDialog()
+    {
+        try
+        {
+            var parameters = new DialogParameters<NewPartyDialog>
+            {
+                { x => x.OrganizationId, Globals.User.OrganizationId },
+                { x => x.CreatedBy, Globals.User.Id },
+                { x => x.CreatedFrom, Functions.GetComputerDetails() },
+                { x => x.InvoiceType, InvoiceType }
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true
+            };
+
+            var dialog = await dialogService.ShowAsync<NewPartyDialog>("Add New Party", parameters, options);
+            var result = await dialog.Result;
+
+            if (!result.Canceled && result.Data is PartiesModel newParty)
+            {
+                LoadingPanel = true;
+                try
+                {
+                    // Save the new party
+                    var saveResult = await Functions.PostAsync<PartiesModel>("Parties/Insert", newParty, true);
+                    
+                    if (saveResult.Success && saveResult.Result != null)
+                    {
+                        var savedParty = saveResult.Result;
+                        
+                        // Reload parties list to include the new party
+                        await LoadParties();
+                        
+                        // Select the newly created party
+                        SelectedParty = Parties.FirstOrDefault(p => p.Id == savedParty.Id) ?? savedParty;
+                        await OnPartyChanged(SelectedParty);
+                        
+                        Snackbar.Add("Party created successfully", Severity.Success);
+                    }
+                    else
+                    {
+                        Snackbar.Add($"Failed to create party: {saveResult.Message ?? "Unknown error"}", Severity.Error);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ShowError($"Error creating party: {ex.Message}");
+                }
+                finally
+                {
+                    LoadingPanel = false;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowError($"Error opening party dialog: {ex.Message}");
+        }
+    }
+
     private async Task OnPartyChanged(PartiesModel? selectedParty)
     {
         SelectedParty = selectedParty;
@@ -1349,6 +1650,18 @@
         _chargesManuallyOverridden = false;
         _discountManuallyOverridden = false;
         
+        // Initialize currency fields
+        if (Currencies != null && Currencies.Any())
+        {
+            var baseCurrency = Currencies.FirstOrDefault(c => c.IsBaseCurrency == 1);
+            if (baseCurrency != null)
+            {
+                record.Invoice.BaseCurrencyId = baseCurrency.Id;
+                record.Invoice.EnteredCurrencyId = baseCurrency.Id;
+            }
+        }
+        record.Invoice.ExchangeRate = 1.0;
+        
         // Select first party by default and update prices
         if (Parties != null && Parties.Any())
         {
@@ -1540,6 +1853,19 @@
     private async Task OpenOptionsDrawer() => await _optionsDrawer.Open();
     private async Task OpenPaymentDialog() => await _paymentDialog.Open();
     private async Task OpenTaxDialog() => await _tax_dialog.Open();
+    private async Task OpenItemsDrawer()
+    {
+        _itemsDrawerOpen = true;
+        await _itemsDrawer.OpenDrawerAsync();
+    }
+
+    private async Task HandleItemSelected(string itemId)
+    {
+        await AddItemDialogShow(itemId);
+        // Close drawer after item selection
+        _itemsDrawerOpen = false;
+        await _itemsDrawer.CloseDrawerAsync();
+    }
 
     // When user clicks "Taxes" in a line, populate selected line tax details and show the dialog.
     private async Task OnItemSelection(InvoiceItemReportModel row)
@@ -1895,6 +2221,21 @@
         if (record.Invoice == null) record.Invoice = new InvoiceModel();
         if (record.InvoiceDetails == null) record.InvoiceDetails = new ObservableCollection<InvoiceItemReportModel>();
         if (record.InvoicePayments == null) record.InvoicePayments = new ObservableCollection<InvoicePaymentModel>();
+        
+        // Initialize currency fields if not set
+        if (Currencies != null && Currencies.Any())
+        {
+            var baseCurrency = Currencies.FirstOrDefault(c => c.IsBaseCurrency == 1);
+            if (baseCurrency != null)
+            {
+                if (record.Invoice.BaseCurrencyId == 0)
+                    record.Invoice.BaseCurrencyId = baseCurrency.Id;
+                if (record.Invoice.EnteredCurrencyId == 0)
+                    record.Invoice.EnteredCurrencyId = baseCurrency.Id;
+            }
+        }
+        if (record.Invoice.ExchangeRate == 0)
+            record.Invoice.ExchangeRate = 1.0;
         if (record.InvoiceCharges == null) record.InvoiceCharges = new ObservableCollection<InvoiceChargesModel>();
     }
 
@@ -2036,9 +2377,18 @@
 
             var charges = rules.Select(rule =>
             {
-                decimal appliedAmount = rule.AmountType == "PERCENTAGE"
-                    ? baseAmount * (decimal)rule.Amount / 100m
-                    : (decimal)rule.Amount;
+                decimal appliedAmount;
+                if (rule.AmountType == "PERCENTAGE")
+                {
+                    // Percentage charges: always calculate based on base amount
+                    appliedAmount = baseAmount * (decimal)rule.Amount / 100m;
+                }
+                else // FLAT
+                {
+                    // Flat charges: only apply if invoice amount is greater than or equal to the flat amount
+                    decimal flatAmount = (decimal)rule.Amount;
+                    appliedAmount = baseAmount >= flatAmount ? flatAmount : 0m;
+                }
 
                 return new InvoiceChargesModel
                 {
@@ -2050,7 +2400,7 @@
                     AppliedAmount = (double) appliedAmount,   
                     IsSoftDeleted = 0
                 };
-            }).ToList();
+            }).Where(c => c.AppliedAmount > 0).ToList(); // Only include charges that are actually applied
 
             return (charges, service, discount);
         }
@@ -2174,10 +2524,22 @@
     {
         return rules
             .Where(r => r.ChargeCategory == category)
-            .Sum(r => r.AmountType == "PERCENTAGE"
-                ? baseAmount * (decimal)r.Amount / 100m   // ✅ divide by 100
-                : (decimal)r.Amount);
+            .Sum(r => 
+            {
+                if (r.AmountType == "PERCENTAGE")
+                {
+                    // Percentage charges: always calculate based on base amount
+                    return baseAmount * (decimal)r.Amount / 100m;
+                }
+                else // FLAT
+                {
+                    // Flat charges: only apply if invoice amount is greater than or equal to the flat amount
+                    decimal flatAmount = (decimal)r.Amount;
+                    return baseAmount >= flatAmount ? flatAmount : 0m;
+                }
+            });
     }
+
 
 }
 
@@ -2223,10 +2585,10 @@
         color: white !important;
     }
 
-    /* Invoice Details Row - Flexbox layout to prevent wrapping */
+    /* Invoice Details Row - Equal width flexbox layout */
     .invoice-details-row {
         display: flex;
-        gap: 8px;
+        gap: 12px;
         align-items: flex-start;
         flex-wrap: nowrap;
         width: 100%;
@@ -2235,49 +2597,74 @@
     .invoice-field {
         flex: 1 1 0;
         min-width: 0;
+        display: flex;
+        flex-direction: column;
     }
 
-    .invoice-field-type {
-        flex: 0 0 180px;
-        max-width: 180px;
+    .invoice-field-equal {
+        flex: 1 1 0;
+        min-width: 140px;
+        max-width: 100%;
     }
 
-    .invoice-field-party {
-        flex: 1 1 300px;
-        min-width: 200px;
+    .invoice-field-label {
+        font-size: 0.75rem;
+        color: var(--mud-palette-text-primary);
+        margin-bottom: 4px;
+        display: block;
     }
 
-    .invoice-field-date {
-        flex: 0 0 160px;
-        max-width: 160px;
+    .invoice-currency-display {
+        min-height: 40px;
+        padding: 8px 12px;
+        background: rgba(63, 81, 181, 0.08);
+        border-radius: 4px;
+        border: 1px solid rgba(63, 81, 181, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
     }
 
-    .invoice-field-number {
-        flex: 0 0 140px;
-        max-width: 140px;
+    .invoice-currency-display:hover {
+        background: rgba(63, 81, 181, 0.12) !important;
+        border-color: rgba(63, 81, 181, 0.3);
     }
 
-    /* Responsive: stack on small screens */
-    @@media (max-width: 960px) {
+    .invoice-currency-text {
+        color: var(--mud-palette-primary);
+        font-size: 0.875rem;
+        flex: 1;
+    }
+
+    .invoice-currency-edit-btn {
+        min-width: 24px;
+        width: 24px;
+        height: 24px;
+        padding: 2px;
+    }
+
+    .invoice-field-input {
+        width: 100%;
+    }
+
+    /* Responsive: stack on medium screens */
+    @@media (max-width: 1200px) {
         .invoice-details-row {
             flex-wrap: wrap;
+            gap: 8px;
         }
 
-        .invoice-field-type,
-        .invoice-field-party,
-        .invoice-field-date,
-        .invoice-field-number {
+        .invoice-field-equal {
             flex: 1 1 calc(50% - 4px);
-            max-width: none;
+            min-width: 150px;
         }
     }
 
-    @@media (max-width: 600px) {
-        .invoice-field-type,
-        .invoice-field-party,
-        .invoice-field-date,
-        .invoice-field-number {
+    @@media (max-width: 768px) {
+        .invoice-field-equal {
             flex: 1 1 100%;
+            min-width: 100%;
         }
     }
 
@@ -2291,4 +2678,22 @@
     .mud-main-content {
         overflow-x: hidden !important;
     }
+
+    /* Invoice main content height management */
+    .invoice-main-content {
+        max-height: calc(100vh - 280px);
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    /* Ensure MudGrid doesn't overflow */
+    .invoice-main-content .mud-grid {
+        margin: 0;
+    }
+
+    /* Ensure MudGrid items fit properly */
+    .invoice-main-content .mud-grid-item {
+        max-width: 100%;
+    }
+
 </style>

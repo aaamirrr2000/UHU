@@ -14,7 +14,7 @@
     <div class="dashboard-header">
         <div class="d-flex align-items-center justify-content-between flex-wrap">
             <div>
-                <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
                     <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Class="me-2" Style="color: white;" />
                     Cash Book Management
                 </MudText>
@@ -23,10 +23,12 @@
             <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 flex-wrap">
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <MudDatePicker @bind-Date="startDate"
+                                   @bind-Date:after="OnStartDateChanged"
                                    Label="Start Date"
                                    DateFormat="dd MMM yyyy"
                                    Variant="Variant.Outlined" />
                     <MudDatePicker @bind-Date="endDate"
+                                   @bind-Date:after="OnEndDateChanged"
                                    Label="End Date"
                                    DateFormat="dd MMM yyyy"
                                    Variant="Variant.Outlined" />
@@ -42,14 +44,6 @@
                         New
                     </MudButton>
                 }
-                <MudButton StartIcon="@Icons.Material.TwoTone.Search" 
-                           Size="Size.Small" 
-                           Variant="Variant.Filled" 
-                           Color="Color.Primary"
-                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
-                           OnClick="@(() => GetAll())">
-                    Search
-                </MudButton>
                 <MudButton StartIcon="@Icons.Material.TwoTone.Print" 
                            Size="Size.Small" 
                            Variant="Variant.Filled" 
@@ -183,14 +177,6 @@
                                     CellClass="grid-cell"
                                     Width="80px" />
 
-                    <PropertyColumn Property="x => x.Source"
-                                    Title="Tran Source"
-                                    Sortable="true"
-                                    Filterable="true"
-                                    HeaderClass="grid-header"
-                                    CellClass="grid-cell"
-                                    Width="200px" />
-
                     <PropertyColumn Property="x => x.TranDate"
                                     Title="Transaction Date"
                                     Sortable="true"
@@ -219,13 +205,47 @@
                                     CellClass="grid-cell"
                                     Width="200px" />
 
-                    <PropertyColumn Property="x => x.TranType"
-                                    Title="Transaction Type"
-                                    Sortable="true"
-                                    Filterable="true"
+                    <TemplateColumn Title="Account"
+                                    Sortable="false"
                                     HeaderClass="grid-header"
                                     CellClass="grid-cell"
-                                    Width="120px" />
+                                    Width="150px">
+                        <CellTemplate>
+                            @if (!string.IsNullOrWhiteSpace(context.Item.AccountName))
+                            {
+                                <MudChip Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined">
+                                    @context.Item.AccountName
+                                </MudChip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <TemplateColumn Title="Transaction Type"
+                                    Sortable="false"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="120px">
+                        <CellTemplate>
+                            @if (context.Item.TranType?.ToUpper().Contains("RECEIPT") == true)
+                            {
+                                <MudChip Size="Size.Small" Color="Color.Success" Variant="Variant.Filled">
+                                    @context.Item.TranType
+                                </MudChip>
+                            }
+                            else if (context.Item.TranType?.ToUpper().Contains("PAYMENT") == true)
+                            {
+                                <MudChip Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">
+                                    @context.Item.TranType
+                                </MudChip>
+                            }
+                            else
+                            {
+                                <MudChip Size="Size.Small" Color="Color.Default" Variant="Variant.Filled">
+                                    @context.Item.TranType
+                                </MudChip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
 
                     <PropertyColumn Property="x => x.PaymentMethod"
                                     Title="Payment Method"
@@ -251,14 +271,94 @@
                                     CellClass="grid-cell"
                                     Width="150px" />
 
-                    <PropertyColumn Property="x => x.Amount"
-                                    Title="Amount"
-                                    Sortable="true"
-                                    Filterable="true"
+                    <TemplateColumn Title="Currency"
+                                    Sortable="false"
+                                    Filterable="false"
                                     HeaderClass="grid-header"
                                     CellClass="grid-cell"
-                                    Format="#,##0.00"
-                                    Width="150px" />
+                                    Width="100px">
+                        <CellTemplate>
+                            @{
+                                var currencyId = context.Item.EnteredCurrencyId > 0 ? context.Item.EnteredCurrencyId : context.Item.BaseCurrencyId;
+                            }
+                            @if (currencyId > 0)
+                            {
+                                <MudChip Size="Size.Small" Variant="Variant.Text" Color="Color.Info">
+                                    @(GetCurrencyCode(currencyId))
+                                </MudChip>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <TemplateColumn Title="Rate"
+                                    Sortable="false"
+                                    Filterable="false"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell text-end"
+                                    Width="100px">
+                        <CellTemplate>
+                            @if (context.Item.ExchangeRate != 1.0)
+                            {
+                                <span class="fw-semibold">@context.Item.ExchangeRate.ToString("N6")</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <TemplateColumn Title="Receipts"
+                                    Sortable="false"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell text-end"
+                                    Width="120px">
+                        <CellTemplate>
+                            @if (context.Item.TranType?.ToUpper().Contains("RECEIPT") == true)
+                            {
+                                <span class="text-success fw-bold">@Math.Abs((decimal)context.Item.Amount).ToString("N2")</span>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <TemplateColumn Title="Payments"
+                                    Sortable="false"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell text-end"
+                                    Width="120px">
+                        <CellTemplate>
+                            @if (context.Item.TranType?.ToUpper().Contains("PAYMENT") == true || context.Item.TranType?.ToUpper().Contains("DEPOSIT") == true)
+                            {
+                                <span class="text-danger fw-bold">@Math.Abs((decimal)context.Item.Amount).ToString("N2")</span>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <TemplateColumn Title="Balance"
+                                    Sortable="false"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell text-end"
+                                    Width="120px">
+                        <CellTemplate>
+                            @{
+                                decimal balance = 0;
+                                if (context.Item.TranType?.ToUpper().Contains("RECEIPT") == true)
+                                {
+                                    balance = (decimal)context.Item.Amount;
+                                }
+                                else if (context.Item.TranType?.ToUpper().Contains("PAYMENT") == true || context.Item.TranType?.ToUpper().Contains("DEPOSIT") == true)
+                                {
+                                    balance = -(decimal)context.Item.Amount;
+                                }
+                                var balanceClass = balance >= 0 ? "text-success" : "text-danger";
+                            }
+                            <span class="@balanceClass fw-bold">@balance.ToString("N2")</span>
+                        </CellTemplate>
+                    </TemplateColumn>
 
                 </Columns>
 
@@ -300,6 +400,7 @@
 {
     List<CashBookModel> data = new();
     CashBookModel record = new();
+    List<CurrenciesModel> Currencies = new();
 
     public DateTime? startDate { get; set; } = DateTime.Today;
     public DateTime? endDate { get; set; } = DateTime.Today;
@@ -323,7 +424,15 @@
     protected override async Task OnInitializedAsync()
     {
         Globals.AccessLevel = Globals.PageAccess(NavManager, "CashBookDashboard");
+        Currencies = await Functions.GetAsync<List<CurrenciesModel>>($"Currencies/Search", true) ?? new List<CurrenciesModel>();
         await GetAll();
+    }
+
+    private string GetCurrencyCode(int currencyId)
+    {
+        if (currencyId == 0) return "-";
+        var currency = Currencies.FirstOrDefault(c => c.Id == currencyId);
+        return currency?.Code ?? "-";
     }
 
     // protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -351,15 +460,16 @@
                 return;
             }
 
-            var formattedStartDate = startDate.Value.ToString("yyyy-MM-dd");
-            var formattedEndDate = endDate.Value.ToString("yyyy-MM-dd");
+            // Format dates for SQL comparison - use CAST to ensure proper date comparison
+            string formattedStartDate = startDate.Value.ToString("yyyy-MM-dd");
+            // Add 1 day to end date to include the entire end date in the range
+            string formattedEndDateNextDay = endDate.Value.Date.AddDays(1).ToString("yyyy-MM-dd");
 
             string Criteria = string.Empty;
             LoadingPanel = true;
 
-            // Use simple field comparisons without CAST or SQL functions
-            // Most SQL injection checkers allow simple comparisons
-            Criteria = $"TranDate >= '{formattedStartDate}' and TranDate <= '{formattedEndDate}'";
+            // Use CAST for explicit date type conversion
+            Criteria = $"TranDate >= CAST('{formattedStartDate}' AS DATE) AND TranDate < CAST('{formattedEndDateNextDay}' AS DATE)";
 
             // Add location filter if needed
             if (Globals.User.GroupId != 1)
@@ -469,7 +579,8 @@
             if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) await Edit(result.Result!.Id);
         }
     
-        data = await Functions.GetAsync<List<CashBookModel>>($"CashBook/Search", true) ?? new List<CashBookModel>();
+        // Reload data with current date criteria instead of fetching all records
+        await GetAll();
         LoadingPanel = false;
         await _drawer.CloseDrawerAsync();
      
@@ -517,6 +628,26 @@
     protected void ViewGLEntry(string glEntryNo)
     {
         NavManager.NavigateTo($"/GeneralLedgerDashboard");
+    }
+
+    private async Task OnStartDateChanged()
+    {
+        // Debounce to avoid multiple calls during date selection
+        await Task.Delay(300);
+        if (startDate.HasValue && endDate.HasValue)
+        {
+            await GetAll();
+        }
+    }
+
+    private async Task OnEndDateChanged()
+    {
+        // Debounce to avoid multiple calls during date selection
+        await Task.Delay(300);
+        if (startDate.HasValue && endDate.HasValue)
+        {
+            await GetAll();
+        }
     }
 
 }

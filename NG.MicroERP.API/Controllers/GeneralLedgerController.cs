@@ -135,7 +135,12 @@ public class GeneralLedgerController : ControllerBase
             if (result.Item1 == true && result.Item2 != null)
                 return Ok(result.Item2);
             else
-                return BadRequest(new { message = "Unable to generate preview. Please ensure all required accounts are configured in Chart of Accounts.", error = "Preview generation failed" });
+            {
+                string errorMessage = !string.IsNullOrWhiteSpace(result.Item3) 
+                    ? result.Item3 
+                    : "Unable to generate preview. Please ensure all required accounts are configured in Chart of Accounts.";
+                return BadRequest(new { message = errorMessage, error = "Preview generation failed" });
+            }
         }
         catch (Exception ex)
         {
@@ -168,6 +173,43 @@ public class GeneralLedgerController : ControllerBase
         {
             return BadRequest(new { message = $"Error generating preview: {ex.Message}", error = ex.Message });
         }
+    }
+
+    [HttpPost("PreviewGLFromPettyCash")]
+    public async Task<IActionResult> PreviewGLFromPettyCash([FromBody] PettyCashModel pettyCash)
+    {
+        try
+        {
+            if (pettyCash == null)
+            {
+                return BadRequest(new { message = "PettyCash data is required", error = "Invalid pettycash model" });
+            }
+
+            var result = await Srv.PreviewGLFromPettyCash(pettyCash)!;
+            if (result.Item1 == true && result.Item2 != null)
+                return Ok(result.Item2);
+            else
+            {
+                string errorMessage = !string.IsNullOrWhiteSpace(result.Item3) 
+                    ? result.Item3 
+                    : "Unable to generate preview. Please ensure all required accounts are configured in Chart of Accounts.";
+                return BadRequest(new { message = errorMessage, error = "Preview generation failed" });
+            }
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = $"Error generating preview: {ex.Message}", error = ex.Message });
+        }
+    }
+
+    [HttpPost("CreateGLFromPettyCash/{pettyCashId}")]
+    public async Task<IActionResult> CreateGLFromPettyCash(int pettyCashId, [FromQuery] int userId, [FromQuery] string clientInfo)
+    {
+        var result = await Srv.CreateGLFromPettyCash(pettyCashId, userId, clientInfo)!;
+        if (result.Item1 == true)
+            return Ok(result.Item2);
+        else
+            return BadRequest(result.Item3);
     }
 
 }

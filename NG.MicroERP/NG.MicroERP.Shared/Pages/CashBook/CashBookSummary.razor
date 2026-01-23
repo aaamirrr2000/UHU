@@ -561,8 +561,11 @@
             isLoading = true;
             StateHasChanged();
 
-            // Load transactions for selected period
-            string criteria = $"TranDate >= '{startDate:yyyy-MM-dd}' and TranDate <= '{endDate:yyyy-MM-dd}'";
+            // Load transactions for selected period - use CAST for explicit date type conversion
+            string formattedStartDate = startDate.ToString("yyyy-MM-dd");
+            // Add 1 day to end date to include the entire end date in the range
+            string formattedEndDateNextDay = endDate.Date.AddDays(1).ToString("yyyy-MM-dd");
+            string criteria = $"TranDate >= CAST('{formattedStartDate}' AS DATE) AND TranDate < CAST('{formattedEndDateNextDay}' AS DATE)";
 
             if (Globals.User.GroupId != 1)
             {

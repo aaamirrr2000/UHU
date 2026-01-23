@@ -154,8 +154,7 @@ public class ShiftsService : IShiftsService
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
-					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
-					IsSoftDeleted = {obj.IsSoftDeleted} 
+					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}'
 				WHERE Id = {obj.Id};";
 
             var res = await dapper.Update(SQLUpdate, SQLDuplicate);

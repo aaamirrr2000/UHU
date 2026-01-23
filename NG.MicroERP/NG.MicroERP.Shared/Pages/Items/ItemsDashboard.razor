@@ -13,7 +13,7 @@
     <div class="dashboard-header">
         <div class="d-flex align-items-center justify-content-between flex-wrap">
             <div>
-                <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
                     <MudIcon Icon="@Icons.Material.Filled.Inventory" Class="me-2" Style="color: white;" />
                     Items Management
                 </MudText>
@@ -22,18 +22,18 @@
             <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
                 @if (Globals.AccessLevel == 1)
                 {
-                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
-                               Size="Size.Small" 
-                               Variant="Variant.Filled" 
-                               Color="Color.Success" 
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Add"
+                               Size="Size.Small"
+                               Variant="Variant.Filled"
+                               Color="Color.Success"
                                Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
                                OnClick="@(() => Clear())">
                         New
                     </MudButton>
                 }
-                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
-                           Size="Size.Small" 
-                           Variant="Variant.Filled" 
+                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh"
+                           Size="Size.Small"
+                           Variant="Variant.Filled"
                            Color="Color.Info"
                            Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
                            OnClick="@(() => Refresh())">
@@ -49,7 +49,7 @@
         <ChildContent>
             <EditForm Model="record" OnSubmit="Save">
                 <MudForm>
-                    <ItemsPage Action="@Action" CurrentRecord="record.Id" OnSaved="ChildSaved"/>
+                    <ItemsPage Action="@Action" CurrentRecord="record.Id" OnSaved="ChildSaved" />
                 </MudForm>
             </EditForm>
         </ChildContent>
@@ -63,7 +63,7 @@
         <ChildContent>
             <EditForm Model="record" OnSubmit="Save">
                 <MudForm>
-                    <NG.MicroERP.Shared.Pages.TaxItems.TaxItemsPage CurrentRecord="record.Id"/>
+                    <NG.MicroERP.Shared.Pages.TaxItems.TaxItemsPage CurrentRecord="record.Id" />
                 </MudForm>
             </EditForm>
         </ChildContent>
@@ -85,7 +85,7 @@
         </FooterContent>
     </MyDrawer>
 
-    @if (data == null)
+    @if (LoadingPanel || data == null)
     {
         <SimpleLoading />
     }
@@ -142,7 +142,7 @@
                                             <MudIcon Icon="@Icons.Material.Filled.Settings" Class="menu-icon" />
                                             <span>Features / Serving Size</span>
                                         </MudMenuItem>
-                                      @*   <hr />
+                                        @*   <hr />
                                         <MudMenuItem OnClick="@(() => ItemTax(row.Item.Id))"
                                                      Class="menu-item">
                                             <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Class="menu-icon" />
@@ -255,13 +255,13 @@
         margin-bottom: 8px;
     }
 
-    .dashboard-header .mud-typography {
-        color: white !important;
-    }
+        .dashboard-header .mud-typography {
+            color: white !important;
+        }
 
-    .dashboard-header .text-muted {
-        color: rgba(255, 255, 255, 0.85) !important;
-    }
+        .dashboard-header .text-muted {
+            color: rgba(255, 255, 255, 0.85) !important;
+        }
 
     /* Dark mode adjustments */
     .mud-theme-dark .dashboard-header {
@@ -271,11 +271,11 @@
 
 @code
 {
-     List<ItemsModel> data = new();
-     ItemsModel record = new();
+    List<ItemsModel> data = new();
+    ItemsModel record = new();
 
     public string? Action { get; set; } = "INSERT";
-    
+
 
     bool isReadOnly = true;
     private bool LoadingPanel { get; set; } = false;
@@ -291,9 +291,22 @@
 
     protected async Task GetAll()
     {
-        LoadingPanel = true;
-        data = await Functions.GetAsync<List<ItemsModel>>($"Items/Search", true) ?? new List<ItemsModel>();
-        LoadingPanel = false;
+        try
+        {
+            LoadingPanel = true;
+            StateHasChanged(); // Ensure UI updates
+            data = await Functions.GetAsync<List<ItemsModel>>($"Items/Search", true) ?? new List<ItemsModel>();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading items: {ex.Message}", Severity.Error);
+            data = new List<ItemsModel>();
+        }
+        finally
+        {
+            LoadingPanel = false;
+            StateHasChanged(); // Ensure UI updates
+        }
     }
 
     protected async Task Get(int id)
@@ -314,7 +327,7 @@
 
     protected async Task Refresh()
     {
-        data = await Functions.GetAsync<List<ItemsModel>>($"Items/Search", true) ?? new List<ItemsModel>();
+        await GetAll();
     }
 
     protected async Task View(int id)
@@ -328,7 +341,7 @@
     protected async Task Edit(int id)
     {
         await Get(id);
-        Action = "UPDATE"; 
+        Action = "UPDATE";
         isReadOnly = false;
         await _drawer.OpenDrawerAsync();
     }
@@ -372,7 +385,7 @@
     protected async Task Save()
     {
         LoadingPanel = true;
-         
+
         record.OrganizationId = Globals.User.OrganizationId;
         record.CreatedBy = Globals.User.Id;
         record.CreatedOn = DateTime.Now;
@@ -384,8 +397,8 @@
         var result = await Functions.PostAsync<ItemsModel>($"Items/{Action}", record, true);
         if (result.Success == false)
         {
-            string errorMessage = !string.IsNullOrWhiteSpace(result.Message) 
-                ? result.Message 
+            string errorMessage = !string.IsNullOrWhiteSpace(result.Message)
+                ? result.Message
                 : "Record Not Updated";
             SnackbarService.Add(errorMessage, Severity.Error);
         }
@@ -394,11 +407,11 @@
             SnackbarService.Add($"Record Updated Successfully", Severity.Success);
             if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) await Edit(result.Result!.Id);
         }
-    
+
         data = await Functions.GetAsync<List<ItemsModel>>($"Items/Search", true) ?? new List<ItemsModel>();
         LoadingPanel = false;
         await _drawer.CloseDrawerAsync();
-     
+
     }
 
     private async Task ChildSaved()

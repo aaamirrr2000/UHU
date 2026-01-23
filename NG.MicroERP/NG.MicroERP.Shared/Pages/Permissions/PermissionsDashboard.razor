@@ -39,7 +39,7 @@
     <div class="dashboard-header">
         <div class="d-flex align-items-center justify-content-between flex-wrap">
             <div>
-                <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
                     <MudIcon Icon="@Icons.Material.Filled.Security" Class="me-2" Style="color: white;" />
                     Permissions Management
                 </MudText>
@@ -50,8 +50,7 @@
                            @bind-Value="selectedGroup" 
                            @bind-Value:after="OnGroupChanged"
                            Label="Group"
-                           Variant="Variant.Outlined"
-                           Style="background: rgba(255,255,255,0.95); min-width: 200px;">
+                           Variant="Variant.Outlined">
                     @if (GroupsData != null)
                     {
                         @foreach (var a in GroupsData)
@@ -319,17 +318,27 @@
         rec.UpdatedBy = Globals.User.Id;
         rec.UpdatedOn = DateTime.Now;
         rec.UpdatedFrom = Globals.ClientInfo;
+        rec.IsActive = 1;
+        rec.IsSoftDeleted = 0;
 
-        var result = await Functions.PostAsync<PermissionsModel>($"Permissions/Save", rec, true);
-        if (result.Success == true)
+        var (success, result, message) = await Functions.PostAsync<Newtonsoft.Json.Linq.JObject>($"Permissions/Save", rec, true);
+        if (success == true && result != null)
         {
-            SnackbarService.Add($"Record Saved Successfully", Severity.Success);
+            var successProp = result["success"]?.ToString();
+            var messageProp = result["message"]?.ToString();
+            
+            if (successProp == "True" || successProp == "true" || successProp == "1")
+            {
+                SnackbarService.Add(messageProp ?? "Permission saved successfully", Severity.Success);
+            }
+            else
+            {
+                SnackbarService.Add(messageProp ?? "Failed to save permission", Severity.Error);
+            }
         }
         else
         {
-            SnackbarService.Add($"Record Not Saved", Severity.Error);
-            record = new();
-            isReadOnly = true;
+            SnackbarService.Add(message ?? "Failed to save permission. Please try again.", Severity.Error);
         }
 
         await OnGroupChanged();

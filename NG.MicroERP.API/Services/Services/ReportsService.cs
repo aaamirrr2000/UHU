@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using NG.MicroERP.API.Helper;
 using NG.MicroERP.Shared.Models;
+using Serilog;
 
 namespace NG.MicroERP.API.Services;
 
@@ -20,6 +21,9 @@ public interface IReportsService
     Task<List<CashReconciliationReportModel>> GetCashReconciliation(int organizationId, DateTime reportDate, int? locationId = null, int? countedBy = null, DateTime? countedOn = null);
     Task<List<PhysicalCashCountSessionModel>> GetPhysicalCashCountSessions(int organizationId, DateTime reportDate, int? locationId = null);
     Task<List<EmployeeAdvanceReportModel>> GetEmployeeAdvances(int organizationId, int? locationId = null, int? employeeId = null);
+    Task<DashboardModel> GetDashboardData(int organizationId);
+    Task<List<CashMovementModel>> GetCashMovement(int organizationId, DateTime startDate, DateTime endDate, int? locationId = null);
+    Task<List<PartyReceivablePayableModel>> GetPartyReceivablePayable(int organizationId, string? partyType = null);
 }
 
 public class ReportsService : IReportsService
@@ -659,5 +663,390 @@ public class ReportsService : IReportsService
 
         var result = await dapper.SearchByQuery<EmployeeAdvanceReportModel>(SQL);
         return result ?? new List<EmployeeAdvanceReportModel>();
+    }
+
+    public async Task<DashboardModel> GetDashboardData(int organizationId)
+    {
+        var dashboard = new DashboardModel();
+        DateTime today = DateTime.Today;
+        DateTime sixMonthsAgo = today.AddMonths(-6);
+
+        try
+        {
+            // 1. Total Inventory Value
+            string inventorySQL = $@"
+                SELECT ISNULL(SUM(vi.Quantity * vi.AverageCost), 0) AS TotalValue
+                FROM vw_Inventory vi
+                WHERE vi.OrganizationId = {organizationId}";
+            var inventoryResult = await dapper.SearchByQuery<dynamic>(inventorySQL);
+            dashboard.TotalInventoryValue = inventoryResult?.FirstOrDefault()?.TotalValue ?? 0;
+
+            // 2. Funds Available (Cash balance from CashBook)
+            string fundsSQL = $@"
+                SELECT ISNULL(SUM(CASE WHEN UPPER(TranType) = 'RECEIPT' THEN Amount ELSE -Amount END), 0) AS Balance
+                FROM Cashbook
+                WHERE OrganizationId = {organizationId} AND IsSoftDeleted = 0";
+            var fundsResult = await dapper.SearchByQuery<dynamic>(fundsSQL);
+            dashboard.FundsAvailable = fundsResult?.FirstOrDefault()?.Balance ?? 0;
+
+            // 3. Outstanding Payments (Purchase Invoices with outstanding balance)
+            string outstandingSQL = $@"
+                SELECT ISNULL(SUM(TotalAmount - PaidAmount), 0) AS Outstanding
+                FROM Invoice
+                WHERE OrganizationId = {organizationId} 
+                    AND InvoiceType = 'PURCHASE'
+                    AND IsSoftDeleted = 0
+                    AND (TotalAmount - PaidAmount) > 0";
+            var outstandingResult = await dapper.SearchByQuery<dynamic>(outstandingSQL);
+            dashboard.OutstandingPayments = outstandingResult?.FirstOrDefault()?.Outstanding ?? 0;
+
+            // 4. Stock Alerts (Items below reorder level)
+            string stockAlertsSQL = $@"
+                SELECT COUNT(DISTINCT vi.ItemId) AS AlertCount
+                FROM vw_Inventory vi
+                INNER JOIN Items i ON i.Id = vi.ItemId
+                WHERE vi.OrganizationId = {organizationId}
+                    AND vi.Quantity <= ISNULL(i.ReorderLevel, 0)
+                    AND ISNULL(i.ReorderLevel, 0) > 0";
+            var alertsResult = await dapper.SearchByQuery<dynamic>(stockAlertsSQL);
+            dashboard.StockAlertsCount = (int)(alertsResult?.FirstOrDefault()?.AlertCount ?? 0);
+
+            // 5. Inventory Distribution by Category
+            string categorySQL = $@"
+                SELECT 
+                    ISNULL(c.Name, 'Uncategorized') AS CategoryName,
+                    ISNULL(SUM(vi.Quantity * vi.AverageCost), 0) AS TotalValue
+                FROM vw_Inventory vi
+                INNER JOIN Items i ON i.Id = vi.ItemId
+                LEFT JOIN Categories c ON c.Id = i.CategoryId
+                WHERE vi.OrganizationId = {organizationId}
+                GROUP BY ISNULL(c.Name, 'Uncategorized')
+                HAVING SUM(vi.Quantity * vi.AverageCost) > 0
+                ORDER BY TotalValue DESC";
+            var categoryResult = await dapper.SearchByQuery<InventoryCategoryModel>(categorySQL);
+            dashboard.InventoryByCategory = categoryResult ?? new List<InventoryCategoryModel>();
+
+            // 6. Monthly Funds Flow (last 6 months)
+            string monthlyFundsSQL = $@"
+                SELECT 
+                    CONCAT(DATENAME(MONTH, TranDate), ' ', YEAR(TranDate)) AS Month,
+                    ISNULL(SUM(CASE WHEN UPPER(TranType) = 'RECEIPT' THEN Amount ELSE 0 END), 0) AS Receipts,
+                    ISNULL(SUM(CASE WHEN UPPER(TranType) = 'PAYMENT' THEN Amount ELSE 0 END), 0) AS Payments,
+                    ISNULL(SUM(CASE WHEN UPPER(TranType) = 'RECEIPT' THEN Amount ELSE -Amount END), 0) AS NetFlow
+                FROM Cashbook
+                WHERE OrganizationId = {organizationId}
+                    AND TranDate >= '{sixMonthsAgo:yyyy-MM-dd}'
+                    AND IsSoftDeleted = 0
+                GROUP BY YEAR(TranDate), MONTH(TranDate), DATENAME(MONTH, TranDate)
+                ORDER BY YEAR(TranDate), MONTH(TranDate)";
+            var monthlyFundsResult = await dapper.SearchByQuery<MonthlyFundsModel>(monthlyFundsSQL);
+            dashboard.MonthlyFundsFlow = monthlyFundsResult ?? new List<MonthlyFundsModel>();
+
+            // 7. Low Stock Items
+            string lowStockSQL = $@"
+                SELECT TOP 10
+                    i.Name AS ItemName,
+                    ISNULL(SUM(vi.Quantity), 0) AS Quantity,
+                    ISNULL(i.ReorderLevel, 0) AS ReorderLevel
+                FROM vw_Inventory vi
+                INNER JOIN Items i ON i.Id = vi.ItemId
+                WHERE vi.OrganizationId = {organizationId}
+                    AND ISNULL(i.ReorderLevel, 0) > 0
+                GROUP BY i.Id, i.Name, i.ReorderLevel
+                HAVING SUM(vi.Quantity) <= ISNULL(i.ReorderLevel, 0)
+                ORDER BY (SUM(vi.Quantity) - ISNULL(i.ReorderLevel, 0)) ASC";
+            var lowStockResult = await dapper.SearchByQuery<LowStockItemModel>(lowStockSQL);
+            dashboard.LowStockItems = lowStockResult ?? new List<LowStockItemModel>();
+
+            // 8. Recent Transactions (from CashBook, PettyCash, Invoices)
+            string recentTransactionsSQL = $@"
+                SELECT TOP 10
+                    TranDate AS Date,
+                    Description,
+                    Amount,
+                    'CashBook' AS TransactionType
+                FROM Cashbook
+                WHERE OrganizationId = {organizationId} AND IsSoftDeleted = 0
+                
+                UNION ALL
+                
+                SELECT TOP 10
+                    TranDate AS Date,
+                    Description,
+                    CASE WHEN TranType = 'RECEIPT' THEN Amount ELSE -Amount END AS Amount,
+                    'PettyCash' AS TransactionType
+                FROM PettyCash
+                WHERE OrganizationId = {organizationId} AND IsSoftDeleted = 0
+                
+                UNION ALL
+                
+                SELECT TOP 10
+                    TranDate AS Date,
+                    CONCAT(InvoiceType, ' - ', InvoiceNo) AS Description,
+                    CASE WHEN InvoiceType = 'SALE' THEN TotalAmount ELSE -TotalAmount END AS Amount,
+                    'Invoice' AS TransactionType
+                FROM Invoice
+                WHERE OrganizationId = {organizationId} AND IsSoftDeleted = 0
+                
+                ORDER BY Date DESC";
+            var transactionsResult = await dapper.SearchByQuery<RecentTransactionModel>(recentTransactionsSQL);
+            dashboard.RecentTransactions = transactionsResult?.Take(10).ToList() ?? new List<RecentTransactionModel>();
+
+            // 9. Cash Position (Receipts and Payments by Source)
+            var cashPosition = new CashPositionModel();
+            
+            // Cash Receipts by Source
+            string cashReceiptsSQL = $@"
+                SELECT 
+                    'CashBook' AS Source,
+                    ISNULL(SUM(Amount), 0) AS Amount,
+                    COUNT(*) AS TransactionCount
+                FROM Cashbook
+                WHERE OrganizationId = {organizationId}
+                    AND UPPER(TranType) = 'RECEIPT'
+                    AND IsSoftDeleted = 0
+                
+                UNION ALL
+                
+                SELECT 
+                    'PettyCash' AS Source,
+                    ISNULL(SUM(Amount), 0) AS Amount,
+                    COUNT(*) AS TransactionCount
+                FROM PettyCash
+                WHERE OrganizationId = {organizationId}
+                    AND UPPER(TranType) = 'RECEIPT'
+                    AND IsSoftDeleted = 0
+                
+                UNION ALL
+                
+                SELECT 
+                    'Sale Invoices' AS Source,
+                    ISNULL(SUM(ip.Amount), 0) AS Amount,
+                    COUNT(DISTINCT i.Id) AS TransactionCount
+                FROM InvoicePayments ip
+                INNER JOIN Invoice i ON i.Id = ip.InvoiceId
+                INNER JOIN ChartOfAccounts coa ON coa.Id = ip.AccountId
+                WHERE i.OrganizationId = {organizationId}
+                    AND i.InvoiceType = 'SALE'
+                    AND i.IsSoftDeleted = 0
+                    AND ip.IsSoftDeleted = 0
+                    AND coa.InterfaceType = 'PAYMENT METHOD'
+                    AND (UPPER(coa.Name) LIKE '%CASH%' OR UPPER(coa.Name) = 'CASH IN HAND')";
+            var receiptsResult = await dapper.SearchByQuery<CashSourceModel>(cashReceiptsSQL);
+            cashPosition.ReceiptsBySource = receiptsResult ?? new List<CashSourceModel>();
+            cashPosition.TotalReceipts = cashPosition.ReceiptsBySource.Sum(r => r.Amount);
+
+            // Cash Payments by Source
+            string cashPaymentsSQL = $@"
+                SELECT 
+                    'CashBook' AS Source,
+                    ISNULL(SUM(Amount), 0) AS Amount,
+                    COUNT(*) AS TransactionCount
+                FROM Cashbook
+                WHERE OrganizationId = {organizationId}
+                    AND UPPER(TranType) = 'PAYMENT'
+                    AND IsSoftDeleted = 0
+                
+                UNION ALL
+                
+                SELECT 
+                    'PettyCash' AS Source,
+                    ISNULL(SUM(Amount), 0) AS Amount,
+                    COUNT(*) AS TransactionCount
+                FROM PettyCash
+                WHERE OrganizationId = {organizationId}
+                    AND UPPER(TranType) = 'PAYMENT'
+                    AND IsSoftDeleted = 0
+                
+                UNION ALL
+                
+                SELECT 
+                    'Purchase Invoices' AS Source,
+                    ISNULL(SUM(ip.Amount), 0) AS Amount,
+                    COUNT(DISTINCT i.Id) AS TransactionCount
+                FROM InvoicePayments ip
+                INNER JOIN Invoice i ON i.Id = ip.InvoiceId
+                INNER JOIN ChartOfAccounts coa ON coa.Id = ip.AccountId
+                WHERE i.OrganizationId = {organizationId}
+                    AND i.InvoiceType = 'PURCHASE'
+                    AND i.IsSoftDeleted = 0
+                    AND ip.IsSoftDeleted = 0
+                    AND coa.InterfaceType = 'PAYMENT METHOD'
+                    AND (UPPER(coa.Name) LIKE '%CASH%' OR UPPER(coa.Name) = 'CASH IN HAND')";
+            var paymentsResult = await dapper.SearchByQuery<CashSourceModel>(cashPaymentsSQL);
+            cashPosition.PaymentsBySource = paymentsResult ?? new List<CashSourceModel>();
+            cashPosition.TotalPayments = cashPosition.PaymentsBySource.Sum(p => p.Amount);
+            
+            cashPosition.NetCashFlow = cashPosition.TotalReceipts - cashPosition.TotalPayments;
+            dashboard.CashPosition = cashPosition;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error getting dashboard data for organization {OrganizationId}", organizationId);
+        }
+
+        return dashboard;
+    }
+
+    public async Task<List<CashMovementModel>> GetCashMovement(int organizationId, DateTime startDate, DateTime endDate, int? locationId = null)
+    {
+        string locationFilter = locationId.HasValue && locationId.Value > 0 ? $"AND LocationId = {locationId.Value}" : "";
+        string startDateStr = startDate.ToString("yyyy-MM-dd");
+        string endDateStr = endDate.AddDays(1).ToString("yyyy-MM-dd"); // Add 1 day to include end date
+
+        string SQL = $@"
+            WITH CashTransactions AS (
+                -- CashBook transactions
+                SELECT 
+                    CAST(cb.TranDate AS DATE) AS TranDate,
+                    ISNULL(loc.Name, 'All Locations') AS LocationName,
+                    'CashBook' AS Source,
+                    cb.Description,
+                    cb.Reference,
+                    CASE WHEN cb.TranType = 'RECEIPT' THEN cb.Amount ELSE 0 END AS Receipts,
+                    CASE WHEN cb.TranType = 'PAYMENT' THEN cb.Amount ELSE 0 END AS Payments
+                FROM Cashbook cb
+                LEFT JOIN Locations loc ON loc.Id = cb.LocationId
+                WHERE cb.IsSoftDeleted = 0 
+                    AND cb.OrganizationId = {organizationId}
+                    AND CAST(cb.TranDate AS DATE) >= '{startDateStr}'
+                    AND CAST(cb.TranDate AS DATE) < '{endDateStr}'
+                    {locationFilter}
+                
+                UNION ALL
+                
+                -- PettyCash transactions
+                SELECT 
+                    CAST(pc.TranDate AS DATE) AS TranDate,
+                    ISNULL(loc.Name, 'All Locations') AS LocationName,
+                    'PettyCash' AS Source,
+                    pc.Description,
+                    pc.Reference,
+                    CASE WHEN pc.TranType = 'RECEIPT' THEN pc.Amount ELSE 0 END AS Receipts,
+                    CASE WHEN pc.TranType = 'PAYMENT' THEN pc.Amount ELSE 0 END AS Payments
+                FROM PettyCash pc
+                LEFT JOIN Locations loc ON loc.Id = pc.LocationId
+                WHERE pc.IsSoftDeleted = 0 
+                    AND pc.OrganizationId = {organizationId}
+                    AND CAST(pc.TranDate AS DATE) >= '{startDateStr}'
+                    AND CAST(pc.TranDate AS DATE) < '{endDateStr}'
+                    {locationFilter}
+                
+                UNION ALL
+                
+                -- Sale Invoice Payments (cash payments only)
+                SELECT 
+                    CAST(i.TranDate AS DATE) AS TranDate,
+                    ISNULL(loc.Name, 'All Locations') AS LocationName,
+                    'Sale Invoice' AS Source,
+                    'Payment for Invoice: ' + i.Code AS Description,
+                    i.Code AS Reference,
+                    ip.Amount AS Receipts,
+                    0 AS Payments
+                FROM InvoicePayments ip
+                INNER JOIN Invoice i ON i.Id = ip.InvoiceId
+                INNER JOIN ChartOfAccounts coa ON coa.Id = ip.AccountId
+                LEFT JOIN Locations loc ON loc.Id = i.LocationId
+                WHERE ip.IsSoftDeleted = 0 
+                    AND i.IsSoftDeleted = 0
+                    AND i.OrganizationId = {organizationId}
+                    AND i.InvoiceType = 'SALE'
+                    AND coa.InterfaceType = 'PAYMENT METHOD'
+                    AND (UPPER(coa.Name) LIKE '%CASH%' OR UPPER(coa.Name) = 'CASH IN HAND')
+                    AND CAST(i.TranDate AS DATE) >= '{startDateStr}'
+                    AND CAST(i.TranDate AS DATE) < '{endDateStr}'
+                    {(locationId.HasValue && locationId.Value > 0 ? $"AND i.LocationId = {locationId.Value}" : "")}
+                
+                UNION ALL
+                
+                -- Purchase Invoice Payments (cash payments only)
+                SELECT 
+                    CAST(i.TranDate AS DATE) AS TranDate,
+                    ISNULL(loc.Name, 'All Locations') AS LocationName,
+                    'Purchase Invoice' AS Source,
+                    'Payment for Invoice: ' + i.Code AS Description,
+                    i.Code AS Reference,
+                    0 AS Receipts,
+                    ip.Amount AS Payments
+                FROM InvoicePayments ip
+                INNER JOIN Invoice i ON i.Id = ip.InvoiceId
+                INNER JOIN ChartOfAccounts coa ON coa.Id = ip.AccountId
+                LEFT JOIN Locations loc ON loc.Id = i.LocationId
+                WHERE ip.IsSoftDeleted = 0 
+                    AND i.IsSoftDeleted = 0
+                    AND i.OrganizationId = {organizationId}
+                    AND i.InvoiceType = 'PURCHASE'
+                    AND coa.InterfaceType = 'PAYMENT METHOD'
+                    AND (UPPER(coa.Name) LIKE '%CASH%' OR UPPER(coa.Name) = 'CASH IN HAND')
+                    AND CAST(i.TranDate AS DATE) >= '{startDateStr}'
+                    AND CAST(i.TranDate AS DATE) < '{endDateStr}'
+                    {(locationId.HasValue && locationId.Value > 0 ? $"AND i.LocationId = {locationId.Value}" : "")}
+            )
+            SELECT 
+                TranDate,
+                LocationName,
+                Source,
+                Description,
+                Reference,
+                SUM(Receipts) AS Receipts,
+                SUM(Payments) AS Payments,
+                SUM(Receipts - Payments) AS Balance
+            FROM CashTransactions
+            GROUP BY TranDate, LocationName, Source, Description, Reference
+            ORDER BY TranDate DESC, Source, LocationName";
+
+        var result = await dapper.SearchByQuery<CashMovementModel>(SQL);
+        return result ?? new List<CashMovementModel>();
+    }
+
+    public async Task<List<PartyReceivablePayableModel>> GetPartyReceivablePayable(int organizationId, string? partyType = null)
+    {
+        string partyTypeFilter = !string.IsNullOrWhiteSpace(partyType) 
+            ? $"AND UPPER(p.PartyType) = '{partyType.ToUpperInvariant()}'" 
+            : "";
+
+        // Use the invoice report view which already has calculated amounts
+        string SQL = $@"
+            SELECT 
+                p.Id AS PartyId,
+                ISNULL(p.Code, '') AS PartyCode,
+                ISNULL(p.Name, 'Unknown') AS PartyName,
+                ISNULL(p.PartyType, '') AS PartyType,
+                ISNULL((SELECT TOP 1 ContactValue FROM PartyContacts WHERE PartyId = p.Id AND ContactType IN ('PHONE', 'MOBILE') AND IsPrimary = 1 AND IsSoftDeleted = 0 ORDER BY CASE WHEN ContactType = 'PHONE' THEN 1 ELSE 2 END), '') AS Phone,
+                ISNULL((SELECT TOP 1 ContactValue FROM PartyContacts WHERE PartyId = p.Id AND ContactType = 'EMAIL' AND IsPrimary = 1 AND IsSoftDeleted = 0), '') AS Email,
+                ISNULL(SUM(CASE WHEN UPPER(v.InvoiceType) = 'SALE' THEN v.BillAmount ELSE 0 END), 0) AS TotalInvoiceAmount,
+                ISNULL(SUM(CASE WHEN UPPER(v.InvoiceType) = 'SALE' THEN v.TotalPaidAmount ELSE 0 END), 0) AS TotalPaidAmount,
+                ISNULL(SUM(CASE WHEN UPPER(v.InvoiceType) = 'SALE' THEN v.BalanceAmount ELSE 0 END), 0) AS ReceivableAmount,
+                ISNULL(SUM(CASE WHEN UPPER(v.InvoiceType) = 'PURCHASE' THEN v.BalanceAmount ELSE 0 END), 0) AS PayableAmount,
+                COUNT(DISTINCT v.Id) AS InvoiceCount,
+                MAX(v.TranDate) AS LastTransactionDate
+            FROM Parties p
+            INNER JOIN vw_InvoiceMasterReport v ON v.PartyId = p.Id
+            WHERE v.OrganizationId = {organizationId}
+                AND p.IsSoftDeleted = 0
+                {partyTypeFilter}
+            GROUP BY p.Id, p.Code, p.Name, p.PartyType
+            HAVING (
+                ISNULL(SUM(CASE WHEN UPPER(v.InvoiceType) = 'SALE' THEN v.BalanceAmount ELSE 0 END), 0) > 0
+                OR
+                ISNULL(SUM(CASE WHEN UPPER(v.InvoiceType) = 'PURCHASE' THEN v.BalanceAmount ELSE 0 END), 0) > 0
+            )
+            ORDER BY 
+                CASE WHEN ISNULL(SUM(CASE WHEN UPPER(v.InvoiceType) = 'SALE' THEN v.BalanceAmount ELSE 0 END), 0) > 0 THEN 1 ELSE 2 END,
+                ABS(ISNULL(SUM(CASE WHEN UPPER(v.InvoiceType) = 'SALE' THEN v.BalanceAmount ELSE 0 END), 0) - 
+                    ISNULL(SUM(CASE WHEN UPPER(v.InvoiceType) = 'PURCHASE' THEN v.BalanceAmount ELSE 0 END), 0)) DESC";
+
+        var result = await dapper.SearchByQuery<PartyReceivablePayableModel>(SQL);
+        
+        // Calculate OutstandingBalance (Receivable - Payable)
+        if (result != null)
+        {
+            foreach (var item in result)
+            {
+                item.OutstandingBalance = item.ReceivableAmount - item.PayableAmount;
+            }
+        }
+        
+        return result ?? new List<PartyReceivablePayableModel>();
     }
 }

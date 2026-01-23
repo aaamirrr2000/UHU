@@ -1,216 +1,334 @@
-﻿<MudTabs Rounded="true" Centered="false" Elevation="1" Class="mb-2" ScrollButtons="ScrollButtons.Auto">
-    <MudTabPanel Text=@($"Items ({SelectedItems.Count:#,##0})") Class="p-2">
-        <div class="d-flex flex-row gap-3" style="height: calc(100vh - 300px); overflow: hidden;">
+<MudTabs Rounded="true" Centered="false" Elevation="2" Class="mb-2 invoice-items-tabs-professional" ScrollButtons="ScrollButtons.Auto" Variant="Variant.Filled">
+    <MudTabPanel Text=@($"Items ({SelectedItems.Count:#,##0})") Class="p-3">
+        <div class="d-flex flex-column gap-3 invoice-items-container-professional" style="max-height: calc(100vh - 200px); overflow: hidden; width: 100%;">
             <!-- Categories Panel -->
-            <div style="width: 240px; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px; margin-top: 10px; display: flex; flex-direction: column; height: 100%;">
+            <MudPaper Elevation="3" Class="invoice-categories-panel-professional" Style="width: 100%; border-radius: 12px; padding: 16px; background: linear-gradient(135deg, rgba(63, 81, 181, 0.08) 0%, rgba(63, 81, 181, 0.03) 100%); border: 2px solid rgba(63, 81, 181, 0.2); box-shadow: 0 4px 12px rgba(63, 81, 181, 0.12);">
 
-                <!-- Categories Header with Search -->
-                <div style="margin-bottom: 8px; /* removed border-bottom */">
-                    <MudText Typo="Typo.subtitle2" Class="fw-semibold mb-2">Categories</MudText>
-                    <MudTextField Dense="true"
-                                  Placeholder="Search categories…"
-                                  @bind-Value="_categorySearch"
-                                  Adornment="Adornment.Start"
-                                  AdornmentIcon="@Icons.Material.Filled.Search"
-                                  Class="w-100" />
+                <!-- Categories Header -->
+                <div class="d-flex align-items-center mb-3" style="border-bottom: 3px solid rgba(63, 81, 181, 0.15); padding-bottom: 10px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Category" Size="Size.Medium" Color="Color.Primary" Class="me-2" />
+                    <MudText Typo="Typo.subtitle1" Class="fw-bold mb-0" Style="color: var(--mud-palette-primary); font-size: 1rem; letter-spacing: 0.5px;">Categories</MudText>
+                    <MudSpacer />
+                    <MudChip T="string" Variant="Variant.Text" Size="Size.Small" Style="color: var(--mud-palette-primary); opacity: 0.7;">
+                        @FilteredCategories.Count() total
+                    </MudChip>
                 </div>
 
-                <!-- Categories List -->
-                <div style="overflow-y: auto; flex: 1;">
-                    <div style="display: flex; flex-direction: column;">
+                <!-- Categories Search -->
+                <div style="margin-bottom: 12px;">
+                    <MudTextField Dense="true"
+                                  Placeholder="🔍 Search categories by name…"
+                                  @bind-Value="_categorySearch"
+                                  Variant="Variant.Outlined"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  FullWidth="true"
+                                  Class="w-100"
+                                  Style="background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%); border-radius: 8px;" />
+                </div>
+
+                <!-- Categories List - Horizontal Scroll -->
+                <div style="overflow-x: auto; overflow-y: visible; padding-bottom: 8px; margin: -4px; padding: 4px;">
+                    <div style="display: flex; flex-direction: row; gap: 12px; flex-wrap: nowrap; align-items: flex-start; padding: 4px;">
                         @foreach (var category in FilteredCategories)
                         {
                             var isActive = ActiveCategory?.Id == category.Id;
-                            var borderColor = isActive ? "#3f51b5" : "transparent";
-                            var bgColor = isActive ? "rgba(63, 81, 181, 0.08)" : "transparent";
-                            var style = $"text-align: left; border: 1px solid rgba(0,0,0,0.12); border-left: 4px solid {borderColor}; background-color: {bgColor};";
-
-                            <MudButton @onclick="async () => await HandleCategoryClick(category)"
-                                       Variant="Variant.Filled"
-                                       Color="Color.Inherit"
-                                       FullWidth="@true"
-                                       Class="text-transform-none justify-start mb-1 category-button"
-                                       Style="@style">
-                                <span style="font-weight: 600; font-size: 14px; color: #212529; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                    @category.Name (@category.ItemCount)
-                                </span>
-                            </MudButton>
+                            var tileColor = GetTileColor(category.Id);
+                            var tileGradient = GetTileGradient(category.Id);
+                            
+                            <MudPaper Elevation="@(isActive ? 4 : 2)"
+                                      Class="@($"category-tile-windows {(isActive ? "category-active" : "")}")"
+                                      @onclick="async () => await HandleCategoryClick(category)"
+                                      Style="@GetCategoryTileStyle(tileGradient, isActive)">
+                                <div class="tile-content-wrapper">
+                                    <div class="tile-left-section">
+                                        <div class="tile-icon-section">
+                                            <div class="tile-icon-background">
+                                                <i class="fas fa-tags" style="font-size: 1.6rem; color: white;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="tile-name-section">
+                                            <MudText Class="tile-item-name" Typo="Typo.body2" Style="font-size: 0.8rem; font-weight: 700; line-height: 1.2; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.4);">
+                                                @category.Name
+                                            </MudText>
+                                        </div>
+                                    </div>
+                                    <div class="tile-price-right-section">
+                                        <MudText Typo="Typo.body2" Style="font-size: 0.9rem; font-weight: 800; color: rgba(255,255,255,0.95); text-shadow: 0 2px 4px rgba(0,0,0,0.4); font-family: 'Segoe UI', sans-serif; text-align: right;">
+                                            @category.ItemCount
+                                        </MudText>
+                                    </div>
+                                </div>
+                                <div class="tile-hover-overlay"></div>
+                            </MudPaper>
                         }
-
                     </div>
                 </div>
-            </div>
-
+            </MudPaper>
 
             <!-- Items Panel -->
-            <div class="flex-grow-1" style="display: flex; flex-direction: column; height: 100%; overflow: hidden;">
+            <MudPaper Elevation="3" Class="flex-grow-1 invoice-items-panel-professional" Style="display: flex; flex-direction: column; max-height: calc(100vh - 350px); overflow: hidden; flex: 1; width: 100%; border-radius: 12px; padding: 16px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%); border: 2px solid rgba(63, 81, 181, 0.2); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);">
+                
+                <!-- Items Header -->
+                <div class="d-flex align-items-center mb-3" style="border-bottom: 3px solid rgba(63, 81, 181, 0.15); padding-bottom: 10px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Medium" Color="Color.Primary" Class="me-2" />
+                    <MudText Typo="Typo.subtitle1" Class="fw-bold mb-0" Style="color: var(--mud-palette-primary); font-size: 1rem; letter-spacing: 0.5px;">Items</MudText>
+                    <MudSpacer />
+                    <MudChip T="string" Variant="Variant.Text" Size="Size.Small" Style="color: var(--mud-palette-primary); opacity: 0.7;">
+                        @FilteredItems.Count() items
+                    </MudChip>
+                </div>
+
                 <!-- Items Search Bar -->
-                <div style="flex-shrink: 0; margin-bottom: 8px;">
+                <div style="flex-shrink: 0; margin-bottom: 14px; width: 100%;">
                     <MudTextField Dense="true"
-                                  Placeholder="Search items…"
-                                  @bind-Value="ClickedItem.Name"
+                                  Placeholder="🔍 Search items by name, code, or category…"
+                                  @bind-Value="_itemSearch"
+                                  Variant="Variant.Outlined"
                                   Adornment="Adornment.Start"
                                   AdornmentIcon="@Icons.Material.Filled.Search"
-                                  Class="w-100" />
+                                  FullWidth="true"
+                                  Class="w-100"
+                                  Style="background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%); border-radius: 8px;" />
                 </div>
 
                 <!-- Items Grid -->
-                <div style="flex:1; overflow-y:auto; padding-right:4px;">
-                    <MudGrid GutterSize="GutterSize.Small">
-
-                        @foreach (var i in SelectedItems.Where(f =>
-                                                string.IsNullOrWhiteSpace(ClickedItem.Name) ||
-                                                f.Name!.Contains(ClickedItem!.Name!, StringComparison.OrdinalIgnoreCase)))
+                <div style="flex:1; overflow-y:auto; overflow-x:hidden; padding-right:4px; width: 100%;">
+                    <MudGrid GutterSize="GutterSize.Large" Style="width: 100%; margin: 0;">
+                        @foreach (var i in FilteredItems)
                         {
-                            <MudItem xs="12">
-
-                                <MudPaper Elevation="1"
-                                          Class="item-list-row"
-                                          @onclick="async () => await HandleItemClick(i.Id.ToString())">
-
-                                    <div class="item-row">
-
-                                        <!-- Image (left, spans rows) -->
-                                        <div class="item-img">
-                                            <AvatarDisplay Pic="@i.Pic"
-                                                           Name="@i.Name"
-                                                           Size="48" />
+                            var tileColor = GetTileColor(i.Id);
+                            var tileGradient = GetTileGradient(i.Id);
+                            <MudItem xs="12" sm="6" md="6" lg="4" Style="width: 100%; max-width: 100%; min-width: 0;">
+                                <MudPaper Elevation="2"
+                                          Class="item-tile-windows"
+                                          @onclick="async () => await HandleItemClick(i.Id.ToString())"
+                                          Style="@($"background: {tileGradient}; border-radius: 5px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; height: 160px; position: relative; overflow: hidden; border: none;")">
+                                    <!-- Tile Content -->
+                                    <div class="tile-content-wrapper">
+                                        <!-- Left Column: Icon/Image (Spans 2 rows) -->
+                                        <div class="tile-icon-column">
+                                            <div class="tile-icon-background">
+                                                @if (!string.IsNullOrWhiteSpace(i.Pic))
+                                                {
+                                                    <img src="@Globals.GetImageUrl(i.Pic)" 
+                                                         alt="@i.Name" 
+                                                         style="width: 100%; height: 100%; object-fit: cover; border-radius: 0;" />
+                                                }
+                                                else
+                                                {
+                                                    <i class="@GetItemIcon(i.StockType)" style="font-size: 2.5rem; color: white;"></i>
+                                                }
+                                            </div>
                                         </div>
 
-                                        <!-- Text content -->
-                                        <div class="item-content">
-
-                                            <!-- Name Row -->
-                                            <MudText Class="item-name" Typo="Typo.body1" Style="font-size:14px; font-weight:600;">
-                                                @i.Name
-                                            </MudText>
-
-                                            <!-- Meta Row -->
-                                            <div class="item-meta" style="font-size:12px;">
-                                                <MudText Typo="Typo.caption" 
-                                                         Class="item-price" 
-                                                         Style="font-size:12px; font-weight:700;"
-                                                         Color="@(GetRetailPriceDisplay(i) > 0 ? (HasTaxRule?.Invoke(i) == true ? Color.Error : Color.Success) : Color.Default)">
+                                        <!-- Right Column: Price and Name -->
+                                        <div class="tile-content-column">
+                                            <!-- Price (First Row, Right Column) -->
+                                            <div class="tile-price-section">
+                                                <MudText Typo="Typo.h5" Style="font-size: 1.5rem; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.4); font-family: 'Segoe UI', sans-serif; text-align: right; width: 100%;">
                                                     @GetRetailPriceDisplay(i).ToString("#,##0.00")
                                                 </MudText>
-                                                <span class="item-dot">•</span>
-                                                <span class="item-extra">@i.CategoryName</span>
                                             </div>
 
+                                            <!-- Name (Second Row, Right Column) -->
+                                            <div class="tile-name-section">
+                                                <MudText Class="tile-item-name" Typo="Typo.body1" Style="font-size: 0.95rem; font-weight: 700; line-height: 1.4; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.3); text-align: left; width: 100%;">
+                                                    @i.Name
+                                                </MudText>
+                                                @if (!string.IsNullOrWhiteSpace(i.CategoryName))
+                                                {
+                                                    <div class="tile-category-badge" style="margin: 4px 0 0 0;">
+                                                        <MudText Typo="Typo.caption" Style="font-size: 0.65rem; font-weight: 600; color: rgba(255,255,255,0.9); text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
+                                                            @i.CategoryName
+                                                        </MudText>
+                                                    </div>
+                                                }
+                                            </div>
                                         </div>
-
                                     </div>
 
+                                    <!-- Hover Overlay -->
+                                    <div class="tile-hover-overlay"></div>
                                 </MudPaper>
-
                             </MudItem>
                         }
-
                     </MudGrid>
                 </div>
+            </MudPaper>
+        </div>
+    </MudTabPanel>
 
-
+    <MudTabPanel Text=@($"Favorites ({FavItemsData.Count:#,##0})") Class="p-3">
+        <MudPaper Elevation="3" Style="border-radius: 12px; padding: 16px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%); border: 2px solid rgba(229, 57, 53, 0.2); box-shadow: 0 4px 12px rgba(229, 57, 53, 0.08);">
+            <div class="d-flex align-items-center mb-3" style="border-bottom: 3px solid rgba(229, 57, 53, 0.15); padding-bottom: 10px;">
+                <MudIcon Icon="@Icons.Material.Filled.Favorite" Size="Size.Medium" Color="Color.Error" Class="me-2" />
+                <MudText Typo="Typo.subtitle1" Class="fw-bold mb-0" Style="color: var(--mud-palette-error); font-size: 1rem; letter-spacing: 0.5px;">Favorites</MudText>
+                <MudSpacer />
+                <MudChip T="string" Variant="Variant.Text" Size="Size.Small" Style="color: var(--mud-palette-error); opacity: 0.7;">
+                    @FilteredFavorites.Count() items
+                </MudChip>
             </div>
-        </div>
+            
+            <MudTextField Dense="true" 
+                          Class="mb-3" 
+                          Placeholder="🔍 Search favorites…"
+                          Variant="Variant.Outlined"
+                          @bind-Value="_favoritesSearch"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          FullWidth="true"
+                          Style="background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%); border-radius: 8px;" />
+
+            <div style="max-height: calc(100vh - 280px); overflow-y: auto;">
+                <MudGrid GutterSize="GutterSize.Small">
+                    @foreach (var fav in FilteredFavorites)
+                    {
+                        var tileColor = GetTileColor(fav.Id);
+                        var tileGradient = GetTileGradient(fav.Id);
+                        <MudItem xs="12" sm="6" md="6" lg="4">
+                            <MudPaper Elevation="2"
+                                      Class="item-tile-windows"
+                                      @onclick="async () => await HandleItemClick(fav.Id.ToString())"
+                                      Style="@($"background: {tileGradient}; border-radius: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; height: 160px; position: relative; overflow: hidden; border: none;")">
+                                    <div class="tile-content-wrapper">
+                                        <!-- Left Column: Icon/Image (Spans 2 rows) -->
+                                        <div class="tile-icon-column">
+                                            <div class="tile-icon-background">
+                                                @if (!string.IsNullOrWhiteSpace(fav.Pic))
+                                                {
+                                                    <img src="@Globals.GetImageUrl(fav.Pic)" 
+                                                         alt="@fav.Name" 
+                                                         style="width: 100%; height: 100%; object-fit: cover; border-radius: 0;" />
+                                                }
+                                                else
+                                                {
+                                                    <i class="@GetItemIcon(fav.StockType)" style="font-size: 2.5rem; color: white;"></i>
+                                                }
+                                            </div>
+                                        </div>
+
+                                        <!-- Right Column: Price and Name -->
+                                        <div class="tile-content-column">
+                                            <!-- Price (First Row, Right Column) -->
+                                            <div class="tile-price-section">
+                                                <MudText Typo="Typo.h5" Style="font-size: 1.5rem; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.4); font-family: 'Segoe UI', sans-serif; text-align: right; width: 100%;">
+                                                    @GetRetailPriceDisplay(fav).ToString("#,##0.00")
+                                                </MudText>
+                                            </div>
+
+                                            <!-- Name (Second Row, Right Column) -->
+                                            <div class="tile-name-section">
+                                                <MudText Class="tile-item-name" Typo="Typo.body1" Style="font-size: 0.95rem; font-weight: 700; line-height: 1.4; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.3); text-align: left; width: 100%;">
+                                                    @fav.Name
+                                                </MudText>
+                                                @if (!string.IsNullOrWhiteSpace(fav.CategoryName))
+                                                {
+                                                    <div class="tile-category-badge" style="margin: 4px 0 0 0;">
+                                                        <MudText Typo="Typo.caption" Style="font-size: 0.65rem; font-weight: 600; color: rgba(255,255,255,0.9); text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
+                                                            @fav.CategoryName
+                                                        </MudText>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                <div class="tile-hover-overlay"></div>
+                            </MudPaper>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </div>
+        </MudPaper>
     </MudTabPanel>
 
-    <MudTabPanel Text=@($"Favorites ({FavItemsData.Count:#,##0})") Class="p-2">
-        <div style="height: calc(100vh - 300px); overflow-y: auto;">
-            <MudTextField Dense="true" Class="mb-2" Placeholder="Search…"
-                          @bind-Value="SelectedFavItem.Name"
+    <MudTabPanel Text=@($"Recent ({RecentItemsData.Count:#,##0})") Class="p-3">
+        <MudPaper Elevation="3" Style="border-radius: 12px; padding: 16px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%); border: 2px solid rgba(33, 150, 243, 0.2); box-shadow: 0 4px 12px rgba(33, 150, 243, 0.08);">
+            <div class="d-flex align-items-center mb-3" style="border-bottom: 3px solid rgba(33, 150, 243, 0.15); padding-bottom: 10px;">
+                <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Medium" Color="Color.Info" Class="me-2" />
+                <MudText Typo="Typo.subtitle1" Class="fw-bold mb-0" Style="color: var(--mud-palette-info); font-size: 1rem; letter-spacing: 0.5px;">Recent Items</MudText>
+                <MudSpacer />
+                <MudChip T="string" Variant="Variant.Text" Size="Size.Small" Style="color: var(--mud-palette-info); opacity: 0.7;">
+                    @FilteredRecent.Count() items
+                </MudChip>
+            </div>
+            
+            <MudTextField Dense="@true" 
+                          Class="mb-3" 
+                          Placeholder="🔍 Search recent items…"
+                          Variant="Variant.Outlined"
+                          @bind-Value="_recentSearch"
                           Adornment="Adornment.Start"
-                          AdornmentIcon="@Icons.Material.Filled.Search" />
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          FullWidth="true"
+                          Style="background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%); border-radius: 8px;" />
 
-            <MudGrid GutterSize="GutterSize.Small">
-                @foreach (var fav in FavItemsData.Where(f => string.IsNullOrWhiteSpace(SelectedFavItem.Name) ||
-                                f.Name!.Contains(SelectedFavItem.Name, StringComparison.OrdinalIgnoreCase)))
-                {
-                    <MudItem xs="12" sm="6">
-                        <MudButton @onclick="async () => await HandleItemClick(fav.Id.ToString())"
-                                   Variant="Variant.Filled"
-                                   Color="Color.Inherit"
-                                   FullWidth="@true"
-                                   Class="text-transform-none p-2 overflow-hidden"
-                                   Style="height: auto; min-height: 80px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.12); display: flex; flex-direction: row; align-items: center; gap: 8px;">
+            <div style="max-height: calc(100vh - 280px); overflow-y: auto;">
+                <MudGrid GutterSize="GutterSize.Small">
+                    @foreach (var recent in FilteredRecent)
+                    {
+                        var tileColor = GetTileColor(recent.Id);
+                        var tileGradient = GetTileGradient(recent.Id);
+                        <MudItem xs="12" sm="6" md="6" lg="4">
+                            <MudPaper Elevation="2"
+                                      Class="item-tile-windows"
+                                      @onclick="async () => await HandleItemClick(recent.Id.ToString())"
+                                      Style="@($"background: {tileGradient}; border-radius: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; height: 160px; position: relative; overflow: hidden; border: none;")">
+                                    <div class="tile-content-wrapper">
+                                        <!-- Left Column: Icon/Image (Spans 2 rows) -->
+                                        <div class="tile-icon-column">
+                                            <div class="tile-icon-background">
+                                                @if (!string.IsNullOrWhiteSpace(recent.Pic))
+                                                {
+                                                    <img src="@Globals.GetImageUrl(recent.Pic)" 
+                                                         alt="@recent.Name" 
+                                                         style="width: 100%; height: 100%; object-fit: cover; border-radius: 0;" />
+                                                }
+                                                else
+                                                {
+                                                    <i class="@GetItemIcon(recent.StockType)" style="font-size: 2.5rem; color: white;"></i>
+                                                }
+                                            </div>
+                                        </div>
 
-                            <!-- Image on the left -->
-                            <AvatarDisplay Pic="@fav.Pic" Name="@fav.Name" Size="48" />
+                                        <!-- Right Column: Price and Name -->
+                                        <div class="tile-content-column">
+                                            <!-- Price (First Row, Right Column) -->
+                                            <div class="tile-price-section">
+                                                <MudText Typo="Typo.h5" Style="font-size: 1.5rem; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.4); font-family: 'Segoe UI', sans-serif; text-align: right; width: 100%;">
+                                                    @GetRetailPriceDisplay(recent).ToString("#,##0.00")
+                                                </MudText>
+                                            </div>
 
-                            <!-- Text content on the right -->
-                            <div style="display:flex; flex-direction:column; justify-content:center; gap:2px; flex:1;">
-                                <!-- First row: name -->
-                                <MudText Style="font-size:14px; font-weight:600; line-height:1.2; color:black;">
-                                    @fav.Name
-                                </MudText>
-
-                                <!-- Second row: price / meta -->
-                                <div style="font-size:12px; display:flex; gap:4px; align-items:center; color:gray;">
-                                    <MudText Typo="Typo.caption" 
-                                             Style="font-weight:700;"
-                                             Color="@(GetRetailPriceDisplay(fav) > 0 ? (HasTaxRule?.Invoke(fav) == true ? Color.Error : Color.Success) : Color.Default)">
-                                        @GetRetailPriceDisplay(fav).ToString("#,##0.00")
-                                    </MudText>
-                                    <span style="opacity:0.4;">•</span>
-                                    <span>@fav.CategoryName</span>
-                                </div>
-                            </div>
-                        </MudButton>
-                    </MudItem>
-                }
-            </MudGrid>
-        </div>
-
-    </MudTabPanel>
-
-    <MudTabPanel Text=@($"Recent ({RecentItemsData.Count:#,##0})") Class="p-2">
-        <div style="height: calc(100vh - 300px); overflow-y: auto;">
-            <MudTextField Dense="@true" Class="mb-2" Placeholder="Search…"
-                          @bind-Value="SelectedRecentItem.Name"
-                          Adornment="Adornment.Start"
-                          AdornmentIcon="@Icons.Material.Filled.Search" />
-
-            <MudGrid GutterSize="GutterSize.Small">
-                @foreach (var fav in RecentItemsData.Where(f => string.IsNullOrWhiteSpace(SelectedRecentItem.Name) || f.Name!.Contains(SelectedRecentItem.Name, StringComparison.OrdinalIgnoreCase)))
-                {
-                    <MudItem xs="12" sm="6">
-                        <MudButton @onclick="async () => await HandleItemClick(fav.Id.ToString())"
-                                   Variant="Variant.Filled"
-                                   Color="Color.Inherit"
-                                   FullWidth="@true"
-                                   Class="text-transform-none p-2 overflow-hidden"
-                                   Style="height: auto; min-height: 80px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.12); display: flex; flex-direction: row; align-items: center; gap: 8px;">
-
-                            <!-- Image on the left -->
-                            <AvatarDisplay Pic="@fav.Pic" Name="@fav.Name" Size="48" />
-
-                            <!-- Text content on the right -->
-                            <div style="display:flex; flex-direction:column; justify-content:center; gap:2px; flex:1;">
-                                <!-- First row: name -->
-                                <MudText Style="font-size:14px; font-weight:600; line-height:1.2; color:black;">
-                                    @fav.Name
-                                </MudText>
-
-                                <!-- Second row: price / meta -->
-                                <div style="font-size:12px; display:flex; gap:4px; align-items:center; color:gray;">
-                                    <MudText Typo="Typo.caption" 
-                                             Style="font-weight:700;"
-                                             Color="@(GetRetailPriceDisplay(fav) > 0 ? (HasTaxRule?.Invoke(fav) == true ? Color.Error : Color.Success) : Color.Default)">
-                                        @GetRetailPriceDisplay(fav).ToString("#,##0.00")
-                                    </MudText>
-                                    <span style="opacity:0.4;">•</span>
-                                    <span>@fav.CategoryName</span>
-                                </div>
-                            </div>
-                        </MudButton>
-                    </MudItem>
-                }
-            </MudGrid>
-        </div>
-
+                                            <!-- Name (Second Row, Right Column) -->
+                                            <div class="tile-name-section">
+                                                <MudText Class="tile-item-name" Typo="Typo.body1" Style="font-size: 0.95rem; font-weight: 700; line-height: 1.4; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.3); text-align: left; width: 100%;">
+                                                    @recent.Name
+                                                </MudText>
+                                                @if (!string.IsNullOrWhiteSpace(recent.CategoryName))
+                                                {
+                                                    <div class="tile-category-badge" style="margin: 4px 0 0 0;">
+                                                        <MudText Typo="Typo.caption" Style="font-size: 0.65rem; font-weight: 600; color: rgba(255,255,255,0.9); text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
+                                                            @recent.CategoryName
+                                                        </MudText>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                <div class="tile-hover-overlay"></div>
+                            </MudPaper>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </div>
+        </MudPaper>
     </MudTabPanel>
 </MudTabs>
 
 @code {
+    [Inject] private NG.MicroERP.Shared.Helper.Globals Globals { get; set; } = null!;
+    
     [Parameter] public List<CategoriesModel> Categories { get; set; } = new();
     [Parameter] public List<ItemsModel> SelectedItems { get; set; } = new();
     [Parameter] public List<ItemsModel> FavItemsData { get; set; } = new();
@@ -227,34 +345,84 @@
     [Parameter] public Func<ItemsModel, int, Task<double>> GetRetailPrice { get; set; }
     [Parameter] public Func<ItemsModel, bool> HasTaxRule { get; set; }
 
-    // New property for category search
     private string _categorySearch = string.Empty;
+    private string _itemSearch = string.Empty;
+    private string _favoritesSearch = string.Empty;
+    private string _recentSearch = string.Empty;
 
-    // Computed property for filtered categories
     private IEnumerable<CategoriesModel> FilteredCategories
     {
         get
         {
-            // Create a synthetic "All Categories" item
             var allItem = new CategoriesModel
             {
-                Id = 0, // special Id to identify "All"
-                Name = "All Categories",
+                Id = 0,
+                Name = "All Items",
                 ItemCount = Categories.Sum(c => c.ItemCount)
             };
 
-            // Filtered real categories
             var filtered = string.IsNullOrWhiteSpace(_categorySearch)
                 ? Categories
                 : Categories.Where(c => c.Name != null && c.Name.Contains(_categorySearch, StringComparison.OrdinalIgnoreCase));
 
-            // Return "All Categories" first, then filtered list
             return new[] { allItem }.Concat(filtered);
         }
     }
 
+    private IEnumerable<ItemsModel> FilteredItems
+    {
+        get
+        {
+            if (SelectedItems == null || !SelectedItems.Any())
+                return Enumerable.Empty<ItemsModel>();
 
-    // Flag to track if component is initialized
+            if (string.IsNullOrWhiteSpace(_itemSearch))
+                return SelectedItems;
+
+            return SelectedItems.Where(f =>
+                (!string.IsNullOrWhiteSpace(f.Name) && f.Name.Contains(_itemSearch, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrWhiteSpace(f.Code) && f.Code.Contains(_itemSearch, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrWhiteSpace(f.CategoryName) && f.CategoryName.Contains(_itemSearch, StringComparison.OrdinalIgnoreCase))
+            );
+        }
+    }
+
+    private IEnumerable<ItemsModel> FilteredFavorites
+    {
+        get
+        {
+            if (FavItemsData == null || !FavItemsData.Any())
+                return Enumerable.Empty<ItemsModel>();
+
+            if (string.IsNullOrWhiteSpace(_favoritesSearch))
+                return FavItemsData;
+
+            return FavItemsData.Where(f =>
+                (!string.IsNullOrWhiteSpace(f.Name) && f.Name.Contains(_favoritesSearch, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrWhiteSpace(f.Code) && f.Code.Contains(_favoritesSearch, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrWhiteSpace(f.CategoryName) && f.CategoryName.Contains(_favoritesSearch, StringComparison.OrdinalIgnoreCase))
+            );
+        }
+    }
+
+    private IEnumerable<ItemsModel> FilteredRecent
+    {
+        get
+        {
+            if (RecentItemsData == null || !RecentItemsData.Any())
+                return Enumerable.Empty<ItemsModel>();
+
+            if (string.IsNullOrWhiteSpace(_recentSearch))
+                return RecentItemsData;
+
+            return RecentItemsData.Where(f =>
+                (!string.IsNullOrWhiteSpace(f.Name) && f.Name.Contains(_recentSearch, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrWhiteSpace(f.Code) && f.Code.Contains(_recentSearch, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrWhiteSpace(f.CategoryName) && f.CategoryName.Contains(_recentSearch, StringComparison.OrdinalIgnoreCase))
+            );
+        }
+    }
+
     private bool _isInitialized = false;
 
     protected override void OnInitialized()
@@ -295,95 +463,424 @@
     private double GetRetailPriceDisplay(ItemsModel item)
     {
         if (item == null) return 0;
-        
-        // Always use RetailPrice since it's initialized in LoadAllItemsData
-        // For purchase: RetailPrice = CostPrice
-        // For sale: RetailPrice = BasePrice - DefaultDiscount (tax added when party selected)
-        // Even if RetailPrice is 0 or negative, use it (it's the calculated value)
         return item.RetailPrice;
+    }
+
+    private string GetCategoryTileStyle(string tileGradient, bool isActive)
+    {
+        string borderStyle = isActive 
+            ? "3px solid rgba(255,255,255,0.8)" 
+            : "2px solid rgba(255,255,255,0.3)";
+        
+        return $"background: {tileGradient}; border-radius: 8px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; height: 80px; width: 150px; flex-shrink: 0; position: relative; overflow: hidden; border: {borderStyle};";
+    }
+
+    // Windows Tile Color Generation - Consistent colors based on item ID
+    private string GetTileColor(int itemId)
+    {
+        // Attractive Windows-style color palette
+        string[] colors = new[]
+        {
+            "#0078D4", // Blue
+            "#107C10", // Green
+            "#D13438", // Red
+            "#FF8C00", // Orange
+            "#8764B8", // Purple
+            "#00BCF2", // Cyan
+            "#FFB900", // Yellow
+            "#E81123", // Red Accent
+            "#00B294", // Teal
+            "#FF6B6B", // Coral
+            "#4ECDC4", // Turquoise
+            "#45B7D1", // Sky Blue
+            "#96CEB4", // Mint
+            "#FFEAA7", // Light Yellow
+            "#DDA15E", // Tan
+            "#6C5CE7", // Indigo
+            "#A29BFE", // Lavender
+            "#FD79A8", // Pink
+            "#00B894", // Emerald
+            "#0984E3", // Royal Blue
+            "#FDCB6E", // Gold
+            "#E17055", // Salmon
+            "#74B9FF", // Light Blue
+            "#55EFC4", // Aqua
+            "#A29BFE"  // Periwinkle
+        };
+        
+        return colors[Math.Abs(itemId) % colors.Length];
+    }
+
+    private string GetTileGradient(int itemId)
+    {
+        var baseColor = GetTileColor(itemId);
+        // Convert hex to RGB for gradient
+        var rgb = HexToRgb(baseColor);
+        var darkerRgb = DarkenRgb(rgb, 0.15);
+        
+        return $"linear-gradient(135deg, {baseColor} 0%, rgb({darkerRgb.r}, {darkerRgb.g}, {darkerRgb.b}) 100%)";
+    }
+
+    private (int r, int g, int b) HexToRgb(string hex)
+    {
+        hex = hex.TrimStart('#');
+        if (hex.Length == 6)
+        {
+            return (
+                Convert.ToInt32(hex.Substring(0, 2), 16),
+                Convert.ToInt32(hex.Substring(2, 2), 16),
+                Convert.ToInt32(hex.Substring(4, 2), 16)
+            );
+        }
+        return (0, 120, 212); // Default blue
+    }
+
+    private (int r, int g, int b) DarkenRgb((int r, int g, int b) rgb, double factor)
+    {
+        return (
+            Math.Max(0, (int)(rgb.r * (1 - factor))),
+            Math.Max(0, (int)(rgb.g * (1 - factor))),
+            Math.Max(0, (int)(rgb.b * (1 - factor)))
+        );
+    }
+
+    private string GetItemIcon(string stockType)
+    {
+        return stockType?.ToUpper() switch
+        {
+            "SERVICE" => "fas fa-concierge-bell",
+            "FIXED ASSET" => "fas fa-building",
+            _ => "fas fa-box"
+        };
     }
 }
 
-
 <style>
-    /* ===============================
-       LIST ROW (CONTAINER)
-    ================================ */
-    .item-list-row {
-        padding: 4px 6px; /* tighter */
-        border-radius: 8px;
-        border: 1px solid var(--mud-palette-divider);
-        cursor: pointer;
-        transition: background 0.1s ease;
+    /* Professional Tabs Styling */
+    .invoice-items-tabs-professional {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.99) 0%, rgba(255, 255, 255, 0.96) 100%);
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(63, 81, 181, 0.1);
     }
 
-        .item-list-row:hover {
-            background: var(--mud-palette-background-grey);
-        }
-
-    /* ===============================
-       ROW LAYOUT
-    ================================ */
-    .item-row {
-        display: grid;
-        grid-template-columns: 44px 1fr; /* smaller image column */
-        gap: 6px;
-        align-items: flex-start;
-    }
-
-    /* ===============================
-       IMAGE
-    ================================ */
-    .item-img {
-        display: flex;
-        justify-content: center;
-        padding-top: 1px;
-    }
-
-    /* ===============================
-       TEXT CONTAINER
-    ================================ */
-    .item-content {
+    /* Container Layout - Vertical Stack */
+    .invoice-items-container-professional {
+        gap: 16px;
         display: flex;
         flex-direction: column;
-        gap: 2px; /* tighter vertical spacing */
     }
 
-    /* ===============================
-       NAME (SMALL, FULLY VISIBLE)
-    ================================ */
-    .item-name {
-        font-size: 14px; /* ✅ was too big/small before */
-        font-weight: 600;
-        line-height: 1.25;
-        color: var(--mud-palette-text-primary);
+    /* Categories Panel */
+    .invoice-categories-panel-professional {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .invoice-categories-panel-professional:hover {
+        box-shadow: 0 6px 16px rgba(63, 81, 181, 0.15);
+    }
+
+    .category-item-professional {
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .category-item-professional:hover {
+        background: linear-gradient(135deg, rgba(63, 81, 181, 0.15) 0%, rgba(63, 81, 181, 0.08) 100%) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(63, 81, 181, 0.2);
+    }
+
+    /* Category Active State */
+    .category-active {
+        box-shadow: 0 6px 20px rgba(63, 81, 181, 0.25) !important;
+    }
+
+    /* Horizontal scrollbar for categories */
+    .invoice-categories-panel-professional::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .invoice-categories-panel-professional::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
+    }
+
+    .invoice-categories-panel-professional::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, rgba(63, 81, 181, 0.4) 0%, rgba(63, 81, 181, 0.2) 100%);
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+
+    .invoice-categories-panel-professional::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, rgba(63, 81, 181, 0.6) 0%, rgba(63, 81, 181, 0.4) 100%);
+    }
+
+    /* Items Panel */
+    .invoice-items-panel-professional {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .invoice-items-panel-professional:hover {
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Windows Tile Style */
+    .item-tile-windows,
+    .category-tile-windows {
+        position: relative;
+        padding: 0 !important;
+        margin-bottom: 12px;
+        overflow: hidden;
+    }
+
+    .item-tile-windows:hover,
+    .category-tile-windows:hover {
+        transform: translateY(-6px) scale(1.03);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25) !important;
+        z-index: 10;
+    }
+
+    .tile-content-wrapper {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-rows: 1fr 1fr;
+        height: 100%;
+        padding: 12px;
+        position: relative;
+        z-index: 2;
+        gap: 12px;
+    }
+
+    /* Category-specific tile styling - smaller sizes */
+    .category-tile-windows .tile-content-wrapper {
+        padding: 10px;
+        gap: 10px;
+    }
+
+    .category-tile-windows .tile-icon-background {
+        width: 50px;
+        min-height: 50px;
+        height: 50px;
+    }
+
+    .category-tile-windows .tile-left-section {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .item-tile-windows {
+        margin-bottom: 16px;
+    }
+
+    .tile-icon-column {
+        grid-column: 1;
+        grid-row: 1 / 3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .tile-icon-background {
+        width: 80px;
+        height: 100%;
+        min-height: 120px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(10px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: inset 0 2px 8px rgba(255, 255, 255, 0.4), 0 6px 16px rgba(0, 0, 0, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .item-tile-windows:hover .tile-icon-background,
+    .category-tile-windows:hover .tile-icon-background {
+        background: rgba(255, 255, 255, 0.4);
+        box-shadow: inset 0 2px 8px rgba(255, 255, 255, 0.5), 0 8px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .tile-content-column {
+        grid-column: 2;
+        grid-row: 1 / 3;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-width: 0;
+    }
+
+    .tile-price-section {
+        grid-column: 2;
+        grid-row: 1;
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-end;
+        width: 100%;
+    }
+
+    .tile-name-section {
+        grid-column: 2;
+        grid-row: 2;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        align-items: flex-start;
+        min-width: 0;
+        gap: 6px;
+        width: 100%;
+    }
+
+    .tile-item-name {
         white-space: normal;
         word-break: break-word;
+        overflow-wrap: break-word;
+        line-height: 1.4;
+        display: block;
+        width: 100%;
+        overflow: visible;
+        text-align: left;
     }
 
-    /* ===============================
-       META ROW
-    ================================ */
-    .item-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-        font-size: 12px; /* ✅ readable, compact */
-        color: var(--mud-palette-text-secondary);
+    .tile-category-badge {
+        background: rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(8px);
+        padding: 4px 10px;
+        border-radius: 6px;
+        display: inline-block;
+        max-width: fit-content;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
     }
 
-    /* ===============================
-       PRICE
-    ================================ */
-    .item-price {
-        font-size: 12px; /* match second row */
-        font-weight: 700;
+    .item-tile-windows:hover .tile-category-badge,
+    .category-tile-windows:hover .tile-category-badge {
+        background: rgba(255, 255, 255, 0.35);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .tile-hover-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0);
+        transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    .item-tile-windows:hover .tile-hover-overlay,
+    .category-tile-windows:hover .tile-hover-overlay {
+        background: rgba(255, 255, 255, 0.12);
+    }
+
+    /* Scrollbar Styling */
+    .invoice-categories-panel-professional::-webkit-scrollbar,
+    .invoice-items-panel-professional::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    .invoice-categories-panel-professional::-webkit-scrollbar-track,
+    .invoice-items-panel-professional::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
+    }
+
+    .invoice-categories-panel-professional::-webkit-scrollbar-thumb,
+    .invoice-items-panel-professional::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, rgba(63, 81, 181, 0.4) 0%, rgba(63, 81, 181, 0.2) 100%);
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+
+    .invoice-categories-panel-professional::-webkit-scrollbar-thumb:hover,
+    .invoice-items-panel-professional::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, rgba(63, 81, 181, 0.6) 0%, rgba(63, 81, 181, 0.4) 100%);
+    }
+
+    /* Dark Mode Support */
+    .mud-theme-dark .invoice-items-tabs-professional {
+        background: linear-gradient(135deg, rgba(30, 30, 30, 0.99) 0%, rgba(30, 30, 30, 0.96) 100%);
+        border-color: rgba(63, 81, 181, 0.2);
+    }
+
+    .mud-theme-dark .invoice-categories-panel-professional {
+        background: linear-gradient(135deg, rgba(63, 81, 181, 0.12) 0%, rgba(63, 81, 181, 0.06) 100%);
+        border-color: rgba(63, 81, 181, 0.25);
+    }
+
+    .mud-theme-dark .invoice-items-panel-professional {
+        background: linear-gradient(135deg, rgba(40, 40, 40, 0.98) 0%, rgba(40, 40, 40, 0.95) 100%);
+        border-color: rgba(63, 81, 181, 0.25);
+    }
+
+    .mud-theme-dark .tile-icon-background {
+        background: rgba(255, 255, 255, 0.15) !important;
+        border-color: rgba(255, 255, 255, 0.25) !important;
+    }
+
+    .mud-theme-dark .item-tile-windows:hover .tile-icon-background,
+    .mud-theme-dark .category-tile-windows:hover .tile-icon-background {
+        background: rgba(255, 255, 255, 0.2) !important;
+        border-color: rgba(255, 255, 255, 0.3) !important;
+    }
+
+    /* Prevent Overflow */
+    .invoice-items-container-professional {
+        width: 100% !important;
+        max-width: 100%;
+    }
+
+    .invoice-items-panel-professional {
+        overflow-x: hidden !important;
+    }
+
+    .invoice-items-panel-professional .mud-grid {
+        width: 100% !important;
+        max-width: 100%;
+    }
+
+    .invoice-items-panel-professional .mud-grid-item {
+        max-width: 100% !important;
+        overflow: hidden;
+    }
+
+    /* Categories horizontal scroll styling */
+    .invoice-categories-panel-professional > div:last-child {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(63, 81, 181, 0.4) rgba(0, 0, 0, 0.04);
+    }
+
+    /* Enhanced visual polish */
+    .invoice-items-tabs-professional .mud-tabs-header {
+        border-bottom: 2px solid rgba(63, 81, 181, 0.1);
+    }
+
+    .invoice-items-tabs-professional .mud-tab {
+        transition: all 0.2s ease;
+    }
+
+    .invoice-items-tabs-professional .mud-tab:hover {
+        background: rgba(63, 81, 181, 0.05);
+    }
+
+    .invoice-items-tabs-professional .mud-tab-active {
         color: var(--mud-palette-primary);
+        border-bottom: 3px solid var(--mud-palette-primary);
     }
 
-    /* Separator */
-    .item-dot {
-        opacity: 0.4;
+    /* MudChip styling for counts */
+    .mud-chip-variant-text {
+        transition: all 0.2s ease;
     }
 
+    .mud-chip-variant-text:hover {
+        background: rgba(63, 81, 181, 0.08);
+    }
 </style>

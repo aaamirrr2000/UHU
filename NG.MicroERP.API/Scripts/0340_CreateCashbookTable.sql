@@ -1,4 +1,4 @@
-﻿CREATE TABLE Cashbook
+CREATE TABLE Cashbook
 (
     Id                  INT              PRIMARY KEY IDENTITY(1,1),
     OrganizationId      INT             NOT NULL,
@@ -15,17 +15,26 @@
     RefNo               VARCHAR(50),
     TranRef             VARCHAR(50),
 	CreatedBy           INT             NULL DEFAULT NULL,
+    BaseCurrencyId      INT             NULL,
+    EnteredCurrencyId   INT             NULL,
+    ExchangeRate        DECIMAL(18, 6)  NULL DEFAULT 1.000000,
+    IsPostedToGL        SMALLINT DEFAULT 0,
+    PostedToGLDate      DATETIME NULL,
+    PostedToGLBy        INT NULL,
+    GLEntryNo           VARCHAR(50) NULL,
 	CreatedOn           DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	CreatedFrom         VARCHAR(255)    NULL DEFAULT NULL,
 	UpdatedBy           INT             NULL DEFAULT NULL,
 	UpdatedOn           DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	UpdatedFrom         VARCHAR(255)    NULL DEFAULT NULL,
     IsSoftDeleted       SMALLINT         NOT NULL DEFAULT 0,
-
     FOREIGN KEY (LocationId)   REFERENCES Locations(Id),
     FOREIGN KEY (CreatedBy)    REFERENCES Users(Id),
     FOREIGN KEY (UpdatedBy)    REFERENCES Users(Id),
     FOREIGN KEY (PartyId)      REFERENCES Parties(Id),
     FOREIGN KEY (AccountId)    REFERENCES ChartOfAccounts(Id),
-    FOREIGN KEY (OrganizationId)   REFERENCES Organizations(Id)
+    FOREIGN KEY (OrganizationId)   REFERENCES Organizations(Id),
+    FOREIGN KEY (BaseCurrencyId)   REFERENCES Currencies(Id),
+    FOREIGN KEY (EnteredCurrencyId) REFERENCES Currencies(Id),
+    FOREIGN KEY (PostedToGLBy) REFERENCES dbo.Users(Id)
 );

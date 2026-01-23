@@ -249,7 +249,11 @@
             isLoading = true;
             StateHasChanged();
 
-            string criteria = $"EntryDate >= '{startDate:yyyy-MM-dd}' AND EntryDate <= '{endDate:yyyy-MM-dd}'";
+            // Use CAST for explicit date type conversion
+            string formattedStartDate = startDate.ToString("yyyy-MM-dd");
+            // Add 1 day to end date to include the entire end date in the range
+            string formattedEndDateNextDay = endDate.Date.AddDays(1).ToString("yyyy-MM-dd");
+            string criteria = $"EntryDate >= CAST('{formattedStartDate}' AS DATE) AND EntryDate < CAST('{formattedEndDateNextDay}' AS DATE)";
 
             if (Globals.User.GroupId != 1)
             {

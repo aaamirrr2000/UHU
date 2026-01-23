@@ -1,4 +1,4 @@
-﻿CREATE TABLE Invoice
+CREATE TABLE Invoice
 (
     Id                      INT              PRIMARY KEY IDENTITY(1,1),
     Guid                    UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
@@ -19,6 +19,10 @@
     Status                  VARCHAR(50)      NULL,
     ClientComments          VARCHAR(255)     NULL DEFAULT NULL,
     Rating                  INT              NULL,
+    IsPostedToGL            SMALLINT DEFAULT 0,
+    PostedToGLDate          DATETIME NULL,
+    PostedToGLBy            INT NULL,
+    GLEntryNo               VARCHAR(50) NULL,
 	CreatedBy               INT              NULL DEFAULT NULL,
 	CreatedOn               DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	CreatedFrom             VARCHAR(255)     NULL DEFAULT NULL,
@@ -26,6 +30,9 @@
 	UpdatedOn               DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	UpdatedFrom             VARCHAR(255)     NULL DEFAULT NULL,
     IsSoftDeleted           SMALLINT         NOT NULL DEFAULT 0,
+    BaseCurrencyId          INT              NULL,
+    EnteredCurrencyId        INT              NULL,
+    ExchangeRate             DECIMAL(18, 6)   NULL DEFAULT 1.000000,
     RowVersion              ROWVERSION,
     FOREIGN KEY (SalesId)           REFERENCES Employees(Id),
     FOREIGN KEY (LocationId)        REFERENCES Locations(Id),
@@ -33,14 +40,20 @@
     FOREIGN KEY (UpdatedBy)         REFERENCES Users(Id),
     FOREIGN KEY (PartyId)           REFERENCES Parties(Id),
     FOREIGN KEY (OrganizationId)    REFERENCES Organizations(Id),
-    FOREIGN KEY (AccountId) REFERENCES dbo.ChartOfAccounts(Id)
+    FOREIGN KEY (AccountId) REFERENCES dbo.ChartOfAccounts(Id),
+    FOREIGN KEY (BaseCurrencyId)   REFERENCES Currencies(Id),
+    FOREIGN KEY (EnteredCurrencyId) REFERENCES Currencies(Id),
+    FOREIGN KEY (PostedToGLBy) REFERENCES dbo.Users(Id)
 );
+
 
 CREATE TABLE InvoiceDetail
 (
     Id                  INT              PRIMARY KEY IDENTITY(1,1),
-    ItemId              INT              NOT NULL,
+    ItemId              INT              NULL,            
     StockCondition      VARCHAR(20)      NULL DEFAULT NULL,
+    ManualItem          VARCHAR(255)     NULL DEFAULT NULL, 
+    AccountId           INT              NULL,
     ServingSize         VARCHAR(50)      NULL DEFAULT NULL,
     Qty                 DECIMAL(16, 4)   NULL DEFAULT 0,
     UnitPrice           DECIMAL(16, 4)   NULL DEFAULT 0,
@@ -52,7 +65,8 @@ CREATE TABLE InvoiceDetail
     TranDate            DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
     IsSoftDeleted       SMALLINT         NOT NULL DEFAULT 0,
     FOREIGN KEY (InvoiceId)        REFERENCES Invoice(Id),
-    FOREIGN KEY (ItemId)        REFERENCES Items(Id)
+    FOREIGN KEY (ItemId)        REFERENCES Items(Id),
+    FOREIGN KEY (AccountId) REFERENCES dbo.ChartOfAccounts(Id),
 );
 
 CREATE TABLE InvoiceDetailTax

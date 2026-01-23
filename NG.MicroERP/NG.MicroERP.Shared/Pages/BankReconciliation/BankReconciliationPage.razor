@@ -45,7 +45,7 @@
                     }
                     else
                     {
-                        <AutoComplete TItem="ChartOfAccountsModel" DataList="@BankAccounts" DisplayProperty="@(b => b.DisplayName)" IdProperty="@(b => b.Id)" @bind-SelectedId="record.BankAccountId" @bind-SelectedId:after="OnBankAccountChanged" Variant="Variant.Outlined" Label="" FullWidth="@true" />
+                        <AutoComplete TItem="ChartOfAccountsModel" DataList="@BankAccounts" DisplayProperty="@(b => b.DisplayName)" IdProperty="@(b => b.Id)" @bind-SelectedId="record.BankAccountId" @bind-SelectedId:after="OnBankAccountChanged" Variant="Variant.Outlined" Label="Bank Account" FullWidth="@true" />
                     }
                 </div>
                 <div class="col-12 col-md-3">

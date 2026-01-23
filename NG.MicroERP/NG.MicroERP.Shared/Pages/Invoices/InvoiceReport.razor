@@ -1,4 +1,4 @@
-﻿@page "/InvoiceReport/{id:int}"
+@page "/InvoiceReport/{id:int}"
 @page "/InvoiceReport/{ServingSize:int}/{id:int}"
 @using System.Linq
 @using System.Collections.ObjectModel
@@ -69,6 +69,10 @@ else if (ReportData?.Invoice != null)
                 <p><strong>Email:</strong> @ReportData.Invoice.PartyEmail</p>
             </div>
             <p><strong>Address:</strong> @ReportData.Invoice.PartyAddress</p>
+            @if (!string.IsNullOrWhiteSpace(ReportData.Invoice.Description))
+            {
+                <p><strong>Description:</strong> @ReportData.Invoice.Description</p>
+            }
         </div>
 
         <!-- Items Table - Full Width -->
@@ -79,7 +83,7 @@ else if (ReportData?.Invoice != null)
                         <tr>
                             <th class="text-left">Sr.</th>
                             <th class="text-left">Item</th>
-                            <th class="text-left">Feature</th>
+                            <th class="text-left">Description</th>
                             <th>Quantity</th>
                             <th>Unit Price</th>
                             <th>Discount</th>
@@ -108,10 +112,42 @@ else if (ReportData?.Invoice != null)
                             // ItemTotalAmount = (Qty * UnitPrice) + TaxAmount - DiscountAmount (same as InvoicePage)
                             var calculatedItemTotal = (item.Qty * item.UnitPrice) + itemTaxAmount - itemDiscount;
                             
+                            // Determine item name: if ItemId is not null (catalog item), show ItemName, otherwise show ManualItem
+                            // If both are empty, use Description as fallback
+                            string displayItemName = item.ItemId > 0 
+                                ? (!string.IsNullOrWhiteSpace(item.ItemName) ? item.ItemName : string.Empty)
+                                : (!string.IsNullOrWhiteSpace(item.ManualItem) ? item.ManualItem 
+                                    : (!string.IsNullOrWhiteSpace(item.Description) ? item.Description : "Manual Item"));
+                            
+                            // Determine description: use Description field
+                            string displayDescription = !string.IsNullOrWhiteSpace(item.Description) 
+                                ? item.Description 
+                                : "-";
+                            
+                            // Feature (ServingSize) to show under item name
+                            string displayFeature = item.ItemId > 0 && !string.IsNullOrWhiteSpace(item.ServingSize) 
+                                ? item.ServingSize 
+                                : string.Empty;
                             <tr class="table-row-hover">
                                 <td class="text-left">@serial</td>
-                                <td class="text-left">@item.ItemName.ToUpper() @item.StockCondition.ToUpper()</td>
-                                <td class="text-left">@item.ServingSize</td>
+                                <td class="text-left">
+                                    <div style="font-weight: 700; margin-bottom: 4px;">@displayItemName.ToUpper()</div>
+                                    <div style="display: flex; flex-direction: column; gap: 3px;">
+                                        @if (!string.IsNullOrWhiteSpace(displayFeature))
+                                        {
+                                            <div style="font-size: 0.75em; color: #888; font-style: italic;">
+                                                <span style="font-weight: 600;">Features:</span> @displayFeature
+                                            </div>
+                                        }
+                                        @if (item.ItemId > 0 && !string.IsNullOrWhiteSpace(item.StockCondition))
+                                        {
+                                            <div style="font-size: 0.75em; color: #888; font-style: italic;">
+                                                <span style="font-weight: 600;">Condition:</span> @item.StockCondition.ToUpper()
+                                            </div>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="text-left">@displayDescription</td>
                                 <td class="text-right">@item.Qty.ToString("N2")</td>
                                 <td class="text-right">@item.UnitPrice.ToString("N2")</td>
                                 <td class="text-right">@itemDiscount.ToString("N2")</td>
@@ -228,10 +264,13 @@ else if (ReportData?.Invoice != null)
                     }
                     <table class="table table-bordered" style="width: 100%;">
                         <tbody>
-                            <tr>
-                                <td class="text-left font-weight-bold" style="width: 60%;">Sub Total:</td>
-                                <td class="text-end font-weight-bold">@calculatedSubTotal.ToString("N2")</td>
-                            </tr>
+                            @if (!isPurchaseInvoice && (ReportData.Invoice.TotalChargeAmount > 0 || ReportData.Invoice.DiscountAmount > 0))
+                            {
+                                <tr>
+                                    <td class="text-left font-weight-bold" style="width: 60%;">Sub Total:</td>
+                                    <td class="text-end font-weight-bold">@calculatedSubTotal.ToString("N2")</td>
+                                </tr>
+                            }
                             @if (!isPurchaseInvoice && ReportData.Invoice.TotalChargeAmount > 0)
                             {
                                 <tr>
@@ -247,7 +286,7 @@ else if (ReportData?.Invoice != null)
                                 </tr>
                             }
                             <tr style="background-color: #e3f2fd;">
-                                <td class="text-left font-weight-bold">Total Invoice Amount:</td>
+                                <td class="text-left font-weight-bold">Sub Total:</td>
                                 <td class="text-end font-weight-bold">@calculatedTotal.ToString("N2")</td>
                             </tr>
                             @if (ReportData.Invoice.TotalPaidAmount > 0)

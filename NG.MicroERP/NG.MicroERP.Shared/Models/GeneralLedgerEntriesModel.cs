@@ -47,6 +47,10 @@ public class GeneralLedgerHeaderModel
     // Detail collection
     public ObservableCollection<GeneralLedgerDetailModel> Details { get; set; } = new ObservableCollection<GeneralLedgerDetailModel>();
 
+    // Warnings for missing accounts or configuration issues
+    public List<string> Warnings { get; set; } = new List<string>();
+    public bool HasWarnings => Warnings != null && Warnings.Any();
+
     public string? DisplayName =>
         string.Format("{0} - {1} ({2})", EntryNo, Description, EntryDate?.ToString("yyyy-MM-dd") ?? "");
 

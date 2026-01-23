@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -28,8 +28,9 @@ public class CashBookService : ICashBookService
 
     public async Task<(bool, List<CashBookModel>)>? Search(string Criteria = "")
     {
-        string SQL = $@"SELECT 'CASH BOOK' as Source, a.*, b.Name as LocationName FROM Cashbook as a
+        string SQL = $@"SELECT 'CASH BOOK' as Source, a.*, b.Name as LocationName, coa.Name as AccountName FROM Cashbook as a
                         LEFT JOIN Locations as b on b.id=a.LocationId
+                        LEFT JOIN ChartOfAccounts as coa on coa.Id=a.AccountId
                         Where a.IsSoftDeleted=0";
 
         if (!string.IsNullOrWhiteSpace(Criteria))
@@ -79,6 +80,12 @@ public class CashBookService : ICashBookService
 
             string Code = dapper.GetCode("CBP", "Cashbook", "SeqNo")!;
             string SQLDuplicate = $@"SELECT * FROM Cashbook WHERE UPPER(SeqNo) = '{obj.SeqNo!.ToUpper()}';";
+            
+            // Get currency fields with defaults
+            int baseCurrencyId = obj.BaseCurrencyId > 0 ? obj.BaseCurrencyId : 0;
+            int enteredCurrencyId = obj.EnteredCurrencyId > 0 ? obj.EnteredCurrencyId : 0;
+            double exchangeRate = obj.ExchangeRate > 0 ? obj.ExchangeRate : 1.0;
+            
             string SQLInsert = $@"INSERT INTO Cashbook 
 			(
 				OrganizationId, 
@@ -94,6 +101,9 @@ public class CashBookService : ICashBookService
 				PaymentMethod, 
 				RefNo, 
 				TranRef, 
+				BaseCurrencyId,
+				EnteredCurrencyId,
+				ExchangeRate,
 				CreatedBy, 
 				CreatedOn, 
 				CreatedFrom, 
@@ -114,6 +124,9 @@ public class CashBookService : ICashBookService
 				'{obj.PaymentMethod!.ToUpper()}', 
 				'{obj.RefNo!.ToUpper()}', 
 				'{obj.TranRef!.ToUpper()}', 
+				{(baseCurrencyId > 0 ? baseCurrencyId.ToString() : "NULL")},
+				{(enteredCurrencyId > 0 ? enteredCurrencyId.ToString() : "NULL")},
+				{exchangeRate.ToString(System.Globalization.CultureInfo.InvariantCulture)},
 				{obj.CreatedBy},
 				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
 				'{obj.CreatedFrom!.ToUpper()}', 
@@ -161,6 +174,12 @@ public class CashBookService : ICashBookService
             }
 
             string SQLDuplicate = $@"SELECT * FROM Cashbook WHERE UPPER(SeqNo) = '{obj.SeqNo!.ToUpper()}' and ID != {obj.Id};";
+            
+            // Get currency fields with defaults
+            int baseCurrencyId = obj.BaseCurrencyId > 0 ? obj.BaseCurrencyId : 0;
+            int enteredCurrencyId = obj.EnteredCurrencyId > 0 ? obj.EnteredCurrencyId : 0;
+            double exchangeRate = obj.ExchangeRate > 0 ? obj.ExchangeRate : 1.0;
+            
             string SQLUpdate = $@"UPDATE Cashbook SET 
 					OrganizationId = {obj.OrganizationId}, 
 					SeqNo = '{obj.SeqNo!.ToUpper()}', 
@@ -175,6 +194,9 @@ public class CashBookService : ICashBookService
 					PaymentMethod = '{obj.PaymentMethod!.ToUpper()}', 
 					RefNo = '{obj.RefNo!.ToUpper()}', 
 					TranRef = '{obj.TranRef!.ToUpper()}',  
+					BaseCurrencyId = {(baseCurrencyId > 0 ? baseCurrencyId.ToString() : "NULL")},
+					EnteredCurrencyId = {(enteredCurrencyId > 0 ? enteredCurrencyId.ToString() : "NULL")},
+					ExchangeRate = {exchangeRate.ToString(System.Globalization.CultureInfo.InvariantCulture)},
 					UpdatedBy = {obj.UpdatedBy}, 
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 

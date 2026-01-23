@@ -1,9 +1,12 @@
 using DinkToPdf;
 using DinkToPdf.Contracts;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NG.MicroERP.API.Helper;
+using NG.MicroERP.API.HealthChecks;
+using NG.MicroERP.API.Middleware;
 using NG.MicroERP.API.Services;
 using NG.MicroERP.API.Services.Services;
 using Serilog;
@@ -12,13 +15,16 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Logging
+// Configure Serilog for logging
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
     .Enrich.FromLogContext()
-    .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
+    .Enrich.WithProperty("Application", "NG.MicroERP.API")
+    .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 30)
     .CreateLogger();
+
+builder.Host.UseSerilog();
 
 // Services
 builder.Services.AddControllers();
@@ -49,10 +55,15 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// JWT Authentication
-string? key = builder.Configuration["Jwt:Key"];
-string? issuer = builder.Configuration["Jwt:Issuer"];
-string? audience = builder.Configuration["Jwt:Audience"];
+// JWT Authentication - Get credentials from environment variables for security
+string? key = builder.Configuration["Jwt:Key"] ?? Environment.GetEnvironmentVariable("JWT_KEY");
+string? issuer = builder.Configuration["Jwt:Issuer"] ?? Environment.GetEnvironmentVariable("JWT_ISSUER");
+string? audience = builder.Configuration["Jwt:Audience"] ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE");
+
+if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(issuer) || string.IsNullOrEmpty(audience))
+{
+    Log.Warning("JWT credentials not configured. Please set environment variables: JWT_KEY, JWT_ISSUER, JWT_AUDIENCE");
+}
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -66,8 +77,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = issuer,
             ValidAudience = audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key ?? string.Empty)),
-            // Map the Name claim to User.Identity.Name
-            NameClaimType = System.Security.Claims.ClaimTypes.Name
+            NameClaimType = System.Security.Claims.ClaimTypes.Name,
+            ClockSkew = TimeSpan.FromSeconds(5)
         };
         
         // Add event handlers for debugging authentication failures
@@ -75,7 +86,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             OnAuthenticationFailed = context =>
             {
-                Serilog.Log.Warning($"JWT Authentication failed: {context.Exception.Message}");
+                Log.Warning("JWT Authentication failed: {Message}", context.Exception.Message);
                 return Task.CompletedTask;
             },
             OnTokenValidated = context =>
@@ -84,14 +95,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                               context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ??
                               context.Principal?.FindFirst("sub")?.Value ?? 
                               "Unknown";
-                Serilog.Log.Debug($"JWT Token validated successfully for user: {username}");
+                Log.Debug("JWT Token validated for user: {Username}", username);
                 return Task.CompletedTask;
             },
             OnChallenge = context =>
             {
                 var requestPath = context.Request.Path;
                 var hasAuthHeader = context.Request.Headers.ContainsKey("Authorization");
-                Serilog.Log.Warning($"JWT Challenge triggered - Path: {requestPath}, HasAuthHeader: {hasAuthHeader}, Error: {context.Error ?? "None"}, ErrorDescription: {context.ErrorDescription ?? "None"}");
+                Log.Warning("JWT Challenge - Path: {Path}, HasAuth: {HasAuth}, Error: {Error}", 
+                    requestPath, hasAuthHeader, context.Error);
                 return Task.CompletedTask;
             }
         };
@@ -100,8 +112,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 builder.Services.AddSingleton<JWT>();
 
+// Configure CORS with restricted origins instead of AllowAll
 builder.Services.AddCors(options =>
 {
+    var allowedOrigins = builder.Configuration["AllowedOrigins"]?.Split(',') ?? 
+                         Environment.GetEnvironmentVariable("ALLOWED_ORIGINS")?.Split(',') ?? 
+                         new[] { "http://localhost:5000", "https://localhost:5001" };
+
+    options.AddPolicy("AllowSpecificOrigins", policy =>
+    {
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+
     options.AddPolicy("AllowAll", policy =>
     {
         policy.AllowAnyOrigin()
@@ -110,25 +135,49 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Add security policies
+builder.Services.AddSecurityPolicies();
+
+// Add health checks
+builder.Services.AddHealthChecks()
+    .AddCheck<ApiHealthCheck>("api_health");
+
 builder.Services.AddSingleton<DatabaseMigrator>();
 builder.Services.AddScoped<IControlCenterService, ControlCenterService>();
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
 
+// Add response compression
+builder.Services.AddResponseCompression(options =>
+{
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/json" });
+});
+
 var app = builder.Build();
 
 // Middleware
+app.UseResponseCompression();
+app.UseSecurityMiddleware();
+
 app.UseRouting();
-app.UseCors("AllowAll");
+
+// Use appropriate CORS policy based on environment
+var corsPolicy = app.Environment.IsDevelopment() ? "AllowAll" : "AllowSpecificOrigins";
+app.UseCors(corsPolicy);
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseStaticFiles();
 app.UseHttpsRedirection();
 
+// Add health check endpoint
+app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/ready");
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "NG.MicroERP API v1");
-    c.RoutePrefix = "swagger"; // access via /swagger
+    c.RoutePrefix = "swagger";
 });
 
 app.MapControllers();
@@ -136,8 +185,16 @@ app.MapControllers();
 // Database Migration
 using (var scope = app.Services.CreateScope())
 {
-    var migrator = scope.ServiceProvider.GetRequiredService<DatabaseMigrator>();
-    migrator.Migrate();
+    try
+    {
+        var migrator = scope.ServiceProvider.GetRequiredService<DatabaseMigrator>();
+        migrator.Migrate();
+        Log.Information("Database migration completed successfully");
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "Database migration failed");
+    }
 }
 
 app.Run();

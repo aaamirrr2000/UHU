@@ -1,5 +1,5 @@
 ﻿using Dapper;
-using MySql.Data.MySqlClient;
+using Microsoft.Data.SqlClient;
 using NG.MicroERP.API.Helper;
 using NG.MicroERP.Shared.Models;
 using System.Data;
@@ -49,7 +49,7 @@ public class DailyAttendanceService : IDailyAttendanceService
 
         string DBConnection = cfg.DefaultDB();
 
-        using IDbConnection connection = new MySqlConnection(DBConnection);
+        using IDbConnection connection = new SqlConnection(DBConnection);
 
         var result = await connection.QueryAsync<DailyAttendanceModel>(
             "GetAttendanceReport",

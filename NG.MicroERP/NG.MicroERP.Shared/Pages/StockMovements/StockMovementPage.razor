@@ -68,7 +68,7 @@
                     }
                     else
                     {
-                        <AutoComplete TItem="LocationsModel" DataList="@Locations" DisplayProperty="@(p => p.Name)" IdProperty="@(p => p.Id)" @bind-SelectedId="record.FromLocationId" Variant="Variant.Outlined" Label="" FullWidth="@true" />
+                        <AutoComplete TItem="LocationsModel" DataList="@Locations" DisplayProperty="@(p => p.Name)" IdProperty="@(p => p.Id)" @bind-SelectedId="record.FromLocationId" Variant="Variant.Outlined" Label="From Location" FullWidth="@true" />
                     }
                 </div>
                 <div class="col-12 col-md-3">
@@ -79,7 +79,7 @@
                     }
                     else
                     {
-                        <AutoComplete TItem="LocationsModel" DataList="@Locations" DisplayProperty="@(p => p.Name)" IdProperty="@(p => p.Id)" @bind-SelectedId="record.ToLocationId" Variant="Variant.Outlined" Label="" FullWidth="@true" />
+                        <AutoComplete TItem="LocationsModel" DataList="@Locations" DisplayProperty="@(p => p.Name)" IdProperty="@(p => p.Id)" @bind-SelectedId="record.ToLocationId" Variant="Variant.Outlined" Label="To Location" FullWidth="@true" />
                     }
                 </div>
                 <div class="col-12 col-md-3">
@@ -149,7 +149,7 @@
                             }
                             else
                             {
-                                <AutoComplete TItem="ItemsModel" DataList="@Items" DisplayProperty="@(p => p.DisplayName)" IdProperty="@(p => p.Id)" @bind-SelectedId="detail.ItemId" Variant="Variant.Outlined" Label="" FullWidth="@true" />
+                                <AutoComplete TItem="ItemsModel" DataList="@Items" DisplayProperty="@(p => p.DisplayName)" IdProperty="@(p => p.Id)" @bind-SelectedId="detail.ItemId" Variant="Variant.Outlined" Label="Item" FullWidth="@true" />
                             }
                         </MudTd>
                         <MudTd>

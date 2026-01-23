@@ -13,7 +13,7 @@
     <div class="dashboard-header">
         <div class="d-flex align-items-center justify-content-between flex-wrap">
             <div>
-                <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
                     <MudIcon Icon="@Icons.Material.Filled.AccountTree" Class="me-2" Style="color: white;" />
                     Chart of Accounts
                 </MudText>
@@ -55,7 +55,7 @@
             <ChildContent>
                 <EditForm Model="record" OnSubmit="Save">
                     <MudForm>
-                        <ChartOfAccountsPage Action="@Action" CurrentRecord="record.Id" />
+                        <ChartOfAccountsPage Action="@Action" CurrentRecord="record.Id" OnSaved="ChildSaved" />
                     </MudForm>
                 </EditForm>
             </ChildContent>
@@ -464,13 +464,23 @@
 
     private List<TreeItemData<ChartOfAccountsModel>> BuildTree(List<ChartOfAccountsModel> flatList, int parentId = 0)
     {
-        return flatList
-            .Where(x => x.ParentId == parentId)
+        // Get all valid parent IDs that exist in the list
+        var validParentIds = flatList.Select(x => x.Id).ToHashSet();
+        
+        // For root level (parentId = 0), include:
+        // 1. Accounts with ParentId = 0 (true root accounts)
+        // 2. Orphaned accounts (ParentId != 0 but parent doesn't exist in the list)
+        var rootItems = flatList
+            .Where(x => parentId == 0 
+                ? (x.ParentId == 0 || (x.ParentId != 0 && !validParentIds.Contains(x.ParentId)))
+                : x.ParentId == parentId)
             .Select(x => new TreeItemData<ChartOfAccountsModel>
             {
                 Value = x,
                 Children = BuildTree(flatList, x.Id)
             }).ToList();
+        
+        return rootItems;
     }
 
     private async Task ExpandAllNodes()
@@ -577,6 +587,12 @@
 
     }
 
+    private async Task ChildSaved()
+    {
+        await GetAll();
+        await _drawer.CloseDrawerAsync();
+        StateHasChanged();
+    }
 
 }
 

@@ -1,0 +1,491 @@
+@page "/PettyCashSummary"
+
+@inject Functions Functions
+@inject Globals Globals
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject IJSRuntime JSRuntime
+
+<Loading IsLoading="@isLoading" />
+
+<div class="container-fluid p-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-1">Petty Cash Summary</h3>
+            <p class="text-muted mb-0">@startDate.ToString("dd MMM yyyy") to @endDate.ToString("dd MMM yyyy")</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary btn-sm" @onclick="LoadReport">
+                <i class="fas fa-sync me-1"></i> Refresh
+            </button>
+            <button class="btn btn-success btn-sm" @onclick="PrintReport">
+                <i class="fas fa-print me-1"></i> Print
+            </button>
+        </div>
+    </div>
+
+    <!-- Date Range -->
+    <div class="card mb-4">
+        <div class="card-body py-2">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label small mb-1">Start Date</label>
+                    <input type="date" class="form-control form-control-sm" @bind="startDate" @bind:format="yyyy-MM-dd" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small mb-1">End Date</label>
+                    <input type="date" class="form-control form-control-sm" @bind="endDate" @bind:format="yyyy-MM-dd" />
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button class="btn btn-primary btn-sm w-100" @onclick="LoadReport">
+                        <i class="fas fa-search me-1"></i> Load Summary
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (transactions == null)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary spinner-border-sm" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">Loading report data...</p>
+        </div>
+    }
+    else
+    {
+        <!-- Compact Summary Cards Row -->
+        <div class="row mb-4 g-2">
+            <!-- Opening Balance Card -->
+            <div class="col-xl-3 col-md-4 col-6">
+                <div class="card bg-warning text-white h-100">
+                    <div class="card-body p-2 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="card-title mb-0 small">Opening Balance</h6>
+                            <i class="fas fa-door-open fa-sm"></i>
+                        </div>
+                        <div class="mt-auto">
+                            <h5 class="mb-2 fw-bold text-center">@openingBalance.ToString("N2")</h5>
+                            <div class="text-center small opacity-75 mb-2">
+                                <div>@startDate.ToString("dd MMM yyyy")</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Receipts Card -->
+            <div class="col-xl-3 col-md-4 col-6">
+                <div class="card bg-success text-white h-100">
+                    <div class="card-body p-2 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="card-title mb-0 small">Total Receipts</h6>
+                            <i class="fas fa-download fa-sm"></i>
+                        </div>
+                        <div class="mt-auto">
+                            <h5 class="mb-2 fw-bold text-center">@totalReceipts.ToString("N2")</h5>
+                            <div class="small text-center mb-2">
+                                <div>@receiptCount trans</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Payments Card -->
+            <div class="col-xl-3 col-md-4 col-6">
+                <div class="card bg-danger text-white h-100">
+                    <div class="card-body p-2 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="card-title mb-0 small">Total Payments</h6>
+                            <i class="fas fa-upload fa-sm"></i>
+                        </div>
+                        <div class="mt-auto">
+                            <h5 class="mb-2 fw-bold text-center">@totalPayments.ToString("N2")</h5>
+                            <div class="small text-center mb-2">
+                                <div>@paymentCount trans</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Closing Balance Card -->
+            <div class="col-xl-3 col-md-4 col-6">
+                @{
+                    var closingClass = closingBalance >= 0 ? "bg-primary" : "bg-danger";
+                    var closingIcon = closingBalance >= 0 ? "fa-lock" : "fa-exclamation-triangle";
+                }
+                <div class="card @closingClass text-white h-100">
+                    <div class="card-body p-2 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="card-title mb-0 small">Closing Balance</h6>
+                            <i class="fas @closingIcon fa-sm"></i>
+                        </div>
+                        <div class="mt-auto">
+                            <h5 class="mb-2 fw-bold text-center">@closingBalance.ToString("N2")</h5>
+                            <div class="text-center small mb-2">
+                                <div>@endDate.ToString("dd MMM yyyy")</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (!transactions.Any())
+        {
+            <div class="alert alert-info py-2 mb-4">
+                <i class="fas fa-info-circle me-2"></i> No transactions found for the selected period.
+            </div>
+        }
+
+        <!-- Transaction Details -->
+        <div class="card">
+            <div class="card-header bg-light py-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-list me-1 fa-xs text-secondary"></i>
+                        <small>Transaction Details (@transactions.Count records)</small>
+                    </h6>
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-2" style="width: 8%;">Date</th>
+                                @if (Globals.User.GroupId == 1)
+                                {
+                                    <th style="width: 10%;">Location</th>
+                                }
+                                <th style="width: 8%;">Type</th>
+                                <th style="width: 18%;">Description</th>
+                                <th style="width: 12%;">Employee</th>
+                                <th style="width: 12%;">Account</th>
+                                <th style="width: 10%;">Payment Method</th>
+                                <th class="text-end border-start" style="width: 9%;">Receipts</th>
+                                <th class="text-end" style="width: 9%;">Payments</th>
+                                <th class="text-end border-end" style="width: 10%;">Running Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Opening Balance Row -->
+                            <tr class="table-warning">
+                                <td class="ps-2 fw-bold">@startDate.ToString("dd MMM yyyy")</td>
+                                @if (Globals.User.GroupId == 1)
+                                {
+                                    <td colspan="6" class="fw-bold">Opening Balance</td>
+                                }
+                                else
+                                {
+                                    <td colspan="5" class="fw-bold">Opening Balance</td>
+                                }
+                                <td class="text-end fw-bold border-start"></td>
+                                <td class="text-end fw-bold"></td>
+                                <td class="text-end fw-bold border-end">@openingBalance.ToString("N2")</td>
+                            </tr>
+
+                            @{
+                                decimal runningBalance = openingBalance;
+                                var sortedTransactions = transactions.OrderBy(x => x.TranDate).ThenBy(x => x.Id);
+                            }
+
+                            @foreach (var tran in sortedTransactions)
+                            {
+                                runningBalance += GetTransactionAmount(tran);
+
+                                <tr>
+                                    <td class="ps-2">
+                                        @if (tran.TranDate.HasValue)
+                                        {
+                                            @tran.TranDate.Value.ToString("dd MMM yyyy")
+                                        }
+                                    </td>
+                                    @if (Globals.User.GroupId == 1)
+                                    {
+                                        <td>@tran.LocationName</td>
+                                    }
+                                    <td>
+                                        <span class="badge @GetTransactionTypeBadgeClass(tran.TranType)">
+                                            @tran.TranType
+                                        </span>
+                                    </td>
+                                    <td class="text-truncate" title="@tran.Description">@tran.Description</td>
+                                    <td>@tran.EmployeeName</td>
+                                    <td>@tran.AccountName</td>
+                                    <td>@tran.PaymentMethod</td>
+
+                                    <!-- Receipts Column -->
+                                    <td class="text-end text-success fw-bold border-start">
+                                        @if (tran.TranType?.ToUpper() == "RECEIPT")
+                                        {
+                                            @Math.Abs((decimal)tran.Amount).ToString("N2")
+                                        }
+                                    </td>
+
+                                    <!-- Payments Column -->
+                                    <td class="text-end text-danger fw-bold">
+                                        @if (tran.TranType?.ToUpper() == "PAYMENT")
+                                        {
+                                            @Math.Abs((decimal)tran.Amount).ToString("N2")
+                                        }
+                                    </td>
+
+                                    <!-- Running Balance Column -->
+                                    <td class="text-end fw-bold border-end @(runningBalance >= 0 ? "text-primary" : "text-danger")">
+                                        @runningBalance.ToString("N2")
+                                    </td>
+                                </tr>
+                            }
+
+                            <!-- Closing Balance Row -->
+                            <tr class="table-primary">
+                                <td class="ps-2 fw-bold">@endDate.ToString("dd MMM yyyy")</td>
+                                @if (Globals.User.GroupId == 1)
+                                {
+                                    <td colspan="6" class="fw-bold">Closing Balance</td>
+                                }
+                                else
+                                {
+                                    <td colspan="5" class="fw-bold">Closing Balance</td>
+                                }
+                                <td class="text-end fw-bold text-success border-start">@totalReceipts.ToString("N2")</td>
+                                <td class="text-end fw-bold text-danger">@totalPayments.ToString("N2")</td>
+                                <td class="text-end fw-bold border-end @(closingBalance >= 0 ? "text-primary" : "text-danger")">
+                                    @closingBalance.ToString("N2")
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<PettyCashModel> transactions = new();
+    private DateTime startDate = DateTime.Today;
+    private DateTime endDate = DateTime.Today;
+    private bool isLoading = false;
+
+    // Summary variables
+    private decimal openingBalance = 0;
+    private decimal closingBalance = 0;
+    private decimal totalReceipts = 0;
+    private decimal totalPayments = 0;
+    private int receiptCount = 0;
+    private int paymentCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Globals.AccessLevel = Globals.PageAccess(NavManager, "PettyCashDashboard");
+            await LoadReport();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error initializing page: {ex.Message}", Severity.Error);
+            transactions = new List<PettyCashModel>();
+        }
+    }
+
+    private async Task LoadReport()
+    {
+        if (startDate > endDate)
+        {
+            SnackbarService.Add("Start date must be earlier than end date.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // Load transactions for selected period - use CAST for explicit date type conversion
+            string formattedStartDate = startDate.ToString("yyyy-MM-dd");
+            // Add 1 day to end date to include the entire end date in the range
+            string formattedEndDateNextDay = endDate.Date.AddDays(1).ToString("yyyy-MM-dd");
+            string criteria = $"TranDate >= CAST('{formattedStartDate}' AS DATE) AND TranDate < CAST('{formattedEndDateNextDay}' AS DATE)";
+
+            if (Globals.User.GroupId != 1)
+            {
+                criteria += $" AND LocationId = {Globals.User.LocationId}";
+            }
+
+            string encodedCriteria = Uri.EscapeDataString(criteria);
+            string apiUrl = $"PettyCash/Search/{encodedCriteria}";
+
+            var result = await Functions.GetAsync<List<PettyCashModel>>(apiUrl, true);
+            transactions = result ?? new List<PettyCashModel>();
+
+            // Calculate opening balance
+            await CalculateOpeningBalance();
+
+            // Calculate summaries
+            CalculateSummaries();
+
+            if (transactions.Any())
+            {
+                SnackbarService.Add($"Summary loaded: {transactions.Count} transactions", Severity.Success);
+            }
+            else
+            {
+                SnackbarService.Add($"No transactions found for the selected period", Severity.Info);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading summary: {ex.Message}", Severity.Error);
+            transactions = new List<PettyCashModel>();
+            ResetSummaryValues();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CalculateOpeningBalance()
+    {
+        try
+        {
+            // If start date is in the future, use today's date to calculate opening balance
+            DateTime calculationDate = startDate > DateTime.Today ? DateTime.Today : startDate;
+
+            string criteria = $"TranDate < CAST('{calculationDate:yyyy-MM-dd}' AS DATE)";
+
+            if (Globals.User.GroupId != 1)
+            {
+                criteria += $" AND LocationId = {Globals.User.LocationId}";
+            }
+
+            string encodedCriteria = Uri.EscapeDataString(criteria);
+            string apiUrl = $"PettyCash/Search/{encodedCriteria}";
+
+            var previous = await Functions.GetAsync<List<PettyCashModel>>(apiUrl, true) ?? new List<PettyCashModel>();
+
+            decimal previousReceipts = 0;
+            decimal previousPayments = 0;
+
+            foreach (var tran in previous)
+            {
+                if (tran.TranDate.HasValue)
+                {
+                    string type = tran.TranType?.ToUpper() ?? "";
+                    decimal amount = Math.Abs((decimal)tran.Amount);
+
+                    if (type == "RECEIPT")
+                    {
+                        previousReceipts += amount;
+                    }
+                    else if (type == "PAYMENT")
+                    {
+                        previousPayments += amount;
+                    }
+                }
+            }
+
+            openingBalance = previousReceipts - previousPayments;
+        }
+        catch
+        {
+            openingBalance = 0;
+        }
+    }
+
+    private void CalculateSummaries()
+    {
+        // Reset totals
+        totalReceipts = 0;
+        totalPayments = 0;
+        receiptCount = 0;
+        paymentCount = 0;
+
+        foreach (var tran in transactions)
+        {
+            if (!tran.TranDate.HasValue)
+                continue;
+
+            string type = tran.TranType?.ToUpper() ?? "";
+            decimal amount = Math.Abs((decimal)tran.Amount);
+
+            if (type == "RECEIPT")
+            {
+                totalReceipts += amount;
+                receiptCount++;
+            }
+            else if (type == "PAYMENT")
+            {
+                totalPayments += amount;
+                paymentCount++;
+            }
+        }
+
+        // Closing Balance = Opening Balance + Receipts - Payments
+        closingBalance = openingBalance + totalReceipts - totalPayments;
+    }
+
+    private void ResetSummaryValues()
+    {
+        openingBalance = 0;
+        closingBalance = 0;
+        totalReceipts = 0;
+        totalPayments = 0;
+        receiptCount = 0;
+        paymentCount = 0;
+    }
+
+    private string GetTransactionTypeBadgeClass(string? type)
+    {
+        if (string.IsNullOrEmpty(type))
+            return "bg-secondary";
+
+        return type.ToUpper() switch
+        {
+            "RECEIPT" => "bg-success",
+            "PAYMENT" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    private decimal GetTransactionAmount(PettyCashModel transaction)
+    {
+        if (!transaction.TranDate.HasValue)
+            return 0;
+
+        string type = transaction.TranType?.ToUpper() ?? "";
+
+        if (type == "RECEIPT")
+        {
+            return Math.Abs((decimal)transaction.Amount);
+        }
+        else if (type == "PAYMENT")
+        {
+            return -Math.Abs((decimal)transaction.Amount);
+        }
+
+        return 0;
+    }
+
+    private async Task PrintReport()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("print");
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error printing: {ex.Message}", Severity.Error);
+        }
+    }
+}

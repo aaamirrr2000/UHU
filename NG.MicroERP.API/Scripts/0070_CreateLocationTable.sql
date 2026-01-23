@@ -22,38 +22,37 @@
     IsSoftDeleted   INT NULL DEFAULT 0,
     CONSTRAINT FK_Locations_Organizations FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id)
 );
-
-INSERT INTO Locations 
+INSERT INTO Locations
 (
-    OrganizationId, 
-    Code, 
-    Name, 
-    Address, 
-    PocName, 
-    PocEmail, 
-    PocPhone, 
-    LocationType, 
-    Latitude, 
-    Longitude, 
-    Radius, 
-    IsActive, 
-    CreatedBy, 
+    OrganizationId,
+    Code,
+    Name,
+    Address,
+    PocName,
+    PocEmail,
+    PocPhone,
+    LocationType,
+    Latitude,
+    Longitude,
+    Radius,
+    IsActive,
+    CreatedBy,
     UpdatedBy
 )
-VALUES 
+VALUES
 (
-    1, -- OrganizationId cannot be NULL because of FK reference
-    '000001', 
-    'UHU', 
-    'UHU OFFICE', 
-    'M TAHIR', 
-    'NO EMAIL', 
-    'NO PHONE', 
-    'HEAD OFFICE', 
-    '33.56739413432688', 
-    '73.13653547252294', 
-    10, 
-    1, 
-    1, 
+    1,
+    '000001',
+    'HEALTHWIRE PHARMACY ISLAMABAD',
+    'HEALTHWIRE PHARMACY ISLAMABAD',
+    'AAMIR RASHID',
+    'NO EMAIL',
+    'NO PHONE',
+    'HEAD OFFICE',
+    '33.71165089079584',
+    '73.04146635447766',
+    10,
+    1,
+    1,
     1
 );

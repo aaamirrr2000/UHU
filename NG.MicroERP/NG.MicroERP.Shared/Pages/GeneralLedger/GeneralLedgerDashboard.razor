@@ -27,7 +27,7 @@
     <div class="dashboard-header">
         <div class="d-flex align-items-center justify-content-between flex-wrap">
             <div>
-                <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
                     <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="me-2" Style="color: white;" />
                     General Ledger Management
                 </MudText>
@@ -207,6 +207,47 @@
                                     CellClass="grid-cell"
                                     Width="120px" />
 
+                    <TemplateColumn Title="Currency"
+                                    Sortable="false"
+                                    Filterable="false"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="100px">
+                        <CellTemplate>
+                            @{
+                                var currencyId = context.Item.EnteredCurrencyId > 0 ? context.Item.EnteredCurrencyId : context.Item.BaseCurrencyId;
+                            }
+                            @if (currencyId > 0)
+                            {
+                                <MudChip Size="Size.Small" Variant="Variant.Text" Color="Color.Info">
+                                    @(GetCurrencyCode(currencyId))
+                                </MudChip>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <TemplateColumn Title="Rate"
+                                    Sortable="false"
+                                    Filterable="false"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell text-end"
+                                    Width="100px">
+                        <CellTemplate>
+                            @if (context.Item.ExchangeRate != 1.0)
+                            {
+                                <span class="fw-semibold">@context.Item.ExchangeRate.ToString("N6")</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+
                     <TemplateColumn Title="Status"
                                     HeaderClass="grid-header"
                                     CellClass="grid-cell"
@@ -262,6 +303,7 @@
 {
     GeneralLedgerHeaderModel record = new();
     List<GeneralLedgerHeaderModel> data = new();
+    List<CurrenciesModel> Currencies = new();
 
     public DateTime? startDate { get; set; } = DateTime.Today.AddDays(-30);
     public DateTime? endDate { get; set; } = DateTime.Today;
@@ -275,12 +317,20 @@
         try
         {
             Globals.AccessLevel = Globals.PageAccess(NavManager, "GeneralLedgerDashboard");
+            Currencies = await Functions.GetAsync<List<CurrenciesModel>>($"Currencies/Search", true) ?? new List<CurrenciesModel>();
             await GetAll();
         }
         catch (Exception ex)
         {
             SnackbarService.Add($"Error initializing: {ex.Message}", Severity.Error);
         }
+    }
+
+    private string GetCurrencyCode(int currencyId)
+    {
+        if (currencyId == 0) return "-";
+        var currency = Currencies.FirstOrDefault(c => c.Id == currencyId);
+        return currency?.Code ?? "-";
     }
 
     protected async Task GetAll()
@@ -292,15 +342,22 @@
             string criteria = string.Empty;
             if (startDate.HasValue && endDate.HasValue)
             {
-                criteria = $"EntryDate >= '{startDate.Value:yyyy-MM-dd}' AND EntryDate <= '{endDate.Value:yyyy-MM-dd}'";
+                // Format dates for SQL comparison - use CAST to ensure proper date comparison
+                string formattedStartDate = startDate.Value.ToString("yyyy-MM-dd");
+                // Add 1 day to end date to include the entire end date in the range
+                string formattedEndDateNextDay = endDate.Value.Date.AddDays(1).ToString("yyyy-MM-dd");
+                criteria = $"EntryDate >= CAST('{formattedStartDate}' AS DATE) AND EntryDate < CAST('{formattedEndDateNextDay}' AS DATE)";
             }
             else if (startDate.HasValue)
             {
-                criteria = $"EntryDate >= '{startDate.Value:yyyy-MM-dd}'";
+                string formattedStartDate = startDate.Value.ToString("yyyy-MM-dd");
+                criteria = $"EntryDate >= CAST('{formattedStartDate}' AS DATE)";
             }
             else if (endDate.HasValue)
             {
-                criteria = $"EntryDate <= '{endDate.Value:yyyy-MM-dd}'";
+                // Add 1 day to end date to include the entire end date in the range
+                string formattedEndDateNextDay = endDate.Value.Date.AddDays(1).ToString("yyyy-MM-dd");
+                criteria = $"EntryDate < CAST('{formattedEndDateNextDay}' AS DATE)";
             }
             
             string url = "GeneralLedger/Search";

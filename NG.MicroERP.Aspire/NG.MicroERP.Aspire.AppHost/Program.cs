@@ -14,4 +14,8 @@ var controlCenterWebsite = builder.AddProject<Projects.NG_ControlCenter_WebSite>
     .WithExternalHttpEndpoints()
     .WithReference(nexgenApi);
 
+// Note: MAUI apps (NG.MicroERP.WorkHub, NG.MicroERP.App, NG.MicroERP.App.SwiftServe, etc.) 
+// are excluded from Aspire as they are desktop/mobile applications, not web services.
+// Aspire is designed for orchestrating web services and APIs, not desktop/mobile apps.
+
 builder.Build().Run();

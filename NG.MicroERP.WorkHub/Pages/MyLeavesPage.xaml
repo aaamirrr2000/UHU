@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:helper="clr-namespace:NG.MicroERP.WorkHub.Helper"
+             x:Class="NG.MicroERP.WorkHub.Pages.MyLeavesPage"
+             Title="My Leaves">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <Color x:Key="PrimaryColor">#512BD4</Color>
+            <Color x:Key="WhiteColor">#FFFFFF</Color>
+            <Color x:Key="TextPrimary">#212121</Color>
+            <Color x:Key="TextSecondary">#666666</Color>
+            <Color x:Key="SuccessColor">#4CAF50</Color>
+            <Color x:Key="WarningColor">#FF9800</Color>
+            <Color x:Key="ErrorColor">#F44336</Color>
+            <Color x:Key="BackgroundLight">#F5F5F5</Color>
+            <helper:DateRangeConverter x:Key="DateRangeConverter"/>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ContentPage.Background>
+        <SolidColorBrush Color="{StaticResource BackgroundLight}"/>
+    </ContentPage.Background>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Filter Section -->
+        <Frame Grid.Row="0"
+               BackgroundColor="{StaticResource WhiteColor}"
+               BorderColor="#E0E0E0"
+               HasShadow="True"
+               CornerRadius="12"
+               Padding="15"
+               Margin="20,20,20,10">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                <DatePicker x:Name="datePickerStart"
+                            Grid.Column="0"
+                            Format="dd MMM yyyy"
+                            DateSelected="OnDateSelected"/>
+                <DatePicker x:Name="datePickerEnd"
+                            Grid.Column="1"
+                            Format="dd MMM yyyy"
+                            DateSelected="OnDateSelected"/>
+            </Grid>
+        </Frame>
+
+        <!-- Leaves List -->
+        <CollectionView x:Name="leavesCollectionView"
+                        Grid.Row="1"
+                        Margin="20,0,20,20"
+                        SelectionMode="None">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Frame BackgroundColor="{StaticResource WhiteColor}"
+                           BorderColor="#E0E0E0"
+                           HasShadow="True"
+                           CornerRadius="12"
+                           Padding="15"
+                           Margin="0,0,0,10">
+                        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="15" RowSpacing="8">
+                            <Label Grid.Row="0" Grid.Column="0" Grid.RowSpan="4"
+                                   Text="🏖️"
+                                   FontSize="32"
+                                   VerticalOptions="Center"/>
+                            
+                            <Label Grid.Row="0" Grid.Column="1"
+                                   Text="{Binding LeaveName}"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   FontFamily="OpenSansSemibold"/>
+                            
+                            <Label Grid.Row="1" Grid.Column="1"
+                                   Text="{Binding ., Converter={StaticResource DateRangeConverter}}"
+                                   FontSize="14"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   FontFamily="OpenSansRegular"/>
+                            
+                            <Label Grid.Row="2" Grid.Column="1"
+                                   Text="{Binding Reason}"
+                                   FontSize="14"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   FontFamily="OpenSansRegular"
+                                   LineBreakMode="WordWrap"/>
+                            
+                            <Label Grid.Row="3" Grid.Column="1"
+                                   Text="{Binding AppliedDate, StringFormat='Applied: {0:dd MMM yyyy}'}"
+                                   FontSize="12"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   FontFamily="OpenSansRegular"/>
+                            
+                            <Label Grid.Row="0" Grid.Column="2" Grid.RowSpan="4"
+                                   Text="{Binding Status}"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   VerticalOptions="Center"
+                                   HorizontalOptions="End"
+                                   FontFamily="OpenSansSemibold">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding Status}" Value="APPROVED">
+                                        <Setter Property="TextColor" Value="{StaticResource SuccessColor}"/>
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Label" Binding="{Binding Status}" Value="PENDING">
+                                        <Setter Property="TextColor" Value="{StaticResource WarningColor}"/>
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Label" Binding="{Binding Status}" Value="REJECTED">
+                                        <Setter Property="TextColor" Value="{StaticResource ErrorColor}"/>
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+                        </Grid>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator x:Name="LoadingSpinner"
+                          Grid.Row="1"
+                          IsVisible="False"
+                          IsRunning="False"
+                          Color="{StaticResource PrimaryColor}"
+                          HeightRequest="40"
+                          WidthRequest="40"
+                          VerticalOptions="Center"
+                          HorizontalOptions="Center"/>
+
+        <!-- Empty State -->
+        <Label x:Name="lblEmpty"
+               Grid.Row="1"
+               Text="No leave requests found"
+               FontSize="16"
+               TextColor="{StaticResource TextSecondary}"
+               VerticalOptions="Center"
+               HorizontalOptions="Center"
+               IsVisible="False"
+               FontFamily="OpenSansRegular"/>
+    </Grid>
+</ContentPage>

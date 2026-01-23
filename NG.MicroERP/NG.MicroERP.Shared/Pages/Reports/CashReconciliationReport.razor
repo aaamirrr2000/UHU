@@ -14,7 +14,7 @@
     <div class="dashboard-header">
         <div class="d-flex align-items-center justify-content-between flex-wrap">
             <div>
-                <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
                     <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Class="me-2" Style="color: white;" />
                     Cash Reconciliation Report
                 </MudText>
@@ -35,7 +35,7 @@
                                   @bind-SelectedId="selectedLocationId"
                                   @bind-SelectedId:after="OnDateOrLocationChanged"
                                   Variant="Variant.Outlined"
-                                  Label=""
+                                  Label="Location"
                                   Placeholder="All Locations"
                                   Style="background: rgba(255,255,255,0.95); width: 180px;" />
                     <AutoComplete TItem="UsersModel"
@@ -44,7 +44,7 @@
                                   IdProperty="@(p => p.Id)"
                                   @bind-SelectedId="selectedUserId"
                                   Variant="Variant.Outlined"
-                                  Label=""
+                                  Label="User"
                                   Placeholder="All Users (Optional)"
                                   Clearable="true"
                                   Disabled="@(selectedPhysicalCountSession != null)"

@@ -14,7 +14,7 @@
     <div class="dashboard-header">
         <div class="d-flex align-items-center justify-content-between flex-wrap">
             <div>
-                <MudText Typo="Typo.h4" Class="mb-0 fw-bold">
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
                     <MudIcon Icon="@Icons.Material.Filled.Money" Class="me-2" Style="color: white;" />
                     Physical Cash Count Management
                 </MudText>
@@ -260,13 +260,14 @@
                 return;
             }
 
-            // Format dates for SQL comparison - avoid CAST to pass SQL injection check
-            // Use date range: >= start of first day and < start of day after end date
+            // Format dates for SQL comparison - use CAST for explicit date type conversion
             string formattedStartDate = startDate.Value.ToString("yyyy-MM-dd");
+            // Add 1 day to end date to include the entire end date in the range
             string formattedEndDateNextDay = endDate.Value.Date.AddDays(1).ToString("yyyy-MM-dd");
 
-            string Criteria = $"pcc.CountDate >= '{formattedStartDate} 00:00:00' " +
-                              $"AND pcc.CountDate < '{formattedEndDateNextDay} 00:00:00'";
+            // Use CAST for DATETIME comparison - cast dates to DATE for proper comparison
+            string Criteria = $"CAST(pcc.CountDate AS DATE) >= CAST('{formattedStartDate}' AS DATE) " +
+                              $"AND CAST(pcc.CountDate AS DATE) < CAST('{formattedEndDateNextDay}' AS DATE)";
 
             // Location filter
             if (Globals.User.GroupId != 1)

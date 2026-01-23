@@ -27,6 +27,10 @@ CREATE TABLE dbo.GeneralLedgerHeader
     AdjustmentEntryNo   VARCHAR(50) NULL,                 -- Reference to original entry if adjusted
     FileAttachment      VARCHAR(255) NULL,                 -- Supporting document attachment
     Notes               VARCHAR(MAX) NULL,                 -- Additional notes
+    IsPostedToGL        SMALLINT DEFAULT 0,
+    PostedToGLDate      DATETIME NULL,
+    PostedToGLBy        INT NULL,
+    GLEntryNo           VARCHAR(50) NULL,
     CreatedBy           INT NULL,
     CreatedOn           DATETIME NOT NULL DEFAULT GETDATE(),
     CreatedFrom         VARCHAR(255) NULL,
@@ -34,23 +38,24 @@ CREATE TABLE dbo.GeneralLedgerHeader
     UpdatedOn           DATETIME NOT NULL DEFAULT GETDATE(),
     UpdatedFrom         VARCHAR(255) NULL,
     IsSoftDeleted       SMALLINT NULL DEFAULT 0,
-    
-    CONSTRAINT FK_GeneralLedgerHeader_Organization FOREIGN KEY (OrganizationId) REFERENCES dbo.Organizations(Id),
-    CONSTRAINT FK_GeneralLedgerHeader_Party FOREIGN KEY (PartyId) REFERENCES dbo.Parties(Id),
-    CONSTRAINT FK_GeneralLedgerHeader_Location FOREIGN KEY (LocationId) REFERENCES dbo.Locations(Id),
-    CONSTRAINT FK_GeneralLedgerHeader_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES dbo.Users(Id),
-    CONSTRAINT FK_GeneralLedgerHeader_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES dbo.Users(Id),
-    CONSTRAINT FK_GeneralLedgerHeader_PostedBy FOREIGN KEY (PostedBy) REFERENCES dbo.Users(Id),
-    CONSTRAINT CHK_GeneralLedgerHeader_Balanced CHECK (
-        TotalDebit = TotalCredit
-    ) -- Ensures double-entry balance
+    BaseCurrencyId      INT NULL,
+    EnteredCurrencyId   INT NULL,
+    ExchangeRate        DECIMAL(18, 6) DEFAULT 1.000000,
+    FOREIGN KEY (PostedToGLBy)  REFERENCES Users(Id),
+    FOREIGN KEY (BaseCurrencyId) REFERENCES Currencies(Id),
+    FOREIGN KEY (EnteredCurrencyId) REFERENCES Currencies(Id),
+    FOREIGN KEY (PostedToGLBy) REFERENCES dbo.Users(Id),
+    FOREIGN KEY (OrganizationId) REFERENCES dbo.Organizations(Id),
+    FOREIGN KEY (PartyId) REFERENCES dbo.Parties(Id),
+    FOREIGN KEY (LocationId) REFERENCES dbo.Locations(Id),
+    FOREIGN KEY (CreatedBy) REFERENCES dbo.Users(Id),
+    FOREIGN KEY (UpdatedBy) REFERENCES dbo.Users(Id),
+    FOREIGN KEY (PostedBy) REFERENCES dbo.Users(Id),
+    FOREIGN KEY (BaseCurrencyId) REFERENCES dbo.Currencies(Id),
+    FOREIGN KEY (EnteredCurrencyId) REFERENCES dbo.Currencies(Id),
+    CHECK (TotalDebit = TotalCredit) -- Ensures double-entry balance
 );
 GO
-
--- =============================================
--- General Ledger Detail Table Structure
--- Individual account lines for each header entry
--- =============================================
 
 CREATE TABLE dbo.GeneralLedgerDetail
 (

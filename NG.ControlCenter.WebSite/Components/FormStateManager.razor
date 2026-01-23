@@ -1,0 +1,87 @@
+@* 
+Template component for persisting form state to survive page refresh
+Usage in your page:
+@inject IStateService StateService
+@implements IAsyncDisposable
+
+In OnInitializedAsync:
+protected override async Task OnInitializedAsync()
+{
+    // Load state from localStorage
+    record = await StateService.LoadStateAsync<YourModel>("page_key") ?? new YourModel();
+    await base.OnInitializedAsync();
+}
+
+In form submit:
+await StateService.SaveStateAsync("page_key", record);
+
+On form clear:
+await StateService.RemoveStateAsync("page_key");
+*@
+
+@using NG.ControlCenter.WebSite.Services
+@attribute [StreamRendering]
+
+<div class="form-state-manager">
+    @if (IsLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Class="mb-2" />
+    }
+    
+    @if (!string.IsNullOrEmpty(StatusMessage))
+    {
+        <MudAlert Severity="Severity.Info" Class="mb-3">
+            @StatusMessage
+        </MudAlert>
+    }
+    
+    @ChildContent
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public string? StatusMessage { get; set; }
+
+    [Inject]
+    public IStateService? StateService { get; set; }
+
+    /// <summary>
+    /// Save form state to localStorage
+    /// </summary>
+    public async Task SaveFormStateAsync<T>(string key, T value)
+    {
+        if (StateService != null)
+        {
+            await StateService.SaveStateAsync(key, value);
+        }
+    }
+
+    /// <summary>
+    /// Load form state from localStorage
+    /// </summary>
+    public async Task<T?> LoadFormStateAsync<T>(string key)
+    {
+        if (StateService != null)
+        {
+            return await StateService.LoadStateAsync<T>(key);
+        }
+        return default;
+    }
+
+    /// <summary>
+    /// Clear form state from localStorage
+    /// </summary>
+    public async Task ClearFormStateAsync(string key)
+    {
+        if (StateService != null)
+        {
+            await StateService.RemoveStateAsync(key);
+        }
+    }
+}

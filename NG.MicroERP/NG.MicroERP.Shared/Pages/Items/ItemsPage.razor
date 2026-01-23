@@ -382,7 +382,66 @@
 
         </MudExpansionPanel>
 
-        <!-- Panel 4: Status & System -->
+        <!-- Panel 4: GL Accounting -->
+        <MudExpansionPanel Text="GL Accounting" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fas fa-book"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">General Ledger Mapping</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">GL accounts for expense and revenue posting</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #673AB7; border-radius: 10px;" />
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row g-3">
+
+                    <!-- Expense Account (PURCHASE) -->
+                    <div class="col-12 col-md-6">
+                        <MudSelect T="int?"
+                                   Label="Expense Account"
+                                   Value="record.ExpenseAccountId"
+                                   ValueChanged="(int? value) => record.ExpenseAccountId = value"
+                                   Variant="Variant.Outlined"
+                                   Dense="@true"
+                                   FullWidth="@true"
+                                   Margin="Margin.Dense"
+                                   Clearable="true"
+                                   Class="invoice-field-input">
+                            @foreach (var option in ExpenseAccounts)
+                            {
+                                <MudSelectItem T="int?" Value="@((int?)option.Id)">@option.DisplayName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </div>
+
+                    <!-- Revenue Account (SALE) -->
+                    <div class="col-12 col-md-6">
+                        <MudSelect T="int?"
+                                   Label="Revenue Account"
+                                   Value="record.RevenueAccountId"
+                                   ValueChanged="(int? value) => record.RevenueAccountId = value"
+                                   Variant="Variant.Outlined"
+                                   Dense="@true"
+                                   FullWidth="@true"
+                                   Margin="Margin.Dense"
+                                   Clearable="true"
+                                   Class="invoice-field-input">
+                            @foreach (var option in RevenueAccounts)
+                            {
+                                <MudSelectItem T="int?" Value="@((int?)option.Id)">@option.DisplayName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <!-- Panel 5: Status & System -->
         <MudExpansionPanel Text="Status & System">
             <TitleContent>
                 <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
@@ -434,6 +493,9 @@
     List<TypeCodeModel> Unit = null!;
     List<TaxRuleModel> TaxRule = new();
     List<TaxRuleDetailModel> SelectedTaxRule = new();
+    List<ChartOfAccountsModel> ExpenseAccounts = new();
+    List<ChartOfAccountsModel> RevenueAccounts = new();
+    
     [Parameter] public string? Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
     [Parameter] public EventCallback OnSaved { get; set; }
@@ -454,6 +516,10 @@
         Cat = await Functions.GetAsync<List<CategoriesModel>>($"Categories/Search", true) ?? new List<CategoriesModel>();
         Sto = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/STOCK TYPE", true) ?? new List<TypeCodeModel>();
         Unit = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/UNIT TYPE", true) ?? new List<TypeCodeModel>();
+        
+        // Fetch GL Accounts for expense and revenue
+        ExpenseAccounts = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/InterfaceType='ITEM EXPENSE'", true) ?? new List<ChartOfAccountsModel>();
+        RevenueAccounts = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/InterfaceType='ITEM REVENUE'", true) ?? new List<ChartOfAccountsModel>();
 
         if (Action == "INSERT")
         {

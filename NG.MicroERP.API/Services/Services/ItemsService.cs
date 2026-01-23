@@ -30,82 +30,62 @@ public class ItemsService : IItemsService
 
     public async Task<(bool, List<ItemsModel>)>? Search(string Criteria = "", string TopN="")
     {
-        string SQL = string.Empty;
-        if (!string.IsNullOrWhiteSpace(Criteria))
-            SQL += " and " + Criteria;
+        try
+        {
+            string SQL = string.Empty;
+            if (!string.IsNullOrWhiteSpace(Criteria))
+                SQL += " and " + Criteria;
 
-        SQL = $@"SELECT
-                    Items.Id,
-                    Items.OrganizationId,
-                    Items.Pic,
-                    Items.Code,
-                    Items.HsCode,
-                    Items.Name,
-                    Items.Description,
-                    Items.MinQty,
-                    Items.MaxQty,
-                    Items.ReorderQty,
-                    Items.DefaultDiscount,
-                    Items.CostPrice,
-                    Items.BasePrice,
-                    Items.CategoryId,
-                    Categories.Code AS CategoryCode,
-                    Categories.Name AS CategoryName,
-                    Items.StockType,
-                    Items.Unit,
-                    Items.TaxRuleId,
-                    Items.ServingSize,
-                    Items.IsFavorite,
-                    Items.IsActive,
-                    Items.CreatedBy,
-                    Items.CreatedOn,
-                    Items.CreatedFrom,
-                    Items.UpdatedBy,
-                    Items.UpdatedOn,
-                    Items.UpdatedFrom
-                FROM Items
-                LEFT JOIN Categories ON Categories.Id = Items.CategoryId
-                WHERE Items.IsSoftDeleted = 0 {SQL}
-                GROUP BY
-                    Items.Id,
-                    Items.OrganizationId,
-                    Items.Pic,
-                    Items.Code,
-                    Items.HsCode,
-                    Items.Name,
-                    Items.Description,
-                    Items.MinQty,
-                    Items.MaxQty,
-                    Items.ReorderQty,
-                    Items.DefaultDiscount,
-                    Items.CostPrice,
-                    Items.BasePrice,
-                    Items.CategoryId,
-                    Categories.Code,
-                    Categories.Name,
-                    Items.StockType,
-                    Items.Unit,
-                    Items.TaxRuleId,
-                    Items.ServingSize,
-                    Items.IsFavorite,
-                    Items.IsActive,
-                    Items.CreatedBy,
-                    Items.CreatedOn,
-                    Items.CreatedFrom,
-                    Items.UpdatedBy,
-                    Items.UpdatedOn,
-                    Items.UpdatedFrom
-            ";
+            // Removed GROUP BY as it's not needed without aggregate functions
+            // This should improve query performance
+            SQL = $@"SELECT
+                        Items.Id,
+                        Items.OrganizationId,
+                        Items.Pic,
+                        Items.Code,
+                        Items.HsCode,
+                        Items.Name,
+                        Items.Description,
+                        Items.MinQty,
+                        Items.MaxQty,
+                        Items.ReorderQty,
+                        Items.DefaultDiscount,
+                        Items.CostPrice,
+                        Items.BasePrice,
+                        Items.CategoryId,
+                        Categories.Code AS CategoryCode,
+                        Categories.Name AS CategoryName,
+                        Items.StockType,
+                        Items.Unit,
+                        Items.TaxRuleId,
+                        Items.ExpenseAccountId,
+                        Items.RevenueAccountId,
+                        Items.ServingSize,
+                        Items.IsFavorite,
+                        Items.IsActive,
+                        Items.CreatedBy,
+                        Items.CreatedOn,
+                        Items.CreatedFrom,
+                        Items.UpdatedBy,
+                        Items.UpdatedOn,
+                        Items.UpdatedFrom
+                    FROM Items
+                    LEFT JOIN Categories ON Categories.Id = Items.CategoryId
+                    WHERE Items.IsSoftDeleted = 0 {SQL}
+                    ORDER BY Items.IsFavorite DESC, Items.Name";
 
+            List<ItemsModel> result = (await dapper.SearchByQuery<ItemsModel>(SQL)) ?? new List<ItemsModel>();
 
-        SQL += " Order by Items.IsFavorite desc, Items.Name";
-
-        List<ItemsModel> result = (await dapper.SearchByQuery<ItemsModel>(SQL)) ?? new List<ItemsModel>();
-
-        if (result == null || result.Count == 0)
-            return (false, null!);
-        else
-            return (true, result);
+            if (result == null || result.Count == 0)
+                return (false, new List<ItemsModel>());
+            else
+                return (true, result);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "ItemsService.Search Error");
+            return (false, new List<ItemsModel>());
+        }
     }
 
     public async Task<(bool, List<ItemsModel>)>? SearchRecent(string TopN = "")
@@ -132,6 +112,8 @@ public class ItemsService : IItemsService
                           Items.SaleType,
                           Items.Unit,
                           Items.TaxRuleId,
+                          Items.ExpenseAccountId,
+                          Items.RevenueAccountId,
                           Items.ServingSize,
                           Items.IsFavorite,
                           Items.IsActive,
@@ -181,6 +163,8 @@ public class ItemsService : IItemsService
 
             string Code = dapper.GetCode("", "Items", "Code", 12)!;
             string taxRuleIdValue = (obj.TaxRuleId.HasValue && obj.TaxRuleId.Value > 0) ? obj.TaxRuleId.Value.ToString() : "NULL";
+            string expenseAccountIdValue = (obj.ExpenseAccountId.HasValue && obj.ExpenseAccountId.Value > 0) ? obj.ExpenseAccountId.Value.ToString() : "NULL";
+            string revenueAccountIdValue = (obj.RevenueAccountId.HasValue && obj.RevenueAccountId.Value > 0) ? obj.RevenueAccountId.Value.ToString() : "NULL";
             string SQLDuplicate = $@"SELECT * FROM Items WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
             string SQLInsert = $@"
                                 INSERT INTO Items 
@@ -201,6 +185,8 @@ public class ItemsService : IItemsService
                                     StockType, 
                                     Unit, 
                                     TaxRuleId,
+                                    ExpenseAccountId,
+                                    RevenueAccountId,
                                     IsFavorite, 
                                     IsActive, 
                                     CreatedBy, 
@@ -225,6 +211,8 @@ public class ItemsService : IItemsService
                                     '{obj.StockType?.ToUpper() ?? "null"}', 
                                     '{obj.Unit?.ToUpper() ?? "null"}', 
                                     {taxRuleIdValue},
+                                    {expenseAccountIdValue},
+                                    {revenueAccountIdValue},
                                     {obj.IsFavorite},
                                     {obj.IsActive},
                                     {obj.CreatedBy},
@@ -273,6 +261,8 @@ public class ItemsService : IItemsService
             // TaxRuleId is optional - can be NULL
 
             string taxRuleIdValueUpdate = (obj.TaxRuleId.HasValue && obj.TaxRuleId.Value > 0) ? obj.TaxRuleId.Value.ToString() : "NULL";
+            string expenseAccountIdValueUpdate = (obj.ExpenseAccountId.HasValue && obj.ExpenseAccountId.Value > 0) ? obj.ExpenseAccountId.Value.ToString() : "NULL";
+            string revenueAccountIdValueUpdate = (obj.RevenueAccountId.HasValue && obj.RevenueAccountId.Value > 0) ? obj.RevenueAccountId.Value.ToString() : "NULL";
             string SQLDuplicate = $@"SELECT * FROM Items WHERE UPPER(code) = '{obj.Code!.ToUpper()}' and ID != {obj.Id};";
             string SQLUpdate = $@"
                     UPDATE Items SET 
@@ -292,6 +282,8 @@ public class ItemsService : IItemsService
                         StockType = '{obj.StockType?.ToUpper() ?? "null"}', 
                         Unit = '{obj.Unit?.ToUpper() ?? "null"}',
                         TaxRuleId = {taxRuleIdValueUpdate}, 
+                        ExpenseAccountId = {expenseAccountIdValueUpdate},
+                        RevenueAccountId = {revenueAccountIdValueUpdate},
                         ServingSize = '{obj.ServingSize?.ToUpper() ?? "null"}',
                         IsFavorite = {obj.IsFavorite}, 
                         IsActive = {obj.IsActive}, 

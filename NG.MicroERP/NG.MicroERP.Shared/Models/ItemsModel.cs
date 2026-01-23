@@ -26,6 +26,8 @@ public class ItemsModel
     public string? SaleType { get; set; } = string.Empty;
     public string? Unit { get; set; } = string.Empty;
     public int? TaxRuleId { get; set; }
+    public int? ExpenseAccountId { get; set; }
+    public int? RevenueAccountId { get; set; }
     public string? ServingSize { get; set; }
     public int IsFavorite { get; set; } = 0;
     public int IsActive { get; set; } = 0;

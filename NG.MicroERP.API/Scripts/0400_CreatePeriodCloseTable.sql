@@ -30,32 +30,6 @@ CREATE TABLE dbo.PeriodClose
 );
 GO
 
--- Add IsPostedToGL to Invoice table
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.Invoice') AND name = 'IsPostedToGL')
-BEGIN
-    ALTER TABLE dbo.Invoice
-    ADD IsPostedToGL SMALLINT DEFAULT 0,
-        PostedToGLDate DATETIME NULL,
-        PostedToGLBy INT NULL,
-        GLEntryNo VARCHAR(50) NULL;
-    
-    ALTER TABLE dbo.Invoice
-    ADD CONSTRAINT FK_Invoice_PostedToGLBy FOREIGN KEY (PostedToGLBy) REFERENCES dbo.Users(Id);
-END
-GO
-
--- Add IsPostedToGL to Cashbook table
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.Cashbook') AND name = 'IsPostedToGL')
-BEGIN
-    ALTER TABLE dbo.Cashbook
-    ADD IsPostedToGL SMALLINT DEFAULT 0,
-        PostedToGLDate DATETIME NULL,
-        PostedToGLBy INT NULL,
-        GLEntryNo VARCHAR(50) NULL;
-    
-    ALTER TABLE dbo.Cashbook
-    ADD CONSTRAINT FK_Cashbook_PostedToGLBy FOREIGN KEY (PostedToGLBy) REFERENCES dbo.Users(Id);
-END
-GO
-
-
+INSERT INTO PeriodClose
+    (OrganizationId, PeriodName, ModuleType, StartDate, EndDate, Status, ClosedDate, ClosedBy, Notes, CreatedBy, CreatedOn, CreatedFrom, UpdatedBy, UpdatedOn, UpdatedFrom, IsSoftDeleted) VALUES
+    (1, 'YEAR 2025-26', 'ALL', '2025-07-01', '2026-06-30', 'OPEN', NULL, NULL, NULL, 1, '2026-01-22 11:57:20.000', 'ANONYMOUS|127.0.0.1|CHROME|WINDOWS 10/11|01220656', NULL, '2026-01-22 11:57:20.600', NULL, 0);

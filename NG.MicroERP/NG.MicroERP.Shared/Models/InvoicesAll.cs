@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -21,10 +21,9 @@ public class InvoicesAllModel
     public int PartyId { get; set; } = 0;
     public string? Party { get; set; } = string.Empty;
     public string? PartyName { get; set; } = string.Empty;
-    public string? PartyPhone { get; set; } = string.Empty;
-    public string? PartyEmail { get; set; } = string.Empty;
-    public string? PartyAddress { get; set; } = string.Empty;
     public string? ScenarioId { get; set; } = string.Empty;
+    public int AccountId { get; set; } = 0;
+    public string? AccountName { get; set; } = string.Empty;
     public DateTime TranDate { get; set; } = DateTime.Today;
     public int PreprationTime { get; set; } = 0;
     public double SubTotalAmount { get; set; } = 0;
@@ -39,5 +38,12 @@ public class InvoicesAllModel
     public string? Status { get; set; } = string.Empty;
     public string? Username { get; set; } = string.Empty;
     public string? ClientComments { get; set; } = string.Empty;
+    
+    // Currency Fields
+    public int BaseCurrencyId { get; set; } = 0;
+    public int EnteredCurrencyId { get; set; } = 0;
+    public double ExchangeRate { get; set; } = 1.0;
+    public string? CurrencyCode { get; set; } = string.Empty;
+    public string? CurrencyName { get; set; } = string.Empty;
 
 }
