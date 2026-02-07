@@ -25,15 +25,15 @@ CREATE TABLE Promotion
     UpdatedFrom         VARCHAR(255)     NULL DEFAULT NULL,
     IsSoftDeleted       SMALLINT         NOT NULL DEFAULT 0,
 
-    FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
-    FOREIGN KEY (EmployeeId)     REFERENCES Employees(Id),
-    FOREIGN KEY (OldDepartmentId) REFERENCES Departments(Id),
-    FOREIGN KEY (NewDepartmentId) REFERENCES Departments(Id),
-    FOREIGN KEY (OldDesignationId) REFERENCES Designations(Id),
-    FOREIGN KEY (NewDesignationId) REFERENCES Designations(Id),
-    FOREIGN KEY (ApprovedBy)      REFERENCES Users(Id),
-    FOREIGN KEY (CreatedBy)       REFERENCES Users(Id),
-    FOREIGN KEY (UpdatedBy)       REFERENCES Users(Id)
+    CONSTRAINT FK_Promotion_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
+    CONSTRAINT FK_Promotion_Employee FOREIGN KEY (EmployeeId) REFERENCES Employees(Id),
+    CONSTRAINT FK_Promotion_OldDepartment FOREIGN KEY (OldDepartmentId) REFERENCES Departments(Id),
+    CONSTRAINT FK_Promotion_NewDepartment FOREIGN KEY (NewDepartmentId) REFERENCES Departments(Id),
+    CONSTRAINT FK_Promotion_OldDesignation FOREIGN KEY (OldDesignationId) REFERENCES Designations(Id),
+    CONSTRAINT FK_Promotion_NewDesignation FOREIGN KEY (NewDesignationId) REFERENCES Designations(Id),
+    CONSTRAINT FK_Promotion_ApprovedBy FOREIGN KEY (ApprovedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Promotion_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Promotion_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id)
 );
 GO
 

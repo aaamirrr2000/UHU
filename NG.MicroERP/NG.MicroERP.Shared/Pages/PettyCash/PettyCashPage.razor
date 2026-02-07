@@ -17,9 +17,9 @@
     <div class="text-end" style="margin-top:10px;">
         @if (Action != "VIEW" && Globals.AccessLevel == 1)
         {
-            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;" Disabled="@_isSaving">
                 <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
-                @(Action == "INSERT" ? "Save" : "Update")
+                @(_isSaving ? "Saving..." : (Action == "INSERT" ? "Save" : "Update"))
             </MudButton>
 
             <!-- Preview GL Entry - Available before and after saving -->
@@ -333,6 +333,7 @@
 
     bool isReadOnly = true;
     private bool LoadingPanel { get; set; } = false;
+    private bool _isSaving = false;
     private string PeriodValidationMessage { get; set; } = string.Empty;
     private bool PeriodValidationChecked { get; set; } = false;
 
@@ -475,6 +476,9 @@
 
     protected async Task Save()
     {
+        if (_isSaving) return;
+        _isSaving = true;
+        await InvokeAsync(StateHasChanged);
         try
         {
             LoadingPanel = true;
@@ -512,6 +516,8 @@
         finally
         {
             LoadingPanel = false;
+            _isSaving = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -611,17 +617,20 @@
             }
 
             LoadingPanel = true;
+            StateHasChanged();
             try
             {
                 var result = await Functions.PostAsync<GeneralLedgerHeaderModel>("GeneralLedger/PreviewGLFromPettyCash", record, true);
                 LoadingPanel = false;
+                StateHasChanged();
 
                 if (result.Success && result.Result != null)
                 {
+                    int recordId = CurrentRecord > 0 ? CurrentRecord : 0;
                     var parameters = new DialogParameters<InvoiceGLPreviewDialog>
                     {
                         { x => x.PreviewData, result.Result },
-                        { x => x.RecordId, CurrentRecord },
+                        { x => x.RecordId, recordId },
                         { x => x.IsPostedToGL, record.IsPostedToGL == 1 },
                         { x => x.OnPostToGL, EventCallback.Factory.Create(this, async () => 
                         {
@@ -631,7 +640,6 @@
                                 return;
                             }
                             await PostToGL();
-                            // Refresh preview after posting
                             await ShowGLPreview();
                         }) }
                     };
@@ -642,7 +650,8 @@
                         FullWidth = true,
                         CloseButton = true,
                         CloseOnEscapeKey = true,
-                        BackdropClick = false
+                        BackdropClick = false,
+                        Position = DialogPosition.Center
                     };
 
                     await dialogService.ShowAsync<InvoiceGLPreviewDialog>("Accounting Entry Preview", parameters, options);
@@ -652,12 +661,16 @@
                     string errorMsg = !string.IsNullOrWhiteSpace(result.Message) 
                         ? result.Message 
                         : "Unable to generate preview. Please ensure all required accounts are configured in Chart of Accounts.";
-                    SnackbarService.Add(errorMsg, Severity.Error);
+                    if (errorMsg.StartsWith("Unable to generate preview", StringComparison.OrdinalIgnoreCase))
+                        SnackbarService.Add(errorMsg, Severity.Error);
+                    else
+                        SnackbarService.Add($"Unable to generate preview: {errorMsg}", Severity.Error);
                 }
             }
             catch (Exception ex)
             {
                 LoadingPanel = false;
+                StateHasChanged();
                 SnackbarService.Add($"Error generating preview: {ex.Message}", Severity.Error);
             }
         }

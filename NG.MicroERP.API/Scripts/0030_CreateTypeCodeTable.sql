@@ -1,4 +1,4 @@
-﻿CREATE TABLE TypeCode
+CREATE TABLE TypeCode
 (
     Id              INT IDENTITY(1,1) PRIMARY KEY,
     OrganizationId  INT NULL DEFAULT 1,
@@ -100,6 +100,8 @@ INSERT INTO TypeCode (ListName, ListValue, ParentId, SeqNo) VALUES
 ('INTERFACE TYPE', 'MANUAL ITEM REVENUE', 0, 1),
 ('INTERFACE TYPE', 'ITEM EXPENSE', 0, 1),
 ('INTERFACE TYPE', 'ITEM REVENUE', 0, 1),
+('INTERFACE TYPE', 'DISCOUNT', 0, 1),
+('INTERFACE TYPE', 'SERVICE', 0, 1),
 ('SALE TYPE', 'B2C (BUSINESS TO CONSUMER)', 0, 1),
 ('SALE TYPE', 'B2B (BUSINESS TO BUSINESS)', 0, 1),
 ('SALE TYPE', 'EXPORT', 0, 1),
@@ -170,4 +172,8 @@ INSERT INTO TypeCode (ListName, ListValue, ParentId, SeqNo) VALUES
 ('DENOMINATION', '5', 0, 1),
 ('DENOMINATION', '20', 0, 1),
 ('LOCKER', 'SALE CASH', 0, 1),
-('LOCKER', 'PETTY CASH', 0, 1);
+('LOCKER', 'PETTY CASH', 0, 1),
+('TAX CONDITION TYPE', 'Filer and Register Check Applied', 0, 1),
+('TAX CONDITION TYPE', 'No Condition Applied', 0, 2),
+('PRICE LIST', 'INDIVIDUAL CUSTOMERS', 0, 1),
+('PRICE LIST', 'DEALERS', 0, 1);

@@ -1,4 +1,4 @@
-﻿using NG.MicroERP.API.Helper;
+using NG.MicroERP.API.Helper;
 using NG.MicroERP.Shared.Models;
 using System.Net;
 using System.Xml;
@@ -137,7 +137,7 @@ public class ScannerDevicesService : IScannerDevicesService
 
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM scannerdevices WHERE UPPER(DeviceIpAddress) = '{obj.DeviceIpAddress!.ToUpper()}';";
+            string SQLDuplicate = $@"SELECT * FROM scannerdevices WHERE UPPER(DeviceIpAddress) = '{obj.DeviceIpAddress!.ToUpper()}' AND IsSoftDeleted = 0;";
             string SQLInsert = $@"INSERT INTO scannerdevices 
 			(
 				OrganizationId, 
@@ -197,7 +197,7 @@ public class ScannerDevicesService : IScannerDevicesService
     {
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM scannerdevices WHERE UPPER(DeviceIpAddress) = '{obj.DeviceIpAddress!.ToUpper()}' and Id != {obj.Id};";
+            string SQLDuplicate = $@"SELECT * FROM scannerdevices WHERE UPPER(DeviceIpAddress) = '{obj.DeviceIpAddress!.ToUpper()}' AND Id != {obj.Id} AND IsSoftDeleted = 0;";
             string SQLUpdate = $@"UPDATE scannerdevices SET 
 					OrganizationId = {obj.OrganizationId}, 
 					DeviceIpAddress = '{obj.DeviceIpAddress!.ToUpper()}', 

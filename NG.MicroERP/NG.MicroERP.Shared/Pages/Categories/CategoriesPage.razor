@@ -1,4 +1,4 @@
-﻿@page "/CategoriesPage/{Action}/{CurrentRecord?}"
+@page "/CategoriesPage/{Action}/{CurrentRecord?}"
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
@@ -121,6 +121,39 @@
                     </MudItem>
 
                     <MudItem xs="12" md="6">
+                        @if (_taxRuleAppliedOnInvoiceLevel)
+                        {
+                            <MudAlert Severity="Severity.Warning" Class="mb-3" Variant="Variant.Filled">
+                                <MudText Typo="Typo.body2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Warning" Class="me-2" />
+                                    <strong>Warning:</strong> Tax is currently applied at invoice level. Category-level tax rules will not be used in sale invoices.
+                                </MudText>
+                            </MudAlert>
+                        }
+                        <MudSelect T="int?"
+                                   Label="Tax Rule"
+                                   @bind-Value="record.TaxRuleId"
+                                   Placeholder="Select tax rule (optional)"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   ReadOnly="@isReadOnly"
+                                   FullWidth="true"
+                                   @bind-Value:after="OnTaxRuleChange">
+                            @if (TaxRule != null && TaxRule.Any())
+                            {
+                                @foreach (var rule in TaxRule)
+                                {
+                                    <MudSelectItem T="int?" Value="@rule.Id">@(rule.RuleName ?? $"Rule {rule.Id}")</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <MudText Typo="Typo.caption" Class="text-muted mt-1">
+                            Tax rule applied to all items in this category (if item doesn't have its own tax rule)
+                        </MudText>
+                        <ValidationMessage For="@(() => record.TaxRuleId)" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
                         <MudSelect T="int"
                                    Label="Active Status"
                                    @bind-Value="record.IsActive"
@@ -138,6 +171,46 @@
                         </MudSelect>
                         <ValidationMessage For="@(() => record.IsActive)" />
                     </MudItem>
+                    
+                    @if (SelectedTaxRule != null && SelectedTaxRule.Any())
+                    {
+                        <MudItem xs="12">
+                            <MudPaper Class="pa-3 mt-2" Elevation="1">
+                                <MudText Typo="Typo.subtitle1" Class="mb-2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Info" Class="me-1" />
+                                    Tax Rule Details
+                                </MudText>
+
+                                <MudTable Items="SelectedTaxRule" Elevation="0" Bordered="true" Hover="true" Striped="true">
+                                    <HeaderContent>
+                                        <MudTh>Seq</MudTh>
+                                        <MudTh>Tax Name</MudTh>
+                                        <MudTh>Base Type</MudTh>
+                                        <MudTh>Rate</MudTh>
+                                    </HeaderContent>
+                                    <RowTemplate>
+                                        <MudTd>@context.SequenceNo</MudTd>
+                                        <MudTd>
+                                            <MudIcon Icon="@Icons.Material.Filled.ConfirmationNumber" Class="me-1" />
+                                            @context.TaxName
+                                        </MudTd>
+                                        <MudTd>
+                                            <MudChip T="string" Size="Size.Small" Variant="Variant.Filled"
+                                                     Color="Color.Primary">
+                                                @context.TaxBaseType
+                                            </MudChip>
+                                        </MudTd>
+                                        <MudTd>
+                                            <MudChip T="int" Size="Size.Small" Variant="Variant.Filled"
+                                                     Color="@(context.TaxType == "PERCENTAGE" ? Color.Primary : Color.Info)">
+                                                @(context.TaxType == "PERCENTAGE" ? $"{context.TaxAmount:0.##}%" : $"{context.TaxAmount:0.##}")
+                                            </MudChip>
+                                        </MudTd>
+                                    </RowTemplate>
+                                </MudTable>
+                            </MudPaper>
+                        </MudItem>
+                    }
                 </MudGrid>
             </MudPaper>
         </MudItem>
@@ -159,6 +232,8 @@
     static CategoriesModel record = new();
     List<CategoriesModel> Par = new();
     List<TypeCodeModel> Cat = null!;
+    List<TaxRuleModel> TaxRule = new();
+    List<TaxRuleDetailModel> SelectedTaxRule = new();
 
     [Parameter] public string? Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
@@ -170,7 +245,27 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadInterfaceSettings();
         await GetAll();
+    }
+    
+    private bool _taxRuleAppliedOnInvoiceLevel = false;
+    
+    private async Task LoadInterfaceSettings()
+    {
+        try
+        {
+            var settings = await Functions.GetAsync<List<InterfaceSettingsModel>>(
+                $"InterfaceSettings/Search/OrganizationId={Globals.User.OrganizationId} and Category='Sale Invoice' and SettingKey='TaxRuleAppliedOnInvoiceLevel'", true)
+                ?? new List<InterfaceSettingsModel>();
+            
+            var setting = settings.FirstOrDefault(s => s.IsActive == 1 && s.IsSoftDeleted == 0);
+            _taxRuleAppliedOnInvoiceLevel = setting?.SettingValue?.ToLower() == "true";
+        }
+        catch
+        {
+            _taxRuleAppliedOnInvoiceLevel = false;
+        }
     }
 
     protected async Task GetAll()
@@ -178,6 +273,7 @@
         LoadingPanel = true;
         Cat = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/CATEGORY TYPE", true) ?? new List<TypeCodeModel>();
         Par = await Functions.GetAsync<List<CategoriesModel>>($"Categories/Search", true) ?? new List<CategoriesModel>();
+        TaxRule = await Functions.GetAsync<List<TaxRuleModel>>($"TaxRule/Search/IsActive=1", true) ?? new List<TaxRuleModel>();
 
         if (Action == "INSERT")
         {
@@ -203,7 +299,34 @@
     {
         LoadingPanel = true;
         record = await Functions.GetAsync<CategoriesModel>($"Categories/Get/{id}", true) ?? new CategoriesModel();
+        // Normalize 0 to null so Tax Rule dropdown shows placeholder instead of first option
+        if (record.TaxRuleId == 0)
+            record.TaxRuleId = null;
+
+        // Load tax rule details if TaxRuleId is set
+        if (record.TaxRuleId.HasValue && record.TaxRuleId.Value > 0)
+        {
+            SelectedTaxRule = await Functions.GetAsync<List<TaxRuleDetailModel>>($"TaxRuleDetail/Search/a.TaxRuleId={record.TaxRuleId.Value}", true) ?? new List<TaxRuleDetailModel>();
+        }
+        else
+        {
+            SelectedTaxRule = new List<TaxRuleDetailModel>();
+        }
+        
         LoadingPanel = false;
+    }
+
+    private async Task OnTaxRuleChange()
+    {
+        if (record.TaxRuleId.HasValue && record.TaxRuleId.Value > 0)
+        {
+            SelectedTaxRule = await Functions.GetAsync<List<TaxRuleDetailModel>>($"TaxRuleDetail/Search/a.TaxRuleId={record.TaxRuleId.Value}", true) ?? new List<TaxRuleDetailModel>();
+        }
+        else
+        {
+            SelectedTaxRule = new List<TaxRuleDetailModel>();
+        }
+        StateHasChanged();
     }
 
     protected async Task Clear()

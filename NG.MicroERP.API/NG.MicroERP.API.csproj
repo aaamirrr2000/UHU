@@ -53,7 +53,6 @@
   <ItemGroup>
     <None Include="Scripts\0005_CreateControlCenterTable.sql" />
     <None Include="Scripts\0450_ExtendEmployeesTableForHRMS.sql" />
-    <None Include="Scripts\0711_AllowNullItemIdInInvoiceDetail.sql" />
   </ItemGroup>
 
 </Project>

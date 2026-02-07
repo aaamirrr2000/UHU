@@ -1,0 +1,361 @@
+@page "/CustomerItemDiscountRulesPage/{Action}/{CurrentRecord?}"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+
+    <div class="text-end" style="margin-top:10px;">
+        @if (Action != "VIEW")
+        {
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                @(Action == "INSERT" ? "Save" : "Update")
+            </MudButton>
+
+            @if (Action == "UPDATE")
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                    Delete
+                </MudButton>
+            }
+        }
+    </div>
+
+    <br />
+
+    <MudExpansionPanels MultiExpansion="true">
+        <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
+
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+
+                    <i class="fa fa-tags"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Customer & Item Discount Rules</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Manage discounts based on customer and item</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #4CAF50; border-radius: 10px;" />
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudAutocomplete T="PartiesModel"
+                                         @bind-Value="SelectedParty"
+                                         ToStringFunc="@(p => p?.Name)"
+                                         SearchFunc="@( (searchText, cancellationToken) =>
+                                                        Task.FromResult(
+                                                            string.IsNullOrWhiteSpace(searchText)
+                                                                ? Parties
+                                                                : Parties.Where(p =>
+                                                                    p.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                                                                    p.Code.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                                                                )
+                                                        )
+                                                )"
+                                         Label="Customer (Leave empty for all customers)"
+                                         Clearable="true"
+                                         Variant="Variant.Outlined"
+                                         Dense="true"
+                                         CoerceText="true"
+                                         CoerceValue="true"
+                                         ResetValueOnEmptyText="true"
+                                         Immediate="true"
+                                         Placeholder="Select Customer (Optional)"
+                                         FullWidth="@true"
+                                         Class="flex-grow-1" />
+                    </div>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudAutocomplete T="ItemsModel"
+                                         @bind-Value="SelectedItem"
+                                         ToStringFunc="@(i => $"{i?.Code} - {i?.Name}")"
+                                         SearchFunc="@( (searchText, cancellationToken) =>
+                                                        Task.FromResult(
+                                                            string.IsNullOrWhiteSpace(searchText)
+                                                                ? Items
+                                                                : Items.Where(i =>
+                                                                    i.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                                                                    i.Code.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                                                                )
+                                                        )
+                                                )"
+                                         Label="Item (Leave empty for all items)"
+                                         Clearable="true"
+                                         Variant="Variant.Outlined"
+                                         Dense="true"
+                                         CoerceText="true"
+                                         CoerceValue="true"
+                                         ResetValueOnEmptyText="true"
+                                         Immediate="true"
+                                         Placeholder="Select Item (Optional)"
+                                         FullWidth="@true"
+                                         Class="flex-grow-1" />
+                    </div>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudSelect T="string"
+                                   @bind-Value="record.AmountType"
+                                   Label="Amount Type *"
+                                   Placeholder="Percentage OR Flat"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="@true"
+                                   Class="flex-grow-1"
+                                   ReadOnly="@isReadOnly">
+
+                            <!-- Percentage -->
+                            <MudSelectItem Value="@("PERCENTAGE")">
+                                <MudIcon Icon="@Icons.Material.Filled.Percent" Size="Size.Small" Class="me-2" />
+                                Percentage
+                            </MudSelectItem>
+
+                            <!-- Fixed Amount -->
+                            <MudSelectItem Value="@("FLAT")">
+                                <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Size="Size.Small" Class="me-2" />
+                                Fixed Amount
+                            </MudSelectItem>
+
+                        </MudSelect>
+
+                        <ValidationMessage For="@(() => record.AmountType)" />
+                    </div>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudNumericField @bind-Value="record.Amount" 
+                                         Label="Amount *"
+                                         Variant="Variant.Outlined" 
+                                         Placeholder="Amount" 
+                                         ReadOnly="@isReadOnly" 
+                                         Format="#,##0.00"
+                                         FullWidth="@true"
+                                         Class="flex-grow-1"></MudNumericField>
+                        <ValidationMessage For="@(() => record.Amount)" />
+                    </div>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudDatePicker @bind-Date="record.EffectiveFrom" 
+                                       Label="Effective From *"
+                                       Variant="Variant.Outlined" 
+                                       DateFormat="yyyy-MM-dd" 
+                                       Placeholder="Effective From" 
+                                       ReadOnly="@isReadOnly"
+                                       FullWidth="@true"
+                                       Class="flex-grow-1"></MudDatePicker>
+                        <ValidationMessage For="@(() => record.EffectiveFrom)" />
+                    </div>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudDatePicker @bind-Date="record.EffectiveTo" 
+                                       Label="Effective To"
+                                       Variant="Variant.Outlined" 
+                                       DateFormat="yyyy-MM-dd" 
+                                       Placeholder="Effective To" 
+                                       ReadOnly="@isReadOnly"
+                                       FullWidth="@true"
+                                       Class="flex-grow-1"></MudDatePicker>
+                    </div>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudSelect T="int"
+                                   @bind-Value="record.IsActive"
+                                   Label="Activation Status *"
+                                   Placeholder="Is Active"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="@true"
+                                   Class="flex-grow-1"
+                                   ReadOnly="@isReadOnly">
+                            @if (record.IsActive != 0 && record.IsActive != 1)
+                            {
+                                record.IsActive = 1;
+                            }
+                            <MudSelectItem T="int" Value="1">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                Enable
+                            </MudSelectItem>
+                            <MudSelectItem T="int" Value="0">
+                                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" Class="me-2" />
+                                Disable
+                            </MudSelectItem>
+                        </MudSelect>
+
+                        <ValidationMessage For="@(() => record.IsActive)" />
+                    </div>
+
+                </div>
+            </ChildContent>
+
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+
+</div>
+
+@code
+{
+    CustomerItemDiscountRulesModel record = new();
+    List<PartiesModel> Parties = new();
+    List<ItemsModel> Items = new();
+    PartiesModel? SelectedParty = null;
+    ItemsModel? SelectedItem = null;
+
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "CustomerItemDiscountRulesDashboard");
+        await GetAll();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        
+        Parties = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search/IsSoftDeleted=0", true) ?? new List<PartiesModel>();
+        Items = await Functions.GetAsync<List<ItemsModel>>($"Items/Search/IsSoftDeleted=0", true) ?? new List<ItemsModel>();
+
+        if (Action == "INSERT")
+        {
+            record = new CustomerItemDiscountRulesModel();
+            record.IsActive = 1;
+            record.EffectiveFrom = DateTime.Today;
+            isReadOnly = false;
+        }
+        else if (Action == "UPDATE")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action == "VIEW")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<CustomerItemDiscountRulesModel>($"CustomerItemDiscountRules/Get/{id}", true) ?? new CustomerItemDiscountRulesModel();
+        
+        if (record.PartyId.HasValue && record.PartyId.Value > 0)
+        {
+            SelectedParty = Parties.FirstOrDefault(p => p.Id == record.PartyId.Value);
+        }
+        
+        if (record.ItemId.HasValue && record.ItemId.Value > 0)
+        {
+            SelectedItem = Items.FirstOrDefault(i => i.Id == record.ItemId.Value);
+        }
+        
+        LoadingPanel = false;
+    }
+
+    protected void GetDefaultValues()
+    {
+        StateHasChanged();
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new CustomerItemDiscountRulesModel();
+        record.IsActive = 1;
+        record.EffectiveFrom = DateTime.Today;
+        SelectedParty = null;
+        SelectedItem = null;
+        isReadOnly = false;
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+
+        var errors = new List<string>();
+        if (string.IsNullOrWhiteSpace(record.AmountType))
+            errors.Add("• Amount Type is required");
+
+        if (record.Amount <= 0)
+            errors.Add("• Amount must be greater than 0");
+
+        if (errors.Count > 0)
+        {
+            SnackbarService.Add($"ERROR:\n{string.Join("\n", errors)}", Severity.Error);
+            return;
+        }
+
+        try
+        {
+            LoadingPanel = true;
+            record.PartyId = SelectedParty?.Id;
+            record.ItemId = SelectedItem?.Id;
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<CustomerItemDiscountRulesModel>($"CustomerItemDiscountRules/{url}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+            }
+            else
+            {
+                await OnSaved.InvokeAsync();
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                    await Edit(result.Result!.Id);
+                else
+                {
+                    await Clear();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"ERROR: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+}

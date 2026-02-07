@@ -149,4 +149,5 @@ public class ManualLineData
     public double UnitPrice { get; set; } = 0;
     public double DiscountAmount { get; set; } = 0;
     public double TaxAmount { get; set; } = 0;
+    public int? TaxRuleId { get; set; } = null; // Tax rule ID for manual items
 }

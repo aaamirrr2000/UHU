@@ -1,4 +1,4 @@
-﻿using NG.MicroERP.API.Helper;
+using NG.MicroERP.API.Helper;
 using NG.MicroERP.Shared.Models;
 
 namespace NG.MicroERP.API.Services.Services;
@@ -56,7 +56,7 @@ public class DepartmentsService : IDepartmentsService
 
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM departments WHERE UPPER(DepartmentName) = '{obj.DepartmentName!.ToUpper()}';";
+            string SQLDuplicate = $@"SELECT * FROM departments WHERE UPPER(DepartmentName) = '{obj.DepartmentName!.ToUpper()}' AND IsSoftDeleted = 0;";
             string SQLInsert = $@"INSERT INTO departments 
 			(
 				OrganizationId, 
@@ -105,7 +105,7 @@ public class DepartmentsService : IDepartmentsService
     {
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM departments WHERE UPPER(DepartmentName) = '{obj.DepartmentName!.ToUpper()}' and Id != {obj.Id};";
+            string SQLDuplicate = $@"SELECT * FROM departments WHERE UPPER(DepartmentName) = '{obj.DepartmentName!.ToUpper()}' AND Id != {obj.Id} AND IsSoftDeleted = 0;";
             string SQLUpdate = $@"UPDATE departments SET 
 					OrganizationId = {obj.OrganizationId}, 
 					DepartmentName = '{obj.DepartmentName!.ToUpper()}', 

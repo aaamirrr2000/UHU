@@ -1,4 +1,4 @@
-﻿using NG.MicroERP.API.Helper;
+using NG.MicroERP.API.Helper;
 using NG.MicroERP.Shared.Models;
 
 namespace NG.MicroERP.API.Services.Services;
@@ -52,7 +52,7 @@ public class TaxService : ITaxService
         try
         {
             string Code = dapper.GetCode("TAX", "Tax", "Code")!;
-            string SQLDuplicate = $@"SELECT * FROM Tax WHERE UPPER(TaxCode) = '{obj.TaxCode!.ToUpper()}';";
+            string SQLDuplicate = $@"SELECT * FROM Tax WHERE UPPER(TaxCode) = '{obj.TaxCode!.ToUpper()}' AND IsSoftDeleted = 0;";
             string SQLInsert = $@"INSERT INTO Tax 
 			(
 				TaxName, 
@@ -107,7 +107,7 @@ public class TaxService : ITaxService
     {
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM Tax WHERE UPPER(code) = '{obj.TaxCode!.ToUpper()}' and Id != {obj.Id};";
+            string SQLDuplicate = $@"SELECT * FROM Tax WHERE UPPER(TaxCode) = '{obj.TaxCode!.ToUpper()}' AND Id != {obj.Id} AND IsSoftDeleted = 0;";
             string SQLUpdate = $@"UPDATE Tax SET 
 					TaxName = '{obj.TaxName!.ToUpper()}', 
 					TaxCode = '{obj.TaxCode!.ToUpper()}', 

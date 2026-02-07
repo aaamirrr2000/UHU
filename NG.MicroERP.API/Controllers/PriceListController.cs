@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NG.MicroERP.API.Helper;
@@ -37,6 +37,16 @@ public class PriceListController : ControllerBase
 
         return Ok(result.Item2);
 
+    }
+
+    [HttpGet("GetByItemAndPriceList/{itemId}/{priceListName}/{organizationId?}")]
+    public async Task<IActionResult> GetByItemAndPriceList(int itemId, string priceListName, int organizationId = 1)
+    {
+        var result = await Srv.GetByItemAndPriceList(itemId, priceListName, organizationId)!;
+        if (result.Item1 == false)
+            return NotFound("Record Not Found");
+
+        return Ok(result.Item2);
     }
 
     [HttpPost("Insert")]

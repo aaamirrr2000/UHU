@@ -1,4 +1,4 @@
-﻿CREATE TABLE Bundles (
+CREATE TABLE Bundles (
     Id                  INT PRIMARY KEY IDENTITY(1,1),
     OrganizationId      INT                 NOT NULL    DEFAULT 1,
     Code                VARCHAR(50)         NOT NULL,
@@ -14,9 +14,9 @@
 	UpdatedOn           DATETIME			NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	UpdatedFrom         VARCHAR(255)		NULL DEFAULT NULL,
 	IsSoftDeleted       SMALLINT			NOT NULL DEFAULT 0,
-	FOREIGN KEY (CreatedBy)        REFERENCES Users(Id),
-	FOREIGN KEY (UpdatedBy)        REFERENCES Users(Id),
-	FOREIGN KEY (OrganizationId)   REFERENCES Organizations(Id)
+	CONSTRAINT FK_Bundles_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+	CONSTRAINT FK_Bundles_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id),
+	CONSTRAINT FK_Bundles_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id)
 );
 
 CREATE TABLE BundleDetails (
@@ -27,6 +27,6 @@ CREATE TABLE BundleDetails (
     WastePercent    DECIMAL(5,2)  NOT NULL DEFAULT 0.00,
     UnitCost        DECIMAL(16,2) NOT NULL DEFAULT 0.00,
     IsPrimaryItem   SMALLINT NOT NULL DEFAULT 0,
-    FOREIGN KEY (BundleId) REFERENCES Bundles(Id),
-    FOREIGN KEY (ItemId) REFERENCES Items(Id)
+    CONSTRAINT FK_BundleDetails_Bundle FOREIGN KEY (BundleId) REFERENCES Bundles(Id),
+    CONSTRAINT FK_BundleDetails_Item FOREIGN KEY (ItemId) REFERENCES Items(Id)
 );

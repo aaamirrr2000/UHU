@@ -81,7 +81,7 @@ public class ShipmentService : IShipmentService
         try
         {
             string shipmentNo = dapper.GetCode("SH", "Shipments", "ShipmentNo")!;
-            string SQLDuplicate = $@"SELECT * FROM Shipments WHERE UPPER(ShipmentNo) = '{shipmentNo.ToUpper()}' AND OrganizationId = {obj.OrganizationId};";
+            string SQLDuplicate = $@"SELECT * FROM Shipments WHERE UPPER(ShipmentNo) = '{shipmentNo.ToUpper()}' AND OrganizationId = {obj.OrganizationId} AND IsSoftDeleted = 0;";
             
             // Insert Header
             string SQLInsertHeader = $@"INSERT INTO Shipments 

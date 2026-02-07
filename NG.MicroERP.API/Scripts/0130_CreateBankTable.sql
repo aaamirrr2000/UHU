@@ -1,4 +1,4 @@
-﻿CREATE TABLE Bank
+CREATE TABLE Bank
 (
     Id              INT IDENTITY(1,1) PRIMARY KEY,
     OrganizationId  INT NOT NULL DEFAULT 1,
@@ -22,11 +22,11 @@
 	UpdatedOn       DATETIME			NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	UpdatedFrom     VARCHAR(255)		NULL DEFAULT NULL,
 	IsSoftDeleted   SMALLINT			NOT NULL DEFAULT 0,
-	FOREIGN KEY (CreatedBy)         REFERENCES Users(Id),
-	FOREIGN KEY (UpdatedBy)         REFERENCES Users(Id),
-    FOREIGN KEY (CityId)            REFERENCES Areas(Id),
-    FOREIGN KEY (AccountId)         REFERENCES ChartOfAccounts(Id),
-	FOREIGN KEY (OrganizationId)    REFERENCES Organizations(Id)
+	CONSTRAINT FK_Bank_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+	CONSTRAINT FK_Bank_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Bank_City FOREIGN KEY (CityId) REFERENCES Areas(Id),
+    CONSTRAINT FK_Bank_Account FOREIGN KEY (AccountId) REFERENCES ChartOfAccounts(Id),
+	CONSTRAINT FK_Bank_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id)
 );
 
 INSERT INTO Bank

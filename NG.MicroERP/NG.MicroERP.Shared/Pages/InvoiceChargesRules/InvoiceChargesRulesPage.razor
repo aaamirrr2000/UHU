@@ -1,4 +1,4 @@
-﻿@page "/InvoiceChargesRulesPage/{Action}/{CurrentRecord?}"
+@page "/InvoiceChargesRulesPage/{Action}/{CurrentRecord?}"
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
@@ -52,7 +52,6 @@
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Account <span style='color:red;'>*</span></label>
                         <MudAutocomplete T="ChartOfAccountsModel"
                                          @bind-Value="SelectedAccount"
                                          ToStringFunc="@(p => p?.Name)"
@@ -65,24 +64,26 @@
                                                                 )
                                                         )
                                                 )"
-                                        Clearable="true"
+                                         Label="Account *"
+                                         Clearable="true"
                                          Variant="Variant.Outlined"
                                          Dense="true"
                                          CoerceText="true"
                                          CoerceValue="true"
                                          ResetValueOnEmptyText="true"
                                          Immediate="true"
-                                         />
+                                         FullWidth="@true"
+                                         Class="flex-grow-1" />
                         <ValidationMessage For="@(() => record.AccountId)" />
                     </div>
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Amount Type <span style='color:red;'>*</span></label>
                         <MudSelect T="string"
                                    @bind-Value="record.AmountType"
+                                   Label="Amount Type *"
                                    Placeholder="Percentage OR Flat"
                                    Variant="Variant.Outlined"
                                    Clearable="true"
-                                   FullWidth="true"
+                                   FullWidth="@true"
                                    Class="flex-grow-1">
 
                             <!-- Percentage Tax -->
@@ -102,18 +103,24 @@
                         <ValidationMessage For="@(() => record.AmountType)" />
                     </div>
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Amount <span style='color:red;'>*</span></label>
-                        <MudNumericField @bind-Value="record.Amount" Variant="Variant.Outlined" placeholder="Amount" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
+                        <MudNumericField @bind-Value="record.Amount" 
+                                         Label="Amount *"
+                                         Variant="Variant.Outlined" 
+                                         Placeholder="Amount" 
+                                         ReadOnly="@isReadOnly" 
+                                         Format="#,##0.00"
+                                         FullWidth="@true"
+                                         Class="flex-grow-1"></MudNumericField>
                         <ValidationMessage For="@(() => record.Amount)" />
                     </div>
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Charge Category <span style='color:red;'>*</span></label>
                         <MudSelect T="string"
                                    @bind-Value="record.ChargeCategory"
+                                   Label="Charge Category *"
                                    Placeholder="Service OR Discount"
                                    Variant="Variant.Outlined"
                                    Clearable="true"
-                                   FullWidth="true"
+                                   FullWidth="@true"
                                    Class="flex-grow-1">
 
                             <!-- Percentage Tax -->
@@ -132,23 +139,34 @@
                     	<ValidationMessage For="@(() => record.ChargeCategory)" />
                     </div>
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Effective From <span style='color:red;'>*</span></label>
-                        <MudDatePicker @bind-Date="record.EffectiveFrom" Variant="Variant.Outlined" DateFormat="yyyy-MM-dd" placeholder="Effective From" ReadOnly="@isReadOnly"></MudDatePicker>
+                        <MudDatePicker @bind-Date="record.EffectiveFrom" 
+                                       Label="Effective From *"
+                                       Variant="Variant.Outlined" 
+                                       DateFormat="yyyy-MM-dd" 
+                                       Placeholder="Effective From" 
+                                       ReadOnly="@isReadOnly"
+                                       FullWidth="@true"
+                                       Class="flex-grow-1"></MudDatePicker>
                         <ValidationMessage For="@(() => record.EffectiveFrom)" />
                     </div>
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Effective To</label>
-                        <MudDatePicker @bind-Date="record.EffectiveTo" Variant="Variant.Outlined" DateFormat="yyyy-MM-dd" placeholder="Effective To" ReadOnly="@isReadOnly"></MudDatePicker>
+                        <MudDatePicker @bind-Date="record.EffectiveTo" 
+                                       Label="Effective To"
+                                       Variant="Variant.Outlined" 
+                                       DateFormat="yyyy-MM-dd" 
+                                       Placeholder="Effective To" 
+                                       ReadOnly="@isReadOnly"
+                                       FullWidth="@true"
+                                       Class="flex-grow-1"></MudDatePicker>
                     </div>
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Activation Status<span style='color:red;'>*</span></label>
-
                         <MudSelect T="int"
                                    @bind-Value="record.IsActive"
+                                   Label="Activation Status *"
                                    Placeholder="Is Active"
                                    Variant="Variant.Outlined"
                                    Clearable="true"
-                                   FullWidth="true"
+                                   FullWidth="@true"
                                    Class="flex-grow-1">
                             @if (record.IsActive != 0 && record.IsActive != 1)
                             {
@@ -198,6 +216,13 @@
     protected override void OnAfterRender(bool firstRender)
     {
         GetDefaultValues();
+        
+        // Set SelectedAccount from record.AccountId after accounts are loaded (for edit mode)
+        if (firstRender && record.AccountId > 0 && Acc != null && Acc.Any() && (SelectedAccount == null || SelectedAccount.Id == 0))
+        {
+            SelectedAccount = Acc.FirstOrDefault(a => a.Id == record.AccountId) ?? new ChartOfAccountsModel();
+            StateHasChanged();
+        }
     }
 
     protected async Task GetAll()
@@ -216,6 +241,7 @@
             record = new InvoiceChargesRulesModel();
             record.IsActive = 1;
             isReadOnly = false;
+            SelectedAccount = new ChartOfAccountsModel();
         }
         else if (Action == "UPDATE")
         {
@@ -235,6 +261,17 @@
     {
         LoadingPanel = true;
         record = await Functions.GetAsync<InvoiceChargesRulesModel>($"InvoiceChargesRules/Get/{id}", true) ?? new InvoiceChargesRulesModel();
+        
+        // Set SelectedAccount from record.AccountId when editing
+        if (record.AccountId > 0 && Acc != null && Acc.Any())
+        {
+            SelectedAccount = Acc.FirstOrDefault(a => a.Id == record.AccountId) ?? new ChartOfAccountsModel();
+        }
+        else
+        {
+            SelectedAccount = new ChartOfAccountsModel();
+        }
+        
         LoadingPanel = false;
     }
 

@@ -1,4 +1,4 @@
-﻿@page "/TaxRuleDetailPage/{Action}/{CurrentRecord?}"
+@page "/TaxRuleDetailPage/{Action}/{CurrentRecord?}"
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
@@ -54,34 +54,145 @@
                 @if (Action != "VIEW")
                 {
                     <div class="row" style="width:100%; display: flex;">
-                     @*    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                            <label class="form-label fw-bold mb-1">Tax Rule Id <span style='color:red;'>*</span></label>
-                            <AutoComplete TItem="TaxRuleModel"
-                                        DataList="@TaxRule"
-                                        DisplayProperty="@(p => p.RuleName)"
-                                        IdProperty="@(p => p.Id)"
-                                        @bind-SelectedId="record.TaxRuleId"
-                                        Variant="Variant.Outlined"
-                                        FullWidth="true" />
-                                        <ValidationMessage For="@(() => record.TaxRuleId)" />
-                        </div> *@
-                        <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                            <label class="form-label fw-bold mb-1">Tax <span style='color:red;'>*</span></label>
 
+                        <!-- 1. Tax Selection -->
+                        <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
                             <AutoComplete TItem="TaxMasterModel"
                                 DataList="@TaxMaster"
                                 DisplayProperty="@(p => p.TaxName)"
                                 IdProperty="@(p => p.Id)"
+                                Label="Tax"
                                 @bind-SelectedId="record.TaxId"
+                                @bind-SelectedId:after="OnTaxSelected"
                                 Variant="Variant.Outlined"
                                 FullWidth="true" />
                                 <ValidationMessage For="@(() => record.TaxId)" />
                         </div>
+
+                        <!-- 2. Tax Type (Percentage/Flat) -->
                         <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                            <label class="form-label fw-bold mb-1">Calculation Sequence <span style='color:red;'>*</span></label>
-                            <MudNumericField @bind-Value="record.SequenceNo" Variant="Variant.Outlined" placeholder="Calculation Sequence" ReadOnly="@isReadOnly" Format="#,##0"></MudNumericField>
+                            <MudSelect T="string"
+                                       Label="Tax Type *"
+                                       @bind-Value="record.TaxType"
+                                       Placeholder="Select Tax Type"
+                                       Variant="Variant.Outlined"
+                                       Clearable="@true"
+                                       FullWidth="@true"
+                                       ReadOnly="@isReadOnly"
+                                       Required="@true"
+                                       Class="mb-3">
+                                <MudSelectItem Value="@("PERCENTAGE")">
+                                    <MudIcon Icon="@Icons.Material.Filled.Percent" Color="Color.Primary" Size="Size.Small" Class="me-2" />
+                                    Percentage (%)
+                                </MudSelectItem>
+                                <MudSelectItem Value="@("FLAT")">
+                                    <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                    Flat Amount
+                                </MudSelectItem>
+                            </MudSelect>
+                            <ValidationMessage For="@(() => record.TaxType)" />
+                        </div>
+
+                        <!-- 3. Tax Base Type -->
+                        <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                            <MudSelect T="string"
+                                       Label="Tax Calculation Type *"
+                                       @bind-Value="record.TaxBaseType"
+                                       Placeholder="Select Tax Base Type"
+                                       Variant="Variant.Outlined"
+                                       Clearable="@true"
+                                       FullWidth="@true"
+                                       ReadOnly="@isReadOnly"
+                                       Required="@true"
+                                       Class="mb-3">
+                                <MudSelectItem Value="@("BASE_ONLY")">
+                                    <MudIcon Icon="@Icons.Material.Filled.Calculate" Size="Size.Small" Class="me-2" />
+                                    Base Amount Only
+                                </MudSelectItem>
+                                <MudSelectItem Value="@("BASE_PLUS_SELECTED")">
+                                    <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Size="Size.Small" Class="me-2" />
+                                    Base + Selected Taxes
+                                </MudSelectItem>
+                                <MudSelectItem Value="@("RUNNING_TOTAL")">
+                                    <MudIcon Icon="@Icons.Material.Filled.ShowChart" Size="Size.Small" Class="me-2" />
+                                    Running Total
+                                </MudSelectItem>
+                            </MudSelect>
+                            <ValidationMessage For="@(() => record.TaxBaseType)" />
+                        </div>
+
+                        <!-- 4. Tax Amount/Rate -->
+                        <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                            <MudNumericField @bind-Value="record.TaxAmount" 
+                                             Label="@($"Tax Amount/Rate * {((!string.IsNullOrEmpty(record.TaxType) && record.TaxType == "PERCENTAGE") ? "(%)" : "(Fixed)")}")" 
+                                             Variant="Variant.Outlined" 
+                                             Placeholder="Enter Tax Rate/Amount"
+                                             ReadOnly="@isReadOnly" 
+                                             Format="N2"
+                                             Required="@true"></MudNumericField>
+                            <ValidationMessage For="@(() => record.TaxAmount)" />
+                        </div>
+
+                        <!-- 5. Sequence/Order -->
+                        <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                            <MudNumericField @bind-Value="record.SequenceNo" Label="Order/Sequence *" Variant="Variant.Outlined" placeholder="Calculation Sequence" ReadOnly="@isReadOnly" Format="#,##0" Required="@true"></MudNumericField>
                             <ValidationMessage For="@(() => record.SequenceNo)" />
                         </div>
+
+                        @if (selectedTaxIsConditional)
+                        {
+                            <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                                <MudSelect T="int?"
+                                           Label="Is Registered (Override)"
+                                           @bind-Value="record.IsRegistered"
+                                           Placeholder="Inherit from Rule"
+                                           Variant="Variant.Outlined"
+                                           Clearable="@true"
+                                           FullWidth="@true"
+                                           ReadOnly="@isReadOnly"
+                                           Class="mb-3">
+                                    <MudSelectItem T="int?" Value="@((int?)1)">
+                                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                        Yes
+                                    </MudSelectItem>
+                                    <MudSelectItem T="int?" Value="@((int?)0)">
+                                        <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" Class="me-2" />
+                                        No
+                                    </MudSelectItem>
+                                    <MudSelectItem T="int?" Value="@((int?)null)">
+                                        <MudIcon Icon="@Icons.Material.Filled.Remove" Color="Color.Info" Size="Size.Small" Class="me-2" />
+                                        Inherit from Rule
+                                    </MudSelectItem>
+                                </MudSelect>
+                                <MudText Typo="Typo.caption" Class="text-muted">Leave empty if condition is not applicable</MudText>
+                            </div>
+
+                            <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                                <MudSelect T="int?"
+                                           Label="Is Filer"
+                                           @bind-Value="record.IsFiler"
+                                           Placeholder="Not Applicable"
+                                           Variant="Variant.Outlined"
+                                           Clearable="@true"
+                                           FullWidth="@true"
+                                           ReadOnly="@isReadOnly"
+                                           Class="mb-3">
+                                    <MudSelectItem T="int?" Value="@((int?)1)">
+                                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                        Yes
+                                    </MudSelectItem>
+                                    <MudSelectItem T="int?" Value="@((int?)0)">
+                                        <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" Class="me-2" />
+                                        No
+                                    </MudSelectItem>
+                                    <MudSelectItem T="int?" Value="@((int?)null)">
+                                        <MudIcon Icon="@Icons.Material.Filled.Remove" Color="Color.Info" Size="Size.Small" Class="me-2" />
+                                        Not Applicable
+                                    </MudSelectItem>
+                                </MudSelect>
+                                <MudText Typo="Typo.caption" Class="text-muted">Leave empty if condition is not applicable</MudText>
+                            </div>
+                        }
 
                     </div>
                 }
@@ -166,11 +277,11 @@
                                             <CellTemplate Context="row">
                                                 @if (row.Item.TaxType == "PERCENTAGE")
                                                 {
-                                                    <MudText>@($"{row.Item.Rate:0.##}%")</MudText>
+                                                    <MudText>@($"{row.Item.TaxAmount:0.##}%")</MudText>
                                                 }
                                                 else
                                                 {
-                                                    <MudText>@($"{row.Item.Rate:0.##}")</MudText>
+                                                    <MudText>@($"{row.Item.TaxAmount:0.##}")</MudText>
                                                 }
                                             </CellTemplate>
                                         </TemplateColumn>
@@ -187,6 +298,60 @@
                                                 </MudChip>
                                             </CellTemplate>
                                         </TemplateColumn>
+
+                                        <!-- Conditions (if conditional) -->
+                                        @if (RuleData.Any(r => !string.IsNullOrWhiteSpace(r.ConditionType)))
+                                        {
+                                            <TemplateColumn Title="Is Registered"
+                                                            Sortable="true"
+                                                            Filterable="true"
+                                                            CellStyle="text-align:center;">
+                                                <CellTemplate Context="row">
+                                                    @if (!string.IsNullOrWhiteSpace(row.Item.ConditionType))
+                                                    {
+                                                        @if (row.Item.IsRegistered.HasValue)
+                                                        {
+                                                            <MudChip Color="@(row.Item.IsRegistered.Value == 1 ? Color.Success : Color.Error)" 
+                                                                     Size="Size.Small" 
+                                                                     Variant="Variant.Filled">
+                                                                @(row.Item.IsRegistered.Value == 1 ? "Yes" : "No")
+                                                            </MudChip>
+                                                        }
+                                                        else
+                                                        {
+                                                            <MudChip Color="Color.Info" Size="Size.Small" Variant="Variant.Outlined">
+                                                                N/A
+                                                            </MudChip>
+                                                        }
+                                                    }
+                                                </CellTemplate>
+                                            </TemplateColumn>
+
+                                            <TemplateColumn Title="Is Filer"
+                                                            Sortable="true"
+                                                            Filterable="true"
+                                                            CellStyle="text-align:center;">
+                                                <CellTemplate Context="row">
+                                                    @if (!string.IsNullOrWhiteSpace(row.Item.ConditionType))
+                                                    {
+                                                        @if (row.Item.IsFiler.HasValue)
+                                                        {
+                                                            <MudChip Color="@(row.Item.IsFiler.Value == 1 ? Color.Success : Color.Error)" 
+                                                                     Size="Size.Small" 
+                                                                     Variant="Variant.Filled">
+                                                                @(row.Item.IsFiler.Value == 1 ? "Yes" : "No")
+                                                            </MudChip>
+                                                        }
+                                                        else
+                                                        {
+                                                            <MudChip Color="Color.Info" Size="Size.Small" Variant="Variant.Outlined">
+                                                                N/A
+                                                            </MudChip>
+                                                        }
+                                                    }
+                                                </CellTemplate>
+                                            </TemplateColumn>
+                                        }
 
 
                                     </Columns>
@@ -240,6 +405,7 @@
     List<TaxRuleDetailModel> AllData = new();
     List<TaxRuleDetailModel> RuleData = new();
     private string searchString = "";
+    bool selectedTaxIsConditional = false;
 
     [Parameter] public string Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
@@ -271,6 +437,7 @@
         if (Action == "INSERT")
         {
             record = new TaxRuleDetailModel();
+            selectedTaxIsConditional = false;
             isReadOnly = false;
         }
         else if (Action == "UPDATE")
@@ -311,7 +478,61 @@
     {
         LoadingPanel = true;
         record = await Functions.GetAsync<TaxRuleDetailModel>($"TaxRuleDetail/Get/{id}", true) ?? new TaxRuleDetailModel();
+        
+        // Check if the tax has "FILER AND REGISTER CHECK APPLIED" condition type
+        if (record.TaxId > 0)
+        {
+            var tax = TaxMaster.FirstOrDefault(t => t.Id == record.TaxId);
+            selectedTaxIsConditional = tax != null && 
+                !string.IsNullOrWhiteSpace(tax.ConditionType) &&
+                tax.ConditionType.Equals("FILER AND REGISTER CHECK APPLIED", StringComparison.OrdinalIgnoreCase);
+        }
+        else
+        {
+            selectedTaxIsConditional = false;
+        }
+        
         LoadingPanel = false;
+    }
+
+    private void OnTaxSelected()
+    {
+        // Check if selected tax is conditional
+        if (record.TaxId > 0)
+        {
+            var tax = TaxMaster.FirstOrDefault(t => t.Id == record.TaxId);
+            
+            // If tax not found in list, try to find it by reloading (shouldn't happen normally)
+            if (tax == null && TaxMaster.Count > 0)
+            {
+                // Tax might not be in the list yet, wait for it to be available
+                // This should be rare, but we'll handle it
+                selectedTaxIsConditional = false;
+            }
+            else
+            {
+                // Check if the tax has "FILER AND REGISTER CHECK APPLIED" condition type
+                selectedTaxIsConditional = tax != null && 
+                    !string.IsNullOrWhiteSpace(tax.ConditionType) &&
+                    tax.ConditionType.Equals("FILER AND REGISTER CHECK APPLIED", StringComparison.OrdinalIgnoreCase);
+                
+                // If tax is not conditional, clear condition overrides
+                if (!selectedTaxIsConditional)
+                {
+                    record.IsRegistered = null;
+                    record.IsFiler = null;
+                }
+            }
+        }
+        else
+        {
+            selectedTaxIsConditional = false;
+            record.IsRegistered = null;
+            record.IsFiler = null;
+        }
+        
+        // Force UI update to show/hide conditional fields
+        InvokeAsync(StateHasChanged);
     }
 
     protected void GetDefaultValues()
@@ -335,27 +556,99 @@
 
     protected async Task Delete()
     {
-        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (record.Id == 0)
+        {
+            SnackbarService.Add("No record selected to delete", Severity.Warning);
+            return;
+        }
+
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete this tax detail?");
         if (res == false)
             return;
 
-        Action = "SOFTDELETE";
-        await Save();
+        try
+        {
+            LoadingPanel = true;
+            // The Delete endpoint expects id as a query parameter
+            var result = await Functions.PostAsync<string>($"TaxRuleDetail/Delete?id={record.Id}", "", true);
+            if (result.Success == true)
+            {
+                SnackbarService.Add($"Tax detail deleted successfully", Severity.Success);
+                await OnSaved.InvokeAsync();
+                await Clear();
+            }
+            else
+            {
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"ERROR: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
     }
 
     protected async Task Delete(int id)
     {
-        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete this tax detail?");
         if (res == false)
             return;
 
-        Action = "SOFTDELETE";
-        await Get(id);
-        await Save();
+        try
+        {
+            LoadingPanel = true;
+            // The Delete endpoint expects id as a query parameter
+            var result = await Functions.PostAsync<string>($"TaxRuleDetail/Delete?id={id}", "", true);
+            if (result.Success == true)
+            {
+                SnackbarService.Add($"Tax detail deleted successfully", Severity.Success);
+                await OnSaved.InvokeAsync();
+                // Reload the data
+                await GetAll();
+            }
+            else
+            {
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"ERROR: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
     }
 
     protected async Task Save()
     {
+        var errors = new List<string>();
+        if (record.TaxId == 0)
+            errors.Add("• Tax is required");
+        
+        if (string.IsNullOrWhiteSpace(record.TaxType))
+            errors.Add("• Tax Type is required");
+        
+        if (string.IsNullOrWhiteSpace(record.TaxBaseType))
+            errors.Add("• Tax Calculation Type is required");
+        
+        if (!record.TaxAmount.HasValue || record.TaxAmount.Value <= 0)
+            errors.Add("• Tax Amount/Rate must be greater than 0");
+        
+        if (record.SequenceNo <= 0)
+            errors.Add("• Sequence/Order must be greater than 0");
+
+        if (errors.Count > 0)
+        {
+            SnackbarService.Add($"ERROR:\n{string.Join("\n", errors)}", Severity.Error);
+            return;
+        }
+
         try
         {
             LoadingPanel = true;
@@ -369,16 +662,26 @@
             }
             else
             {
-                await OnSaved.InvokeAsync();
                 SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
-                if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                
+                // Refresh the grid data to show the new/updated record
+                await GetAll();
+                
+                // For INSERT: Clear the form and keep drawer open for next record
+                if (Action == "INSERT" && url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
                 {
-                    //await Edit(result.Result!.Id);
+                    record = new TaxRuleDetailModel();
+                    record.TaxRuleId = CurrentRecord; // Keep the TaxRuleId
+                    selectedTaxIsConditional = false;
                 }
-                else
+                else if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == true)
                 {
                     await Clear();
                 }
+                
+                // Notify parent (but don't close drawer for INSERT)
+                await OnSaved.InvokeAsync();
+                StateHasChanged();
             }
         }
         catch (Exception ex)

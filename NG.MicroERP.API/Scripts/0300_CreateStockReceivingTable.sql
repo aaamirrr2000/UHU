@@ -1,4 +1,4 @@
-﻿CREATE TABLE StockReceiving
+CREATE TABLE StockReceiving
 (
     Id              INT             PRIMARY KEY IDENTITY(1,1),
     Guid            UNIQUEIDENTIFIER DEFAULT NEWID(),
@@ -21,7 +21,7 @@
 	UpdatedFrom         VARCHAR(255)    NULL DEFAULT NULL,
     RowVersion      ROWVERSION      NOT NULL,
 
-    FOREIGN KEY (PartyId)       REFERENCES Parties(Id),
-    FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),  
-    FOREIGN KEY (LocationId)    REFERENCES Locations(Id)
+    CONSTRAINT FK_StockReceiving_Party FOREIGN KEY (PartyId) REFERENCES Parties(Id),
+    CONSTRAINT FK_StockReceiving_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),  
+    CONSTRAINT FK_StockReceiving_Location FOREIGN KEY (LocationId) REFERENCES Locations(Id)
 );

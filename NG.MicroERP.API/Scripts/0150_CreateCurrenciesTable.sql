@@ -1,4 +1,4 @@
-﻿CREATE TABLE Currencies
+CREATE TABLE Currencies
 (
     Id              INT IDENTITY(1,1) PRIMARY KEY,
     Code            VARCHAR(10) NOT NULL UNIQUE,      -- e.g. PKR, USD, EUR
@@ -48,8 +48,8 @@ CREATE TABLE ExchangeRates
     UpdatedOn          DATETIME NULL,
     UpdatedFrom        VARCHAR(100) NULL,
     IsSoftDeleted      INT NOT NULL DEFAULT 0,
-    FOREIGN KEY (BaseCurrencyId) REFERENCES Currencies(Id),
-    FOREIGN KEY (TargetCurrencyId) REFERENCES Currencies(Id)
+    CONSTRAINT FK_ExchangeRates_BaseCurrency FOREIGN KEY (BaseCurrencyId) REFERENCES Currencies(Id),
+    CONSTRAINT FK_ExchangeRates_TargetCurrency FOREIGN KEY (TargetCurrencyId) REFERENCES Currencies(Id)
 );
 GO
 

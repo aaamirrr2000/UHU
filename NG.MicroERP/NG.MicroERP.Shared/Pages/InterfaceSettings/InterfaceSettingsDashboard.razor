@@ -1,0 +1,23 @@
+@page "/InterfaceSettingsDashboard"
+
+@using MudBlazor
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<InterfaceSettingsSimplePage />
+
+@code
+{
+    private bool LoadingPanel { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "InterfaceSettingsDashboard");
+    }
+}

@@ -208,7 +208,7 @@ public static class CreateGLFromCashBookHelper
                 }
 
                 // Insert GL Header
-                string SQLDuplicate = $@"SELECT * FROM GeneralLedgerHeader WHERE UPPER(EntryNo) = '{entryNo.ToUpper()}';";
+                string SQLDuplicate = $@"SELECT * FROM GeneralLedgerHeader WHERE UPPER(EntryNo) = '{entryNo.ToUpper()}' AND IsSoftDeleted = 0;";
                 string SQLInsertHeader = $@"INSERT INTO GeneralLedgerHeader 
                     (
                         OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, ReferenceType, ReferenceId,

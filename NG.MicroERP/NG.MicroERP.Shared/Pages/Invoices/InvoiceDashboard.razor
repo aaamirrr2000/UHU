@@ -430,7 +430,11 @@
     protected async Task Get(int id)
     {
         LoadingPanel = true;
-        record = await Functions.GetAsync<InvoiceModel>($"Invoice/Get/{id}", true) ?? new InvoiceModel();
+        var fullRecord = await Functions.GetAsync<InvoicesModel>($"Invoice/Get/{id}", true);
+        if (fullRecord?.Invoice != null)
+            record = fullRecord.Invoice;
+        else
+            record = new InvoiceModel();
         LoadingPanel = false;
     }
 
@@ -511,6 +515,9 @@
 
         Action = "SOFTDELETE";
         await Get(id);
+        // Ensure Id is set for soft delete (e.g. if Get failed or route did not bind id)
+        if (record.Id <= 0)
+            record.Id = id;
         await Save();
     }
 

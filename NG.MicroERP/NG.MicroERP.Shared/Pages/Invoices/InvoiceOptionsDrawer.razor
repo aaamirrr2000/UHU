@@ -1,6 +1,7 @@
 @using NG.MicroERP.Shared.Controls
 @using NG.MicroERP.Shared.Models
 @inject IDialogService dialogService
+@inject Functions Functions
 
 <MyDrawer @ref="_drawerRef" Title="Invoice Options" FaIcon="fas fa-cog">
     <ChildContent>
@@ -198,7 +199,7 @@
         }
     }
 
-    private void OnEnteredCurrencyChanged()
+    private async Task OnEnteredCurrencyChanged()
     {
         // When entered currency changes, auto-populate exchange rate
         // If entered currency is same as base currency, set rate to 1.0
@@ -209,10 +210,63 @@
         }
         else if (Record.Invoice.EnteredCurrencyId > 0 && Record.Invoice.BaseCurrencyId > 0)
         {
-            // If different currency, set default rate to 1.0 (user can change it)
-            Record.Invoice.ExchangeRate = 1.0;
+            // Fetch the latest exchange rate from ExchangeRates table
+            try
+            {
+                // Handle nullable TranDate - use today if null or invalid
+                DateTime transactionDate = Record.Invoice.TranDate.HasValue && Record.Invoice.TranDate.Value > DateTime.MinValue 
+                    ? Record.Invoice.TranDate.Value 
+                    : DateTime.Today;
+                
+                var exchangeRate = await GetLatestExchangeRate(
+                    Record.Invoice.BaseCurrencyId,
+                    Record.Invoice.EnteredCurrencyId,
+                    transactionDate
+                );
+                
+                if (exchangeRate > 0)
+                {
+                    Record.Invoice.ExchangeRate = exchangeRate;
+                }
+                else
+                {
+                    // If no rate found, set default to 1.0 (user can change it)
+                    Record.Invoice.ExchangeRate = 1.0;
+                }
+            }
+            catch (Exception ex)
+            {
+                // If error occurs, set default rate to 1.0
+                Record.Invoice.ExchangeRate = 1.0;
+                Console.WriteLine($"Error fetching exchange rate: {ex.Message}");
+            }
         }
         StateHasChanged();
+    }
+
+    /// <summary>
+    /// Get the latest exchange rate from ExchangeRates table for the given currencies and date
+    /// </summary>
+    private async Task<double> GetLatestExchangeRate(int baseCurrencyId, int targetCurrencyId, DateTime transactionDate)
+    {
+        try
+        {
+            string dateStr = transactionDate.ToString("yyyy-MM-dd");
+            string apiUrl = $"Currencies/GetLatestExchangeRate/{baseCurrencyId}/{targetCurrencyId}/{dateStr}";
+            
+            var result = await Functions.GetAsync<double>(apiUrl, true);
+            
+            if (result > 0)
+            {
+                return result;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"GetLatestExchangeRate error: {ex.Message}");
+        }
+        
+        return 0; // Return 0 if not found
     }
 
     private void ToggleCurrencySelection()

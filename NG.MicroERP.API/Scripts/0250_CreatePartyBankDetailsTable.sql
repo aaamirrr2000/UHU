@@ -1,4 +1,4 @@
-﻿CREATE TABLE PartyBankDetails
+CREATE TABLE PartyBankDetails
 (
 	Id					INT PRIMARY KEY IDENTITY(1,1),
 	Guid				UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
@@ -18,10 +18,10 @@
 	UpdatedFrom         VARCHAR(255)		NULL DEFAULT NULL,
 	IsSoftDeleted       SMALLINT			NOT NULL DEFAULT 0,
 	RowVersion          ROWVERSION,
-	FOREIGN KEY (PartyId) REFERENCES Parties(Id),
-	FOREIGN KEY (BankId) REFERENCES Bank(Id),
-	FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
-	FOREIGN KEY (UpdatedBy) REFERENCES Users(Id)
+	CONSTRAINT FK_PartyBankDetails_Party FOREIGN KEY (PartyId) REFERENCES Parties(Id),
+	CONSTRAINT FK_PartyBankDetails_Bank FOREIGN KEY (BankId) REFERENCES Bank(Id),
+	CONSTRAINT FK_PartyBankDetails_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+	CONSTRAINT FK_PartyBankDetails_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id)
 );
 
 INSERT INTO PartyBankDetails (PartyId, BankId, AccountTitle, AccountNumber, IBAN, BranchCode, IsPrimary)

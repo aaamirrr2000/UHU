@@ -25,13 +25,13 @@ CREATE TABLE Relocation
     UpdatedFrom         VARCHAR(255)     NULL DEFAULT NULL,
     IsSoftDeleted       SMALLINT         NOT NULL DEFAULT 0,
 
-    FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
-    FOREIGN KEY (EmployeeId)     REFERENCES Employees(Id),
-    FOREIGN KEY (OldLocationId)  REFERENCES Locations(Id),
-    FOREIGN KEY (NewLocationId)  REFERENCES Locations(Id),
-    FOREIGN KEY (ApprovedBy)     REFERENCES Users(Id),
-    FOREIGN KEY (CreatedBy)      REFERENCES Users(Id),
-    FOREIGN KEY (UpdatedBy)      REFERENCES Users(Id)
+    CONSTRAINT FK_Relocation_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
+    CONSTRAINT FK_Relocation_Employee FOREIGN KEY (EmployeeId) REFERENCES Employees(Id),
+    CONSTRAINT FK_Relocation_OldLocation FOREIGN KEY (OldLocationId) REFERENCES Locations(Id),
+    CONSTRAINT FK_Relocation_NewLocation FOREIGN KEY (NewLocationId) REFERENCES Locations(Id),
+    CONSTRAINT FK_Relocation_ApprovedBy FOREIGN KEY (ApprovedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Relocation_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Relocation_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id)
 );
 GO
 

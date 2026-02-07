@@ -45,6 +45,13 @@
                         </MudText>
                         <MudText Typo="Typo.body2" Class="mt-0" Style="color: rgba(255,255,255,0.85) !important; font-size: 0.75rem;">
                             @(CurrentRecord.GetValueOrDefault() > 0 ? $"Invoice #{record.Invoice.Code}" : "Create new invoice")
+                            @if (!string.IsNullOrWhiteSpace(_currentPriceListName))
+                            {
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color.Info" Class="ms-2" Style="opacity: 0.9;">
+                                    <MudIcon Icon="@Icons.Material.Filled.LocalOffer" Size="Size.Small" Class="me-1" />
+                                    @_currentPriceListName
+                                </MudChip>
+                            }
                         </MudText>
                     </div>
                 </div>
@@ -74,8 +81,9 @@
                                    Color="Color.Success"
                                    Size="Size.Small"
                                    OnClick="Save"
+                                   Disabled="@_isSaving"
                                    Class="invoice-header-btn">
-                            @(CurrentRecord.GetValueOrDefault() != 0 ? "Update" : "Save")
+                            @(_isSaving ? "Saving..." : (CurrentRecord.GetValueOrDefault() != 0 ? "Update" : "Save"))
                         </MudButton>
                     }
 
@@ -135,7 +143,7 @@
                 <div class="invoice-field invoice-field-equal">
                     <div class="d-flex align-items-center gap-1">
                         <MudAutocomplete T="PartiesModel"
-                                         Label="Party / Customer"
+                                         Label="@(string.Equals(InvoiceType, "SALE", StringComparison.OrdinalIgnoreCase) ? "Customer" : "Supplier")"
                                          Value="SelectedParty"
                                          ValueChanged="OnPartyChanged"
                                          ToStringFunc="@(p => p?.DisplayName)"
@@ -143,11 +151,11 @@
                                          Clearable="@true"
                                          Variant="Variant.Outlined"
                                          Dense="@true"
-                                         Disabled="@(record?.InvoiceDetails?.Count > 0)"
+                                         Disabled="@Disabled"
                                          FullWidth="@true"
                                          Margin="Margin.Dense"
                                          Class="invoice-field-input flex-grow-1" />
-                        @if (!Disabled && record?.InvoiceDetails?.Count == 0)
+                        @if (!Disabled)
                         {
                             <MudTooltip Text="Add New Party">
                                 <MudIconButton Icon="@Icons.Material.Filled.Add"
@@ -287,7 +295,8 @@
                                    OnResetChargesClick="ResetChargesToAuto"
                                    OnResetDiscountClick="ResetDiscountToAuto"
                                    OnAddManualLineClick="AddManualLine"
-                                   OnBrowseItemsClick="OpenItemsDrawer" />
+                                   OnBrowseItemsClick="OpenItemsDrawer"
+                                   TaxRuleAppliedOnInvoiceLevel="_taxRuleAppliedOnInvoiceLevel" />
             </MudItem>
         </MudGrid>
     </MudMainContent>
@@ -333,6 +342,7 @@
     [CascadingParameter] private bool isReadOnly { get; set; }
     public bool Disabled { get; set; } = true;
     private bool LoadingPanel { get; set; } = false;
+    private int? _lastLoadedInvoiceId;
 
     // Main Models
     private InvoicesModel record = new();
@@ -377,7 +387,9 @@
     private Dictionary<(int ItemId, int PartyId), List<ItemPartyTaxCalculationModel>> _taxCache = new();
     private HashSet<int> _itemsWithTaxRules = new();
     private bool _isInvoiceSaved = false;
+    private string _currentPriceListName = string.Empty;
     private bool _hasChanges = false;
+    private bool _isSaving = false;
     private InvoicesModel _originalRecord = new();
     private HashSet<int> _originalItemIds = new();
     private bool IsInvoiceTypeAndDateLocked => Disabled || (record?.Invoice?.IsPostedToGL == 1);
@@ -390,17 +402,49 @@
     // Track if charges and discounts were manually overridden
     private bool _chargesManuallyOverridden = false;
     private bool _discountManuallyOverridden = false;
+    
+    // Interface Settings
+    private bool _taxRuleAppliedOnInvoiceLevel = false;
 
     // ========== Initialization Methods ==========
     protected override async Task OnInitializedAsync()
     {
         InitializeInvoice();
+        await LoadInterfaceSettings();
         await GetAll();
+    }
+    
+    private async Task LoadInterfaceSettings()
+    {
+        try
+        {
+            // Only load for SALE invoices
+            if (InvoiceType != null && InvoiceType.ToUpper().Contains("SALE"))
+            {
+                var settings = await Functions.GetAsync<List<InterfaceSettingsModel>>(
+                    $"InterfaceSettings/Search/OrganizationId={Globals.User.OrganizationId} and Category='Sale Invoice' and SettingKey='TaxRuleAppliedOnInvoiceLevel'", true)
+                    ?? new List<InterfaceSettingsModel>();
+                
+                var setting = settings.FirstOrDefault(s => s.IsActive == 1 && s.IsSoftDeleted == 0);
+                _taxRuleAppliedOnInvoiceLevel = setting?.SettingValue?.ToLower() == "true";
+            }
+        }
+        catch
+        {
+            // Default to false if setting cannot be loaded
+            _taxRuleAppliedOnInvoiceLevel = false;
+        }
     }
 
     protected override async Task OnParametersSetAsync()
     {
         InitializeInvoice();
+        
+        // Reload interface settings (e.g. TaxRuleAppliedOnInvoiceLevel) so changes in settings page are reflected
+        if (InvoiceType != null && InvoiceType.ToUpper().Contains("SALE"))
+        {
+            await LoadInterfaceSettings();
+        }
         
         // Ensure data is loaded before trying to get invoice
         if (ItemsData == null || !ItemsData.Any())
@@ -408,9 +452,10 @@
             await LoadAllItemsData();
         }
         
-        if (!string.Equals(Action, "INSERT", StringComparison.OrdinalIgnoreCase) && CurrentRecord.HasValue && CurrentRecord.Value != 0)
+        // Only load invoice when CurrentRecord changed (avoids duplicate load after OnInitializedAsync and prevents loading flicker)
+        if (!string.Equals(Action, "INSERT", StringComparison.OrdinalIgnoreCase) && CurrentRecord.HasValue && CurrentRecord.Value != 0 && CurrentRecord.Value != _lastLoadedInvoiceId)
         {
-            await Get(CurrentRecord);
+            await Get(CurrentRecord, showLoading: true);
         }
         else if (SelectedParty == null && record?.Invoice?.PartyId > 0)
         {
@@ -431,10 +476,15 @@
         EnsureInvoiceInitialized();
         Disabled = string.Equals(Action, "VIEW", StringComparison.OrdinalIgnoreCase);
         
-        // Disable if posted to GL
+        // Disable if posted to GL - invoice cannot be changed after posting
         if (record?.Invoice?.IsPostedToGL == 1)
         {
             Disabled = true;
+            // Also set Action to VIEW to prevent any edits
+            if (!string.Equals(Action, "VIEW", StringComparison.OrdinalIgnoreCase))
+            {
+                Action = "VIEW";
+            }
         }
 
         if (string.Equals(Action, "INSERT", StringComparison.OrdinalIgnoreCase) && CurrentRecord.GetValueOrDefault() == 0)
@@ -468,6 +518,12 @@
             {
                 _activeCategory = _categories[0];
                 await LoadItemsByCategory(_categories[0]);
+            }
+
+            // Load invoice in same loading phase when editing/viewing (avoids loading flicker)
+            if (!string.Equals(Action, "INSERT", StringComparison.OrdinalIgnoreCase) && CurrentRecord.HasValue && CurrentRecord.Value != 0)
+            {
+                await Get(CurrentRecord, showLoading: false);
             }
         }
         catch (Exception ex)
@@ -588,16 +644,17 @@
         }
     }
 
-    private async Task Get(int? id)
+    private async Task Get(int? id, bool showLoading = true)
     {
         if (id.HasValue && id.Value != 0)
         {
             EnsureInvoiceInitialized();
-            LoadingPanel = true;
+            if (showLoading)
+                LoadingPanel = true;
 
             try
             {
-                record = await Functions.GetAsync<InvoicesModel>($"Invoice/Get?Id={id.Value}", true) ?? new InvoicesModel();
+                record = await Functions.GetAsync<InvoicesModel>($"Invoice/Get/{id.Value}", true) ?? new InvoicesModel();
                 
                 // Ensure all collections are initialized
                 EnsureInvoiceInitialized();
@@ -681,6 +738,23 @@
                     {
                         record.Invoice.AccountId = SelectedParty.AccountId;
                     }
+                    
+                    // Load price list name if party has a price list
+                    if (SelectedParty != null && SelectedParty.Id > 0 && SelectedParty.PriceListId > 0)
+                    {
+                        try
+                        {
+                            var typeCode = await Functions.GetAsync<TypeCodeModel>($"TypeCode/Get/{SelectedParty.PriceListId}", true);
+                            if (typeCode != null && !string.IsNullOrWhiteSpace(typeCode.ListValue))
+                            {
+                                _currentPriceListName = typeCode.ListValue;
+                            }
+                        }
+                        catch
+                        {
+                            // If TypeCode lookup fails, leave price list name empty
+                        }
+                    }
                 }
                 
                 // Clear tax cache and recalculate
@@ -710,6 +784,7 @@
                 // Mark as saved if invoice exists
                 if (record.Invoice.Id > 0)
                 {
+                    _lastLoadedInvoiceId = record.Invoice.Id;
                     _isInvoiceSaved = true;
                     CurrentRecord = record.Invoice.Id; // Ensure CurrentRecord is set
                     await SaveOriginalRecord();
@@ -718,6 +793,8 @@
                     if (record.Invoice.IsPostedToGL == 1)
                     {
                         Disabled = true;
+                        // Set Action to VIEW to prevent any edits
+                        Action = "VIEW";
                     }
                     
                     // Track original item IDs to identify new items in updates
@@ -738,7 +815,8 @@
             }
             finally
             {
-                LoadingPanel = false;
+                if (showLoading)
+                    LoadingPanel = false;
                 await InvokeAsync(StateHasChanged);
             }
         }
@@ -938,27 +1016,125 @@
         _itemsWithTaxRules.Clear();
     }
 
-    private async Task<double> CalculateItemTax(ItemsModel item, double quantity)
+    /// <summary>
+    /// Calculate item tax using the same rule-based RUNNING_TOTAL logic as the GL breakdown,
+    /// so Advance Tax is on (base + GST) not on full base (fixes 252 vs 124 mismatch from view).
+    /// </summary>
+    private async Task<double> CalculateItemTax(ItemsModel item, double quantity, double unitPrice = 0, double discountAmount = 0)
     {
-        var itemTaxes = await GetItemTaxes(item.Id, record.Invoice.PartyId);
-        double taxAmount = 0;
+        if (record?.Invoice?.PartyId == 0 || SelectedParty == null) return 0;
+        decimal lineBase = unitPrice > 0
+            ? (decimal)((unitPrice * quantity) - discountAmount)
+            : (decimal)(item.BasePrice * quantity);
+        if (lineBase <= 0) return 0;
 
-        foreach (var tax in itemTaxes)
-        {
-            double lineTax = tax.TaxAmount * quantity;
-            if (!string.IsNullOrEmpty(InvoiceType) && InvoiceType.ToUpper().Contains("RETURN"))
-            {
-                lineTax = -lineTax;
-            }
-            taxAmount += lineTax;
-        }
+        int? ruleId = item.TaxRuleId ?? _categories.FirstOrDefault(c => c.Id == item.CategoryId)?.TaxRuleId;
+        if (ruleId == null || ruleId.Value <= 0) return 0;
 
-        return taxAmount;
+        var applicableDetails = await GetApplicableTaxRuleDetailsForPartyAsync(ruleId.Value);
+        if (applicableDetails == null || !applicableDetails.Any()) return 0;
+
+        bool isReturn = !string.IsNullOrEmpty(InvoiceType) && InvoiceType.ToUpper().Contains("RETURN");
+        var breakdown = ComputeTaxBreakdownForBase(applicableDetails, lineBase, isReturn);
+        decimal total = breakdown.Sum(x => x.TaxAmount);
+        return (double)total;
     }
 
     private double CalculateItemTotal(ItemsModel item, double quantity, double discountAmount, double taxAmount)
     {
         return (item.BasePrice * quantity) - discountAmount + taxAmount;
+    }
+
+    /// <summary>
+    /// Calculate tax at invoice level (when TaxRuleAppliedOnInvoiceLevel setting is enabled)
+    /// Uses the first active tax rule for SALE and applies it to the invoice total
+    /// </summary>
+    private async Task<decimal> CalculateTaxAtInvoiceLevel(decimal invoiceBaseAmount)
+    {
+        try
+        {
+            if (record.Invoice.PartyId == 0 || SelectedParty == null || invoiceBaseAmount <= 0)
+                return 0;
+
+            // Get the first active tax rule for SALE that applies to this organization
+            var taxRules = await Functions.GetAsync<List<TaxRuleModel>>(
+                $"TaxRule/Search/OrganizationId={Globals.User.OrganizationId} and AppliesTo='SALE' and IsActive=1 and IsSoftDeleted=0", true)
+                ?? new List<TaxRuleModel>();
+
+            // Filter by effective dates
+            var today = DateTime.Today;
+            var applicableRule = taxRules
+                .Where(tr =>
+                    tr.EffectiveFrom <= today &&
+                    (tr.EffectiveTo == null || tr.EffectiveTo >= today)
+                )
+                .OrderBy(tr => tr.Id)
+                .FirstOrDefault();
+
+            if (applicableRule == null)
+                return 0;
+
+            // Get tax rule details
+            var taxRuleDetails = await Functions.GetAsync<List<TaxRuleDetailModel>>(
+                $"TaxRuleDetail/Search/TaxRuleId={applicableRule.Id}", true)
+                ?? new List<TaxRuleDetailModel>();
+
+            if (!taxRuleDetails.Any())
+                return 0;
+
+            // Filter by party conditions and order by sequence
+            var applicableDetails = new List<TaxRuleDetailModel>();
+            foreach (var detail in taxRuleDetails.OrderBy(trd => trd.SequenceNo))
+            {
+                var taxMaster = await Functions.GetAsync<TaxMasterModel>($"TaxMaster/Get/{detail.TaxId}", true);
+                if (taxMaster == null) continue;
+
+                // Apply party filter when detail has IsRegistered/IsFiler so only GST + one Advance Tax (matching party) apply
+                bool hasPartyCondition = detail.IsRegistered.HasValue || detail.IsFiler.HasValue || !string.IsNullOrWhiteSpace(taxMaster.ConditionType);
+                bool shouldApply = true;
+                if (hasPartyCondition)
+                {
+                    bool registeredMatch = detail.IsRegistered == null || detail.IsRegistered == (SelectedParty.IsRegistered == 1 ? 1 : 0);
+                    bool filerMatch = detail.IsFiler == null || detail.IsFiler == (SelectedParty.IsFiler == 1 ? 1 : 0);
+                    shouldApply = registeredMatch && filerMatch;
+                }
+
+                if (shouldApply)
+                    applicableDetails.Add(detail);
+            }
+
+            if (!applicableDetails.Any())
+                return 0;
+
+            // Calculate tax for each detail using TaxBaseType (BASE_ONLY, BASE_PLUS_SELECTED, RUNNING_TOTAL)
+            decimal totalTax = 0;
+            decimal runningTotal = invoiceBaseAmount;
+            decimal basePlusSelectedTotal = invoiceBaseAmount;
+
+            foreach (var detail in applicableDetails)
+            {
+                decimal taxableAmount = GetTaxableAmountByBaseType(detail.TaxBaseType, invoiceBaseAmount, basePlusSelectedTotal, runningTotal);
+                decimal taxAmount = 0;
+                if (detail.TaxType == "PERCENTAGE" && detail.TaxAmount.HasValue)
+                    taxAmount = taxableAmount * (decimal)detail.TaxAmount.Value / 100m;
+                else if (detail.TaxType == "FLAT" && detail.TaxAmount.HasValue)
+                    taxAmount = (decimal)detail.TaxAmount.Value;
+
+                if (!string.IsNullOrEmpty(InvoiceType) && InvoiceType.ToUpper().Contains("RETURN"))
+                    taxAmount = -taxAmount;
+
+                totalTax += taxAmount;
+                runningTotal += taxAmount;
+                if (detail.TaxBaseType == "BASE_ONLY" || detail.TaxBaseType == "BASE_PLUS_SELECTED")
+                    basePlusSelectedTotal += taxAmount;
+            }
+
+            return totalTax;
+        }
+        catch
+        {
+            return 0;
+        }
     }
 
     // ========== Cart Operations ==========
@@ -969,6 +1145,13 @@
     {
         EnsureInvoiceInitialized();
         if (selectedItem == null || selectedItem.BasePrice == 0) return;
+        
+        // Prevent adding items if invoice is posted to GL
+        if (record?.Invoice?.IsPostedToGL == 1)
+        {
+            Snackbar.Add("Cannot modify invoice after it has been posted to General Ledger", Severity.Warning);
+            return;
+        }
         
         // Prevent concurrent additions
         if (_isAddingToCart)
@@ -987,11 +1170,42 @@
         {
             _isAddingToCart = true;
             
-            double taxAmount = await CalculateItemTax(selectedItem, selectedItem.Qty);
+            // Check for price list price if party has a price list (only for sale invoices)
+            double itemPrice = selectedItem.BasePrice;
+            if (SelectedParty?.PriceListId > 0 && 
+                !string.Equals(InvoiceType, "PURCHASE", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    // Get TypeCode ListValue from PriceListId
+                    var typeCode = await Functions.GetAsync<TypeCodeModel>($"TypeCode/Get/{SelectedParty.PriceListId}", true);
+                    if (typeCode != null && !string.IsNullOrWhiteSpace(typeCode.ListValue))
+                    {
+                        var priceListItem = await Functions.GetAsync<PriceListModel>(
+                            $"PriceList/GetByItemAndPriceList/{selectedItem.Id}/{Uri.EscapeDataString(typeCode.ListValue)}/{Globals.User.OrganizationId}", true);
+                        
+                        if (priceListItem != null && priceListItem.OneQuantityPrice > 0)
+                        {
+                            itemPrice = priceListItem.OneQuantityPrice;
+                        }
+                    }
+                }
+                catch
+                {
+                    // If price list lookup fails, use default price
+                }
+            }
+            
+            // Check if tax should be applied at invoice level
+            bool isSaleInvoice = !InvoiceType.Equals("PURCHASE", StringComparison.OrdinalIgnoreCase);
+            bool applyTaxAtInvoiceLevel = isSaleInvoice && _taxRuleAppliedOnInvoiceLevel;
+            
             double discountAmount = CalculateItemDiscount(selectedItem);
-            double itemTotalAmount = CalculateItemTotal(selectedItem, selectedItem.Qty, discountAmount, taxAmount);
+            double taxAmount = applyTaxAtInvoiceLevel ? 0 : await CalculateItemTax(selectedItem, selectedItem.Qty, itemPrice, discountAmount);
+            double itemTotalAmount = (selectedItem.Qty * itemPrice) + taxAmount - discountAmount;
 
             var row = CreateInvoiceItem(selectedItem, taxAmount, discountAmount, itemTotalAmount);
+            row.UnitPrice = itemPrice; // Set the price list price or default price
             
             // Ensure collection modification is thread-safe
             lock (_invoiceDetailsLock)
@@ -1061,6 +1275,13 @@
     {
         EnsureInvoiceInitialized();
         
+        // Prevent adding items if invoice is posted to GL
+        if (record?.Invoice?.IsPostedToGL == 1)
+        {
+            Snackbar.Add("Cannot modify invoice after it has been posted to General Ledger", Severity.Warning);
+            return;
+        }
+        
         // Prevent adding manual lines when no party is selected
         if (SelectedParty == null || SelectedParty.Id == 0)
         {
@@ -1069,9 +1290,11 @@
         }
 
         // Show dialog for manual entry
-        var parameters = new DialogParameters<ManualLineDialog>
+        var parameters = new DialogParameters
         {
-            { x => x.InvoiceType, InvoiceType }
+            { "InvoiceType", InvoiceType },
+            { "PartyId", SelectedParty?.Id },
+            { "Party", SelectedParty }
         };
 
         var options = new DialogOptions
@@ -1201,6 +1424,13 @@
     {
         try
         {
+            // Prevent modifying items if invoice is posted to GL
+            if (record?.Invoice?.IsPostedToGL == 1)
+            {
+                Snackbar.Add("Cannot modify invoice after it has been posted to General Ledger", Severity.Warning);
+                return;
+            }
+            
             if (!ValidateQuantity(args.NewQty)) return;
 
             EnsureInvoiceInitialized();
@@ -1232,12 +1462,51 @@
         var item = ItemsData.FirstOrDefault(i => i.Id == invoiceItem.ItemId);
         if (item != null)
         {
+            // Check for price list price if party has a price list (only for sale invoices)
+            double itemPrice = item.BasePrice;
+            if (SelectedParty?.PriceListId > 0 && 
+                !string.Equals(InvoiceType, "PURCHASE", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    // Get TypeCode ListValue from PriceListId
+                    var typeCode = await Functions.GetAsync<TypeCodeModel>($"TypeCode/Get/{SelectedParty.PriceListId}", true);
+                    if (typeCode != null && !string.IsNullOrWhiteSpace(typeCode.ListValue))
+                    {
+                        var priceListItem = await Functions.GetAsync<PriceListModel>(
+                            $"PriceList/GetByItemAndPriceList/{item.Id}/{Uri.EscapeDataString(typeCode.ListValue)}/{Globals.User.OrganizationId}", true);
+                        
+                        if (priceListItem != null && priceListItem.OneQuantityPrice > 0)
+                        {
+                            itemPrice = priceListItem.OneQuantityPrice;
+                            invoiceItem.UnitPrice = itemPrice; // Update unit price from price list
+                        }
+                    }
+                }
+                catch
+                {
+                    // If price list lookup fails, use default price
+                }
+            }
+            
             invoiceItem.DiscountAmount = string.Equals(InvoiceType, "PURCHASE", StringComparison.OrdinalIgnoreCase)
                 ? 0
                 : item.DefaultDiscount * invoiceItem.Qty;
 
-            invoiceItem.TaxAmount = await CalculateItemTax(item, invoiceItem.Qty);
-            invoiceItem.ItemTotalAmount = CalculateItemTotal(item, invoiceItem.Qty, invoiceItem.DiscountAmount, invoiceItem.TaxAmount);
+            // Check if tax should be applied at invoice level
+            bool isSaleInvoice = !InvoiceType.Equals("PURCHASE", StringComparison.OrdinalIgnoreCase);
+            bool applyTaxAtInvoiceLevel = isSaleInvoice && _taxRuleAppliedOnInvoiceLevel;
+
+            if (applyTaxAtInvoiceLevel)
+            {
+                invoiceItem.TaxAmount = 0; // Tax will be calculated at invoice level
+            }
+            else
+            {
+                invoiceItem.TaxAmount = await CalculateItemTax(item, invoiceItem.Qty);
+            }
+
+            invoiceItem.ItemTotalAmount = (invoiceItem.Qty * invoiceItem.UnitPrice) + invoiceItem.TaxAmount - invoiceItem.DiscountAmount;
             await CalculateInvoiceTotalsAsync();
         }
     }
@@ -1289,6 +1558,13 @@
     // ========== Item Deletion ==========
     private async Task DeleteItem(InvoiceItemReportModel item)
     {
+        // Prevent deleting items if invoice is posted to GL
+        if (record?.Invoice?.IsPostedToGL == 1)
+        {
+            Snackbar.Add("Cannot modify invoice after it has been posted to General Ledger", Severity.Warning);
+            return;
+        }
+        
         var res = await Functions.ShowConfirmation(dialogService, "Do You want to REMOVE Item?");
         if (res == false) return;
 
@@ -1433,6 +1709,7 @@
             record.Invoice.PartyName = string.Empty;
             record.Invoice.PartyAddress = string.Empty;
             record.Invoice.AccountId = 0; // Clear AccountId when party is cleared
+            _currentPriceListName = string.Empty;
             await InvokeAsync(StateHasChanged);
             return;
         }
@@ -1448,6 +1725,24 @@
             record.Invoice.PartyName = party.Name;
             record.Invoice.PartyAddress = party.Address;
             record.Invoice.AccountId = party.AccountId; // Set AccountId from party
+            
+            // Get price list name if party has a price list
+            _currentPriceListName = string.Empty;
+            if (party.PriceListId > 0)
+            {
+                try
+                {
+                    var typeCode = await Functions.GetAsync<TypeCodeModel>($"TypeCode/Get/{party.PriceListId}", true);
+                    if (typeCode != null && !string.IsNullOrWhiteSpace(typeCode.ListValue))
+                    {
+                        _currentPriceListName = typeCode.ListValue;
+                    }
+                }
+                catch
+                {
+                    // If TypeCode lookup fails, leave price list name empty
+                }
+            }
         }
 
         // Recalculate retail prices for all items (ItemsData, FavItemsData, RecentItemsData, SelectedItems)
@@ -1496,6 +1791,27 @@
     {
         if (items == null || !items.Any() || partyId == 0) return;
         
+            // Get party to check for price list
+            var party = Parties.FirstOrDefault(p => p.Id == partyId);
+            string? priceListName = null;
+            
+            // Get TypeCode ListValue from PriceListId if party has one
+            if (party?.PriceListId > 0)
+            {
+                try
+                {
+                    var typeCode = await Functions.GetAsync<TypeCodeModel>($"TypeCode/Get/{party.PriceListId}", true);
+                    if (typeCode != null && !string.IsNullOrWhiteSpace(typeCode.ListValue))
+                    {
+                        priceListName = typeCode.ListValue;
+                    }
+                }
+                catch
+                {
+                    // If TypeCode lookup fails, continue without price list
+                }
+            }
+        
         // Process in batches to avoid blocking
         const int batchSize = 20; // Increased batch size for better performance
         bool needsUpdate = false;
@@ -1509,6 +1825,27 @@
                 try
                 {
                     double basePrice = item.BasePrice;
+                    
+                    // Check if party has a price list and item has a price in that list
+                    if (!string.IsNullOrWhiteSpace(priceListName) && !string.Equals(InvoiceType, "purchase", StringComparison.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            var priceListItem = await Functions.GetAsync<PriceListModel>(
+                                $"PriceList/GetByItemAndPriceList/{item.Id}/{Uri.EscapeDataString(priceListName)}/{Globals.User.OrganizationId}", true);
+                            
+                            if (priceListItem != null && priceListItem.OneQuantityPrice > 0)
+                            {
+                                // Use price list price (OneQuantityPrice) instead of base price
+                                basePrice = priceListItem.OneQuantityPrice;
+                            }
+                        }
+                        catch
+                        {
+                            // If price list lookup fails, use default base price
+                        }
+                    }
+                    
                     double discountPerUnit = item.DefaultDiscount;
                     double taxPerUnit = 0;
                     
@@ -1526,7 +1863,7 @@
                         _itemsWithTaxRules.Remove(item.Id);
                     }
                     
-                    // Calculate retail price: base + tax - discount
+                    // Calculate retail price: base (from price list or default) + tax - discount
                     double newRetailPrice = basePrice + taxPerUnit - discountPerUnit;
                     if (Math.Abs(item.RetailPrice - newRetailPrice) > 0.01) // Only update if changed
                     {
@@ -1645,6 +1982,7 @@
         ClearTaxCache();
         _isInvoiceSaved = false;
         _hasChanges = false;
+        _lastLoadedInvoiceId = null;
         _originalRecord = new InvoicesModel();
         _originalItemIds.Clear();
         _chargesManuallyOverridden = false;
@@ -1732,6 +2070,9 @@
             // Recalculate totals before preview
             await CalculateInvoiceTotalsAsync();
 
+            // Populate invoice-level tax breakdown (GST, Advance Tax, etc.) so journal shows one line per tax
+            await PopulateInvoiceTaxBreakdownForPreviewAsync();
+
             // Validate invoice has required data
             if (record.Invoice.OrganizationId == 0)
             {
@@ -1740,10 +2081,12 @@
             }
 
             LoadingPanel = true;
+            StateHasChanged(); // Update UI to show loading
             try
             {
                 var result = await Functions.PostAsync<GeneralLedgerHeaderModel>("GeneralLedger/PreviewGLFromInvoice", record, true);
                 LoadingPanel = false;
+                StateHasChanged(); // Update UI to hide loading
 
                 if (result.Success && result.Result != null)
                 {
@@ -1767,7 +2110,8 @@
                         FullWidth = true,
                         CloseButton = true,
                         CloseOnEscapeKey = true,
-                        BackdropClick = false
+                        BackdropClick = false,
+                        Position = DialogPosition.Center
                     };
 
                     await dialogService.ShowAsync<InvoiceGLPreviewDialog>("Accounting Entry Preview", parameters, options);
@@ -1921,6 +2265,9 @@
     // ========== Save Method ==========
     private async Task Save()
     {
+        if (_isSaving) return;
+        _isSaving = true;
+        await InvokeAsync(StateHasChanged);
         try
         {
             EnsureInvoiceInitialized();
@@ -2029,6 +2376,11 @@
             LoadingPanel = false;
             record.Invoice.SkipStockValidation = false; // Reset flag on error
             ShowError($"Error saving Invoice: {ex.Message}");
+        }
+        finally
+        {
+            _isSaving = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
     
@@ -2156,39 +2508,51 @@
             catch { /* ignore */ }
         }
 
-        // For each invoice detail, fetch the calculated taxes and add entries to InvoiceTaxes.
+        // If tax is applied at invoice level, populate InvoiceTaxes from invoice-level breakdown only (mutual exclusivity).
+        if (_taxRuleAppliedOnInvoiceLevel)
+        {
+            await PopulateInvoiceLevelTaxBreakdownAsync();
+            return;
+        }
+
+        // For each invoice detail, use rule-based RUNNING_TOTAL tax (same as CalculateItemTax) so Advance Tax is correct.
+        bool isReturn = !string.IsNullOrEmpty(InvoiceType) && InvoiceType.ToUpper().Contains("RETURN");
+        var ruleDetailsCache = new Dictionary<int, List<TaxRuleDetailModel>>();
+
         foreach (var detail in record.InvoiceDetails)
         {
             try
             {
+                if (detail.ItemId == 0) continue;
                 var item = ItemsData.FirstOrDefault(i => i.Id == detail.ItemId);
                 if (item == null) continue;
 
-                var taxes = await GetItemTaxes(item.Id, record.Invoice.PartyId);
-                if (taxes == null || !taxes.Any()) continue;
+                int? ruleId = item.TaxRuleId ?? _categories.FirstOrDefault(c => c.Id == item.CategoryId)?.TaxRuleId;
+                if (ruleId == null || ruleId.Value <= 0) continue;
 
-                // compute taxable base for the line (unit price * qty - discount)
-                var taxableBase = (detail.UnitPrice * detail.Qty) - detail.DiscountAmount;
-                foreach (var t in taxes)
+                if (!ruleDetailsCache.TryGetValue(ruleId.Value, out var applicableDetails))
                 {
-                    // taxAmount per unit in ItemPartyTaxCalculationModel * qty
-                    var taxAmountForLine = t.TaxAmount * detail.Qty;
-                    if (!string.IsNullOrEmpty(InvoiceType) && InvoiceType.ToUpper().Contains("RETURN"))
-                        taxAmountForLine = -taxAmountForLine;
+                    applicableDetails = await GetApplicableTaxRuleDetailsForPartyAsync(ruleId.Value);
+                    ruleDetailsCache[ruleId.Value] = applicableDetails ?? new List<TaxRuleDetailModel>();
+                }
+                if (applicableDetails == null || !applicableDetails.Any()) continue;
 
+                decimal lineBase = (decimal)((detail.UnitPrice * detail.Qty) - detail.DiscountAmount);
+                var lineBreakdown = ComputeTaxBreakdownForBase(applicableDetails, lineBase, isReturn);
+
+                foreach (var (taxId, taxAmount, rate) in lineBreakdown)
+                {
                     var taxEntry = new InvoiceDetailTaxesModel
                     {
                         Id = 0,
-                        InvoiceDetailId = detail.ItemId, 
-                        TaxId = t.TaxName ?? string.Empty,
-                        TaxRate = t.Percentage,
-                        TaxableAmount = (decimal)taxableBase,
-                        TaxAmount = (decimal)taxAmountForLine
+                        InvoiceDetailId = detail.ItemId,
+                        TaxId = taxId.ToString(),
+                        TaxRate = rate,
+                        TaxableAmount = lineBase,
+                        TaxAmount = taxAmount
                     };
-
                     record.InvoiceTaxes.Add(taxEntry);
 
-                    // also add into detail's AppliedTaxes where available
                     try
                     {
                         var applied = detail.GetType().GetProperty("AppliedTaxes");
@@ -2200,10 +2564,10 @@
                                 {
                                     Id = 0,
                                     InvoiceDetailId = detail.ItemId,
-                                    TaxId = t.TaxName ?? string.Empty,
-                                    TaxRate = t.Percentage,
-                                    TaxableAmount = (decimal)taxableBase,
-                                    TaxAmount = (decimal)taxAmountForLine
+                                    TaxId = taxId.ToString(),
+                                    TaxRate = rate,
+                                    TaxableAmount = lineBase,
+                                    TaxAmount = taxAmount
                                 });
                         }
                     }
@@ -2211,6 +2575,271 @@
                 }
             }
             catch { /* ignore per-line errors */ }
+        }
+    }
+
+    /// <summary>
+    /// Populate record.InvoiceTaxes with tax breakdown (GST, Advance Tax, etc.) so GL preview shows one line per tax.
+    /// For invoice-level tax: compute from tax rule on invoice total. For item-level tax: aggregate from each line's GetItemTaxes.
+    /// </summary>
+    private async Task PopulateInvoiceTaxBreakdownForPreviewAsync()
+    {
+        if (record?.Invoice == null || record.Invoice.PartyId == 0 || SelectedParty == null)
+            return;
+        bool isSale = !string.Equals(InvoiceType, "PURCHASE", StringComparison.OrdinalIgnoreCase);
+        if (!isSale || record.Invoice.TaxAmount <= 0)
+            return;
+
+        if (_taxRuleAppliedOnInvoiceLevel)
+        {
+            await PopulateInvoiceLevelTaxBreakdownAsync();
+            return;
+        }
+
+        // Item-level tax: use same rule-based breakdown as invoice-level (GST + Advance Tax, RUNNING_TOTAL, party conditions)
+        // so both taxes show in the journal. Get each line's tax rule (item or category), compute breakdown per line, aggregate by TaxId.
+        if (record.InvoiceDetails == null || !record.InvoiceDetails.Any())
+            return;
+
+        if (record.InvoiceTaxes == null)
+            record.InvoiceTaxes = new ObservableCollection<InvoiceDetailTaxesModel>();
+        else
+            record.InvoiceTaxes.Clear();
+
+        var aggregatedByTaxId = new Dictionary<int, (decimal Amount, double Rate)>();
+        bool isReturn = !string.IsNullOrEmpty(InvoiceType) && InvoiceType.ToUpper().Contains("RETURN");
+        var ruleDetailsCache = new Dictionary<int, List<TaxRuleDetailModel>>();
+
+        foreach (var detail in record.InvoiceDetails)
+        {
+            if (detail.ItemId == 0) continue;
+            var item = ItemsData.FirstOrDefault(i => i.Id == detail.ItemId);
+            if (item == null) continue;
+
+            int? ruleId = item.TaxRuleId ?? _categories.FirstOrDefault(c => c.Id == item.CategoryId)?.TaxRuleId;
+            if (ruleId == null || ruleId.Value <= 0) continue;
+
+            if (!ruleDetailsCache.TryGetValue(ruleId.Value, out var applicableDetails))
+            {
+                applicableDetails = await GetApplicableTaxRuleDetailsForPartyAsync(ruleId.Value);
+                ruleDetailsCache[ruleId.Value] = applicableDetails ?? new List<TaxRuleDetailModel>();
+            }
+            if (applicableDetails == null || !applicableDetails.Any()) continue;
+
+            decimal lineBase = (decimal)((detail.UnitPrice * detail.Qty) - detail.DiscountAmount);
+            var lineBreakdown = ComputeTaxBreakdownForBase(applicableDetails, lineBase, isReturn);
+
+            foreach (var (taxId, taxAmount, rate) in lineBreakdown)
+            {
+                if (!aggregatedByTaxId.TryGetValue(taxId, out var existing))
+                    aggregatedByTaxId[taxId] = (taxAmount, rate);
+                else
+                    aggregatedByTaxId[taxId] = (existing.Amount + taxAmount, existing.Rate);
+            }
+        }
+
+        foreach (var kv in aggregatedByTaxId.OrderBy(x => x.Key))
+        {
+            if (kv.Value.Amount == 0) continue;
+            record.InvoiceTaxes.Add(new InvoiceDetailTaxesModel
+            {
+                TaxId = kv.Key.ToString(),
+                TaxRate = kv.Value.Rate,
+                TaxableAmount = 0,
+                TaxAmount = kv.Value.Amount
+            });
+        }
+
+        // Scale breakdown so sum equals invoice total tax (no separate account; correct rounding)
+        decimal sumBreakdown = record.InvoiceTaxes.Sum(t => t.TaxAmount);
+        decimal totalTax = record.Invoice.TaxAmount;
+        if (sumBreakdown > 0.01m && Math.Abs(sumBreakdown - totalTax) > 0.01m)
+        {
+            decimal scale = totalTax / sumBreakdown;
+            decimal allocated = 0m;
+            var list = record.InvoiceTaxes.ToList();
+            record.InvoiceTaxes.Clear();
+            for (int i = 0; i < list.Count; i++)
+            {
+                decimal amt = i == list.Count - 1 ? (totalTax - allocated) : Math.Round(list[i].TaxAmount * scale, 2, MidpointRounding.AwayFromZero);
+                allocated += amt;
+                record.InvoiceTaxes.Add(new InvoiceDetailTaxesModel
+                {
+                    TaxId = list[i].TaxId,
+                    TaxRate = list[i].TaxRate,
+                    TaxableAmount = list[i].TaxableAmount,
+                    TaxAmount = amt
+                });
+            }
+        }
+    }
+
+    /// <summary>
+    /// Get tax rule details for a rule ID, filtered by party (IsRegistered, IsFiler). Used for item-level tax breakdown.
+    /// </summary>
+    private async Task<List<TaxRuleDetailModel>?> GetApplicableTaxRuleDetailsForPartyAsync(int taxRuleId)
+    {
+        var taxRuleDetails = await Functions.GetAsync<List<TaxRuleDetailModel>>(
+            $"TaxRuleDetail/Search/TaxRuleId={taxRuleId}", true)
+            ?? new List<TaxRuleDetailModel>();
+        if (!taxRuleDetails.Any()) return null;
+
+        var applicable = new List<TaxRuleDetailModel>();
+        foreach (var detail in taxRuleDetails.OrderBy(trd => trd.SequenceNo))
+        {
+            var taxMaster = await Functions.GetAsync<TaxMasterModel>($"TaxMaster/Get/{detail.TaxId}", true);
+            if (taxMaster == null) continue;
+            // Apply party filter when rule detail has IsRegistered/IsFiler (e.g. one GST + three Advance Taxes; only the Advance that matches party applies)
+            bool hasPartyCondition = detail.IsRegistered.HasValue || detail.IsFiler.HasValue || !string.IsNullOrWhiteSpace(taxMaster.ConditionType);
+            bool shouldApply = true;
+            if (hasPartyCondition)
+            {
+                bool registeredMatch = detail.IsRegistered == null || detail.IsRegistered == (SelectedParty.IsRegistered == 1 ? 1 : 0);
+                bool filerMatch = detail.IsFiler == null || detail.IsFiler == (SelectedParty.IsFiler == 1 ? 1 : 0);
+                shouldApply = registeredMatch && filerMatch;
+            }
+            if (shouldApply) applicable.Add(detail);
+        }
+        return applicable.Any() ? applicable : null;
+    }
+
+    /// <summary>
+    /// Compute tax breakdown for a single base amount using rule details.
+    /// TaxBaseType: BASE_ONLY = original base; BASE_PLUS_SELECTED = base + BASE_ONLY/BASE_PLUS_SELECTED taxes so far; RUNNING_TOTAL = base + all previous taxes.
+    /// </summary>
+    private static List<(int TaxId, decimal TaxAmount, double Rate)> ComputeTaxBreakdownForBase(
+        List<TaxRuleDetailModel> applicableDetails,
+        decimal baseAmount,
+        bool isReturn)
+    {
+        var result = new List<(int, decimal, double)>();
+        decimal runningTotal = baseAmount;           // base + all previous taxes
+        decimal basePlusSelectedTotal = baseAmount;  // base + BASE_ONLY and BASE_PLUS_SELECTED taxes so far
+        foreach (var detail in applicableDetails)
+        {
+            decimal taxableAmount = GetTaxableAmountByBaseType(detail.TaxBaseType, baseAmount, basePlusSelectedTotal, runningTotal);
+            decimal taxAmount = 0;
+            if (detail.TaxType == "PERCENTAGE" && detail.TaxAmount.HasValue)
+                taxAmount = taxableAmount * (decimal)detail.TaxAmount.Value / 100m;
+            else if (detail.TaxType == "FLAT" && detail.TaxAmount.HasValue)
+                taxAmount = (decimal)detail.TaxAmount.Value;
+            if (isReturn) taxAmount = -taxAmount;
+            result.Add((detail.TaxId, taxAmount, (double)(detail.TaxAmount ?? 0)));
+            runningTotal += taxAmount;
+            if (detail.TaxBaseType == "BASE_ONLY" || detail.TaxBaseType == "BASE_PLUS_SELECTED")
+                basePlusSelectedTotal += taxAmount;
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Return taxable amount for a tax detail based on TaxBaseType (aligned with ManualLineDialog / TaxRuleTestPage).
+    /// </summary>
+    private static decimal GetTaxableAmountByBaseType(string? taxBaseType, decimal baseAmount, decimal basePlusSelectedTotal, decimal runningTotal)
+    {
+        if (string.Equals(taxBaseType, "BASE_ONLY", StringComparison.OrdinalIgnoreCase))
+            return baseAmount;
+        if (string.Equals(taxBaseType, "BASE_PLUS_SELECTED", StringComparison.OrdinalIgnoreCase))
+            return basePlusSelectedTotal;
+        if (string.Equals(taxBaseType, "RUNNING_TOTAL", StringComparison.OrdinalIgnoreCase))
+            return runningTotal;
+        return baseAmount;
+    }
+
+    /// <summary>
+    /// Populate record.InvoiceTaxes for invoice-level tax (when TaxRuleAppliedOnInvoiceLevel is true).
+    /// </summary>
+    private async Task PopulateInvoiceLevelTaxBreakdownAsync()
+    {
+        if (record?.Invoice == null || record.Invoice.PartyId == 0 || SelectedParty == null)
+            return;
+        decimal invoiceBaseAmount = record.Invoice.InvoiceAmount;
+        if (invoiceBaseAmount <= 0) return;
+
+        var taxRules = await Functions.GetAsync<List<TaxRuleModel>>(
+            $"TaxRule/Search/OrganizationId={Globals.User.OrganizationId} and AppliesTo='SALE' and IsActive=1 and IsSoftDeleted=0", true)
+            ?? new List<TaxRuleModel>();
+        var today = DateTime.Today;
+        var applicableRule = taxRules
+            .Where(tr => tr.EffectiveFrom <= today && (tr.EffectiveTo == null || tr.EffectiveTo >= today))
+            .OrderBy(tr => tr.Id)
+            .FirstOrDefault();
+        if (applicableRule == null) return;
+
+        var taxRuleDetails = await Functions.GetAsync<List<TaxRuleDetailModel>>(
+            $"TaxRuleDetail/Search/TaxRuleId={applicableRule.Id}", true)
+            ?? new List<TaxRuleDetailModel>();
+        if (!taxRuleDetails.Any()) return;
+
+        var applicableDetails = new List<TaxRuleDetailModel>();
+        foreach (var detail in taxRuleDetails.OrderBy(trd => trd.SequenceNo))
+        {
+            var taxMaster = await Functions.GetAsync<TaxMasterModel>($"TaxMaster/Get/{detail.TaxId}", true);
+            if (taxMaster == null) continue;
+            // Apply party filter when detail has IsRegistered/IsFiler so only one Advance Tax (matching party) applies
+            bool hasPartyCondition = detail.IsRegistered.HasValue || detail.IsFiler.HasValue || !string.IsNullOrWhiteSpace(taxMaster.ConditionType);
+            bool shouldApply = true;
+            if (hasPartyCondition)
+            {
+                bool registeredMatch = detail.IsRegistered == null || detail.IsRegistered == (SelectedParty.IsRegistered == 1 ? 1 : 0);
+                bool filerMatch = detail.IsFiler == null || detail.IsFiler == (SelectedParty.IsFiler == 1 ? 1 : 0);
+                shouldApply = registeredMatch && filerMatch;
+            }
+            if (shouldApply) applicableDetails.Add(detail);
+        }
+        if (!applicableDetails.Any()) return;
+
+        if (record.InvoiceTaxes == null)
+            record.InvoiceTaxes = new ObservableCollection<InvoiceDetailTaxesModel>();
+        else
+            record.InvoiceTaxes.Clear();
+
+        decimal runningTotal = invoiceBaseAmount;
+        decimal basePlusSelectedTotal = invoiceBaseAmount;
+        foreach (var detail in applicableDetails)
+        {
+            decimal taxableAmount = GetTaxableAmountByBaseType(detail.TaxBaseType, invoiceBaseAmount, basePlusSelectedTotal, runningTotal);
+            decimal taxAmount = 0;
+            if (detail.TaxType == "PERCENTAGE" && detail.TaxAmount.HasValue)
+                taxAmount = taxableAmount * (decimal)detail.TaxAmount.Value / 100m;
+            else if (detail.TaxType == "FLAT" && detail.TaxAmount.HasValue)
+                taxAmount = (decimal)detail.TaxAmount.Value;
+            if (!string.IsNullOrEmpty(InvoiceType) && InvoiceType.ToUpper().Contains("RETURN"))
+                taxAmount = -taxAmount;
+
+            record.InvoiceTaxes.Add(new InvoiceDetailTaxesModel
+            {
+                TaxId = detail.TaxId.ToString(),
+                TaxRate = (double)(detail.TaxAmount ?? 0),
+                TaxableAmount = taxableAmount,
+                TaxAmount = taxAmount
+            });
+            runningTotal += taxAmount;
+            if (detail.TaxBaseType == "BASE_ONLY" || detail.TaxBaseType == "BASE_PLUS_SELECTED")
+                basePlusSelectedTotal += taxAmount;
+        }
+
+        // Scale breakdown so sum equals invoice total tax (no separate account; correct rounding)
+        decimal sumBreakdown = record.InvoiceTaxes.Sum(t => t.TaxAmount);
+        decimal totalTax = record.Invoice.TaxAmount;
+        if (sumBreakdown > 0.01m && Math.Abs(sumBreakdown - totalTax) > 0.01m)
+        {
+            decimal scale = totalTax / sumBreakdown;
+            decimal allocated = 0m;
+            var list = record.InvoiceTaxes.ToList();
+            record.InvoiceTaxes.Clear();
+            for (int i = 0; i < list.Count; i++)
+            {
+                decimal amt = i == list.Count - 1 ? (totalTax - allocated) : Math.Round(list[i].TaxAmount * scale, 2, MidpointRounding.AwayFromZero);
+                allocated += amt;
+                record.InvoiceTaxes.Add(new InvoiceDetailTaxesModel
+                {
+                    TaxId = list[i].TaxId,
+                    TaxRate = list[i].TaxRate,
+                    TaxableAmount = list[i].TaxableAmount,
+                    TaxAmount = amt
+                });
+            }
         }
     }
 
@@ -2385,9 +3014,17 @@
                 }
                 else // FLAT
                 {
-                    // Flat charges: only apply if invoice amount is greater than or equal to the flat amount
                     decimal flatAmount = (decimal)rule.Amount;
-                    appliedAmount = baseAmount >= flatAmount ? flatAmount : 0m;
+                    if (rule.ChargeCategory?.ToUpper() == "DISCOUNT")
+                    {
+                        // Flat discount: only apply if invoice amount is GREATER than discount amount
+                        appliedAmount = baseAmount > flatAmount ? flatAmount : 0m;
+                    }
+                    else
+                    {
+                        // Flat service charges: apply if invoice amount is greater than or equal to the flat amount
+                        appliedAmount = baseAmount >= flatAmount ? flatAmount : 0m;
+                    }
                 }
 
                 return new InvoiceChargesModel
@@ -2417,26 +3054,92 @@
         {
             EnsureInvoiceInitialized();
 
+            // Check if tax should be applied at invoice level (only for SALE invoices)
+            bool isSaleInvoice = !InvoiceType.Equals("PURCHASE", StringComparison.OrdinalIgnoreCase);
+            bool applyTaxAtInvoiceLevel = isSaleInvoice && _taxRuleAppliedOnInvoiceLevel;
+
             // -------- Item-level calculations --------
             foreach (var item in record.InvoiceDetails)
             {
                 var product = ItemsData.FirstOrDefault(i => i.Id == item.ItemId);
                 if (product == null) continue;
 
+                // Check for price list price if party has a price list (only for sale invoices)
+                // Only update if unit price hasn't been manually set or is 0
+                if (item.UnitPrice == 0 || item.UnitPrice == product.BasePrice)
+                {
+                    if (SelectedParty?.PriceListId > 0 && 
+                        !string.Equals(InvoiceType, "PURCHASE", StringComparison.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            // Get TypeCode ListValue from PriceListId
+                            var typeCode = await Functions.GetAsync<TypeCodeModel>($"TypeCode/Get/{SelectedParty.PriceListId}", true);
+                            if (typeCode != null && !string.IsNullOrWhiteSpace(typeCode.ListValue))
+                            {
+                                var priceListItem = await Functions.GetAsync<PriceListModel>(
+                                    $"PriceList/GetByItemAndPriceList/{product.Id}/{Uri.EscapeDataString(typeCode.ListValue)}/{Globals.User.OrganizationId}", true);
+                                
+                                if (priceListItem != null && priceListItem.OneQuantityPrice > 0)
+                                {
+                                    item.UnitPrice = priceListItem.OneQuantityPrice;
+                                }
+                                else
+                                {
+                                    item.UnitPrice = product.BasePrice; // Use default if not in price list
+                                }
+                            }
+                            else
+                            {
+                                item.UnitPrice = product.BasePrice; // Use default if TypeCode not found
+                            }
+                        }
+                        catch
+                        {
+                            item.UnitPrice = product.BasePrice; // Use default if lookup fails
+                        }
+                    }
+                    else
+                    {
+                        item.UnitPrice = product.BasePrice; // Use default price
+                    }
+                }
+
                 // Only apply default discount if not purchase
                 item.DiscountAmount = InvoiceType.Equals("PURCHASE", StringComparison.OrdinalIgnoreCase)
                     ? 0
                     : product.DefaultDiscount * item.Qty;
 
-                item.TaxAmount = await CalculateItemTax(product, item.Qty);
+                // Calculate tax per item (will be zero if tax is applied at invoice level)
+                if (applyTaxAtInvoiceLevel)
+                {
+                    item.TaxAmount = 0; // Tax will be calculated at invoice level
+                }
+                else
+                {
+                    item.TaxAmount = await CalculateItemTax(product, item.Qty, item.UnitPrice, item.DiscountAmount);
+                }
 
                 item.ItemTotalAmount = (item.Qty * item.UnitPrice) + item.TaxAmount - item.DiscountAmount;
             }
 
             // -------- Base Invoice --------
             record.Invoice.TotalQty = (decimal)record.InvoiceDetails.Sum(i => i.Qty);
-            record.Invoice.TaxAmount = (decimal)record.InvoiceDetails.Sum(i => i.TaxAmount);
-            record.Invoice.InvoiceAmount = (decimal)record.InvoiceDetails.Sum(i => i.ItemTotalAmount);
+            // Pre-tax subtotal (revenue base minus discount) so TotalInvoiceAmount and AR do not double-count tax
+            record.Invoice.InvoiceAmount = (decimal)record.InvoiceDetails.Sum(i => (i.Qty * i.UnitPrice) - i.DiscountAmount);
+            
+            // Calculate tax at invoice level if setting is enabled
+            if (applyTaxAtInvoiceLevel && record.Invoice.PartyId > 0)
+            {
+                // Calculate tax on invoice total (after discounts, before charges)
+                decimal invoiceBaseAmount = record.Invoice.InvoiceAmount;
+                record.Invoice.TaxAmount = await CalculateTaxAtInvoiceLevel(invoiceBaseAmount);
+            }
+            else
+            {
+                // Calculate tax per item (sum of item taxes)
+                record.Invoice.TaxAmount = (decimal)record.InvoiceDetails.Sum(i => i.TaxAmount);
+            }
 
             // -------- Charges & Discounts --------
             // Service charges and discounts are NOT applicable for purchase invoices
@@ -2455,6 +3158,29 @@
                 // Check if charges/discounts were manually overridden
                 bool shouldRecalculateCharges = !isManuallyChanged && !_chargesManuallyOverridden;
                 bool shouldRecalculateDiscount = !isManuallyChanged && !_discountManuallyOverridden;
+                
+                // For percentage-based rules, always recalculate when items change (not manually changed)
+                // This ensures percentage charges/discounts update dynamically
+                if (!isManuallyChanged)
+                {
+                    // Check if we have percentage-based rules that need dynamic recalculation
+                    var checkDate = record.Invoice.TranDate?.ToString("yyyy-MM-dd") ?? string.Empty;
+                    var criteria = $"a.IsActive = 1 AND ('{checkDate}' BETWEEN EffectiveFrom AND EffectiveTo " +
+                                   $"OR ('{checkDate}' >= EffectiveFrom AND EffectiveTo IS NULL))";
+                    var encodedCriteria = Uri.EscapeDataString(criteria);
+                    var rules = await Functions.GetAsync<List<InvoiceChargesRulesModel>>(
+                        $"InvoiceChargesRules/Search/{encodedCriteria}", true)
+                        ?? new List<InvoiceChargesRulesModel>();
+                    
+                    bool hasPercentageRules = rules.Any(r => r.AmountType == "PERCENTAGE");
+                    
+                    // If percentage rules exist, force recalculation even if manually overridden
+                    if (hasPercentageRules)
+                    {
+                        shouldRecalculateCharges = true;
+                        shouldRecalculateDiscount = true;
+                    }
+                }
                 
                 if (shouldRecalculateCharges && shouldRecalculateDiscount)
                 {
@@ -2533,9 +3259,17 @@
                 }
                 else // FLAT
                 {
-                    // Flat charges: only apply if invoice amount is greater than or equal to the flat amount
                     decimal flatAmount = (decimal)r.Amount;
-                    return baseAmount >= flatAmount ? flatAmount : 0m;
+                    if (category?.ToUpper() == "DISCOUNT")
+                    {
+                        // Flat discount: only apply if invoice amount is GREATER than discount amount
+                        return baseAmount > flatAmount ? flatAmount : 0m;
+                    }
+                    else
+                    {
+                        // Flat service charges: apply if invoice amount is greater than or equal to the flat amount
+                        return baseAmount >= flatAmount ? flatAmount : 0m;
+                    }
                 }
             });
     }

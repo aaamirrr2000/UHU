@@ -1,4 +1,4 @@
-﻿using NG.MicroERP.API.Helper;
+using NG.MicroERP.API.Helper;
 using NG.MicroERP.Shared.Models;
 
 namespace NG.MicroERP.API.Services.Services;
@@ -24,17 +24,18 @@ public class TaxRuleDetailService : ITaxRuleDetailService
                           a.Id,
                           a.TaxId,
                           a.SequenceNo,
+                          a.TaxType,
+                          a.TaxBaseType,
+                          a.TaxAmount,
+                          a.IsRegistered,
+                          a.IsFiler,
                           b.TaxName,
-                          b.TaxType,
-                          b.TaxBaseType,
-                          b.Rate,
+                          b.Description,
+                          b.ConditionType,
                           c.RuleName,
                           c.AppliesTo,
-                          c.IsFiler,
-                          c.IsRegistered,
                           d.Name as Account,
                           a.TaxRuleId,
-                          d.Description,
                           c.EffectiveFrom,
                           c.EffectiveTo
                         FROM TaxRuleDetail as a
@@ -78,17 +79,33 @@ public class TaxRuleDetailService : ITaxRuleDetailService
 
         try
         {
+            string taxTypeValue = string.IsNullOrWhiteSpace(obj.TaxType) ? "NULL" : $"'{obj.TaxType.ToUpper()}'";
+            string taxBaseTypeValue = string.IsNullOrWhiteSpace(obj.TaxBaseType) ? "NULL" : $"'{obj.TaxBaseType.ToUpper()}'";
+            string isRegisteredValue = obj.IsRegistered.HasValue ? obj.IsRegistered.Value.ToString() : "NULL";
+            string isFilerValue = obj.IsFiler.HasValue ? obj.IsFiler.Value.ToString() : "NULL";
+            string taxAmountValue = obj.TaxAmount.HasValue ? obj.TaxAmount.Value.ToString() : "NULL";
+            
             string SQLInsert = $@"INSERT INTO TaxRuleDetail 
 			(
 				TaxRuleId, 
 				TaxId, 
-				SequenceNo
+				SequenceNo,
+				TaxType,
+				TaxBaseType,
+				TaxAmount,
+				IsRegistered,
+				IsFiler
 			) 
 			VALUES 
 			(
 				{obj.TaxRuleId},
 				{obj.TaxId},
-				{obj.SequenceNo}
+				{obj.SequenceNo},
+				{taxTypeValue},
+				{taxBaseTypeValue},
+				{taxAmountValue},
+				{isRegisteredValue},
+				{isFilerValue}
 			);";
 
             var res = await dapper.Insert(SQLInsert);
@@ -114,10 +131,21 @@ public class TaxRuleDetailService : ITaxRuleDetailService
     {
         try
         {
+            string taxTypeValue = string.IsNullOrWhiteSpace(obj.TaxType) ? "NULL" : $"'{obj.TaxType.ToUpper()}'";
+            string taxBaseTypeValue = string.IsNullOrWhiteSpace(obj.TaxBaseType) ? "NULL" : $"'{obj.TaxBaseType.ToUpper()}'";
+            string isRegisteredValue = obj.IsRegistered.HasValue ? obj.IsRegistered.Value.ToString() : "NULL";
+            string isFilerValue = obj.IsFiler.HasValue ? obj.IsFiler.Value.ToString() : "NULL";
+            string taxAmountValue = obj.TaxAmount.HasValue ? obj.TaxAmount.Value.ToString() : "NULL";
+            
             string SQLUpdate = $@"UPDATE TaxRuleDetail SET 
 					TaxRuleId = {obj.TaxRuleId}, 
 					TaxId = {obj.TaxId}, 
-					SequenceNo = {obj.SequenceNo} 
+					SequenceNo = {obj.SequenceNo},
+					TaxType = {taxTypeValue},
+					TaxBaseType = {taxBaseTypeValue},
+					TaxAmount = {taxAmountValue},
+					IsRegistered = {isRegisteredValue},
+					IsFiler = {isFilerValue}
 				WHERE Id = {obj.Id};";
 
             var res = await dapper.Update(SQLUpdate);

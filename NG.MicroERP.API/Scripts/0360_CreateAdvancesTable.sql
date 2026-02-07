@@ -32,13 +32,13 @@ CREATE TABLE Advances
     ExchangeRate        DECIMAL(18, 6)  NULL DEFAULT 1.0,
     RowVersion          VARBINARY(8)    NULL,
 
-    FOREIGN KEY (LocationId)   REFERENCES Locations(Id),
-    FOREIGN KEY (CreatedBy)    REFERENCES Users(Id),
-    FOREIGN KEY (UpdatedBy)    REFERENCES Users(Id),
-    FOREIGN KEY (PartyId)      REFERENCES Parties(Id),
-    FOREIGN KEY (AccountId)    REFERENCES ChartOfAccounts(Id),
-    FOREIGN KEY (OrganizationId)   REFERENCES Organizations(Id),
-    FOREIGN KEY (PostedToGLBy)  REFERENCES Users(Id),
-    FOREIGN KEY (BaseCurrencyId) REFERENCES Currencies(Id),
-    FOREIGN KEY (EnteredCurrencyId) REFERENCES Currencies(Id)
+    CONSTRAINT FK_Advances_Location FOREIGN KEY (LocationId) REFERENCES Locations(Id),
+    CONSTRAINT FK_Advances_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Advances_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Advances_Party FOREIGN KEY (PartyId) REFERENCES Parties(Id),
+    CONSTRAINT FK_Advances_Account FOREIGN KEY (AccountId) REFERENCES ChartOfAccounts(Id),
+    CONSTRAINT FK_Advances_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
+    CONSTRAINT FK_Advances_PostedToGLBy FOREIGN KEY (PostedToGLBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Advances_BaseCurrency FOREIGN KEY (BaseCurrencyId) REFERENCES Currencies(Id),
+    CONSTRAINT FK_Advances_EnteredCurrency FOREIGN KEY (EnteredCurrencyId) REFERENCES Currencies(Id)
 );

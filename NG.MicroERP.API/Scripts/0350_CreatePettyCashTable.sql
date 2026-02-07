@@ -32,14 +32,13 @@ CREATE TABLE PettyCash
     ExchangeRate        DECIMAL(18, 6)  NULL DEFAULT 1.0,
     RowVersion          VARBINARY(8)    NULL,
 
-    FOREIGN KEY (LocationId)   REFERENCES Locations(Id),
-    FOREIGN KEY (CreatedBy)    REFERENCES Users(Id),
-    FOREIGN KEY (UpdatedBy)    REFERENCES Users(Id),
-    FOREIGN KEY (EmployeeId)   REFERENCES Employees(Id),
-    FOREIGN KEY (AccountId)    REFERENCES ChartOfAccounts(Id),
-    FOREIGN KEY (OrganizationId)   REFERENCES Organizations(Id),
-    FOREIGN KEY (PostedToGLBy)  REFERENCES Users(Id),
-    FOREIGN KEY (BaseCurrencyId) REFERENCES Currencies(Id),
-    FOREIGN KEY (EnteredCurrencyId) REFERENCES Currencies(Id),
-    FOREIGN KEY (PostedToGLBy) REFERENCES dbo.Users(Id)
+    CONSTRAINT FK_PettyCash_Location FOREIGN KEY (LocationId) REFERENCES Locations(Id),
+    CONSTRAINT FK_PettyCash_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_PettyCash_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_PettyCash_Employee FOREIGN KEY (EmployeeId) REFERENCES Employees(Id),
+    CONSTRAINT FK_PettyCash_Account FOREIGN KEY (AccountId) REFERENCES ChartOfAccounts(Id),
+    CONSTRAINT FK_PettyCash_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
+    CONSTRAINT FK_PettyCash_PostedToGLBy FOREIGN KEY (PostedToGLBy) REFERENCES dbo.Users(Id),
+    CONSTRAINT FK_PettyCash_BaseCurrency FOREIGN KEY (BaseCurrencyId) REFERENCES Currencies(Id),
+    CONSTRAINT FK_PettyCash_EnteredCurrency FOREIGN KEY (EnteredCurrencyId) REFERENCES Currencies(Id)
 );

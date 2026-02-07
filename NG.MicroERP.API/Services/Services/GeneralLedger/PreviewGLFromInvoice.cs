@@ -50,7 +50,7 @@ public static class PreviewGLFromInvoiceHelper
             DapperFunctions dapper = new DapperFunctions();
             
             // If invoice is already posted, return the actual GL entry
-            if (invoice.Invoice.Id > 0 && invoice.Invoice.IsPostedToGL == 1 && !string.IsNullOrWhiteSpace(invoice.Invoice.GLEntryNo))
+            if (Convert.ToInt32(invoice.Invoice.Id) > 0 && Convert.ToInt32(invoice.Invoice.IsPostedToGL) == 1 && !string.IsNullOrWhiteSpace(invoice.Invoice.GLEntryNo))
             {
                 // Get the actual posted GL entry by EntryNo
                 string sqlPostedEntry = $@"SELECT glh.*, p.Name as PartyName, loc.Name as LocationName
@@ -63,8 +63,8 @@ public static class PreviewGLFromInvoiceHelper
                 
                 if (postedHeader != null && postedHeader.Id > 0)
                 {
-                    // Get details for the posted entry
-                    string sqlPostedDetails = $@"SELECT gld.*, coa.Code as AccountCode, coa.Name as AccountName, coa.Type as AccountType,
+                    // Get details for the posted entry (include coa.InterfaceType for journal sorting)
+                    string sqlPostedDetails = $@"SELECT gld.*, coa.Code as AccountCode, coa.Name as AccountName, coa.Type as AccountType, coa.InterfaceType,
                                                 p.Name as PartyName, loc.Name as LocationName
                                                 FROM GeneralLedgerDetail as gld
                                                 LEFT JOIN ChartOfAccounts as coa on coa.Id=gld.AccountId
@@ -83,18 +83,18 @@ public static class PreviewGLFromInvoiceHelper
             // Create preview GL header (not saved)
             GeneralLedgerHeaderModel glHeader = new GeneralLedgerHeaderModel
             {
-                OrganizationId = invoice.Invoice.OrganizationId,
+                OrganizationId = Convert.ToInt32(invoice.Invoice.OrganizationId),
                 EntryNo = "PREVIEW",
                 EntryDate = invoice.Invoice.TranDate ?? DateTime.Now,
                 Source = "INVOICE",
                 Description = $"Invoice {invoice.Invoice.Code ?? "NEW"}",
                 ReferenceNo = invoice.Invoice.Code ?? "NEW",
                 ReferenceType = "INVOICE",
-                ReferenceId = invoice.Invoice.Id,
-                PartyId = invoice.Invoice.PartyId,
-                LocationId = invoice.Invoice.LocationId,
-                BaseCurrencyId = invoice.Invoice.BaseCurrencyId,
-                EnteredCurrencyId = invoice.Invoice.EnteredCurrencyId,
+                ReferenceId = Convert.ToInt32(invoice.Invoice.Id),
+                PartyId = Convert.ToInt32(invoice.Invoice.PartyId),
+                LocationId = Convert.ToInt32(invoice.Invoice.LocationId),
+                BaseCurrencyId = Convert.ToInt32(invoice.Invoice.BaseCurrencyId),
+                EnteredCurrencyId = Convert.ToInt32(invoice.Invoice.EnteredCurrencyId),
                 Details = new System.Collections.ObjectModel.ObservableCollection<GeneralLedgerDetailModel>(),
                 Warnings = new List<string>()
             };
@@ -107,15 +107,15 @@ public static class PreviewGLFromInvoiceHelper
             // ====================================================================================
             var arApResult = await GLAccountLookupHelper.GetARAPAccount(
                 dapper,
-                invoice.Invoice.OrganizationId,
+                Convert.ToInt32(invoice.Invoice.OrganizationId),
                 isSale,
-                invoice.Invoice.AccountId > 0 ? invoice.Invoice.AccountId : null,
-                invoice.Invoice.PartyId > 0 ? invoice.Invoice.PartyId : null);
+                Convert.ToInt32(invoice.Invoice.AccountId) > 0 ? Convert.ToInt32(invoice.Invoice.AccountId) : (int?)null,
+                Convert.ToInt32(invoice.Invoice.PartyId) > 0 ? Convert.ToInt32(invoice.Invoice.PartyId) : (int?)null);
             
             ChartOfAccountsModel? arApAccount = null;
-            if (!arApResult.Success)
+            if (!arApResult.Item1)
             {
-                string warningMsg = $"AR/AP Account Missing: {arApResult.ErrorMessage}";
+                string warningMsg = $"AR/AP Account Missing: {arApResult.Item3}";
                 glHeader.Warnings.Add(warningMsg);
                 Log.Warning($"PreviewGLFromInvoice: {warningMsg}");
                 // Create placeholder account for missing AR/AP
@@ -129,7 +129,7 @@ public static class PreviewGLFromInvoiceHelper
             }
             else
             {
-                arApAccount = arApResult.Account!;
+                arApAccount = arApResult.Item2!;
             }
 
             // ====================================================================================
@@ -147,51 +147,59 @@ public static class PreviewGLFromInvoiceHelper
             // ====================================================================================
             // CREATE ACCOUNTING ENTRIES BASED ON INVOICE TYPE
             // ====================================================================================
-            // For SALE: Debit AR (balance only), Credit Revenue/Tax/Charges, Debit Discount
-            // For PURCHASE: Credit AP (balance only), Debit Expense/Tax/Charges, Credit Discount
+            // For SALE: Debit AR (full invoice amount), Credit Revenue/Tax/Charges, Debit Discount
+            // For PURCHASE: Credit AP (full invoice amount), Debit Expense/Tax/Charges, Credit Discount
+            // Note: AR/AP is debited/credited for full invoice amount, then credited/debited for payments
+            // This matches the CreateGLFromInvoice logic for consistency
             if (isSale)
             {
                 // ====================================================================================
-                // ACCOUNTING ENTRY 1: AR/AP ENTRY (SALE - Debit AR for balance amount)
-                // Source: Invoice.AccountId -> Party.AccountId -> ChartOfAccounts.InterfaceType('ACCOUNTS RECEIVABLE')
-                // Amount: Balance (TotalInvoiceAmount - Payments) - only if balance > 0
+                // ACCOUNTING ENTRY 1: AR/AP ENTRY (SALE - Debit AR)
+                // Use TotalInvoiceAmount (amount customer owes) so receivable matches credits and journal balances.
+                // Fallback to component sum when TotalInvoiceAmount is zero (e.g. unsaved invoice).
                 // ====================================================================================
-                if (arApAccount != null)
+                decimal arAmount = invoice.Invoice.TotalInvoiceAmount > 0
+                    ? invoice.Invoice.TotalInvoiceAmount
+                    : (invoice.Invoice.InvoiceAmount + invoice.Invoice.ChargesAmount + invoice.Invoice.TaxAmount - invoice.Invoice.DiscountAmount);
+                if (arApAccount != null && arAmount > 0)
                 {
-                    GLAccountLookupHelper.AddARAPEntry(glHeader, arApAccount, balanceAmount, isSale, invoice.Invoice.Code ?? "NEW", invoice.Invoice.PartyId > 0 ? invoice.Invoice.PartyId : null);
+                    GLAccountLookupHelper.AddARAPEntry(glHeader, arApAccount, arAmount, isSale, invoice.Invoice.Code ?? "NEW", Convert.ToInt32(invoice.Invoice.PartyId) > 0 ? Convert.ToInt32(invoice.Invoice.PartyId) : (int?)null);
                 }
 
                 // ====================================================================================
                 // ACCOUNTING ENTRY 2: REVENUE ENTRIES (SALE - Credit Revenue, one per invoice item)
                 // Source Priority: Items.RevenueAccountId -> Invoice.AccountId -> ChartOfAccounts.InterfaceType('MANUAL ITEM REVENUE')
                 // ====================================================================================
-                if (invoice.Invoice.Id > 0)
+                if (Convert.ToInt32(invoice.Invoice.Id) > 0)
                 {
                     // Get invoice items from database
+                    int invId = Convert.ToInt32(invoice.Invoice.Id);
                     string sqlInvoiceItems = $@"SELECT ii.Id, ii.ItemId, ii.Qty, ii.UnitPrice, ii.DiscountAmount,
                                                       ii.ManualItem,
                                                       COALESCE(i.Name, ii.ManualItem) as ItemName,
                                                       i.RevenueAccountId,
-                                                      COALESCE((ii.Qty * ii.UnitPrice) - ii.DiscountAmount + ISNULL(tax.TaxAmount, 0), 0) as Amount
+                                                      COALESCE((ii.Qty * ii.UnitPrice) - ii.DiscountAmount, 0) as Amount
                                                 FROM InvoiceDetail ii
                                                 LEFT JOIN Items i ON ii.ItemId = i.Id
-                                                LEFT JOIN (SELECT InvoiceDetailId, SUM(TaxAmount) AS TaxAmount FROM InvoiceDetailTax GROUP BY InvoiceDetailId) tax ON ii.Id = tax.InvoiceDetailId
-                                                WHERE ii.InvoiceId = {invoice.Invoice.Id} AND ii.IsSoftDeleted = 0
+                                                WHERE ii.InvoiceId = {invId} AND ii.IsSoftDeleted = 0
                                                 ORDER BY ii.Id";
                     var invoiceItems = await dapper.SearchByQuery<dynamic>(sqlInvoiceItems);
                     
                     if (invoiceItems != null && invoiceItems.Any())
                     {
-                        // Normalize line amounts so that sum(lines) == invoice.InvoiceAmount (to avoid rounding / storage mismatches)
+                        // Revenue = sum of (Qty*UnitPrice - Discount) per line (pre-tax); use line sum so journal balances
                         var positiveItems = invoiceItems
                             .Where(i => Convert.ToDecimal(i.Amount ?? 0) > 0)
                             .ToList();
 
-                        decimal targetInvoiceAmount = invoice.Invoice.InvoiceAmount;
-                        decimal sumLineAmounts = positiveItems.Sum(i => Convert.ToDecimal(i.Amount ?? 0));
+                        decimal sumLineAmounts = 0m;
+                        foreach (var i in positiveItems)
+                            sumLineAmounts += Convert.ToDecimal(i.Amount ?? 0);
+                        // Target = line sum so total revenue matches actual lines; ensures DR = CR
+                        decimal targetRevenueAmount = sumLineAmounts > 0 ? sumLineAmounts : invoice.Invoice.InvoiceAmount;
 
-                        bool needsScaling = sumLineAmounts > 0 && Math.Abs(sumLineAmounts - targetInvoiceAmount) > 0.01m;
-                        decimal scaleFactor = needsScaling ? (targetInvoiceAmount / sumLineAmounts) : 1m;
+                        bool needsScaling = sumLineAmounts > 0 && Math.Abs(sumLineAmounts - targetRevenueAmount) > 0.01m;
+                        decimal scaleFactor = needsScaling ? (targetRevenueAmount / sumLineAmounts) : 1m;
                         decimal allocated = 0m;
 
                         for (int idx = 0; idx < positiveItems.Count; idx++)
@@ -210,15 +218,19 @@ public static class PreviewGLFromInvoiceHelper
                             {
                                 // Round and ensure final line fixes any rounding remainder
                                 lineAmount = (idx == positiveItems.Count - 1)
-                                    ? (targetInvoiceAmount - allocated)
+                                    ? (targetRevenueAmount - allocated)
                                     : Math.Round(rawLineAmount * scaleFactor, 2, MidpointRounding.AwayFromZero);
                                 allocated += lineAmount;
                             }
 
                             // Get Revenue Account using common helper
+                            // Check if this is a manual item (ManualItem is not null/empty and ItemId is null/0)
+                            bool isManualItem = (invoiceItem.ItemId == null || Convert.IsDBNull(invoiceItem.ItemId) || Convert.ToInt32(invoiceItem.ItemId ?? 0) == 0) 
+                                && !string.IsNullOrWhiteSpace(invoiceItem.ManualItem?.ToString());
+                            
                             int? itemId = null;
                             int? itemRevenueAccountId = null;
-                            if (invoiceItem.ItemId != null && !Convert.IsDBNull(invoiceItem.ItemId))
+                            if (!isManualItem && invoiceItem.ItemId != null && !Convert.IsDBNull(invoiceItem.ItemId))
                             {
                                 itemId = Convert.ToInt32(invoiceItem.ItemId);
                                 if (invoiceItem.RevenueAccountId != null && !Convert.IsDBNull(invoiceItem.RevenueAccountId))
@@ -229,16 +241,16 @@ public static class PreviewGLFromInvoiceHelper
                             
                             var revenueResult = await GLAccountLookupHelper.GetRevenueAccount(
                                 dapper,
-                                invoice.Invoice.OrganizationId,
-                                itemId,
-                                itemRevenueAccountId,
-                                invoice.Invoice.AccountId > 0 ? (int?)invoice.Invoice.AccountId : null,
+                                Convert.ToInt32(invoice.Invoice.OrganizationId),
+                                isManualItem ? null : itemId, // Pass null for manual items to force MANUAL ITEM REVENUE lookup
+                                isManualItem ? null : itemRevenueAccountId,
+                                Convert.ToInt32(invoice.Invoice.AccountId) > 0 ? (int?)Convert.ToInt32(invoice.Invoice.AccountId) : null,
                                 invoiceItem.ItemName?.ToString());
                             
                             ChartOfAccountsModel? revenueAccount = null;
-                            if (!revenueResult.Success)
+                            if (!revenueResult.Item1)
                             {
-                                string warningMsg = $"Revenue Account Missing for item '{invoiceItem.ItemName}': {revenueResult.ErrorMessage}";
+                                string warningMsg = $"Revenue Account Missing for item '{invoiceItem.ItemName}': {revenueResult.Item3}";
                                 glHeader.Warnings.Add(warningMsg);
                                 Log.Warning($"PreviewGLFromInvoice: {warningMsg}");
                                 // Create placeholder account
@@ -252,7 +264,7 @@ public static class PreviewGLFromInvoiceHelper
                             }
                             else
                             {
-                                revenueAccount = revenueResult.Account!;
+                                revenueAccount = revenueResult.Item2!;
                             }
                             
                             // Creates one accounting entry per invoice item
@@ -263,24 +275,28 @@ public static class PreviewGLFromInvoiceHelper
                 else
                 {
                     // Handle unsaved invoices (preview mode) - use InvoiceDetails from in-memory collection
+                    // Revenue = sum of (Qty*UnitPrice - Discount) per line (pre-tax); use line sum so journal balances
                     if (invoice.InvoiceDetails != null && invoice.InvoiceDetails.Any())
                     {
                         var positiveItems = invoice.InvoiceDetails
-                            .Where(i => i.ItemTotalAmount > 0)
+                            .Select(i => new { Item = i, RevenueAmount = (decimal)((i.Qty * i.UnitPrice) - i.DiscountAmount) })
+                            .Where(x => x.RevenueAmount > 0)
                             .ToList();
 
-                        decimal targetInvoiceAmount = invoice.Invoice.InvoiceAmount;
-                        decimal sumLineAmounts = positiveItems.Sum(i => (decimal)i.ItemTotalAmount);
+                        decimal sumLineAmounts = positiveItems.Sum(x => x.RevenueAmount);
+                        // Target = line sum so total revenue matches actual lines; ensures DR = CR
+                        decimal targetRevenueAmount = sumLineAmounts > 0 ? sumLineAmounts : invoice.Invoice.InvoiceAmount;
 
-                        bool needsScaling = sumLineAmounts > 0 && Math.Abs(sumLineAmounts - targetInvoiceAmount) > 0.01m;
-                        decimal scaleFactor = needsScaling ? (targetInvoiceAmount / sumLineAmounts) : 1m;
+                        bool needsScaling = sumLineAmounts > 0 && Math.Abs(sumLineAmounts - targetRevenueAmount) > 0.01m;
+                        decimal scaleFactor = needsScaling ? (targetRevenueAmount / sumLineAmounts) : 1m;
                         decimal allocated = 0m;
 
                         for (int idx = 0; idx < positiveItems.Count; idx++)
                         {
-                            var invoiceItem = positiveItems[idx];
+                            var itemData = positiveItems[idx];
+                            var invoiceItem = itemData.Item;
 
-                            decimal rawLineAmount = (decimal)invoiceItem.ItemTotalAmount;
+                            decimal rawLineAmount = itemData.RevenueAmount;
                             if (rawLineAmount <= 0) continue;
 
                             decimal lineAmount;
@@ -291,24 +307,28 @@ public static class PreviewGLFromInvoiceHelper
                             else
                             {
                                 lineAmount = (idx == positiveItems.Count - 1)
-                                    ? (targetInvoiceAmount - allocated)
+                                    ? (targetRevenueAmount - allocated)
                                     : Math.Round(rawLineAmount * scaleFactor, 2, MidpointRounding.AwayFromZero);
                                 allocated += lineAmount;
                             }
 
                             // Get Revenue Account using common helper
+                            // Check if this is a manual item (ItemId is 0 and ManualItem is not empty)
+                            bool isManualItem = (invoiceItem.ItemId == 0 || invoiceItem.ItemId == null) 
+                                && !string.IsNullOrWhiteSpace(invoiceItem.ManualItem);
+                            
                             var revenueResult = await GLAccountLookupHelper.GetRevenueAccount(
                                 dapper,
-                                invoice.Invoice.OrganizationId,
-                                invoiceItem.ItemId > 0 ? invoiceItem.ItemId : null,
+                                Convert.ToInt32(invoice.Invoice.OrganizationId),
+                                isManualItem ? null : (invoiceItem.ItemId > 0 ? invoiceItem.ItemId : null), // Pass null for manual items
                                 null,
-                                invoice.Invoice.AccountId > 0 ? invoice.Invoice.AccountId : null,
+                                Convert.ToInt32(invoice.Invoice.AccountId) > 0 ? (int?)Convert.ToInt32(invoice.Invoice.AccountId) : null,
                                 invoiceItem.ItemName);
                             
                             ChartOfAccountsModel? revenueAccount = null;
-                            if (!revenueResult.Success)
+                            if (!revenueResult.Item1)
                             {
-                                string warningMsg = $"Revenue Account Missing for item '{invoiceItem.ItemName}': {revenueResult.ErrorMessage}";
+                                string warningMsg = $"Revenue Account Missing for item '{invoiceItem.ItemName}': {revenueResult.Item3}";
                                 glHeader.Warnings.Add(warningMsg);
                                 Log.Warning($"PreviewGLFromInvoice: {warningMsg}");
                                 // Create placeholder account
@@ -322,7 +342,7 @@ public static class PreviewGLFromInvoiceHelper
                             }
                             else
                             {
-                                revenueAccount = revenueResult.Account!;
+                                revenueAccount = revenueResult.Item2!;
                             }
                             
                             GLAccountLookupHelper.AddRevenueEntry(glHeader, revenueAccount, lineAmount, invoiceItem.ItemName, invoice.Invoice.Code ?? "NEW");
@@ -331,32 +351,12 @@ public static class PreviewGLFromInvoiceHelper
                 }
 
                 // ====================================================================================
-                // ACCOUNTING ENTRY 3: TAX ENTRY (SALE - Credit Tax)
-                // Source: ChartOfAccounts.InterfaceType = 'TAX'
-                // Note: Tax is calculated from item-level TaxRuleId (via InvoiceDetailTax table)
+                // ACCOUNTING ENTRY 3: TAX ENTRIES (SALE - Credit Tax, one line per tax type)
+                // Source: InvoiceDetailTax grouped by TaxId -> TaxMaster.AccountId (e.g. GST -> GENERAL SALES TAX, Advance Tax -> ADVANCE TAX)
                 // ====================================================================================
                 if (invoice.Invoice.TaxAmount > 0)
                 {
-                    ChartOfAccountsModel? taxAccount = await GLAccountLookupHelper.GetTaxAccount(dapper, invoice.Invoice.OrganizationId, required: false);
-                    if (taxAccount != null && taxAccount.Id > 0)
-                    {
-                        GLAccountLookupHelper.AddTaxEntry(glHeader, taxAccount, invoice.Invoice.TaxAmount, isSale, invoice.Invoice.Code ?? "NEW");
-                    }
-                    else
-                    {
-                        string warningMsg = $"Tax account not found. Invoice has TaxAmount of {invoice.Invoice.TaxAmount:N2}, but no account with InterfaceType='TAX' is configured. Tax entry will be skipped.";
-                        glHeader.Warnings.Add(warningMsg);
-                        Log.Warning($"PreviewGLFromInvoice: {warningMsg}");
-                        // Create placeholder entry for missing tax account
-                        var placeholderTaxAccount = new ChartOfAccountsModel
-                        {
-                            Id = 0,
-                            Code = "MISSING",
-                            Name = "TAX ACCOUNT (NOT CONFIGURED)",
-                            Type = "LIABILITY"
-                        };
-                        GLAccountLookupHelper.AddTaxEntry(glHeader, placeholderTaxAccount, invoice.Invoice.TaxAmount, isSale, invoice.Invoice.Code ?? "NEW");
-                    }
+                    await AddTaxEntriesByBreakdown(dapper, glHeader, invoice, isSale);
                 }
 
                 // ====================================================================================
@@ -365,7 +365,7 @@ public static class PreviewGLFromInvoiceHelper
                 // ====================================================================================
                 if (invoice.Invoice.ChargesAmount > 0)
                 {
-                    var chargeAccount = await GLAccountLookupHelper.GetServiceAccount(dapper, invoice.Invoice.OrganizationId, required: false);
+                    var chargeAccount = await GLAccountLookupHelper.GetServiceAccount(dapper, Convert.ToInt32(invoice.Invoice.OrganizationId), required: false);
                     
                     if (chargeAccount != null && chargeAccount.Id > 0)
                     {
@@ -394,7 +394,7 @@ public static class PreviewGLFromInvoiceHelper
                 // ====================================================================================
                 if (invoice.Invoice.DiscountAmount > 0)
                 {
-                    var discountAccount = await GLAccountLookupHelper.GetDiscountAccount(dapper, invoice.Invoice.OrganizationId, required: false);
+                    var discountAccount = await GLAccountLookupHelper.GetDiscountAccount(dapper, Convert.ToInt32(invoice.Invoice.OrganizationId), required: false);
                     if (discountAccount != null && discountAccount.Id > 0)
                     {
                         GLAccountLookupHelper.AddDiscountEntry(glHeader, discountAccount, invoice.Invoice.DiscountAmount, isSale, invoice.Invoice.Code ?? "NEW");
@@ -419,46 +419,51 @@ public static class PreviewGLFromInvoiceHelper
             else
             {
                 // ====================================================================================
-                // ACCOUNTING ENTRY 1: AR/AP ENTRY (PURCHASE - Credit AP for balance amount)
-                // Source: Invoice.AccountId -> Party.AccountId -> ChartOfAccounts.InterfaceType('ACCOUNTS PAYABLE')
-                // Amount: Balance (TotalInvoiceAmount - Payments) - only if balance > 0
+                // ACCOUNTING ENTRY 1: AR/AP ENTRY (PURCHASE - Credit AP)
+                // Use TotalInvoiceAmount so payable matches debits and journal balances. Fallback to component sum.
                 // ====================================================================================
-                if (arApAccount != null)
+                decimal apAmount = invoice.Invoice.TotalInvoiceAmount > 0
+                    ? invoice.Invoice.TotalInvoiceAmount
+                    : (invoice.Invoice.InvoiceAmount + invoice.Invoice.ChargesAmount + invoice.Invoice.TaxAmount - invoice.Invoice.DiscountAmount);
+                if (arApAccount != null && apAmount > 0)
                 {
-                    GLAccountLookupHelper.AddARAPEntry(glHeader, arApAccount, balanceAmount, isSale, invoice.Invoice.Code ?? "NEW", invoice.Invoice.PartyId > 0 ? invoice.Invoice.PartyId : null);
+                    GLAccountLookupHelper.AddARAPEntry(glHeader, arApAccount, apAmount, isSale, invoice.Invoice.Code ?? "NEW", Convert.ToInt32(invoice.Invoice.PartyId) > 0 ? Convert.ToInt32(invoice.Invoice.PartyId) : (int?)null);
                 }
 
                 // ====================================================================================
                 // ACCOUNTING ENTRY 2: EXPENSE ENTRIES (PURCHASE - Debit Expense, one per invoice item)
                 // Source Priority: Items.ExpenseAccountId -> Invoice.AccountId -> ChartOfAccounts.InterfaceType('MANUAL ITEM EXPENSE')
                 // ====================================================================================
-                if (invoice.Invoice.Id > 0)
+                if (Convert.ToInt32(invoice.Invoice.Id) > 0)
                 {
                     // Get invoice items from database
+                    int invIdPurchase = Convert.ToInt32(invoice.Invoice.Id);
                     string sqlInvoiceItems = $@"SELECT ii.Id, ii.ItemId, ii.Qty, ii.UnitPrice, ii.DiscountAmount,
                                                       ii.ManualItem,
                                                       COALESCE(i.Name, ii.ManualItem) as ItemName,
                                                       i.ExpenseAccountId,
-                                                      COALESCE((ii.Qty * ii.UnitPrice) - ii.DiscountAmount + ISNULL(tax.TaxAmount, 0), 0) as Amount
+                                                      COALESCE((ii.Qty * ii.UnitPrice) - ii.DiscountAmount, 0) as Amount
                                                 FROM InvoiceDetail ii
                                                 LEFT JOIN Items i ON ii.ItemId = i.Id
-                                                LEFT JOIN (SELECT InvoiceDetailId, SUM(TaxAmount) AS TaxAmount FROM InvoiceDetailTax GROUP BY InvoiceDetailId) tax ON ii.Id = tax.InvoiceDetailId
-                                                WHERE ii.InvoiceId = {invoice.Invoice.Id} AND ii.IsSoftDeleted = 0
+                                                WHERE ii.InvoiceId = {invIdPurchase} AND ii.IsSoftDeleted = 0
                                                 ORDER BY ii.Id";
                     var invoiceItems = await dapper.SearchByQuery<dynamic>(sqlInvoiceItems);
                     
                     if (invoiceItems != null && invoiceItems.Any())
                     {
-                        // Normalize line amounts so that sum(lines) == invoice.InvoiceAmount (to avoid rounding / storage mismatches)
+                        // Expense = sum of (Qty*UnitPrice - Discount) per line (pre-tax); use line sum so journal balances
                         var positiveItems = invoiceItems
                             .Where(i => Convert.ToDecimal(i.Amount ?? 0) > 0)
                             .ToList();
 
-                        decimal targetInvoiceAmount = invoice.Invoice.InvoiceAmount;
-                        decimal sumLineAmounts = positiveItems.Sum(i => Convert.ToDecimal(i.Amount ?? 0));
+                        decimal sumLineAmounts = 0m;
+                        foreach (var i in positiveItems)
+                            sumLineAmounts += Convert.ToDecimal(i.Amount ?? 0);
+                        // Target = line sum so total expense matches actual lines; ensures DR = CR
+                        decimal targetExpenseAmount = sumLineAmounts > 0 ? sumLineAmounts : invoice.Invoice.InvoiceAmount;
 
-                        bool needsScaling = sumLineAmounts > 0 && Math.Abs(sumLineAmounts - targetInvoiceAmount) > 0.01m;
-                        decimal scaleFactor = needsScaling ? (targetInvoiceAmount / sumLineAmounts) : 1m;
+                        bool needsScaling = sumLineAmounts > 0 && Math.Abs(sumLineAmounts - targetExpenseAmount) > 0.01m;
+                        decimal scaleFactor = needsScaling ? (targetExpenseAmount / sumLineAmounts) : 1m;
                         decimal allocated = 0m;
 
                         for (int idx = 0; idx < positiveItems.Count; idx++)
@@ -477,15 +482,19 @@ public static class PreviewGLFromInvoiceHelper
                             {
                                 // Round and ensure final line fixes any rounding remainder
                                 lineAmount = (idx == positiveItems.Count - 1)
-                                    ? (targetInvoiceAmount - allocated)
+                                    ? (targetExpenseAmount - allocated)
                                     : Math.Round(rawLineAmount * scaleFactor, 2, MidpointRounding.AwayFromZero);
                                 allocated += lineAmount;
                             }
 
                             // Get Expense Account using common helper
+                            // Check if this is a manual item (ManualItem is not null/empty and ItemId is null/0)
+                            bool isManualItem = (invoiceItem.ItemId == null || Convert.IsDBNull(invoiceItem.ItemId) || Convert.ToInt32(invoiceItem.ItemId ?? 0) == 0) 
+                                && !string.IsNullOrWhiteSpace(invoiceItem.ManualItem?.ToString());
+                            
                             int? itemId = null;
                             int? itemExpenseAccountId = null;
-                            if (invoiceItem.ItemId != null && !Convert.IsDBNull(invoiceItem.ItemId))
+                            if (!isManualItem && invoiceItem.ItemId != null && !Convert.IsDBNull(invoiceItem.ItemId))
                             {
                                 itemId = Convert.ToInt32(invoiceItem.ItemId);
                                 if (invoiceItem.ExpenseAccountId != null && !Convert.IsDBNull(invoiceItem.ExpenseAccountId))
@@ -496,16 +505,16 @@ public static class PreviewGLFromInvoiceHelper
                             
                             var expenseResult = await GLAccountLookupHelper.GetExpenseAccount(
                                 dapper,
-                                invoice.Invoice.OrganizationId,
-                                itemId,
-                                itemExpenseAccountId,
-                                invoice.Invoice.AccountId > 0 ? (int?)invoice.Invoice.AccountId : null,
+                                Convert.ToInt32(invoice.Invoice.OrganizationId),
+                                isManualItem ? null : itemId, // Pass null for manual items to force MANUAL ITEM EXPENSE lookup
+                                isManualItem ? null : itemExpenseAccountId,
+                                Convert.ToInt32(invoice.Invoice.AccountId) > 0 ? (int?)Convert.ToInt32(invoice.Invoice.AccountId) : null,
                                 invoiceItem.ItemName?.ToString());
                             
                             ChartOfAccountsModel? expenseAccount = null;
-                            if (!expenseResult.Success)
+                            if (!expenseResult.Item1)
                             {
-                                string warningMsg = $"Expense Account Missing for item '{invoiceItem.ItemName}': {expenseResult.ErrorMessage}";
+                                string warningMsg = $"Expense Account Missing for item '{invoiceItem.ItemName}': {expenseResult.Item3}";
                                 glHeader.Warnings.Add(warningMsg);
                                 Log.Warning($"PreviewGLFromInvoice: {warningMsg}");
                                 // Create placeholder account
@@ -519,7 +528,7 @@ public static class PreviewGLFromInvoiceHelper
                             }
                             else
                             {
-                                expenseAccount = expenseResult.Account!;
+                                expenseAccount = expenseResult.Item2!;
                             }
                             
                             GLAccountLookupHelper.AddExpenseEntry(glHeader, expenseAccount, lineAmount, invoiceItem.ItemName?.ToString(), invoice.Invoice.Code ?? "NEW");
@@ -531,22 +540,30 @@ public static class PreviewGLFromInvoiceHelper
                     // Handle unsaved invoices (preview mode) - use InvoiceDetails from in-memory collection
                     if (invoice.InvoiceDetails != null && invoice.InvoiceDetails.Any())
                     {
+                        // Expense = sum of (Qty*UnitPrice - Discount) per line (pre-tax); use line sum so journal balances
                         var positiveItems = invoice.InvoiceDetails
-                            .Where(i => i.ItemTotalAmount > 0)
+                            .Select(i => new
+                            {
+                                Item = i,
+                                ExpenseAmount = (decimal)((i.Qty * i.UnitPrice) - i.DiscountAmount)
+                            })
+                            .Where(x => x.ExpenseAmount > 0)
                             .ToList();
 
-                        decimal targetInvoiceAmount = invoice.Invoice.InvoiceAmount;
-                        decimal sumLineAmounts = positiveItems.Sum(i => (decimal)i.ItemTotalAmount);
+                        decimal sumLineAmounts = positiveItems.Sum(x => x.ExpenseAmount);
+                        // Target = line sum so total expense matches actual lines; ensures DR = CR
+                        decimal targetExpenseAmount = sumLineAmounts > 0 ? sumLineAmounts : invoice.Invoice.InvoiceAmount;
 
-                        bool needsScaling = sumLineAmounts > 0 && Math.Abs(sumLineAmounts - targetInvoiceAmount) > 0.01m;
-                        decimal scaleFactor = needsScaling ? (targetInvoiceAmount / sumLineAmounts) : 1m;
+                        bool needsScaling = sumLineAmounts > 0 && Math.Abs(sumLineAmounts - targetExpenseAmount) > 0.01m;
+                        decimal scaleFactor = needsScaling ? (targetExpenseAmount / sumLineAmounts) : 1m;
                         decimal allocated = 0m;
 
                         for (int idx = 0; idx < positiveItems.Count; idx++)
                         {
-                            var invoiceItem = positiveItems[idx];
+                            var itemData = positiveItems[idx];
+                            var invoiceItem = itemData.Item;
 
-                            decimal rawLineAmount = (decimal)invoiceItem.ItemTotalAmount;
+                            decimal rawLineAmount = itemData.ExpenseAmount;
                             if (rawLineAmount <= 0) continue;
 
                             decimal lineAmount;
@@ -557,25 +574,29 @@ public static class PreviewGLFromInvoiceHelper
                             else
                             {
                                 lineAmount = (idx == positiveItems.Count - 1)
-                                    ? (targetInvoiceAmount - allocated)
+                                    ? (targetExpenseAmount - allocated)
                                     : Math.Round(rawLineAmount * scaleFactor, 2, MidpointRounding.AwayFromZero);
                                 allocated += lineAmount;
                             }
 
                             // Get Expense Account using common helper
-                            int? itemIdForExpense = invoiceItem.ItemId > 0 ? invoiceItem.ItemId : null;
+                            // Check if this is a manual item (ItemId is 0 and ManualItem is not empty)
+                            bool isManualItem = (invoiceItem.ItemId == 0 || invoiceItem.ItemId == null) 
+                                && !string.IsNullOrWhiteSpace(invoiceItem.ManualItem);
+                            
+                            int? itemIdForExpense = isManualItem ? null : (invoiceItem.ItemId > 0 ? invoiceItem.ItemId : null); // Pass null for manual items
                             var expenseResult = await GLAccountLookupHelper.GetExpenseAccount(
                                 dapper,
-                                invoice.Invoice.OrganizationId,
+                                Convert.ToInt32(invoice.Invoice.OrganizationId),
                                 itemIdForExpense,
                                 null,
-                                invoice.Invoice.AccountId > 0 ? (int?)invoice.Invoice.AccountId : null,
+                                Convert.ToInt32(invoice.Invoice.AccountId) > 0 ? (int?)Convert.ToInt32(invoice.Invoice.AccountId) : null,
                                 invoiceItem.ItemName);
                             
                             ChartOfAccountsModel? expenseAccount = null;
-                            if (!expenseResult.Success)
+                            if (!expenseResult.Item1)
                             {
-                                string warningMsg = $"Expense Account Missing for item '{invoiceItem.ItemName}': {expenseResult.ErrorMessage}";
+                                string warningMsg = $"Expense Account Missing for item '{invoiceItem.ItemName}': {expenseResult.Item3}";
                                 glHeader.Warnings.Add(warningMsg);
                                 Log.Warning($"PreviewGLFromInvoice: {warningMsg}");
                                 // Create placeholder account
@@ -589,7 +610,7 @@ public static class PreviewGLFromInvoiceHelper
                             }
                             else
                             {
-                                expenseAccount = expenseResult.Account!;
+                                expenseAccount = expenseResult.Item2!;
                             }
                             
                             GLAccountLookupHelper.AddExpenseEntry(glHeader, expenseAccount, lineAmount, invoiceItem.ItemName, invoice.Invoice.Code ?? "NEW");
@@ -598,32 +619,12 @@ public static class PreviewGLFromInvoiceHelper
                 }
 
                 // ====================================================================================
-                // ACCOUNTING ENTRY 3: TAX ENTRY (PURCHASE - Debit Tax)
-                // Source: ChartOfAccounts.InterfaceType = 'TAX'
-                // Note: Tax is calculated from item-level TaxRuleId (via InvoiceDetailTax table)
+                // ACCOUNTING ENTRY 3: TAX ENTRIES (PURCHASE - Debit Tax, one line per tax type)
+                // Source: InvoiceDetailTax grouped by TaxId -> TaxMaster.AccountId
                 // ====================================================================================
                 if (invoice.Invoice.TaxAmount > 0)
                 {
-                    var taxAccount = await GLAccountLookupHelper.GetTaxAccount(dapper, invoice.Invoice.OrganizationId, required: false);
-                    if (taxAccount != null && taxAccount.Id > 0)
-                    {
-                        GLAccountLookupHelper.AddTaxEntry(glHeader, taxAccount, invoice.Invoice.TaxAmount, isSale, invoice.Invoice.Code ?? "NEW");
-                    }
-                    else
-                    {
-                        string warningMsg = $"Tax account not found. Invoice has TaxAmount of {invoice.Invoice.TaxAmount:N2}, but no account with InterfaceType='TAX' is configured. Tax entry will be skipped.";
-                        glHeader.Warnings.Add(warningMsg);
-                        Log.Warning($"PreviewGLFromInvoice: {warningMsg}");
-                        // Create placeholder entry for missing tax account
-                        var placeholderTaxAccount = new ChartOfAccountsModel
-                        {
-                            Id = 0,
-                            Code = "MISSING",
-                            Name = "TAX ACCOUNT (NOT CONFIGURED)",
-                            Type = "LIABILITY"
-                        };
-                        GLAccountLookupHelper.AddTaxEntry(glHeader, placeholderTaxAccount, invoice.Invoice.TaxAmount, isSale, invoice.Invoice.Code ?? "NEW");
-                    }
+                    await AddTaxEntriesByBreakdown(dapper, glHeader, invoice, isSale);
                 }
 
                 // ====================================================================================
@@ -632,7 +633,7 @@ public static class PreviewGLFromInvoiceHelper
                 // ====================================================================================
                 if (invoice.Invoice.ChargesAmount > 0)
                 {
-                    var chargeAccount = await GLAccountLookupHelper.GetServiceAccount(dapper, invoice.Invoice.OrganizationId, required: false);
+                    var chargeAccount = await GLAccountLookupHelper.GetServiceAccount(dapper, Convert.ToInt32(invoice.Invoice.OrganizationId), required: false);
                     if (chargeAccount != null && chargeAccount.Id > 0)
                     {
                         GLAccountLookupHelper.AddServiceChargesEntry(glHeader, chargeAccount, invoice.Invoice.ChargesAmount, isSale, invoice.Invoice.Code ?? "NEW");
@@ -660,7 +661,7 @@ public static class PreviewGLFromInvoiceHelper
                 // ====================================================================================
                 if (invoice.Invoice.DiscountAmount > 0)
                 {
-                    var discountAccount = await GLAccountLookupHelper.GetDiscountAccount(dapper, invoice.Invoice.OrganizationId, required: false);
+                    var discountAccount = await GLAccountLookupHelper.GetDiscountAccount(dapper, Convert.ToInt32(invoice.Invoice.OrganizationId), required: false);
                     if (discountAccount != null && discountAccount.Id > 0)
                     {
                         GLAccountLookupHelper.AddDiscountEntry(glHeader, discountAccount, invoice.Invoice.DiscountAmount, isSale, invoice.Invoice.Code ?? "NEW");
@@ -684,63 +685,33 @@ public static class PreviewGLFromInvoiceHelper
             }
 
             // ====================================================================================
-            // ACCOUNTING ENTRIES 6-7: PAYMENT ENTRIES (if payments exist)
+            // ACCOUNTING ENTRIES 6-7: PAYMENT ENTRIES (transaction-wise: one pair of lines per payment)
             // Source: ChartOfAccounts.InterfaceType = 'PAYMENT METHOD' (from InvoicePayments.AccountId)
-            // For SALE: Debit Cash/Bank, Credit AR
-            // For PURCHASE: Debit AP, Credit Cash/Bank
+            // For SALE: Debit Cash/Bank, Credit AR (one pair per payment)
+            // For PURCHASE: Debit AP, Credit Cash/Bank (one pair per payment)
             // ====================================================================================
             if (invoice.InvoicePayments != null && invoice.InvoicePayments.Any())
             {
-                // First, validate that all payment AccountIds correspond to accounts with InterfaceType = 'PAYMENT METHOD'
-                var validPaymentAccountIds = new HashSet<int>();
-                foreach (var payment in invoice.InvoicePayments.Where(p => p.Amount > 0 && p.AccountId > 0))
-                {
-                    string validateAccountSql = $@"SELECT TOP 1 Id FROM ChartOfAccounts 
-                                                   WHERE Id = {payment.AccountId} 
-                                                   AND OrganizationId = {invoice.Invoice.OrganizationId} 
-                                                   AND InterfaceType = 'PAYMENT METHOD'
-                                                   AND IsActive = 1";
-                    var validateResult = await dapper.SearchByQuery<ChartOfAccountsModel>(validateAccountSql);
-                    if (validateResult != null && validateResult.Any())
-                    {
-                        validPaymentAccountIds.Add(payment.AccountId);
-                    }
-                }
-                
-                // Group payments by AccountId and sum amounts - Only include valid payment method accounts
-                var groupedPayments = invoice.InvoicePayments
-                    .Where(p => p.Amount > 0 && p.AccountId > 0 && validPaymentAccountIds.Contains(p.AccountId))
-                    .GroupBy(p => p.AccountId)
-                    .Select(g => new
-                    {
-                        AccountId = g.Key,
-                        TotalAmount = g.Sum(p => (double)p.Amount),
-                        PaymentRefs = g.Where(p => !string.IsNullOrWhiteSpace(p.PaymentRef))
-                                      .Select(p => p.PaymentRef)
-                                      .Distinct()
-                                      .ToList(),
-                        Payments = g.ToList()
-                    })
+                var paymentsToProcess = invoice.InvoicePayments
+                    .Where(p => p.Amount > 0 && p.AccountId > 0)
                     .ToList();
 
-                foreach (var groupedPayment in groupedPayments)
+                foreach (var payment in paymentsToProcess)
                 {
-                    // Get payment method account (cash/bank account) - Must have InterfaceType = 'PAYMENT METHOD'
-                    string paymentAccountSql = $@"SELECT TOP 1 Id, Code, Name, Type FROM ChartOfAccounts 
-                                                 WHERE Id = {groupedPayment.AccountId} 
-                                                 AND OrganizationId = {invoice.Invoice.OrganizationId} 
-                                                 AND InterfaceType = 'PAYMENT METHOD'
-                                                 AND IsActive = 1";
-                    var paymentAccountResult = await dapper.SearchByQuery<ChartOfAccountsModel>(paymentAccountSql);
+                    // Validate payment AccountId has InterfaceType = 'PAYMENT METHOD'
+                    string validateAccountSql = $@"SELECT TOP 1 Id, Code, Name, Type FROM ChartOfAccounts 
+                                                   WHERE Id = {payment.AccountId} 
+                                                   AND OrganizationId = {Convert.ToInt32(invoice.Invoice.OrganizationId)} 
+                                                   AND InterfaceType = 'PAYMENT METHOD'
+                                                   AND IsActive = 1";
+                    var paymentAccountResult = await dapper.SearchByQuery<ChartOfAccountsModel>(validateAccountSql);
                     ChartOfAccountsModel? paymentAccount = paymentAccountResult?.FirstOrDefault();
-                    
-                    // If account not found or doesn't have InterfaceType = 'PAYMENT METHOD', create placeholder
+
                     if (paymentAccount == null || paymentAccount.Id == 0)
                     {
-                        string warningMsg = $"Payment Account (ID: {groupedPayment.AccountId}) not found or does not have InterfaceType='PAYMENT METHOD'. Payment entry will show as missing account.";
+                        string warningMsg = $"Payment Account (ID: {payment.AccountId}) not found or does not have InterfaceType='PAYMENT METHOD'. Payment entry will show as missing account.";
                         glHeader.Warnings.Add(warningMsg);
                         Log.Warning($"PreviewGLFromInvoice: {warningMsg}");
-                        // Create placeholder account
                         paymentAccount = new ChartOfAccountsModel
                         {
                             Id = 0,
@@ -749,27 +720,17 @@ public static class PreviewGLFromInvoiceHelper
                             Type = "ASSET"
                         };
                     }
-                    
-                    // Build description with payment references if available
-                    string paymentDescription = $"Payment - Invoice {invoice.Invoice.Code ?? "NEW"}";
-                    if (groupedPayment.PaymentRefs.Any())
-                    {
-                        paymentDescription += $" ({string.Join(", ", groupedPayment.PaymentRefs)})";
-                    }
-                    else if (groupedPayment.Payments.Count > 1)
-                    {
-                        paymentDescription += $" ({groupedPayment.Payments.Count} payments)";
-                    }
 
+                    // One GL pair per payment transaction (transaction-wise detail)
                     GLAccountLookupHelper.AddPaymentEntries(
                         glHeader,
-                        arApAccount,
+                        arApAccount!,
                         paymentAccount,
-                        groupedPayment.TotalAmount,
+                        (double)payment.Amount,
                         isSale,
                         invoice.Invoice.Code ?? "NEW",
-                        groupedPayment.PaymentRefs.Any() ? string.Join(", ", groupedPayment.PaymentRefs) : null,
-                        invoice.Invoice.PartyId > 0 ? invoice.Invoice.PartyId : null);
+                        payment.PaymentRef,
+                        Convert.ToInt32(invoice.Invoice.PartyId) > 0 ? Convert.ToInt32(invoice.Invoice.PartyId) : (int?)null);
                 }
             }
 
@@ -796,6 +757,122 @@ public static class PreviewGLFromInvoiceHelper
             string errorMsg = $"PreviewGLFromInvoice: Error generating preview: {ex.Message}";
             Log.Error(ex, "PreviewGLFromInvoice Error: {Message}", ex.Message);
             return (false, null, errorMsg);
+        }
+    }
+
+    /// <summary>
+    /// Add GL tax entries per tax type (e.g. GST -> GENERAL SALES TAX, Advance Tax -> ADVANCE TAX).
+    /// 1) If invoice.InvoiceTaxes has items: group by TaxId (name or id), sum TaxAmount, lookup TaxMaster for AccountId → one line per tax.
+    /// 2) Else if saved invoice: get breakdown from InvoiceDetailTax grouped by TaxId.
+    /// 3) Else: single tax entry (InterfaceType='TAX').
+    /// </summary>
+    private static async Task AddTaxEntriesByBreakdown(
+        DapperFunctions dapper,
+        GeneralLedgerHeaderModel glHeader,
+        InvoicesModel invoice,
+        bool isSale)
+    {
+        if (invoice?.Invoice == null || invoice.Invoice.TaxAmount <= 0) return;
+
+        int orgId = Convert.ToInt32(invoice.Invoice.OrganizationId);
+        int invoiceId = Convert.ToInt32(invoice.Invoice.Id);
+        string code = invoice.Invoice.Code ?? "NEW";
+
+        // 1) Use client-supplied InvoiceTaxes breakdown when present (works for unsaved and invoice-level tax)
+        bool taxAddedFromBreakdown = false;
+        if (invoice.InvoiceTaxes != null && invoice.InvoiceTaxes.Any())
+        {
+            var grouped = invoice.InvoiceTaxes
+                .Where(t => t.TaxAmount != 0)
+                .GroupBy(t => t.TaxId?.ToString().Trim() ?? "")
+                .Where(g => !string.IsNullOrEmpty(g.Key))
+                .Select(g => new { TaxKey = g.Key, TaxAmount = g.Sum(t => t.TaxAmount) })
+                .ToList();
+            if (grouped.Any())
+            {
+                foreach (var g in grouped)
+                {
+                    decimal amount = (decimal)g.TaxAmount;
+                    if (amount <= 0) continue;
+                    int accountId = 0;
+                    string taxName = g.TaxKey;
+                    if (int.TryParse(g.TaxKey, out int taxIdNum))
+                    {
+                        string sqlTm = $@"SELECT TOP 1 Id, AccountId, TaxName FROM TaxMaster WHERE Id = {taxIdNum} AND OrganizationId = {orgId} AND IsSoftDeleted = 0";
+                        var tmRow = (await dapper.SearchByQuery<dynamic>(sqlTm))?.FirstOrDefault();
+                        if (tmRow != null)
+                        {
+                            accountId = Convert.ToInt32(tmRow.AccountId ?? 0);
+                            taxName = tmRow.TaxName?.ToString() ?? g.TaxKey;
+                        }
+                    }
+                    if (accountId == 0)
+                    {
+                        string taxKeyEsc = (g.TaxKey ?? "").Replace("'", "''");
+                        string sqlTmByName = $@"SELECT TOP 1 Id, AccountId, TaxName FROM TaxMaster WHERE OrganizationId = {orgId} AND IsSoftDeleted = 0 AND (TaxName = N'{taxKeyEsc}' OR TaxName LIKE N'%' + N'{taxKeyEsc}' + N'%')";
+                        var tmRow = (await dapper.SearchByQuery<dynamic>(sqlTmByName))?.FirstOrDefault();
+                        if (tmRow != null)
+                        {
+                            accountId = Convert.ToInt32(tmRow.AccountId ?? 0);
+                            taxName = tmRow.TaxName?.ToString() ?? g.TaxKey;
+                        }
+                    }
+                    ChartOfAccountsModel? account = accountId > 0 ? await GLAccountLookupHelper.GetAccountById(dapper, orgId, accountId, required: false) : null;
+                    if (account == null || account.Id == 0)
+                    {
+                        glHeader.Warnings.Add($"Tax account for '{taxName}' not found. Entry will show as missing.");
+                        account = new ChartOfAccountsModel { Id = 0, Code = "MISSING", Name = $"TAX - {taxName} (NOT CONFIGURED)", Type = "LIABILITY" };
+                    }
+                    GLAccountLookupHelper.AddTaxEntry(glHeader, account, amount, isSale, code);
+                    taxAddedFromBreakdown = true;
+                }
+                if (taxAddedFromBreakdown) return;
+            }
+        }
+
+        // 2) Saved invoice: get tax breakdown from InvoiceDetailTax grouped by TaxId
+        if (!taxAddedFromBreakdown && invoiceId > 0)
+        {
+            string sqlTaxBreakdown = $@"
+                SELECT idt.TaxId, tm.AccountId, tm.TaxName, SUM(idt.TaxAmount) AS TaxAmount
+                FROM InvoiceDetailTax idt
+                INNER JOIN InvoiceDetail id ON id.Id = idt.InvoiceDetailId AND id.InvoiceId = {invoiceId} AND id.IsSoftDeleted = 0
+                INNER JOIN TaxMaster tm ON tm.Id = idt.TaxId AND tm.OrganizationId = {orgId} AND tm.IsSoftDeleted = 0
+                GROUP BY idt.TaxId, tm.AccountId, tm.TaxName
+                HAVING SUM(idt.TaxAmount) <> 0";
+            var taxRows = await dapper.SearchByQuery<dynamic>(sqlTaxBreakdown);
+            if (taxRows != null && taxRows.Any())
+            {
+                foreach (var row in taxRows)
+                {
+                    decimal amount = Convert.ToDecimal(row.TaxAmount ?? 0);
+                    if (amount <= 0) continue;
+                    int accountId = Convert.ToInt32(row.AccountId ?? 0);
+                    string taxName = row.TaxName?.ToString() ?? $"Tax {row.TaxId}";
+                    ChartOfAccountsModel? account = await GLAccountLookupHelper.GetAccountById(dapper, orgId, accountId, required: false);
+                    if (account == null || account.Id == 0)
+                    {
+                        glHeader.Warnings.Add($"Tax account (ID: {accountId}) for '{taxName}' not found. Entry will show as missing.");
+                        account = new ChartOfAccountsModel { Id = 0, Code = "MISSING", Name = $"TAX - {taxName} (NOT CONFIGURED)", Type = "LIABILITY" };
+                    }
+                    GLAccountLookupHelper.AddTaxEntry(glHeader, account, amount, isSale, code);
+                    taxAddedFromBreakdown = true;
+                }
+                if (taxAddedFromBreakdown) return;
+            }
+        }
+
+        // 3) Fallback: always add single tax entry when TaxAmount > 0 and no breakdown was added (ensures journal balances)
+        if (!taxAddedFromBreakdown && invoice.Invoice.TaxAmount > 0)
+        {
+            ChartOfAccountsModel? taxAccount = await GLAccountLookupHelper.GetTaxAccount(dapper, orgId, required: false);
+            if (taxAccount != null && taxAccount.Id > 0)
+                GLAccountLookupHelper.AddTaxEntry(glHeader, taxAccount, invoice.Invoice.TaxAmount, isSale, code);
+            else
+            {
+                glHeader.Warnings.Add($"Tax account not found. Invoice has TaxAmount of {invoice.Invoice.TaxAmount:N2}. Using placeholder.");
+                GLAccountLookupHelper.AddTaxEntry(glHeader, new ChartOfAccountsModel { Id = 0, Code = "MISSING", Name = "TAX ACCOUNT (NOT CONFIGURED)", Type = "LIABILITY" }, invoice.Invoice.TaxAmount, isSale, code);
+            }
         }
     }
 

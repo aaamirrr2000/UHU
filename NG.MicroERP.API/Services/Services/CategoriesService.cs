@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -73,7 +73,8 @@ public class CategoriesService : ICategoriesService
         {
 
             string Code = dapper.GetCode("", "Categories", "Code")!;
-            string SQLDuplicate = $@"SELECT * FROM Categories WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
+            string SQLDuplicate = $@"SELECT * FROM Categories WHERE UPPER(code) = '{obj.Code!.ToUpper()}' AND IsSoftDeleted = 0;";
+            string taxRuleIdValue = obj.TaxRuleId.HasValue && obj.TaxRuleId.Value > 0 ? obj.TaxRuleId.Value.ToString() : "NULL";
             string SQLInsert = $@"INSERT INTO Categories 
 			(
 				OrganizationId, 
@@ -81,6 +82,7 @@ public class CategoriesService : ICategoriesService
  				Name, 
                 CategoryType,
 				ParentId, 
+				TaxRuleId,
 				IsActive, 
 				CreatedBy, 
 				CreatedOn, 
@@ -94,6 +96,7 @@ public class CategoriesService : ICategoriesService
  				'{obj.Name!.ToUpper()}', 
 				'{obj.CategoryType!.ToUpper()}', 
 				{obj.ParentId},
+				{taxRuleIdValue},
 				{obj.IsActive},
 				{obj.CreatedBy},
 				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
@@ -125,13 +128,15 @@ public class CategoriesService : ICategoriesService
     {
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM Categories WHERE UPPER(code) = '{obj.Code!.ToUpper()}' and ID != {obj.Id};";
+            string SQLDuplicate = $@"SELECT * FROM Categories WHERE UPPER(code) = '{obj.Code!.ToUpper()}' AND ID != {obj.Id} AND IsSoftDeleted = 0;";
+            string taxRuleIdValue = obj.TaxRuleId.HasValue && obj.TaxRuleId.Value > 0 ? obj.TaxRuleId.Value.ToString() : "NULL";
             string SQLUpdate = $@"UPDATE Categories SET 
 					OrganizationId = {obj.OrganizationId}, 
 					Code = '{obj.Code!.ToUpper()}', 
  					Name = '{obj.Name!.ToUpper()}',
                     CategoryType = '{obj.CategoryType!.ToUpper()}',
 					ParentId = {obj.ParentId}, 
+					TaxRuleId = {taxRuleIdValue},
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 

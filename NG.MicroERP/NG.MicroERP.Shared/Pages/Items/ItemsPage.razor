@@ -1,4 +1,4 @@
-﻿@page "/ItemsPage/{Action}/{CurrentRecord?}"
+@page "/ItemsPage/{Action}/{CurrentRecord?}"
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
@@ -317,6 +317,15 @@
 
                     <!-- Transaction Type -->
                     <div>
+                        @if (_taxRuleAppliedOnInvoiceLevel)
+                        {
+                            <MudAlert Severity="Severity.Warning" Class="mb-3" Variant="Variant.Filled">
+                                <MudText Typo="Typo.body2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Warning" Class="me-2" />
+                                    <strong>Warning:</strong> Tax is currently applied at invoice level. Item-level tax rules will not be used in sale invoices.
+                                </MudText>
+                            </MudAlert>
+                        }
                         <MudSelect T="int?"
                                    @bind-Value="record.TaxRuleId"
                                    Placeholder="Transaction Type"
@@ -369,7 +378,7 @@
                                         <MudTd>
                                             <MudChip T="int" Size="Size.Small" Variant="Variant.Filled"
                                                      Color="@(context.TaxType == "PERCENTAGE" ? Color.Primary : Color.Info)">
-                                                @(context.TaxType == "PERCENTAGE" ? $"{context.Rate:0.##}%" : $"{context.Rate:0.##}")
+                                                @(context.TaxType == "PERCENTAGE" ? $"{context.TaxAmount:0.##}%" : $"{context.TaxAmount:0.##}")
                                             </MudChip>
                                         </MudTd>
                                     </RowTemplate>
@@ -504,9 +513,29 @@
     private bool LoadingPanel { get; set; } = false;
     private MyDrawer _drawer = new();
 
+    private bool _taxRuleAppliedOnInvoiceLevel = false;
+    
     protected override async Task OnInitializedAsync()
     {
+        await LoadInterfaceSettings();
         await GetAll();
+    }
+    
+    private async Task LoadInterfaceSettings()
+    {
+        try
+        {
+            var settings = await Functions.GetAsync<List<InterfaceSettingsModel>>(
+                $"InterfaceSettings/Search/OrganizationId={Globals.User.OrganizationId} and Category='Sale Invoice' and SettingKey='TaxRuleAppliedOnInvoiceLevel'", true)
+                ?? new List<InterfaceSettingsModel>();
+            
+            var setting = settings.FirstOrDefault(s => s.IsActive == 1 && s.IsSoftDeleted == 0);
+            _taxRuleAppliedOnInvoiceLevel = setting?.SettingValue?.ToLower() == "true";
+        }
+        catch
+        {
+            _taxRuleAppliedOnInvoiceLevel = false;
+        }
     }
 
     protected async Task GetAll()

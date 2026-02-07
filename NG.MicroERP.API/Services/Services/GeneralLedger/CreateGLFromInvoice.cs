@@ -164,8 +164,12 @@ public static class CreateGLFromInvoiceHelper
                 // For PURCHASE: Credit AP, Debit Expense/Tax/Charges, Credit Discount
                 if (isSale)
                 {
-                    // Debit AR for TotalInvoiceAmount
-                    GLAccountLookupHelper.AddARAPEntry(glHeader, arApAccount.Value, invoice.TotalInvoiceAmount, isSale, invoice.Code, invoice.PartyId);
+                    // Debit AR = TotalInvoiceAmount (amount customer owes) so journal balances; fallback to component sum
+                    decimal arAmount = invoice.TotalInvoiceAmount > 0
+                        ? invoice.TotalInvoiceAmount
+                        : (invoice.InvoiceAmount + invoice.ChargesAmount + invoice.TaxAmount - invoice.DiscountAmount);
+                    if (arAmount > 0)
+                        GLAccountLookupHelper.AddARAPEntry(glHeader, arApAccount.Value, arAmount, isSale, invoice.Code, invoice.PartyId);
 
                     // Credit Revenue (from InvoiceAmount)
                     // Post each invoice item separately using item-level GL account mapping
@@ -173,13 +177,13 @@ public static class CreateGLFromInvoiceHelper
                     if (invoice.InvoiceAmount > 0)
                     {
                         // Get invoice items (same query as PURCHASE)
+                        // Use pre-tax amount (Qty*UnitPrice - Discount) so tax is posted once; matches Preview and keeps journal balanced
                         string sqlInvoiceItems = $@"SELECT ii.Id, ii.ItemId, ii.Qty, ii.UnitPrice, ii.DiscountAmount,
                                                           ii.ManualItem,
                                                           i.Code as ItemCode, i.Name as ItemName, i.RevenueAccountId,
-                                                          COALESCE((ii.Qty * ii.UnitPrice) - ii.DiscountAmount + ISNULL(tax.TaxAmount, 0), 0) as Amount
+                                                          COALESCE((ii.Qty * ii.UnitPrice) - ii.DiscountAmount, 0) as Amount
                                                    FROM InvoiceDetail ii
                                                    LEFT JOIN Items i ON ii.ItemId = i.Id
-                                                   LEFT JOIN (SELECT InvoiceDetailId, SUM(TaxAmount) AS TaxAmount FROM InvoiceDetailTax GROUP BY InvoiceDetailId) tax ON ii.Id = tax.InvoiceDetailId
                                                    WHERE ii.InvoiceId = {invoice.Id} AND ii.IsSoftDeleted = 0
                                                    ORDER BY ii.Id";
                         var invoiceItems = (await connection.QueryAsync<dynamic>(sqlInvoiceItems, transaction: transaction))?.ToList();
@@ -339,21 +343,25 @@ public static class CreateGLFromInvoiceHelper
                 else
                 {
                     // PURCHASE: Credit AP, Debit Expense/Tax/Charges, Credit Discount
-                    // Credit AP for TotalInvoiceAmount (the full amount owed to supplier)
-                    GLAccountLookupHelper.AddARAPEntry(glHeader, arApAccount.Value, invoice.TotalInvoiceAmount, isSale, invoice.Code, invoice.PartyId);
+                    // Credit AP = TotalInvoiceAmount so journal balances; fallback to component sum
+                    decimal apAmount = invoice.TotalInvoiceAmount > 0
+                        ? invoice.TotalInvoiceAmount
+                        : (invoice.InvoiceAmount + invoice.ChargesAmount + invoice.TaxAmount - invoice.DiscountAmount);
+                    if (apAmount > 0)
+                        GLAccountLookupHelper.AddARAPEntry(glHeader, arApAccount.Value, apAmount, isSale, invoice.Code, invoice.PartyId);
 
                     // Debit Expense (from InvoiceAmount)
                     // Post each invoice item separately using item-level GL account mapping
                     // Priority: Item's ExpenseAccountId -> Invoice AccountId -> ITEM_EXPENSE InterfaceType -> EXPENSE Type
                     
                     // Get invoice items
+                    // Use pre-tax amount (Qty*UnitPrice - Discount) so tax is posted once; matches Preview and keeps journal balanced
                     string sqlInvoiceItems = $@"SELECT ii.Id, ii.ItemId, ii.Qty, ii.UnitPrice, ii.DiscountAmount,
                                                       ii.ManualItem,
                                                       i.Code as ItemCode, i.Name as ItemName, i.ExpenseAccountId,
-                                                      COALESCE((ii.Qty * ii.UnitPrice) - ii.DiscountAmount + ISNULL(tax.TaxAmount, 0), 0) as Amount
+                                                      COALESCE((ii.Qty * ii.UnitPrice) - ii.DiscountAmount, 0) as Amount
                                                FROM InvoiceDetail ii
                                                LEFT JOIN Items i ON ii.ItemId = i.Id
-                                               LEFT JOIN (SELECT InvoiceDetailId, SUM(TaxAmount) AS TaxAmount FROM InvoiceDetailTax GROUP BY InvoiceDetailId) tax ON ii.Id = tax.InvoiceDetailId
                                                WHERE ii.InvoiceId = {invoice.Id} AND ii.IsSoftDeleted = 0
                                                ORDER BY ii.Id";
                     var invoiceItems = (await connection.QueryAsync<dynamic>(sqlInvoiceItems, transaction: transaction))?.ToList();
@@ -522,7 +530,7 @@ public static class CreateGLFromInvoiceHelper
                 }
 
                 // Insert GL Header
-                string SQLDuplicate = $@"SELECT * FROM GeneralLedgerHeader WHERE UPPER(EntryNo) = '{entryNo.ToUpper()}';";
+                string SQLDuplicate = $@"SELECT * FROM GeneralLedgerHeader WHERE UPPER(EntryNo) = '{entryNo.ToUpper()}' AND IsSoftDeleted = 0;";
                 string SQLInsertHeader = $@"INSERT INTO GeneralLedgerHeader 
                     (
                         OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, ReferenceType, ReferenceId,

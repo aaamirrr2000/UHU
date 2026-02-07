@@ -131,7 +131,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 entryNo = dapper.GetCode("GL", "GeneralLedgerHeader", "EntryNo")!;
             }
 
-            string SQLDuplicate = $@"SELECT * FROM GeneralLedgerHeader WHERE UPPER(EntryNo) = '{entryNo.ToUpper()}';";
+            string SQLDuplicate = $@"SELECT * FROM GeneralLedgerHeader WHERE UPPER(EntryNo) = '{entryNo.ToUpper()}' AND IsSoftDeleted = 0;";
             
             // Insert Header
             string SQLInsertHeader = $@"INSERT INTO GeneralLedgerHeader 
@@ -276,7 +276,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             if (Math.Abs(totalDebit - totalCredit) > 0.01)
                 return (false, null!, $"Entry is not balanced. Total Debit: {totalDebit:N2}, Total Credit: {totalCredit:N2}");
 
-            string SQLDuplicate = $@"SELECT * FROM GeneralLedgerHeader WHERE UPPER(EntryNo) = '{obj.EntryNo!.ToUpper()}' AND Id != {obj.Id};";
+            string SQLDuplicate = $@"SELECT * FROM GeneralLedgerHeader WHERE UPPER(EntryNo) = '{obj.EntryNo!.ToUpper()}' AND Id != {obj.Id} AND IsSoftDeleted = 0;";
             
             // Update Header
             string SQLUpdateHeader = $@"UPDATE GeneralLedgerHeader SET 

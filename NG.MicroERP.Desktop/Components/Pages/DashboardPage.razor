@@ -1,0 +1,255 @@
+@page "/dashboard"
+@page "/AdminDashboardPage"
+@using MudBlazor
+@using NG.MicroERP.Shared.Models
+@inject Functions Functions
+@inject Globals Globals
+@inject ISnackbar SnackbarService
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MudPaper Class="p-4" Style="height:100vh; overflow:hidden; background-color:#F9FAFB;">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <MudText Typo="Typo.h5" Class="fw-bold text-primary">Inventory & Funds Dashboard</MudText>
+        <MudText Typo="Typo.subtitle2" Color="Color.Secondary">As of @DateTime.Now.ToString("MMMM dd, yyyy")</MudText>
+    </div>
+
+    <!-- Top Cards -->
+    <div class="d-flex justify-content-between mb-4" style="gap:1rem;">
+        <MudCard Class="flex-fill text-center shadow-sm" Style="border-left:5px solid #1976d2;">
+            <MudCardContent>
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Total Inventory Value</MudText>
+                <MudText Typo="Typo.h6" Class="fw-bold text-primary">Rs. @dashboardData.TotalInventoryValue.ToString("N0")</MudText>
+            </MudCardContent>
+        </MudCard>
+
+        <MudCard Class="flex-fill text-center shadow-sm" Style="border-left:5px solid #2e7d32;">
+            <MudCardContent>
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Funds Available</MudText>
+                <MudText Typo="Typo.h6" Class="fw-bold text-success">Rs. @dashboardData.FundsAvailable.ToString("N0")</MudText>
+            </MudCardContent>
+        </MudCard>
+
+        <MudCard Class="flex-fill text-center shadow-sm" Style="border-left:5px solid #ed6c02;">
+            <MudCardContent>
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Outstanding Payments</MudText>
+                <MudText Typo="Typo.h6" Class="fw-bold text-warning">Rs. @dashboardData.OutstandingPayments.ToString("N0")</MudText>
+            </MudCardContent>
+        </MudCard>
+
+        <MudCard Class="flex-fill text-center shadow-sm" Style="border-left:5px solid #d32f2f;">
+            <MudCardContent>
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Stock Alerts</MudText>
+                <MudText Typo="Typo.h6" Class="fw-bold text-error">@dashboardData.StockAlertsCount Items</MudText>
+            </MudCardContent>
+        </MudCard>
+    </div>
+
+    <!-- Middle Section -->
+    <div class="d-flex justify-content-between" style="gap:1rem; height:40vh;">
+        <!-- Inventory Chart -->
+        <MudPaper Class="flex-fill p-3 shadow-sm">
+            <MudText Typo="Typo.subtitle1" Class="fw-bold mb-2 text-primary">Inventory Distribution</MudText>
+            @if (_inventoryLabels.Any() && _inventoryData.Any())
+            {
+                <MudChart ChartType="ChartType.Pie"
+                          Labels="_inventoryLabels"
+                          InputData="_inventoryData"
+                          Style="height:32vh;">
+                </MudChart>
+            }
+            else
+            {
+                <div class="d-flex align-items-center justify-content-center" style="height:32vh;">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">No inventory data available</MudText>
+                </div>
+            }
+        </MudPaper>
+
+        <!-- Funds Chart -->
+        <MudPaper Class="flex-fill p-3 shadow-sm">
+            <MudText Typo="Typo.subtitle1" Class="fw-bold mb-2 text-primary">Monthly Funds Flow</MudText>
+            <div class="d-flex justify-content-between" style="gap:1rem;">
+                <!-- Funds Trend -->
+                <MudPaper Class="p-3 flex-grow-1" Style="width:48%;">
+                    <MudText Typo="Typo.h6" Class="mb-2 fw-bold">Funds Trend</MudText>
+                    @if (_fundsLabels.Any() && _fundsData.Any())
+                    {
+                        <MudChart ChartType="ChartType.Line"
+                                  Labels="_fundsLabels"
+                                  InputData="_fundsData"
+                                  Style="height:240px;" />
+                    }
+                    else
+                    {
+                        <div class="d-flex align-items-center justify-content-center" style="height:240px;">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">No funds data available</MudText>
+                        </div>
+                    }
+                </MudPaper>
+
+                <!-- Inventory Overview -->
+                <MudPaper Class="p-3 flex-grow-1" Style="width:48%;">
+                    <MudText Typo="Typo.h6" Class="mb-2 fw-bold">Inventory Overview</MudText>
+                    @if (_inventoryLabels.Any() && _inventoryBarData.Any())
+                    {
+                        <MudChart ChartType="ChartType.Bar"
+                                  Labels="_inventoryLabels"
+                                  InputData="_inventoryBarData"
+                                  Style="height:240px;" />
+                    }
+                    else
+                    {
+                        <div class="d-flex align-items-center justify-content-center" style="height:240px;">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">No inventory data available</MudText>
+                        </div>
+                    }
+                </MudPaper>
+            </div>
+        </MudPaper>
+    </div>
+
+    <!-- Cash Position Section -->
+    <div class="d-flex justify-content-between mb-4" style="gap:1rem;">
+        <MudPaper Class="flex-fill p-3 shadow-sm">
+            <MudText Typo="Typo.subtitle1" Class="fw-bold mb-3 text-primary">Cash Position - Receipts by Source</MudText>
+            <MudTable Items="@dashboardData.CashPosition.ReceiptsBySource" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh>Source</MudTh>
+                    <MudTh class="text-end">Amount</MudTh>
+                    <MudTh class="text-end">Count</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Source">@context.Source</MudTd>
+                    <MudTd DataLabel="Amount" Class="text-end text-success">Rs. @((double)context.Amount).ToString("N0")</MudTd>
+                    <MudTd DataLabel="Count" Class="text-end">@context.TransactionCount</MudTd>
+                </RowTemplate>
+                <FooterContent>
+                    <MudTd><strong>Total Receipts</strong></MudTd>
+                    <MudTd Class="text-end text-success"><strong>Rs. @dashboardData.CashPosition.TotalReceipts.ToString("N0")</strong></MudTd>
+                    <MudTd Class="text-end"><strong>@dashboardData.CashPosition.TotalReceiptCount</strong></MudTd>
+                </FooterContent>
+            </MudTable>
+        </MudPaper>
+
+        <MudPaper Class="flex-fill p-3 shadow-sm">
+            <MudText Typo="Typo.subtitle1" Class="fw-bold mb-3 text-primary">Cash Position - Payments by Source</MudText>
+            <MudTable Items="@dashboardData.CashPosition.PaymentsBySource" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh>Source</MudTh>
+                    <MudTh class="text-end">Amount</MudTh>
+                    <MudTh class="text-end">Count</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Source">@context.Source</MudTd>
+                    <MudTd DataLabel="Amount" Class="text-end text-error">Rs. @((double)context.Amount).ToString("N0")</MudTd>
+                    <MudTd DataLabel="Count" Class="text-end">@context.TransactionCount</MudTd>
+                </RowTemplate>
+                <FooterContent>
+                    <MudTd><strong>Total Payments</strong></MudTd>
+                    <MudTd Class="text-end text-error"><strong>Rs. @dashboardData.CashPosition.TotalPayments.ToString("N0")</strong></MudTd>
+                    <MudTd Class="text-end"><strong>@dashboardData.CashPosition.TotalPaymentCount</strong></MudTd>
+                </FooterContent>
+            </MudTable>
+        </MudPaper>
+
+        <MudPaper Class="p-4 shadow-sm" Style="width:300px;">
+            <MudText Typo="Typo.subtitle1" Class="fw-bold mb-3 text-primary">Net Cash Flow Summary</MudText>
+            <div class="text-center">
+                <MudText Typo="Typo.h4" Class="@GetNetCashFlowClass()">Rs. @dashboardData.CashPosition.NetCashFlow.ToString("N0")</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">Receipts: Rs. @dashboardData.CashPosition.TotalReceipts.ToString("N0")</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Payments: Rs. @dashboardData.CashPosition.TotalPayments.ToString("N0")</MudText>
+            </div>
+        </MudPaper>
+    </div>
+
+    <!-- Bottom Section -->
+    <div class="d-flex justify-content-between" style="gap:1rem;">
+        <MudPaper Class="flex-fill p-3 shadow-sm">
+            <MudText Typo="Typo.subtitle1" Class="fw-bold mb-3 text-primary">Low Stock Items</MudText>
+            <MudTable Items="@dashboardData.LowStockItems" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh>Item</MudTh>
+                    <MudTh class="text-end">Qty</MudTh>
+                    <MudTh class="text-end">Reorder Level</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Item">@context.ItemName</MudTd>
+                    <MudTd DataLabel="Qty" Class="text-end text-warning">@context.CurrentQty</MudTd>
+                    <MudTd DataLabel="Reorder Level" Class="text-end">@context.ReorderLevel</MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudTd ColSpan="3" Class="text-center">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">No low stock items</MudText>
+                    </MudTd>
+                </NoRecordsContent>
+            </MudTable>
+        </MudPaper>
+
+        <MudPaper Class="flex-fill p-3 shadow-sm">
+            <MudText Typo="Typo.subtitle1" Class="fw-bold mb-3 text-primary">Recent Transactions</MudText>
+            <MudTable Items="@dashboardData.RecentTransactions" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh>Date</MudTh>
+                    <MudTh>Description</MudTh>
+                    <MudTh class="text-end">Amount</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Date">@context.TransactionDate.ToString("MMM dd, yyyy")</MudTd>
+                    <MudTd DataLabel="Description">@context.Description</MudTd>
+                    <MudTd DataLabel="Amount" Class="text-end @(context.Amount >= 0 ? "text-success" : "text-error")">
+                        Rs. @Math.Abs((double)context.Amount).ToString("N0")
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudTd ColSpan="3" Class="text-center">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">No recent transactions</MudText>
+                    </MudTd>
+                </NoRecordsContent>
+            </MudTable>
+        </MudPaper>
+    </div>
+</MudPaper>
+
+@code {
+    private DashboardModel dashboardData = new();
+    private bool LoadingPanel { get; set; } = true;
+    
+    private string[] _inventoryLabels => dashboardData.InventoryByCategory?.Select(c => c.CategoryName ?? "Unknown").ToArray() ?? Array.Empty<string>();
+    private double[] _inventoryData => dashboardData.InventoryByCategory?.Select(c => (double)c.TotalValue).ToArray() ?? Array.Empty<double>();
+
+    private string[] _fundsLabels => dashboardData.MonthlyFundsFlow?.Select(m => m.Month ?? "").ToArray() ?? Array.Empty<string>();
+    private double[] _fundsData => dashboardData.MonthlyFundsFlow?.Select(m => (double)m.NetFlow).ToArray() ?? Array.Empty<double>();
+
+    private double[] _inventoryBarData => dashboardData.InventoryByCategory?.Select(c => (double)c.TotalValue).ToArray() ?? Array.Empty<double>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        try
+        {
+            LoadingPanel = true;
+            int orgId = Globals.User?.OrganizationId ?? 1;
+            dashboardData = await Functions.GetAsync<DashboardModel>($"Reports/GetDashboardData/{orgId}", true) ?? new DashboardModel();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading dashboard data: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    private string GetNetCashFlowClass()
+    {
+        return dashboardData.CashPosition.NetCashFlow >= 0 ? "fw-bold text-success" : "fw-bold text-error";
+    }
+}

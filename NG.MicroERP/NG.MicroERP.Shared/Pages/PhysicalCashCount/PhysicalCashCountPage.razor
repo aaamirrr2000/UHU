@@ -61,20 +61,20 @@
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Count Date & Time <span style='color:red;'>*</span></label>
                         <MudDatePicker @bind-Date="countDate"
+                                       Label="Count Date & Time *"
                                        DateFormat="dd MMM yyyy HH:mm"
                                        TimeFormat="HH:mm"
                                        UseTimePicker="true"
                                        Placeholder="Select Date & Time"
                                        ReadOnly="@isReadOnly"
                                        Variant="Variant.Outlined"
+                                       FullWidth="@true"
                                        Class="flex-grow-1"
                                        @bind-Date:after="OnCountDateChanged"></MudDatePicker>
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Location <span style='color:red;'>*</span></label>
                         @if (Globals.User.GroupId == 1)
                         {
                             <AutoComplete TItem="LocationsModel"
@@ -84,26 +84,27 @@
                                           @bind-SelectedId="locationId"
                                           @bind-SelectedId:after="OnLocationChanged"
                                           Variant="Variant.Outlined"
-                                          Label="Location"
-                                          FullWidth="true" />
+                                          Label="Location *"
+                                          FullWidth="@true" />
                         }
                         else
                         {
                             <MudTextField Value="@(Loc.FirstOrDefault(l => l.Id == locationId)?.Name ?? "")"
+                                          Label="Location *"
                                           Variant="Variant.Outlined"
                                           ReadOnly="true"
-                                          FullWidth="true" />
+                                          FullWidth="@true" />
                         }
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Locker <span style='color:red;'>*</span></label>
                         <MudSelect T="string"
                                    @bind-Value="locker"
                                    @bind-Value:after="OnLockerChanged"
+                                   Label="Locker *"
                                    Placeholder="Select Locker"
                                    Variant="Variant.Outlined"
-                                   FullWidth="true"
+                                   FullWidth="@true"
                                    Clearable="false"
                                    ReadOnly="@isReadOnly"
                                    Class="flex-grow-1">
@@ -118,7 +119,6 @@
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Counted By (Employee) <span style='color:red;'>*</span></label>
                         <AutoComplete TItem="UsersModel"
                                       DataList="@Users"
                                       DisplayProperty="@(p => string.IsNullOrWhiteSpace(p.FullName) ? p.Username ?? "" : p.FullName)"
@@ -126,8 +126,8 @@
                                       @bind-SelectedId="countedBy"
                                       @bind-SelectedId:after="OnCountedByChanged"
                                       Variant="Variant.Outlined"
-                                      Label="Counted By (Employee)"
-                                      FullWidth="true"
+                                      Label="Counted By (Employee) *"
+                                      FullWidth="@true"
                                       Clearable="false"
                                       ReadOnly="@isReadOnly" />
                         <div class="validation-container" style="min-height: 22px;">
@@ -229,7 +229,7 @@
                                       ReadOnly="@isReadOnly"
                                       Variant="Variant.Outlined"
                                       Lines="3"
-                                      FullWidth="true"
+                                      FullWidth="@true"
                                       Class="flex-grow-1"></MudTextField>
                     </div>
 
@@ -240,7 +240,7 @@
                                       ReadOnly="@isReadOnly"
                                       Variant="Variant.Outlined"
                                       Lines="3"
-                                      FullWidth="true"
+                                      FullWidth="@true"
                                       Class="flex-grow-1"></MudTextField>
                         @if (!isReadOnly && string.IsNullOrWhiteSpace(comments) && !string.IsNullOrWhiteSpace(locker))
                         {
@@ -258,7 +258,7 @@
                                    @bind-Value:after="UpdateComments"
                                    Placeholder="Select Status"
                                    Variant="Variant.Outlined"
-                                   FullWidth="true"
+                                   FullWidth="@true"
                                    Clearable="false"
                                    ReadOnly="@isReadOnly"
                                    Class="flex-grow-1">

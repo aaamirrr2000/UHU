@@ -1,4 +1,4 @@
-﻿@inject Functions Functions 
+@inject Functions Functions 
 @inject Globals Globals
 
 <MudPaper Class="pa-3" Elevation="2" Style="max-height: 70vh; overflow-y: auto;">
@@ -39,51 +39,116 @@
                 </MudCard>
             </MudItem>
 
-            <!-- Compact Tax Table -->
+            <!-- Enhanced Tax Table with Full Calculation Details -->
             <MudItem xs="12">
-                <MudTable Items="Taxes" Dense="true" Hover="true" Bordered="true" Striped="true" Style="font-size: 0.85rem;">
-                    <HeaderContent>
-                        <MudTh Style="width: 30%;">Tax Name</MudTh>
-                        <MudTh Align="Align.Right" Style="width: 15%;">Rate %</MudTh>
-                        <MudTh Align="Align.Right" Style="width: 15%;">Taxable</MudTh>
-                        <MudTh Align="Align.Right" Style="width: 15%;">Tax/Unit</MudTh>
-                        @if (Quantity > 0)
-                        {
-                            <MudTh Align="Align.Right" Style="width: 15%;">Tax Total</MudTh>
-                        }
-                        <MudTh Align="Align.Right" Style="width: 10%;">Final</MudTh>
-                    </HeaderContent>
+                @if (Taxes != null && Taxes.Any())
+                {
+                    <MudTable Items="@OrderedTaxes" Dense="true" Hover="true" Bordered="true" Striped="true" Style="font-size: 0.85rem;">
+                        <HeaderContent>
+                            <MudTh Style="width: 5%; text-align: center;">Seq</MudTh>
+                            <MudTh Style="width: 25%;">Tax Name</MudTh>
+                            <MudTh Style="width: 12%;">Type</MudTh>
+                            <MudTh Align="Align.Right" Style="width: 10%;">Rate/Amt</MudTh>
+                            <MudTh Align="Align.Right" Style="width: 12%;">Taxable Amount</MudTh>
+                            <MudTh Align="Align.Right" Style="width: 12%;">Tax/Unit</MudTh>
+                            @if (Quantity > 0)
+                            {
+                                <MudTh Align="Align.Right" Style="width: 12%;">Tax Total</MudTh>
+                            }
+                            <MudTh Align="Align.Right" Style="width: 12%;">Final Price</MudTh>
+                        </HeaderContent>
 
-                    <RowTemplate>
-                        <MudTd Style="font-weight: 500;">@context.TaxName</MudTd>
-                        <MudTd Align="Align.Right">@context.Percentage.ToString("N2")</MudTd>
-                        <MudTd Align="Align.Right">@context.TaxableAmount.ToString("N2")</MudTd>
-                        <MudTd Align="Align.Right">@context.TaxAmount.ToString("N2")</MudTd>
-                        @if (Quantity > 0)
-                        {
-                            <MudTd Align="Align.Right" Style="font-weight: 600; color: #1976d2;">
-                                @((context.TaxAmount * Quantity).ToString("N2"))
+                        <RowTemplate>
+                            @{
+                                // Determine tax type: if percentage is between 0-100, it's likely PERCENTAGE, otherwise FLAT
+                                var taxTypeDisplay = context.Percentage > 0 && context.Percentage <= 100 ? "PERCENTAGE" : "FLAT";
+                            }
+                            <MudTd Style="font-weight: 600; color: #666; text-align: center;">@(context.SequenceNo > 0 ? context.SequenceNo.ToString() : "-")</MudTd>
+                            <MudTd Style="font-weight: 500;">@context.TaxName</MudTd>
+                            <MudTd>
+                                <MudChip T="string" 
+                                         Variant="Variant.Outlined"
+                                         Color="@(taxTypeDisplay == "PERCENTAGE" ? Color.Primary : Color.Success)"
+                                         Size="Size.Small">
+                                    @taxTypeDisplay
+                                </MudChip>
                             </MudTd>
-                        }
-                        <MudTd Align="Align.Right">@context.FinalPrice.ToString("N2")</MudTd>
-                    </RowTemplate>
+                            <MudTd Align="Align.Right">
+                                @if (taxTypeDisplay == "PERCENTAGE")
+                                {
+                                    <MudText Style="font-weight: 600;">@($"{context.Percentage:N2}%")</MudText>
+                                }
+                                else
+                                {
+                                    <MudText Style="font-weight: 600;">@($"{context.Percentage:N2}")</MudText>
+                                }
+                            </MudTd>
+                            <MudTd Align="Align.Right" Style="font-weight: 500;">@context.TaxableAmount.ToString("N2")</MudTd>
+                            <MudTd Align="Align.Right" Style="font-weight: 700; color: #d32f2f;">@context.TaxAmount.ToString("N2")</MudTd>
+                            @if (Quantity > 0)
+                            {
+                                <MudTd Align="Align.Right" Style="font-weight: 700; color: #1976d2;">
+                                    @((context.TaxAmount * Quantity).ToString("N2"))
+                                </MudTd>
+                            }
+                            <MudTd Align="Align.Right" Style="font-weight: 600; color: #388e3c;">@context.FinalPrice.ToString("N2")</MudTd>
+                        </RowTemplate>
 
-                    <FooterContent>
-                        <MudTd colspan="@(Quantity > 0 ? "4" : "3")" Style="font-weight: 700; background: #e3f2fd;">
-                            <MudText Typo="Typo.body2" Style="font-weight: 700;">TOTAL TAX</MudText>
-                        </MudTd>
-                        <MudTd Align="Align.Right" Style="font-weight: 700; background: #e3f2fd;">
-                            <MudText Typo="Typo.body2" Style="font-weight: 700;">@Taxes.Sum(x => x.TaxAmount).ToString("N2")</MudText>
-                        </MudTd>
-                        @if (Quantity > 0)
-                        {
-                            <MudTd Align="Align.Right" Style="font-weight: 700; background: #e3f2fd; color: #1976d2;">
-                                <MudText Typo="Typo.body2" Style="font-weight: 700;">@(Taxes.Sum(x => x.TaxAmount * Quantity).ToString("N2"))</MudText>
+                        <FooterContent>
+                            <MudTd colspan="@(Quantity > 0 ? "5" : "4")" Style="font-weight: 700; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                                <MudText Typo="Typo.body1" Style="font-weight: 700;">TOTAL TAX</MudText>
                             </MudTd>
-                        }
-                        <MudTd Style="background: #e3f2fd;"></MudTd>
-                    </FooterContent>
-                </MudTable>
+                            <MudTd Align="Align.Right" Style="font-weight: 700; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); color: #d32f2f;">
+                                <MudText Typo="Typo.body1" Style="font-weight: 700;">@Taxes.Sum(x => x.TaxAmount).ToString("N2")</MudText>
+                            </MudTd>
+                            @if (Quantity > 0)
+                            {
+                                <MudTd Align="Align.Right" Style="font-weight: 700; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); color: #1976d2;">
+                                    <MudText Typo="Typo.body1" Style="font-weight: 700;">@(Taxes.Sum(x => x.TaxAmount * Quantity).ToString("N2"))</MudText>
+                                </MudTd>
+                            }
+                            <MudTd Align="Align.Right" Style="font-weight: 700; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); color: #388e3c;">
+                                <MudText Typo="Typo.body1" Style="font-weight: 700;">@(Item.BasePrice + Taxes.Sum(x => x.TaxAmount)).ToString("N2")</MudText>
+                            </MudTd>
+                        </FooterContent>
+                    </MudTable>
+                    
+                    <!-- Summary Card -->
+                    <MudPaper Elevation="2" Class="pa-3 mt-3" Style="background: linear-gradient(135deg, rgba(25, 118, 210, 0.1) 0%, rgba(25, 118, 210, 0.05) 100%); border-radius: 8px;">
+                        <MudGrid>
+                            <MudItem xs="12" sm="4">
+                                <MudText Typo="Typo.caption" Style="color: #666;">Base Price</MudText>
+                                <MudText Typo="Typo.h6" Style="font-weight: 700; color: #1976d2;">@Item.BasePrice.ToString("N2")</MudText>
+                            </MudItem>
+                            <MudItem xs="12" sm="4">
+                                <MudText Typo="Typo.caption" Style="color: #666;">Total Tax (@Taxes.Count() tax(es))</MudText>
+                                <MudText Typo="Typo.h6" Style="font-weight: 700; color: #d32f2f;">@Taxes.Sum(x => x.TaxAmount).ToString("N2")</MudText>
+                            </MudItem>
+                            <MudItem xs="12" sm="4">
+                                <MudText Typo="Typo.caption" Style="color: #666;">Final Price (per unit)</MudText>
+                                <MudText Typo="Typo.h6" Style="font-weight: 700; color: #388e3c;">@(Item.BasePrice + Taxes.Sum(x => x.TaxAmount)).ToString("N2")</MudText>
+                            </MudItem>
+                            @if (Quantity > 0)
+                            {
+                                <MudItem xs="12" sm="6">
+                                    <MudText Typo="Typo.caption" Style="color: #666;">Quantity</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@Quantity.ToString("N2")</MudText>
+                                </MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <MudText Typo="Typo.caption" Style="color: #666;">Total Tax Amount</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 700; color: #1976d2;">@(Taxes.Sum(x => x.TaxAmount * Quantity).ToString("N2"))</MudText>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </MudPaper>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info" Class="mt-3">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Class="me-2" />
+                        No taxes applicable for this item and party combination.
+                    </MudAlert>
+                }
             </MudItem>
         }
         else
@@ -132,5 +197,20 @@
     private async Task LoadTaxes()
     {
         Taxes = await Functions.GetAsync<List<ItemPartyTaxCalculationModel>>($"TaxCalculation/Search/ItemId={ItemId} and PartyId={PartyId}", true) ?? new List<ItemPartyTaxCalculationModel>();
+    }
+
+    /// <summary>
+    /// Returns taxes ordered by SequenceNo to show calculation order
+    /// </summary>
+    private IEnumerable<ItemPartyTaxCalculationModel> OrderedTaxes
+    {
+        get
+        {
+            if (Taxes == null || !Taxes.Any())
+                return Enumerable.Empty<ItemPartyTaxCalculationModel>();
+            
+            // Order by SequenceNo if available, otherwise maintain original order
+            return Taxes.OrderBy(t => t.SequenceNo > 0 ? t.SequenceNo : 999);
+        }
     }
 }

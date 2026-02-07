@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NG.MicroERP.API.Helper;
@@ -81,5 +81,15 @@ public class CurrenciesController : ControllerBase
             return Ok(result.Item2);
         else
             return BadRequest(result.Item2);
+    }
+
+    [HttpGet("GetLatestExchangeRate/{baseCurrencyId}/{targetCurrencyId}/{transactionDate}")]
+    public async Task<IActionResult> GetLatestExchangeRate(int baseCurrencyId, int targetCurrencyId, DateTime transactionDate)
+    {
+        var result = await Srv.GetLatestExchangeRate(baseCurrencyId, targetCurrencyId, transactionDate);
+        if (result.Item1 == false)
+            return NotFound("Exchange rate not found");
+        
+        return Ok(result.Item2);
     }
 }

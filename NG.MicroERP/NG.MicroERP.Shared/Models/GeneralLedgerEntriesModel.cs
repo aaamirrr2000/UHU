@@ -69,6 +69,8 @@ public class GeneralLedgerDetailModel
     public string? AccountCode { get; set; } = string.Empty;
     public string? AccountName { get; set; } = string.Empty;
     public string? AccountType { get; set; } = string.Empty;
+    /// <summary>Chart of Accounts InterfaceType (e.g. ACCOUNTS RECEIVABLE, TAX, REVENUE) for journal sorting.</summary>
+    public string? InterfaceType { get; set; } = string.Empty;
     public string? Description { get; set; } = string.Empty;
     public double DebitAmount { get; set; } = 0;
     public double CreditAmount { get; set; } = 0;

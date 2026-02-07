@@ -1,4 +1,4 @@
-﻿using NG.MicroERP.API.Helper;
+using NG.MicroERP.API.Helper;
 using NG.MicroERP.Shared.Models;
 
 namespace NG.MicroERP.API.Services.Services;
@@ -12,6 +12,7 @@ public interface ICurrenciesService
     Task<(bool, CurrenciesModel, string)> Put(CurrenciesModel obj);
     Task<(bool, string)> Delete(int id);
     Task<(bool, string)> SoftDelete(CurrenciesModel obj);
+    Task<(bool, double)> GetLatestExchangeRate(int baseCurrencyId, int targetCurrencyId, DateTime transactionDate);
 }
 
 
@@ -52,7 +53,7 @@ public class CurrenciesService : ICurrenciesService
         try
         {
 
-            string SQLDuplicate = $@"SELECT * FROM Currencies WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
+            string SQLDuplicate = $@"SELECT * FROM Currencies WHERE UPPER(code) = '{obj.Code!.ToUpper()}' AND IsSoftDeleted = 0;";
             string SQLInsert = $@"INSERT INTO Currencies 
 			(
 				Code, 
@@ -103,7 +104,7 @@ public class CurrenciesService : ICurrenciesService
     {
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM Currencies WHERE UPPER(code) = '{obj.Code!.ToUpper()}' and Id != {obj.Id};";
+            string SQLDuplicate = $@"SELECT * FROM Currencies WHERE UPPER(code) = '{obj.Code!.ToUpper()}' AND Id != {obj.Id} AND IsSoftDeleted = 0;";
             string SQLUpdate = $@"UPDATE Currencies SET 
 					Code = '{obj.Code!.ToUpper()}', 
 					Name = '{obj.Name!.ToUpper()}', 
@@ -150,5 +151,41 @@ public class CurrenciesService : ICurrenciesService
 				WHERE Id = {obj.Id};";
 
         return await dapper.Update(SQLUpdate);
+    }
+
+    public async Task<(bool, double)> GetLatestExchangeRate(int baseCurrencyId, int targetCurrencyId, DateTime transactionDate)
+    {
+        try
+        {
+            string dateStr = transactionDate.ToString("yyyy-MM-dd");
+            string sql = $@"SELECT TOP 1 Rate 
+                            FROM ExchangeRates 
+                            WHERE BaseCurrencyId = {baseCurrencyId} 
+                            AND TargetCurrencyId = {targetCurrencyId} 
+                            AND StartDate <= '{dateStr}' 
+                            AND (EndDate IS NULL OR EndDate >= '{dateStr}') 
+                            AND IsSoftDeleted = 0 
+                            ORDER BY StartDate DESC";
+            
+            var result = await dapper.SearchByQuery<dynamic>(sql);
+            
+            if (result != null && result.Any())
+            {
+                var rateObj = result.FirstOrDefault();
+                if (rateObj != null && rateObj.Rate != null)
+                {
+                    if (double.TryParse(rateObj.Rate.ToString(), out double rate))
+                    {
+                        return (true, rate);
+                    }
+                }
+            }
+            
+            return (false, 0);
+        }
+        catch (Exception ex)
+        {
+            return (false, 0);
+        }
     }
 }

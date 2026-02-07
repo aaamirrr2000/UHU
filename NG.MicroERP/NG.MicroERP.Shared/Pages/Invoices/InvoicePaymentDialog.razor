@@ -34,14 +34,14 @@
                 <MudGrid>
                     <MudItem xs="12" md="4">
                         <MudSelect T="int"
-                                   @bind-Value="InvoicePayments.AccountId"
+                                   @bind-Value="_paymentEntry.AccountId"
                                    Label="Payment Method"
                                    Placeholder="Select Payment Method"
                                    Variant="Variant.Outlined"
                                    Clearable="@false"
                                    FullWidth="@true"
                                    Dense="@true"
-                                   @bind-Value:after="PaymentMethodChanged"
+                                   @bind-Value:after="OnPaymentMethodSelected"
                                    Required="@true"
                                    RequiredError="Payment Method is required"
                                    Class="mb-3">
@@ -57,7 +57,7 @@
 
                     <MudItem xs="12" md="4">
                         <MudTextField Label="Payment Reference"
-                                      @bind-Value="InvoicePayments.PaymentRef"
+                                      @bind-Value="_paymentEntry.PaymentRef"
                                       Variant="Variant.Outlined"
                                       Dense="@true"
                                       FullWidth="@true"
@@ -66,7 +66,7 @@
 
                     <MudItem xs="12" md="4">
                         <MudNumericField Label="Amount"
-                                         @bind-Value="InvoicePayments.Amount"
+                                         @bind-Value="_paymentEntry.Amount"
                                          Variant="Variant.Outlined"
                                          Dense="@true"
                                          Format="#,##0.00"
@@ -188,6 +188,9 @@
 
 @code {
     private bool _visible;
+    /// <summary>Local form state so parent re-renders cannot overwrite user's payment method selection.</summary>
+    private InvoicePaymentModel _paymentEntry = new();
+
     private DialogOptions _dialogOptions = new()
     {
         CloseOnEscapeKey = true,
@@ -208,24 +211,17 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        // Auto-populate amount with remaining balance when dialog is opened
-        if (_visible && InvoicePayments != null)
+        // When dialog is visible, keep amount in sync with remaining balance if user hasn't entered one (avoid overwriting _paymentEntry.AccountId)
+        if (_visible && _paymentEntry != null)
         {
-            if (InvoicePayments.Amount == 0)
+            if (_paymentEntry.Amount == 0)
             {
-                InvoicePayments.Amount = CalculateRemainingBalance();
+                _paymentEntry.Amount = CalculateRemainingBalance();
             }
-            if (InvoicePayments.PaidOn == default)
+            if (_paymentEntry.PaidOn == default)
             {
-                InvoicePayments.PaidOn = DateTime.UtcNow;
+                _paymentEntry.PaidOn = DateTime.UtcNow;
             }
-            
-            // Auto-select first payment method if none is selected and payment methods are available
-            if (InvoicePayments.AccountId == 0 && PaymentMethod != null && PaymentMethod.Any())
-            {
-                InvoicePayments.AccountId = PaymentMethod.First().Id;
-            }
-            
             await InvokeAsync(StateHasChanged);
         }
     }
@@ -244,14 +240,14 @@
 
     private async Task AddPayment()
     {
-        if (InvoicePayments == null || InvoicePayments.Amount <= 0)
+        if (_paymentEntry == null || _paymentEntry.Amount <= 0)
         {
             Snackbar.Add("Please enter a valid payment amount", Severity.Warning);
             return;
         }
 
         // Validate AccountId (Payment Method) is selected
-        if (InvoicePayments.AccountId == 0)
+        if (_paymentEntry.AccountId == 0)
         {
             Snackbar.Add("Please select a Payment Method. Payment Method is required.", Severity.Warning);
             return;
@@ -259,34 +255,38 @@
 
         // Validate payment amount doesn't exceed remaining balance
         decimal remainingBalance = CalculateRemainingBalance();
-        if (InvoicePayments.Amount > remainingBalance)
+        if (_paymentEntry.Amount > remainingBalance)
         {
             Snackbar.Add($"Payment amount exceeds remaining balance of {remainingBalance:N2}", Severity.Warning);
             return;
         }
 
-        // Resolve account name from PaymentMethod lookup (dialog binds AccountId)
-        var methodName = PaymentMethod?.FirstOrDefault(pm => pm.Id == InvoicePayments.AccountId)?.Name
-                         ?? InvoicePayments.PaymentMethod
+        // Resolve account name from PaymentMethod lookup
+        var methodName = PaymentMethod?.FirstOrDefault(pm => pm.Id == _paymentEntry.AccountId)?.Name
+                         ?? _paymentEntry.PaymentMethod
                          ?? string.Empty;
 
-        // Update InvoicePayments with resolved payment method name and default PaidOn if needed
+        // Copy local form to parent's model so parent reads correct values when adding
+        InvoicePayments.AccountId = _paymentEntry.AccountId;
+        InvoicePayments.Amount = _paymentEntry.Amount;
+        InvoicePayments.PaymentRef = _paymentEntry.PaymentRef;
         InvoicePayments.PaymentMethod = methodName;
-        if (InvoicePayments.PaidOn == default)
-        {
-            InvoicePayments.PaidOn = DateTime.UtcNow;
-        }
-        
+        InvoicePayments.PaidOn = _paymentEntry.PaidOn == default ? DateTime.UtcNow : _paymentEntry.PaidOn;
+        InvoicePayments.Notes = _paymentEntry.Notes;
+
         // Notify parent to add payment and recalculate totals
         if (OnAddPayment.HasDelegate)
         {
             await OnAddPayment.InvokeAsync();
         }
-        
-        // Reset the input model after parent has processed
-        InvoicePayments = new InvoicePaymentModel();
-        
-        // Trigger refresh so balance updates dynamically
+
+        // Reset local form for next payment (parent will also set its InvoicePayments = new)
+        _paymentEntry = new InvoicePaymentModel
+        {
+            Amount = CalculateRemainingBalance(),
+            PaidOn = DateTime.UtcNow
+        };
+
         await InvokeAsync(StateHasChanged);
     }
 
@@ -320,29 +320,26 @@
         }
     }
 
-    private async Task PaymentMethodChanged()
+    /// <summary>
+    /// Called when user selects a payment method. Updates Amount to remaining balance (local form only).
+    /// </summary>
+    private async Task OnPaymentMethodSelected()
     {
-        if (OnPaymentMethodChange.HasDelegate)
-            await OnPaymentMethodChange.InvokeAsync();
+        if (_paymentEntry != null)
+        {
+            _paymentEntry.Amount = CalculateRemainingBalance();
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     public async Task Open()
     {
-        // Auto-populate amount with remaining balance when opening
-        if (InvoicePayments != null)
+        // Initialize local form: amount = remaining balance, user must select payment method
+        _paymentEntry = new InvoicePaymentModel
         {
-            InvoicePayments.Amount = CalculateRemainingBalance();
-            if (InvoicePayments.PaidOn == default)
-            {
-                InvoicePayments.PaidOn = DateTime.UtcNow;
-            }
-            
-            // Auto-select first payment method if none is selected and payment methods are available
-            if (InvoicePayments.AccountId == 0 && PaymentMethod != null && PaymentMethod.Any())
-            {
-                InvoicePayments.AccountId = PaymentMethod.First().Id;
-            }
-        }
+            Amount = CalculateRemainingBalance(),
+            PaidOn = DateTime.UtcNow
+        };
 
         _visible = true;
         await InvokeAsync(StateHasChanged);

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -181,7 +181,7 @@ public class OrganizationsService : IOrganizationsService
 
 			}
 
-			string SQLDuplicate = $@"SELECT * FROM Organizations WHERE UPPER(Code) = '{obj.Code?.ToUpper() ?? string.Empty}' and ID != {obj.Id};";
+			string SQLDuplicate = $@"SELECT * FROM Organizations WHERE UPPER(Code) = '{obj.Code?.ToUpper() ?? string.Empty}' AND ID != {obj.Id} AND IsSoftDeleted = 0;";
             string SQLUpdate = $@"UPDATE Organizations SET 
 					Code = '{obj.Code?.Replace("'", "''").ToUpper() ?? string.Empty}', 
 					EntraId = '{obj.EntraId?.Replace("'", "''").ToUpper() ?? string.Empty}', 

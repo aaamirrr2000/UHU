@@ -1,4 +1,4 @@
-﻿@page "/PriceListPage/{Action}/{CurrentRecord?}"
+@page "/PriceListPage/{Action}/{CurrentRecord?}"
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
@@ -65,11 +65,11 @@
                         }
                         else
                         {
-                            <label class="form-label fw-bold mb-1">Item <span style='color:red;'>*</span></label>
                             <AutoComplete TItem="ItemsModel"
                                           DataList="@Ite"
                                           DisplayProperty="@(p => p.DisplayName)"
                                           IdProperty="@(p => p.Id)"
+                                          Label="Item **"
                                           @bind-SelectedId="record.ItemId"
                                           Variant="Variant.Outlined"
                                           FullWidth="@true"
@@ -79,16 +79,29 @@
                     </MudItem>
 
                     <MudItem xs="12" md="6">
-                        <MudTextField Label="Price List Name"
-                                     T="string"
-                                     Value="@record.PriceListName"
-                                     ValueChanged="@((string v) => record.PriceListName = v?.ToUpper())"
-                                     Placeholder="Price List Name"
-                                     ReadOnly="@isReadOnly"
-                                     Variant="Variant.Outlined"
-                                     FullWidth="@true"
-                                     Class="mb-3" />
-                        <ValidationMessage For="@(() => record.PriceListName)" />
+                        <MudSelect T="string"
+                                   @bind-Value="record.PriceListName"
+                                   Placeholder="Select Price List"
+                                   Variant="Variant.Outlined"
+                                   Label="Price List **"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
+                            @if (PriceList != null && PriceList.Any())
+                            {
+                                if (string.IsNullOrWhiteSpace(record.PriceListName))
+                                {
+                                    record.PriceListName = PriceList.First().ListValue;
+                                }
+                                foreach (var i in PriceList)
+                                {
+                                    <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.PriceListName)" />
+                        </div>
                     </MudItem>
 
                     <MudItem xs="12" md="6">
@@ -177,7 +190,7 @@
 {
     PriceListModel record = new();
     List<ItemsModel> Ite = new();
-
+    List<TypeCodeModel> PriceList = null!;
     [Parameter] public string Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
     [Parameter] public EventCallback OnSaved { get; set; }
@@ -199,6 +212,7 @@
     protected async Task GetAll()
     {
         LoadingPanel = true;
+        PriceList = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PRICE LIST", true) ?? new List<TypeCodeModel>();
         Ite = await Functions.GetAsync<List<ItemsModel>>($"Items/Search", true) ?? new List<ItemsModel>();
 
         if (Action == "INSERT")

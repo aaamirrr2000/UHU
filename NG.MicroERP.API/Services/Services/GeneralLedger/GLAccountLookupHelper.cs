@@ -854,6 +854,7 @@ public static class GLAccountLookupHelper
             AccountCode = account.Code,
             AccountName = account.Name,
             AccountType = account.Type,
+            InterfaceType = account.InterfaceType ?? string.Empty,
             DebitAmount = debitAmount,
             CreditAmount = creditAmount,
             Description = description,
@@ -872,7 +873,8 @@ public static class GLAccountLookupHelper
         double creditAmount,
         string description,
         int? partyId = null,
-        int? locationId = null)
+        int? locationId = null,
+        string? interfaceType = null)
     {
         glHeader.Details.Add(new GeneralLedgerDetailModel
         {
@@ -880,6 +882,7 @@ public static class GLAccountLookupHelper
             AccountCode = account.Code,
             AccountName = account.Name,
             AccountType = account.Type,
+            InterfaceType = interfaceType ?? string.Empty,
             DebitAmount = debitAmount,
             CreditAmount = creditAmount,
             Description = description,

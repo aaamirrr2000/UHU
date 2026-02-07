@@ -1,4 +1,4 @@
-﻿CREATE TABLE Items
+CREATE TABLE Items
 (
     Id                    INT              IDENTITY (1,1) PRIMARY KEY,
     OrganizationId        INT              NOT NULL DEFAULT 1,
@@ -29,35 +29,11 @@
     UpdatedBy             INT              NULL,
     UpdatedOn             DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedFrom           VARCHAR(255)     NULL,
-    FOREIGN KEY (CreatedBy) REFERENCES Users (Id),
-    FOREIGN KEY (UpdatedBy) REFERENCES Users (Id),
-    FOREIGN KEY (CategoryId) REFERENCES Categories (Id),
-    FOREIGN KEY (OrganizationId) REFERENCES Organizations (Id),
-    FOREIGN KEY (TaxRuleId) REFERENCES TaxRule(Id),
-    FOREIGN KEY (ExpenseAccountId) REFERENCES ChartOfAccounts(Id),
-    FOREIGN KEY (RevenueAccountId) REFERENCES ChartOfAccounts(Id)
+    CONSTRAINT FK_Items_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Items_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Items_Category FOREIGN KEY (CategoryId) REFERENCES Categories(Id),
+    CONSTRAINT FK_Items_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
+    CONSTRAINT FK_Items_TaxRule FOREIGN KEY (TaxRuleId) REFERENCES TaxRule(Id),
+    CONSTRAINT FK_Items_ExpenseAccount FOREIGN KEY (ExpenseAccountId) REFERENCES ChartOfAccounts(Id),
+    CONSTRAINT FK_Items_RevenueAccount FOREIGN KEY (RevenueAccountId) REFERENCES ChartOfAccounts(Id)
 );
-GO
-SET IDENTITY_INSERT Items ON;
-
-INSERT INTO Items
-    (Id, Code, Name, Description, Pic, HSCode, CategoryId, 
-     Unit, ServingSize, TaxRuleId, ExpenseAccountId, RevenueAccountId, 
-     CreatedBy, CreatedFrom, UpdatedBy, UpdatedFrom)
-VALUES
-    (1, '000000000001', 'MEDICINES',      '', '', '', 1, 
-     'PIECE', NULL, NULL, 57, 58, 
-     1, 'ANONYMOUS|127.0.0.1|CHROME|WINDOWS 10/11|01161735', 
-     1, 'ANONYMOUS|127.0.0.1|CHROME|WINDOWS 10/11|01220821'),
-
-    (2, '000000000002', 'COSMETICS',      '', '', '', 2, 
-     'PIECE', NULL, NULL, 57, 58, 
-     1, 'ANONYMOUS|127.0.0.1|CHROME|WINDOWS 10/11|01161735', 
-     1, 'ANONYMOUS|127.0.0.1|CHROME|WINDOWS 10/11|01220821'),
-
-    (3, '000000000003', 'SURGICAL ITEMS', '', '', '', 3, 
-     'PIECE', NULL, NULL, 57, 58, 
-     1, 'ANONYMOUS|127.0.0.1|CHROME|WINDOWS 10/11|01161735', 
-     1, 'ANONYMOUS|127.0.0.1|CHROME|WINDOWS 10/11|01220821');
-
-SET IDENTITY_INSERT Items OFF;

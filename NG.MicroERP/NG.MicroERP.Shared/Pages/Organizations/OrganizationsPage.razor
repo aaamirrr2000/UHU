@@ -1,4 +1,4 @@
-﻿@page "/OrganizationsPage/{Action}/{CurrentRecord?}"
+@page "/OrganizationsPage/{Action}/{CurrentRecord?}"
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
@@ -44,13 +44,13 @@
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Code</label>
                         <MudTextField id="Code"
                                       @bind-Value="record.Code"
-                                      placeholder="Code"
+                                      Label="Code"
+                                      Placeholder="Code"
                                       ReadOnly="true"
                                       Variant="Variant.Outlined"
-                                      FullWidth="true"
+                                      FullWidth="@true"
                                       Class="flex-grow-1"></MudTextField>
                         <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.Code)" />
@@ -58,13 +58,13 @@
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Name</label>
                         <MudTextField id="Name"
                                       @bind-Value="record.Name"
-                                      placeholder="Name"
+                                      Label="Name"
+                                      Placeholder="Name"
                                       ReadOnly="false"
                                       Variant="Variant.Outlined"
-                                      FullWidth="true"
+                                      FullWidth="@true"
                                       Class="flex-grow-1"></MudTextField>
                         <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.Name)" />
@@ -72,13 +72,13 @@
                     </div>
 
                     <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Description</label>
                         <MudTextField id="Description"
                                       @bind-Value="record.Description"
-                                      placeholder="Description"
+                                      Label="Description"
+                                      Placeholder="Description"
                                       ReadOnly="false"
                                       Variant="Variant.Outlined"
-                                      FullWidth="true"
+                                      FullWidth="@true"
                                       Class="flex-grow-1"></MudTextField>
                         <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.Description)" />
@@ -106,13 +106,13 @@
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Phone</label>
                         <MudTextField id="Phone"
                                       @bind-Value="record.Phone"
-                                      placeholder="Phone"
+                                      Label="Phone"
+                                      Placeholder="Phone"
                                       ReadOnly="false"
                                       Variant="Variant.Outlined"
-                                      FullWidth="true"
+                                      FullWidth="@true"
                                       Class="flex-grow-1"></MudTextField>
                         <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.Phone)" />
@@ -120,13 +120,13 @@
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Email</label>
                         <MudTextField id="Email"
                                       @bind-Value="record.Email"
-                                      placeholder="Email"
+                                      Label="Email"
+                                      Placeholder="Email"
                                       ReadOnly="false"
                                       Variant="Variant.Outlined"
-                                      FullWidth="true"
+                                      FullWidth="@true"
                                       Class="flex-grow-1"></MudTextField>
                         <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.Email)" />
@@ -134,13 +134,13 @@
                     </div>
 
                     <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Address</label>
                         <MudTextField id="Address"
                                       @bind-Value="record.Address"
-                                      placeholder="Address"
+                                      Label="Address"
+                                      Placeholder="Address"
                                       ReadOnly="false"
                                       Variant="Variant.Outlined"
-                                      FullWidth="true"
+                                      FullWidth="@true"
                                       Class="flex-grow-1"></MudTextField>
                         <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.Address)" />
@@ -148,13 +148,13 @@
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Website</label>
                         <MudTextField id="Website"
                                       @bind-Value="record.Website"
-                                      placeholder="Website"
+                                      Label="Website"
+                                      Placeholder="Website"
                                       ReadOnly="false"
                                       Variant="Variant.Outlined"
-                                      FullWidth="true"
+                                      FullWidth="@true"
                                       Class="flex-grow-1"></MudTextField>
                         <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.Website)" />
@@ -182,13 +182,13 @@
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Industry</label>
                         <MudSelect T="string"
                                    @bind-Value="record.Industry"
+                                   Label="Industry"
                                    Placeholder="Industry"
                                    Variant="Variant.Outlined"
                                    ReadOnly="true"
-                                   FullWidth="true"
+                                   FullWidth="@true"
                                    Class="flex-grow-1">
                             @if (Industry != null)
                             {
@@ -204,13 +204,13 @@
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Time Zone</label>
                         <MudSelect T="string"
                                    @bind-Value="record.TimeZone"
+                                   Label="Time Zone"
                                    Placeholder="Time Zone"
                                    Variant="Variant.Outlined"
                                    ReadOnly="false"
-                                   FullWidth="true"
+                                   FullWidth="@true"
                                    Class="flex-grow-1">
                             @if (timeZones != null)
                             {
@@ -226,13 +226,13 @@
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">GMT</label>
                         <MudNumericField @bind-Value="record.GMT"
-                                         placeholder="GMT"
+                                         Label="GMT"
+                                         Placeholder="GMT"
                                          ReadOnly="false"
                                          Format="#,##0.00"
                                          Variant="Variant.Outlined"
-                                         FullWidth="true"
+                                         FullWidth="@true"
                                          Class="flex-grow-1"></MudNumericField>
                         <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.GMT)" />
@@ -240,11 +240,12 @@
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Expiry</label>
                         <MudDatePicker @bind-Date="record.Expiry"
+                                       Label="Expiry"
                                        DateFormat="yyyy-MM-dd"
-                                       placeholder="Expiry"
+                                       Placeholder="Expiry"
                                        Variant="Variant.Outlined"
+                                       FullWidth="@true"
                                        Class="flex-grow-1"></MudDatePicker>
                         <div class="validation-container" style="min-height: 22px;">
                             <ValidationMessage For="@(() => record.Expiry)" />
@@ -272,12 +273,12 @@
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Parent Organization</label>
                         <MudSelect @bind-Value="record.ParentId"
+                                   Label="Parent Organization"
                                    Placeholder="Parent"
                                    Variant="Variant.Outlined"
                                    Clearable="true"
-                                   FullWidth="true"
+                                   FullWidth="@true"
                                    Class="flex-grow-1">
                             @if (Par != null && Par.Any())
                             {
@@ -293,13 +294,13 @@
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Active</label>
                         <MudSelect T="int"
                                    @bind-Value="record.IsActive"
+                                   Label="Active"
                                    Placeholder="Active"
                                    Variant="Variant.Outlined"
                                    Clearable="true"
-                                   FullWidth="true"
+                                   FullWidth="@true"
                                    Class="flex-grow-1">
                             @if (record.IsActive != 0 && record.IsActive != 1)
                             {

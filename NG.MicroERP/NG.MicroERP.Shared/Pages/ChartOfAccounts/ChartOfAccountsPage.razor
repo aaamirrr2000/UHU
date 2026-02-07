@@ -375,6 +375,8 @@
             if (result.Success == false)
             {
                 SnackbarService.Add($"Record Not Saved", Severity.Error);
+                await GetAll();
+                if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) await Edit(result.Result!.Id);
             }
             else
             {

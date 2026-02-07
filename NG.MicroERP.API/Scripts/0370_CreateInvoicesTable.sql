@@ -34,23 +34,23 @@ CREATE TABLE Invoice
     EnteredCurrencyId        INT              NULL,
     ExchangeRate             DECIMAL(18, 6)   NULL DEFAULT 1.000000,
     RowVersion              ROWVERSION,
-    FOREIGN KEY (SalesId)           REFERENCES Employees(Id),
-    FOREIGN KEY (LocationId)        REFERENCES Locations(Id),
-    FOREIGN KEY (CreatedBy)         REFERENCES Users(Id),
-    FOREIGN KEY (UpdatedBy)         REFERENCES Users(Id),
-    FOREIGN KEY (PartyId)           REFERENCES Parties(Id),
-    FOREIGN KEY (OrganizationId)    REFERENCES Organizations(Id),
-    FOREIGN KEY (AccountId) REFERENCES dbo.ChartOfAccounts(Id),
-    FOREIGN KEY (BaseCurrencyId)   REFERENCES Currencies(Id),
-    FOREIGN KEY (EnteredCurrencyId) REFERENCES Currencies(Id),
-    FOREIGN KEY (PostedToGLBy) REFERENCES dbo.Users(Id)
+    CONSTRAINT FK_Invoice_Sales FOREIGN KEY (SalesId) REFERENCES Employees(Id),
+    CONSTRAINT FK_Invoice_Location FOREIGN KEY (LocationId) REFERENCES Locations(Id),
+    CONSTRAINT FK_Invoice_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Invoice_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Invoice_Party FOREIGN KEY (PartyId) REFERENCES Parties(Id),
+    CONSTRAINT FK_Invoice_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
+    CONSTRAINT FK_Invoice_Account FOREIGN KEY (AccountId) REFERENCES dbo.ChartOfAccounts(Id),
+    CONSTRAINT FK_Invoice_BaseCurrency FOREIGN KEY (BaseCurrencyId) REFERENCES Currencies(Id),
+    CONSTRAINT FK_Invoice_EnteredCurrency FOREIGN KEY (EnteredCurrencyId) REFERENCES Currencies(Id),
+    CONSTRAINT FK_Invoice_PostedToGLBy FOREIGN KEY (PostedToGLBy) REFERENCES dbo.Users(Id)
 );
 
 
 CREATE TABLE InvoiceDetail
 (
     Id                  INT              PRIMARY KEY IDENTITY(1,1),
-    ItemId              INT              NULL,            
+    ItemId              INT              NULL,            -- NULL allowed for manual line items
     StockCondition      VARCHAR(20)      NULL DEFAULT NULL,
     ManualItem          VARCHAR(255)     NULL DEFAULT NULL, 
     AccountId           INT              NULL,
@@ -64,9 +64,9 @@ CREATE TABLE InvoiceDetail
     Rating              INT              NULL,    
     TranDate            DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
     IsSoftDeleted       SMALLINT         NOT NULL DEFAULT 0,
-    FOREIGN KEY (InvoiceId)        REFERENCES Invoice(Id),
-    FOREIGN KEY (ItemId)        REFERENCES Items(Id),
-    FOREIGN KEY (AccountId) REFERENCES dbo.ChartOfAccounts(Id),
+    CONSTRAINT FK_InvoiceDetail_Invoice FOREIGN KEY (InvoiceId) REFERENCES Invoice(Id),
+    CONSTRAINT FK_InvoiceDetail_Item FOREIGN KEY (ItemId) REFERENCES Items(Id),  -- Foreign key allows NULL for manual items
+    CONSTRAINT FK_InvoiceDetail_Account FOREIGN KEY (AccountId) REFERENCES dbo.ChartOfAccounts(Id),
 );
 
 CREATE TABLE InvoiceDetailTax
@@ -79,8 +79,8 @@ CREATE TABLE InvoiceDetailTax
     TaxAmount          DECIMAL(18,4) NOT NULL,
     CalculationOrder   INT NOT NULL DEFAULT 1,        -- order of tax application
     RoundingRule       VARCHAR(20) NULL,             -- optional, override from TaxMaster
-    FOREIGN KEY (InvoiceDetailId) REFERENCES InvoiceDetail(Id),
-    FOREIGN KEY (TaxId) REFERENCES TaxMaster(Id)
+    CONSTRAINT FK_InvoiceDetailTax_InvoiceDetail FOREIGN KEY (InvoiceDetailId) REFERENCES InvoiceDetail(Id),
+    CONSTRAINT FK_InvoiceDetailTax_Tax FOREIGN KEY (TaxId) REFERENCES TaxMaster(Id)
 );
 
 CREATE TABLE InvoiceCharges
@@ -94,9 +94,9 @@ CREATE TABLE InvoiceCharges
     Amount          DECIMAL(18,4) NOT NULL,        -- rule value at time
     AppliedAmount   DECIMAL(18,4) NOT NULL,        -- FINAL calculated value
     IsSoftDeleted   SMALLINT NOT NULL DEFAULT 0,
-    FOREIGN KEY (InvoiceId) REFERENCES Invoice(Id),
-    FOREIGN KEY (AccountId) REFERENCES ChartOfAccounts(Id),
-    FOREIGN KEY (RulesId) REFERENCES InvoiceChargesRules(Id)
+    CONSTRAINT FK_InvoiceCharges_Invoice FOREIGN KEY (InvoiceId) REFERENCES Invoice(Id),
+    CONSTRAINT FK_InvoiceCharges_Account FOREIGN KEY (AccountId) REFERENCES ChartOfAccounts(Id),
+    CONSTRAINT FK_InvoiceCharges_Rules FOREIGN KEY (RulesId) REFERENCES InvoiceChargesRules(Id)
 );
 
 
@@ -110,6 +110,6 @@ CREATE TABLE InvoicePayments
     PaidOn          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     Notes           VARCHAR(255) NULL,
     IsSoftDeleted   SMALLINT NOT NULL DEFAULT 0,
-    FOREIGN KEY (InvoiceId)    REFERENCES Invoice(Id),
-    FOREIGN KEY (AccountId)    REFERENCES ChartOfAccounts(Id)
+    CONSTRAINT FK_InvoicePayments_Invoice FOREIGN KEY (InvoiceId) REFERENCES Invoice(Id),
+    CONSTRAINT FK_InvoicePayments_Account FOREIGN KEY (AccountId) REFERENCES ChartOfAccounts(Id)
 );

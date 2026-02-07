@@ -1,4 +1,4 @@
-﻿CREATE TABLE Parties
+CREATE TABLE Parties
 (
     Id                  INT PRIMARY KEY IDENTITY(1,1),
     
@@ -17,6 +17,7 @@
     CreditLimit         DECIMAL(18,4)   NULL,
     PaymentTermsId      INT             NULL,
     AccountId           INT             NULL,
+    PriceListId         INT             NULL,  -- References TypeCode.Id where ListName='PRICE LIST'
 
     NTN                 VARCHAR(50)     NULL,
     STN                 VARCHAR(50)     NULL,
@@ -48,14 +49,15 @@
     UpdatedFrom         VARCHAR(255)    NULL,
     IsSoftDeleted       SMALLINT        NOT NULL DEFAULT 0,
     
-    FOREIGN KEY (OrganizationId)    REFERENCES Organizations(Id),
-    FOREIGN KEY (AccountId)         REFERENCES ChartOfAccounts(Id),
-    FOREIGN KEY (CityId)            REFERENCES Areas(Id),
-    FOREIGN KEY (SalesPersonId)     REFERENCES Employees(Id),
-    FOREIGN KEY (CreatedBy)         REFERENCES Users(Id),
-    FOREIGN KEY (UpdatedBy)         REFERENCES Users(Id),
-    FOREIGN KEY (ApprovedBy)        REFERENCES Users(Id),
-    FOREIGN KEY (PaymentTermsId)    REFERENCES PaymentTerms(Id),
+    CONSTRAINT FK_Parties_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
+    CONSTRAINT FK_Parties_Account FOREIGN KEY (AccountId) REFERENCES ChartOfAccounts(Id),
+    CONSTRAINT FK_Parties_City FOREIGN KEY (CityId) REFERENCES Areas(Id),
+    CONSTRAINT FK_Parties_SalesPerson FOREIGN KEY (SalesPersonId) REFERENCES Employees(Id),
+    CONSTRAINT FK_Parties_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Parties_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Parties_ApprovedBy FOREIGN KEY (ApprovedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Parties_PaymentTerms FOREIGN KEY (PaymentTermsId) REFERENCES PaymentTerms(Id),
+    CONSTRAINT FK_Parties_PriceList FOREIGN KEY (PriceListId) REFERENCES TypeCode(Id),
     
     CHECK (PartyType IN ('CUSTOMER', 'SUPPLIER', 'BANK', 'EMPLOYEE'))
 );

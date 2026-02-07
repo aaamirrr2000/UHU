@@ -1,4 +1,4 @@
-﻿
+
 using NG.MicroERP.API.Helper;
 using NG.MicroERP.Shared.Models;
 
@@ -50,14 +50,16 @@ public class TaxRuleService : ITaxRuleService
         {
 
             string Code = dapper.GetCode("", "TaxRule", "Code")!;
-            string SQLDuplicate = $@"SELECT * FROM TaxRule WHERE UPPER(RuleName) = '{obj.RuleName!.ToUpper()}';";
+            string SQLDuplicate = $@"SELECT * FROM TaxRule WHERE UPPER(RuleName) = '{obj.RuleName!.ToUpper()}' AND IsSoftDeleted = 0;";
+            
+            string effectiveFromValue = obj.EffectiveFrom.HasValue ? $"'{obj.EffectiveFrom.Value:yyyy-MM-dd}'" : "NULL";
+            string effectiveToValue = obj.EffectiveTo.HasValue ? $"'{obj.EffectiveTo.Value:yyyy-MM-dd}'" : "NULL";
+            
             string SQLInsert = $@"INSERT INTO TaxRule 
 			(
 				OrganizationId, 
 				RuleName, 
 				AppliesTo, 
-				IsRegistered, 
-				IsFiler, 
 				EffectiveFrom, 
 				EffectiveTo, 
 				IsActive, 
@@ -70,13 +72,11 @@ public class TaxRuleService : ITaxRuleService
 				{obj.OrganizationId},
 				'{obj.RuleName!.ToUpper()}', 
 				'{obj.AppliesTo!.ToUpper()}', 
-				{obj.IsRegistered},
-				{obj.IsFiler},
-				'{obj.EffectiveFrom.Value.ToString("yyyy-MM-dd HH:mm:ss")}',
-				'{obj.EffectiveTo.Value.ToString("yyyy-MM-dd HH:mm:ss")}',
+				{effectiveFromValue},
+				{effectiveToValue},
 				{obj.IsActive},
 				{obj.CreatedBy},
-				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
+				'{DateTime.Now:yyyy-MM-dd HH:mm:ss}',
 				{(obj.CreatedFrom == null ? "null" : $"'{obj.CreatedFrom.ToUpper()}'")}
 			);";
 
@@ -103,18 +103,20 @@ public class TaxRuleService : ITaxRuleService
     {
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM TaxRule WHERE UPPER(RuleName) = '{obj.RuleName!.ToUpper()}' and Id != {obj.Id};";
+            string SQLDuplicate = $@"SELECT * FROM TaxRule WHERE UPPER(RuleName) = '{obj.RuleName!.ToUpper()}' AND Id != {obj.Id} AND IsSoftDeleted = 0;";
+            
+            string effectiveFromValue = obj.EffectiveFrom.HasValue ? $"'{obj.EffectiveFrom.Value:yyyy-MM-dd}'" : "NULL";
+            string effectiveToValue = obj.EffectiveTo.HasValue ? $"'{obj.EffectiveTo.Value:yyyy-MM-dd}'" : "NULL";
+            
             string SQLUpdate = $@"UPDATE TaxRule SET 
 					OrganizationId = {obj.OrganizationId}, 
 					RuleName = '{obj.RuleName!.ToUpper()}', 
 					AppliesTo = '{obj.AppliesTo!.ToUpper()}', 
-					IsRegistered = {obj.IsRegistered}, 
-					IsFiler = {obj.IsFiler}, 
-					EffectiveFrom = '{obj.EffectiveFrom.Value.ToString("yyyy-MM-dd HH:mm:ss")}', 
-					EffectiveTo = '{obj.EffectiveTo.Value.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					EffectiveFrom = {effectiveFromValue}, 
+					EffectiveTo = {effectiveToValue}, 
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
-					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
+					UpdatedOn = '{DateTime.Now:yyyy-MM-dd HH:mm:ss}', 
 					UpdatedFrom = {(obj.UpdatedFrom == null ? "null" : $"'{obj.UpdatedFrom.ToUpper()}'")}
 				WHERE Id = {obj.Id};";
 

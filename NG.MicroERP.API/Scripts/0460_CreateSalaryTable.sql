@@ -35,13 +35,13 @@ CREATE TABLE Salary
     UpdatedFrom         VARCHAR(255)     NULL DEFAULT NULL,
     IsSoftDeleted       SMALLINT         NOT NULL DEFAULT 0,
 
-    FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
-    FOREIGN KEY (EmployeeId)     REFERENCES Employees(Id),
-    FOREIGN KEY (DepartmentId)   REFERENCES Departments(Id),
-    FOREIGN KEY (DesignationId)  REFERENCES Designations(Id),
-    FOREIGN KEY (BankAccountId)  REFERENCES ChartOfAccounts(Id),
-    FOREIGN KEY (CreatedBy)      REFERENCES Users(Id),
-    FOREIGN KEY (UpdatedBy)      REFERENCES Users(Id)
+    CONSTRAINT FK_Salary_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
+    CONSTRAINT FK_Salary_Employee FOREIGN KEY (EmployeeId) REFERENCES Employees(Id),
+    CONSTRAINT FK_Salary_Department FOREIGN KEY (DepartmentId) REFERENCES Departments(Id),
+    CONSTRAINT FK_Salary_Designation FOREIGN KEY (DesignationId) REFERENCES Designations(Id),
+    CONSTRAINT FK_Salary_BankAccount FOREIGN KEY (BankAccountId) REFERENCES ChartOfAccounts(Id),
+    CONSTRAINT FK_Salary_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Salary_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id)
 );
 GO
 

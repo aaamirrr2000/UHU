@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,7 +12,7 @@ public class PriceListModel
     public int OrganizationId { get; set; } = 0;
     public int ItemId { get; set; } = 0;
     public string? ItemName { get; set; }
-    public string? PriceListName { get; set; } = string.Empty;
+    public string? PriceListName { get; set; } = string.Empty;  // Stores TypeCode.ListValue where ListName='PRICE LIST' (e.g., 'INDIVIDUAL CUSTOMERS', 'DEALERS')
     public int MinQuantity { get; set; } = 0;
     public double OneQuantityPrice { get; set; } = 0;
     public double MinQuantityPrice { get; set; } = 0;

@@ -1,4 +1,4 @@
-﻿using NG.MicroERP.API.Helper;
+using NG.MicroERP.API.Helper;
 using NG.MicroERP.Shared.Models;
 
 namespace NG.MicroERP.API.Services.Services;
@@ -52,7 +52,7 @@ public class PaymentTermsService : IPaymentTermsService
         try
         {
             string Code = dapper.GetCode("", "PaymentTerms", "Code")!;
-            string SQLDuplicate = $@"SELECT * FROM PaymentTerms WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
+            string SQLDuplicate = $@"SELECT * FROM PaymentTerms WHERE UPPER(code) = '{obj.Code!.ToUpper()}' AND IsSoftDeleted = 0;";
             string SQLInsert = $@"INSERT INTO PaymentTerms 
 			(
 				Code, 
@@ -99,7 +99,7 @@ public class PaymentTermsService : IPaymentTermsService
     {
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM PaymentTerms WHERE UPPER(code) = '{obj.Code!.ToUpper()}' and Id != {obj.Id};";
+            string SQLDuplicate = $@"SELECT * FROM PaymentTerms WHERE UPPER(code) = '{obj.Code!.ToUpper()}' AND Id != {obj.Id} AND IsSoftDeleted = 0;";
             string SQLUpdate = $@"UPDATE PaymentTerms SET 
 					Code = '{obj.Code!.ToUpper()}', 
 					Description = '{obj.Description!.ToUpper()}', 

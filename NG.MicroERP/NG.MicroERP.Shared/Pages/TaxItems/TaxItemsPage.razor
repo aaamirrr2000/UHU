@@ -1,4 +1,4 @@
-﻿@page "/TaxItemsPage/{CurrentRecord?}"
+@page "/TaxItemsPage/{CurrentRecord?}"
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
@@ -50,12 +50,12 @@
             <ChildContent>
                 <div class="row" style="width:100%; display: flex;">
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Tax</label>
                         <MudSelect @bind-Value="record.TaxId"
+                                   Label="Tax"
                                    Placeholder="Tax"
                                    Variant="Variant.Outlined"
                                    Clearable="true"
-                                   FullWidth="true"
+                                   FullWidth="@true"
                                    Class="flex-grow-1">
                             @if (TaxMaster != null && TaxMaster.Any())
                             {
@@ -71,13 +71,13 @@
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Invoice Type</label>
                         <MudSelect T="string"
                                    @bind-Value="record.InvoiceType"
+                                   Label="Invoice Type"
                                    Placeholder="Invoice Type"
                                    Variant="Variant.Outlined"
                                    Clearable="true"
-                                   FullWidth="true"
+                                   FullWidth="@true"
                                    Class="flex-grow-1">
                             <MudSelectItem T="string" Value="@("SALE")">
                                 <MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Color="Color.Success" Size="Size.Small" Class="me-2" />
@@ -94,13 +94,13 @@
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Active</label>
                         <MudSelect T="int"
                                    @bind-Value="record.IsActive"
+                                   Label="Active"
                                    Placeholder="Active"
                                    Variant="Variant.Outlined"
                                    Clearable="true"
-                                   FullWidth="true"
+                                   FullWidth="@true"
                                    Class="flex-grow-1">
                             @if (record.IsActive != 0 && record.IsActive != 1)
                             {

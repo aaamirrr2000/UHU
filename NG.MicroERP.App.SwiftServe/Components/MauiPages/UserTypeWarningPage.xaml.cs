@@ -34,7 +34,8 @@ public partial class UserTypeWarningPage : ContentPage
         MyGlobals.User = null;
         MyGlobals.Token = string.Empty;
         
-        // Navigate back to login page
-        await Navigation.PopToRootAsync();
+        // Navigate back to login page by replacing the entire navigation stack
+        var loginPage = new LoginPage();
+        Application.Current!.MainPage = new NavigationPage(loginPage);
     }
 }

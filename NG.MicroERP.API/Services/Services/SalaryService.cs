@@ -67,7 +67,7 @@ public class SalaryService : ISalaryService
             string Code = dapper.GetCode("SAL", "Salary", "Code") ?? string.Empty;
             obj.Code = Code;
             
-            string SQLDuplicate = $@"SELECT * FROM Salary WHERE UPPER(Code) = '{Code.ToUpper()}' OR (EmployeeId = {obj.EmployeeId} AND SalaryMonth = '{obj.SalaryMonth}');";
+            string SQLDuplicate = $@"SELECT * FROM Salary WHERE (UPPER(Code) = '{Code.ToUpper()}' OR (EmployeeId = {obj.EmployeeId} AND SalaryMonth = '{obj.SalaryMonth}')) AND IsSoftDeleted = 0;";
             
             string payDate = obj.PayDate.HasValue ? $"'{obj.PayDate.Value.ToString("yyyy-MM-dd")}'" : "NULL";
             string chequeDate = obj.ChequeDate.HasValue ? $"'{obj.ChequeDate.Value.ToString("yyyy-MM-dd")}'" : "NULL";
@@ -150,7 +150,7 @@ public class SalaryService : ISalaryService
             obj.TotalDeductions = obj.Tax + obj.ProvidentFund + obj.Insurance + obj.Loans + obj.Deductions;
             obj.NetSalary = obj.GrossSalary - obj.TotalDeductions;
             
-            string SQLDuplicate = $@"SELECT * FROM Salary WHERE (UPPER(Code) = '{obj.Code?.ToUpper()}' AND ID != {obj.Id}) OR (EmployeeId = {obj.EmployeeId} AND SalaryMonth = '{obj.SalaryMonth}' AND ID != {obj.Id});";
+            string SQLDuplicate = $@"SELECT * FROM Salary WHERE ((UPPER(Code) = '{obj.Code?.ToUpper()}' AND ID != {obj.Id}) OR (EmployeeId = {obj.EmployeeId} AND SalaryMonth = '{obj.SalaryMonth}' AND ID != {obj.Id})) AND IsSoftDeleted = 0;";
             
             string payDate = obj.PayDate.HasValue ? $"'{obj.PayDate.Value.ToString("yyyy-MM-dd")}'" : "NULL";
             string chequeDate = obj.ChequeDate.HasValue ? $"'{obj.ChequeDate.Value.ToString("yyyy-MM-dd")}'" : "NULL";

@@ -1,4 +1,4 @@
-﻿CREATE TABLE Categories
+CREATE TABLE Categories
 (
 	Id                  INT					PRIMARY KEY IDENTITY(1,1),
 	OrganizationId      INT					NOT NULL	DEFAULT 1,
@@ -7,6 +7,7 @@
 	Name                VARCHAR(255)		NOT NULL,
 	CategoryType        VARCHAR(50)			NOT NULL,		--Raw, Finished Goods
 	ParentId            INT					NOT NULL DEFAULT 0,
+	TaxRuleId			INT					NULL,
 	IsActive            SMALLINT			NOT NULL DEFAULT 1,
 	CreatedBy			INT					NULL DEFAULT NULL,
 	CreatedOn           DATETIME			NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -15,12 +16,8 @@
 	UpdatedOn           DATETIME			NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	UpdatedFrom         VARCHAR(255)		NULL DEFAULT NULL,
 	IsSoftDeleted       SMALLINT			NOT NULL DEFAULT 0,
-	FOREIGN KEY (CreatedBy)        REFERENCES Users(Id),
-	FOREIGN KEY (UpdatedBy)        REFERENCES Users(Id),
-	FOREIGN KEY (OrganizationId)   REFERENCES Organizations(Id)
+	CONSTRAINT FK_Categories_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+	CONSTRAINT FK_Categories_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id),
+	CONSTRAINT FK_Categories_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
+	CONSTRAINT FK_Categories_TaxRule FOREIGN KEY (TaxRuleId) REFERENCES TaxRule(Id)
 );
-
-INSERT INTO Categories (Code, Attribute, Name, CategoryType) VALUES 
-('000001', NULL, 'MEDICINE', 'FINISHED GOODS'),
-('000002', NULL, 'COSMETICS', 'FINISHED GOODS'),
-('000003', NULL, 'SURGICAL', 'FINISHED GOODS');

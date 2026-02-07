@@ -1,0 +1,390 @@
+@page "/InterfaceSettingsSimple"
+
+@using MudBlazor
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <!-- Header -->
+    <div class="dashboard-header mb-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.SettingsApplications" Class="me-2" Style="color: white;" />
+                    Interface Settings
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">
+                    Configure interface behavior with simple switches and inputs
+                </MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+                <MudButton StartIcon="@Icons.Material.TwoTone.Save" 
+                           Size="Size.Medium" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Success"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="SaveAllSettings">
+                    Save
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Info"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="Refresh">
+                    Refresh
+                </MudButton>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings by Category -->
+    @if (SettingsByCategory != null && SettingsByCategory.Any())
+    {
+        @foreach (var categoryGroup in SettingsByCategory)
+        {
+            <MudPaper Elevation="3" Class="pa-4 mb-4" Style="border-radius: 12px;">
+                <div class="d-flex align-items-center mb-4">
+                    <MudIcon Icon="@GetCategoryIcon(categoryGroup.Key)" 
+                             Size="Size.Large" 
+                             Color="Color.Primary" 
+                             Class="me-3" />
+                    <div>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">@categoryGroup.Key</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Configure @categoryGroup.Key settings</MudText>
+                    </div>
+                </div>
+                <MudDivider Class="mb-4" />
+
+                <MudGrid>
+                    @foreach (var setting in categoryGroup.Value.OrderBy(s => s.SettingKey))
+                    {
+                        <MudItem xs="12" md="6">
+                            <MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius: 8px; border-left: 3px solid var(--mud-palette-primary);">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div style="flex: 1;">
+                                        <MudText Typo="Typo.subtitle1" Class="mb-1 fw-bold">
+                                            @GetUserFriendlyLabel(setting.SettingKey)
+                                        </MudText>
+                                        @if (!string.IsNullOrWhiteSpace(setting.Description))
+                                        {
+                                            <MudText Typo="Typo.body2" Class="text-muted" Style="font-size: 0.75rem; line-height: 1.4;">
+                                                @setting.Description
+                                            </MudText>
+                                        }
+                                    </div>
+                                    <div class="ms-3">
+                                        @if (setting.DataType == "BOOLEAN")
+                                        {
+                                            <MudSwitch Value="@GetBooleanValue(setting)"
+                                                       ValueChanged="@((bool value) => SetBooleanValue(setting, value))"
+                                                       Color="Color.Success"
+                                                       Label="@(GetBooleanValue(setting) ? "Enabled" : "Disabled")" />
+                                        }
+                                        else if (setting.DataType == "NUMBER")
+                                        {
+                                            <MudNumericField T="double"
+                                                             Value="@GetNumericValue(setting)"
+                                                             ValueChanged="@((double value) => SetNumericValue(setting, value))"
+                                                             Variant="Variant.Outlined"
+                                                             Dense="true"
+                                                             HideSpinButtons="false"
+                                                             Style="width: 150px;"
+                                                             Format="#,##0.00" />
+                                        }
+                                        else
+                                        {
+                                            <MudTextField Value="@GetStringValue(setting)"
+                                                          ValueChanged="@((string value) => SetStringValue(setting, value))"
+                                                          Variant="Variant.Outlined"
+                                                          Dense="true"
+                                                          Style="width: 200px;" />
+                                        }
+                                    </div>
+                                </div>
+                            </MudPaper>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
+        }
+    }
+    else if (!LoadingPanel)
+    {
+        <MudPaper Elevation="2" Class="pa-6 text-center">
+            <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Large" Color="Color.Default" Class="mb-3" />
+            <MudText Typo="Typo.h6" Class="mb-2">No Settings Found</MudText>
+            <MudText Typo="Typo.body2" Class="text-muted">Interface settings will appear here once configured.</MudText>
+        </MudPaper>
+    }
+</MudContainer>
+
+<style>
+    .dashboard-header {
+        padding: 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+    }
+
+    .dashboard-header .mud-typography {
+        color: white !important;
+    }
+
+    .dashboard-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    .mud-theme-dark .dashboard-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+</style>
+
+@code
+{
+    private bool LoadingPanel { get; set; } = false;
+    private Dictionary<string, List<InterfaceSettingsModel>>? SettingsByCategory { get; set; }
+    private Dictionary<int, bool> _booleanValues = new();
+    private Dictionary<int, double> _numericValues = new();
+    private Dictionary<int, string> _stringValues = new();
+    private bool _hasUnsavedChanges = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "InterfaceSettingsDashboard");
+        await LoadSettings();
+    }
+
+    private async Task LoadSettings()
+    {
+        LoadingPanel = true;
+        try
+        {
+            var allSettings = await Functions.GetAsync<List<InterfaceSettingsModel>>(
+                $"InterfaceSettings/Search/OrganizationId={Globals.User.OrganizationId}", true)
+                ?? new List<InterfaceSettingsModel>();
+
+            // Filter active, non-deleted settings
+            var activeSettings = allSettings
+                .Where(s => s.IsActive == 1 && s.IsSoftDeleted == 0)
+                .ToList();
+
+            // Group by category
+            SettingsByCategory = activeSettings
+                .GroupBy(s => s.Category ?? "Other")
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            // Initialize value dictionaries
+            foreach (var setting in activeSettings)
+            {
+                if (setting.DataType == "BOOLEAN")
+                {
+                    _booleanValues[setting.Id] = setting.SettingValue?.ToLower() == "true";
+                }
+                else if (setting.DataType == "NUMBER")
+                {
+                    _numericValues[setting.Id] = double.TryParse(setting.SettingValue, out double num) ? num : 0;
+                }
+                else
+                {
+                    _stringValues[setting.Id] = setting.SettingValue ?? "";
+                }
+            }
+
+            _hasUnsavedChanges = false;
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading settings: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    private bool GetBooleanValue(InterfaceSettingsModel setting)
+    {
+        return _booleanValues.GetValueOrDefault(setting.Id, false);
+    }
+
+    private double GetNumericValue(InterfaceSettingsModel setting)
+    {
+        return _numericValues.GetValueOrDefault(setting.Id, 0);
+    }
+
+    private string GetStringValue(InterfaceSettingsModel setting)
+    {
+        return _stringValues.GetValueOrDefault(setting.Id, "");
+    }
+
+    private void SetBooleanValue(InterfaceSettingsModel setting, bool value)
+    {
+        _booleanValues[setting.Id] = value;
+        _hasUnsavedChanges = true;
+        setting.SettingValue = value ? "true" : "false";
+        StateHasChanged();
+    }
+
+    private void SetNumericValue(InterfaceSettingsModel setting, double value)
+    {
+        _numericValues[setting.Id] = value;
+        _hasUnsavedChanges = true;
+        setting.SettingValue = value.ToString();
+        StateHasChanged();
+    }
+
+    private void SetStringValue(InterfaceSettingsModel setting, string value)
+    {
+        _stringValues[setting.Id] = value ?? "";
+        _hasUnsavedChanges = true;
+        setting.SettingValue = value ?? "";
+        StateHasChanged();
+    }
+
+    private async Task SaveAllSettings()
+    {
+        if (SettingsByCategory == null) return;
+
+        LoadingPanel = true;
+        int successCount = 0;
+        int errorCount = 0;
+
+        try
+        {
+            foreach (var categoryGroup in SettingsByCategory)
+            {
+                foreach (var setting in categoryGroup.Value)
+                {
+                    try
+                    {
+                        // Update the setting value from dictionaries
+                        if (setting.DataType == "BOOLEAN")
+                        {
+                            setting.SettingValue = _booleanValues[setting.Id] ? "true" : "false";
+                        }
+                        else if (setting.DataType == "NUMBER")
+                        {
+                            setting.SettingValue = _numericValues[setting.Id].ToString();
+                        }
+                        else
+                        {
+                            setting.SettingValue = _stringValues[setting.Id];
+                        }
+
+                        // Update metadata
+                        setting.UpdatedBy = Globals.User.Id;
+                        setting.UpdatedOn = DateTime.Now;
+                        setting.UpdatedFrom = Globals.ClientInfo;
+
+                        var result = await Functions.PostAsync<InterfaceSettingsModel>(
+                            $"InterfaceSettings/Update", setting, true);
+
+                        if (result.Success)
+                        {
+                            successCount++;
+                        }
+                        else
+                        {
+                            errorCount++;
+                        }
+                    }
+                    catch
+                    {
+                        errorCount++;
+                    }
+                }
+            }
+
+            if (errorCount == 0)
+            {
+                SnackbarService.Add($"All {successCount} settings saved successfully!", Severity.Success);
+                _hasUnsavedChanges = false;
+                // Clear cache if helper exists
+                InterfaceSettingsHelper.ClearCache();
+            }
+            else
+            {
+                SnackbarService.Add($"Saved {successCount} settings, {errorCount} errors occurred.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error saving settings: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    private async Task Refresh()
+    {
+        await LoadSettings();
+        SnackbarService.Add("Settings refreshed", Severity.Info);
+    }
+
+    private string GetCategoryIcon(string? category)
+    {
+        return category?.ToUpper() switch
+        {
+            "SALE INVOICE" => Icons.Material.Filled.Receipt,
+            "PURCHASE INVOICE" => Icons.Material.Filled.ShoppingCart,
+            "INVENTORY" => Icons.Material.Filled.Inventory,
+            "ACCOUNTING" => Icons.Material.Filled.AccountBalance,
+            _ => Icons.Material.Filled.Settings
+        };
+    }
+
+    private string GetUserFriendlyLabel(string? settingKey)
+    {
+        if (string.IsNullOrWhiteSpace(settingKey))
+            return "Unknown Setting";
+
+        // Convert camelCase/PascalCase to readable format
+        var label = settingKey
+            .Replace("TaxRuleAppliedOnInvoiceLevel", "Apply Tax at Invoice Level")
+            .Replace("ShowDiscountColumn", "Show Discount Column")
+            .Replace("AllowNegativeQuantity", "Allow Negative Quantities")
+            .Replace("AutoCalculateTax", "Auto Calculate Tax")
+            .Replace("RequirePaymentTerms", "Require Payment Terms")
+            .Replace("DefaultInvoiceStatus", "Default Invoice Status")
+            .Replace("MaxInvoiceItems", "Maximum Invoice Items")
+            .Replace("RequireGRNReference", "Require GRN Reference")
+            .Replace("AllowNegativeStock", "Allow Negative Stock")
+            .Replace("AutoUpdateStockOnInvoice", "Auto Update Stock on Invoice")
+            .Replace("RequireSerialNumber", "Require Serial Number")
+            .Replace("ShowLowStockAlert", "Show Low Stock Alert")
+            .Replace("LowStockThreshold", "Low Stock Threshold")
+            .Replace("EnableBatchTracking", "Enable Batch Tracking")
+            .Replace("DefaultStockMovementType", "Default Stock Movement Type")
+            .Replace("AutoPostToGL", "Auto Post to General Ledger")
+            .Replace("RequireGLApproval", "Require GL Approval")
+            .Replace("AllowBackdatedEntries", "Allow Backdated Entries")
+            .Replace("DefaultAccountType", "Default Account Type")
+            .Replace("ShowAccountBalance", "Show Account Balance")
+            .Replace("EnableMultiCurrency", "Enable Multi Currency")
+            .Replace("DefaultCurrency", "Default Currency")
+            .Replace("FiscalYearStartMonth", "Fiscal Year Start Month");
+
+        // If no replacement was made, format the key nicely
+        if (label == settingKey)
+        {
+            label = System.Text.RegularExpressions.Regex.Replace(
+                settingKey,
+                "([A-Z])",
+                " $1",
+                System.Text.RegularExpressions.RegexOptions.Compiled)
+                .Trim();
+        }
+
+        return label;
+    }
+
+}

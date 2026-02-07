@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -37,6 +37,7 @@ public class PartiesModel
     public string? ContactDesignation { get; set; } = string.Empty;
     public string? ContactEmail { get; set; } = string.Empty;
     public string? Pic { get; set; } = string.Empty;
+    public int PriceListId { get; set; } = 0;  // References TypeCode.Id where ListName='PRICE LIST'
     public int IsActive { get; set; } = 0;
     public int IsApproved { get; set; } = 0;
     public int ApprovedBy { get; set; } = 0;

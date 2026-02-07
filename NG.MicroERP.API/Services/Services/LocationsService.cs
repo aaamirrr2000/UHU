@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -59,7 +59,7 @@ public class LocationsService : ILocationsService
         {
 
             string Code = dapper.GetCode("", "Locations", "Code")!;
-            string SQLDuplicate = $@"SELECT * FROM Locations WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
+            string SQLDuplicate = $@"SELECT * FROM Locations WHERE UPPER(code) = '{obj.Code!.ToUpper()}' AND IsSoftDeleted = 0;";
             string SQLInsert = $@"INSERT INTO Locations 
 			(
 				OrganizationId, 
@@ -86,7 +86,7 @@ public class LocationsService : ILocationsService
 				'{obj.Name!.ToUpper()}', 
 				'{obj.Address!.ToUpper()}', 
 				'{obj.PocName!.ToUpper()}', 
-				'{obj.PocEmail!.ToUpper()}', 
+				'{obj.PocEmail!}', 
 				'{obj.PocPhone!.ToUpper()}', 
 				'{obj.LocationType!.ToUpper()}', 
 				'{obj.Latitude!.ToUpper()}', 
@@ -122,14 +122,14 @@ public class LocationsService : ILocationsService
     {
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM Locations WHERE UPPER(code) = '{obj.Code!.ToUpper()}' and ID != {obj.Id};";
+            string SQLDuplicate = $@"SELECT * FROM Locations WHERE UPPER(code) = '{obj.Code!.ToUpper()}' AND ID != {obj.Id} AND IsSoftDeleted = 0;";
             string SQLUpdate = $@"UPDATE Locations SET 
 					OrganizationId = {obj.OrganizationId}, 
 					Code = '{obj.Code!.ToUpper()}', 
 					Name = '{obj.Name!.ToUpper()}', 
 					Address = '{obj.Address!.ToUpper()}', 
 					PocName = '{obj.PocName!.ToUpper()}', 
-					PocEmail = '{obj.PocEmail!.ToUpper()}', 
+					PocEmail = '{obj.PocEmail!}', 
 					PocPhone = '{obj.PocPhone!.ToUpper()}', 
 					LocationType = '{obj.LocationType!.ToUpper()}', 
 					Latitude = '{obj.Latitude!.ToUpper()}', 

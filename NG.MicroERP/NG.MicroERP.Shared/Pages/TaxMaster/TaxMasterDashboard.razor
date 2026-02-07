@@ -106,11 +106,8 @@
                         </CellTemplate>
                     </TemplateColumn>
 
-                    <PropertyColumn Property="x => x.AccountId" Title="Account Id" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
                     <PropertyColumn Property="x => x.TaxName" Title="Tax Name" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.TaxType" Title="Tax Type" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.TaxBaseType" Title="Tax Base Type" Sortable="true" Filterable="true" />
-                    <PropertyColumn Property="x => x.Rate" Title="Rate" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" />
+                    <PropertyColumn Property="x => x.ConditionType" Title="Condition Type" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.Description" Title="Description" Sortable="true" Filterable="true" />
                     <TemplateColumn Title="IsActive"
                                     CellStyle="width: 70px; min-width: 70px;"
@@ -244,8 +241,7 @@
             var search = searchString.ToLower();
             data = AllData.Where(x =>
                 (x.TaxName.ToString()?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
-                (x.TaxType.ToString()?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
-                (x.TaxBaseType.ToString()?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.ConditionType?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
                 (x.Description?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
             ).ToList();
         }

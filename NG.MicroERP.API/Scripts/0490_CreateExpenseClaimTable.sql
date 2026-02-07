@@ -32,13 +32,13 @@ CREATE TABLE ExpenseClaim
     UpdatedFrom         VARCHAR(255)     NULL DEFAULT NULL,
     IsSoftDeleted       SMALLINT         NOT NULL DEFAULT 0,
 
-    FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
-    FOREIGN KEY (EmployeeId)     REFERENCES Employees(Id),
-    FOREIGN KEY (DepartmentId)   REFERENCES Departments(Id),
-    FOREIGN KEY (ApprovedBy)     REFERENCES Users(Id),
-    FOREIGN KEY (PaidBy)         REFERENCES Users(Id),
-    FOREIGN KEY (CreatedBy)      REFERENCES Users(Id),
-    FOREIGN KEY (UpdatedBy)      REFERENCES Users(Id)
+    CONSTRAINT FK_ExpenseClaim_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
+    CONSTRAINT FK_ExpenseClaim_Employee FOREIGN KEY (EmployeeId) REFERENCES Employees(Id),
+    CONSTRAINT FK_ExpenseClaim_Department FOREIGN KEY (DepartmentId) REFERENCES Departments(Id),
+    CONSTRAINT FK_ExpenseClaim_ApprovedBy FOREIGN KEY (ApprovedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_ExpenseClaim_PaidBy FOREIGN KEY (PaidBy) REFERENCES Users(Id),
+    CONSTRAINT FK_ExpenseClaim_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_ExpenseClaim_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id)
 );
 GO
 

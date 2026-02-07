@@ -939,6 +939,8 @@ public class InvoiceService : IInvoiceService
 
     public async Task<(bool, string)> SoftDelete(InvoiceModel obj)
     {
+        if (obj == null || obj.Id <= 0)
+            return (false, "Invalid record: Id is required for soft delete.");
         // Check if invoice is posted to GL - prevent deletion
         var invoice = await dapper.SearchByQuery<InvoiceModel>($"SELECT * FROM Invoice WHERE Id = {obj.Id}");
         if (invoice != null && invoice.Any() && invoice.First().IsPostedToGL == 1)

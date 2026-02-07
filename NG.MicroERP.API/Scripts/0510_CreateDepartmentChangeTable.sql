@@ -21,13 +21,13 @@ CREATE TABLE DepartmentChange
     UpdatedFrom         VARCHAR(255)     NULL DEFAULT NULL,
     IsSoftDeleted       SMALLINT         NOT NULL DEFAULT 0,
 
-    FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
-    FOREIGN KEY (EmployeeId)     REFERENCES Employees(Id),
-    FOREIGN KEY (OldDepartmentId) REFERENCES Departments(Id),
-    FOREIGN KEY (NewDepartmentId) REFERENCES Departments(Id),
-    FOREIGN KEY (ApprovedBy)     REFERENCES Users(Id),
-    FOREIGN KEY (CreatedBy)      REFERENCES Users(Id),
-    FOREIGN KEY (UpdatedBy)      REFERENCES Users(Id)
+    CONSTRAINT FK_DepartmentChange_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
+    CONSTRAINT FK_DepartmentChange_Employee FOREIGN KEY (EmployeeId) REFERENCES Employees(Id),
+    CONSTRAINT FK_DepartmentChange_OldDepartment FOREIGN KEY (OldDepartmentId) REFERENCES Departments(Id),
+    CONSTRAINT FK_DepartmentChange_NewDepartment FOREIGN KEY (NewDepartmentId) REFERENCES Departments(Id),
+    CONSTRAINT FK_DepartmentChange_ApprovedBy FOREIGN KEY (ApprovedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_DepartmentChange_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_DepartmentChange_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id)
 );
 GO
 

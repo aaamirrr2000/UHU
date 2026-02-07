@@ -1,4 +1,4 @@
-﻿
+
 using NG.MicroERP.API.Helper;
 using NG.MicroERP.Shared.Models;
 
@@ -50,16 +50,16 @@ public class TaxMasterService : ITaxMasterService
 
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM TaxMaster WHERE UPPER(TaxName) = '{obj.TaxName!.ToUpper()}';";
+            string SQLDuplicate = $@"SELECT * FROM TaxMaster WHERE UPPER(TaxName) = '{obj.TaxName!.ToUpper()}' AND IsSoftDeleted = 0;";
+            string conditionTypeValue = string.IsNullOrWhiteSpace(obj.ConditionType) ? "NULL" : $"'{obj.ConditionType.ToUpper()}'";
+            
             string SQLInsert = $@"INSERT INTO TaxMaster 
 			(
 				OrganizationId, 
 				AccountId, 
 				TaxName, 
-				TaxType, 
-				TaxBaseType, 
-				Rate, 
 				Description, 
+				ConditionType,
 				IsActive, 
 				CreatedBy, 
 				CreatedOn, 
@@ -70,10 +70,8 @@ public class TaxMasterService : ITaxMasterService
 				{obj.OrganizationId},
 				{obj.AccountId},
 				'{obj.TaxName!.ToUpper()}', 
-				'{obj.TaxType!.ToUpper()}', 
-				'{obj.TaxBaseType!.ToUpper()}', 
-				{obj.Rate},
 				{(obj.Description == null ? "null" : $"'{obj.Description.ToUpper()}'")}, 
+				{conditionTypeValue},
 				{obj.IsActive},
 				{obj.CreatedBy},
 				'{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}',
@@ -103,15 +101,15 @@ public class TaxMasterService : ITaxMasterService
     {
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM TaxMaster WHERE UPPER(code) = '{obj.TaxName!.ToUpper()}' and Id != {obj.Id};";
+            string conditionTypeValue = string.IsNullOrWhiteSpace(obj.ConditionType) ? "NULL" : $"'{obj.ConditionType.ToUpper()}'";
+            
+            string SQLDuplicate = $@"SELECT * FROM TaxMaster WHERE UPPER(TaxName) = '{obj.TaxName!.ToUpper()}' AND Id != {obj.Id} AND IsSoftDeleted = 0;";
             string SQLUpdate = $@"UPDATE TaxMaster SET 
 					OrganizationId = {obj.OrganizationId}, 
 					AccountId = {obj.AccountId}, 
 					TaxName = '{obj.TaxName!.ToUpper()}', 
-					TaxType = '{obj.TaxType!.ToUpper()}', 
-					TaxBaseType = '{obj.TaxBaseType!.ToUpper()}', 
-					Rate = {obj.Rate}, 
 					Description = {(obj.Description == null ? "null" : $"'{obj.Description.ToUpper()}'")}, 
+					ConditionType = {conditionTypeValue},
 					IsActive = {obj.IsActive}, 
 					UpdatedBy = {obj.UpdatedBy}, 
 					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 

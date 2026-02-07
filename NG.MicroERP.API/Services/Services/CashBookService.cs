@@ -79,7 +79,7 @@ public class CashBookService : ICashBookService
             }
 
             string Code = dapper.GetCode("CBP", "Cashbook", "SeqNo")!;
-            string SQLDuplicate = $@"SELECT * FROM Cashbook WHERE UPPER(SeqNo) = '{obj.SeqNo!.ToUpper()}';";
+            string SQLDuplicate = $@"SELECT * FROM Cashbook WHERE UPPER(SeqNo) = '{obj.SeqNo!.ToUpper()}' AND IsSoftDeleted = 0;";
             
             // Get currency fields with defaults
             int baseCurrencyId = obj.BaseCurrencyId > 0 ? obj.BaseCurrencyId : 0;
@@ -173,7 +173,7 @@ public class CashBookService : ICashBookService
                 }
             }
 
-            string SQLDuplicate = $@"SELECT * FROM Cashbook WHERE UPPER(SeqNo) = '{obj.SeqNo!.ToUpper()}' and ID != {obj.Id};";
+            string SQLDuplicate = $@"SELECT * FROM Cashbook WHERE UPPER(SeqNo) = '{obj.SeqNo!.ToUpper()}' AND ID != {obj.Id} AND IsSoftDeleted = 0;";
             
             // Get currency fields with defaults
             int baseCurrencyId = obj.BaseCurrencyId > 0 ? obj.BaseCurrencyId : 0;

@@ -1,4 +1,4 @@
-﻿
+
 CREATE DATABASE ControlCenter;
 GO
 USE ControlCenter;
@@ -47,7 +47,7 @@ CREATE TABLE Organizations
     UpdatedOn        DATETIME NULL,
     UpdatedFrom      NVARCHAR(250) NULL,
     IsSoftDeleted    INT NOT NULL DEFAULT 0,
-    FOREIGN KEY (OwnerUserId) REFERENCES Users(Id)
+    CONSTRAINT FK_ControlCenterOrganizations_OwnerUser FOREIGN KEY (OwnerUserId) REFERENCES Users(Id)
 );
 GO
 
@@ -72,7 +72,7 @@ CREATE TABLE Projects
     UpdatedOn           DATETIME NULL,
     UpdatedFrom         NVARCHAR(250) NULL,
     IsSoftDeleted       INT NOT NULL DEFAULT 0,
-    FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id)
+    CONSTRAINT FK_ControlCenterProjects_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id)
 );
 GO
 

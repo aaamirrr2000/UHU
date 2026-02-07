@@ -183,6 +183,7 @@ SELECT
         FROM InvoiceDetailTax idt
         WHERE idt.InvoiceDetailId = id.Id
     ), 0)) AS ItemTotalAmount,
+    ISNULL(id.Description, '') AS Description,
     id.Description AS Instructions,
     ISNULL(id.Status, '') AS Status,
     0 AS Person,

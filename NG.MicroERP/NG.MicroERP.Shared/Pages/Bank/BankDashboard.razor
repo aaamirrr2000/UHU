@@ -342,20 +342,19 @@
         record.UpdatedFrom = Globals.ClientInfo;
 
         var result = await Functions.PostAsync<BankModel>($"Bank/{Action}", record, true);
-        if (result.Success == false)
+        if (result.Success == true)
         {
             SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
+            if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) await Edit(result.Result!.Id);
         }
         else
         {
             SnackbarService.Add($"Record Not Deleted", Severity.Error);
-            if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) await Edit(result.Result!.Id);
         }
     
         await GetAll();
         LoadingPanel = false;
         await _drawer.CloseDrawerAsync();
-     
     }
 
     private async Task ChildSaved()

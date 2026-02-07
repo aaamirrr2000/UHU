@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:NG.MicroERP.App.SwiftServe.Components.MauiPages.Converters"
+             x:Class="NG.MicroERP.App.SwiftServe.Components.MauiPages.CartPage"
+             Title="Shopping Cart"
+             BackgroundColor="#F5F5F5">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <Color x:Key="PrimaryColor">#512BD4</Color>
+            <Color x:Key="WhiteColor">#FFFFFF</Color>
+            <Color x:Key="TextPrimary">#212121</Color>
+            <Color x:Key="TextSecondary">#666666</Color>
+            <Color x:Key="DangerColor">#dc3545</Color>
+            
+            <converters:IsGreaterThanZeroConverter x:Key="IsGreaterThanZeroConverter"/>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <StackLayout Spacing="0" Padding="8">
+            
+            <!-- Header -->
+            <Frame BackgroundColor="{StaticResource PrimaryColor}"
+                   CornerRadius="12"
+                   Padding="20,16"
+                   Margin="0,0,0,12"
+                   HasShadow="True">
+                <StackLayout Spacing="8">
+                    <Label Text="Shopping Cart"
+                           FontSize="24"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource WhiteColor}"/>
+                    <Label x:Name="HeaderSubtitle"
+                           Text="Table: - | Service: -"
+                           FontSize="14"
+                           TextColor="#E0FFFFFF"/>
+                    <Button Text="Back"
+                            Clicked="OnBackClicked"
+                            BackgroundColor="#E0FFFFFF"
+                            TextColor="{StaticResource PrimaryColor}"
+                            FontSize="14"
+                            Padding="15,8"
+                            CornerRadius="8"
+                            HorizontalOptions="End"
+                            Margin="0,8,0,0"/>
+                </StackLayout>
+            </Frame>
+
+            <!-- Cart Items -->
+            <CollectionView x:Name="CartItemsCollectionView"
+                           ItemsSource="{Binding CartItems}"
+                           SelectionMode="None"
+                           Margin="0,0,0,12">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame BackgroundColor="{StaticResource WhiteColor}"
+                               BorderColor="#E0E0E0"
+                               CornerRadius="12"
+                               Padding="16"
+                               HasShadow="True"
+                               Margin="0,0,0,12">
+                            <StackLayout Spacing="12">
+                                <!-- Item Header -->
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                    <Label Text="{Binding Name}"
+                                           FontSize="18"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource TextPrimary}"
+                                           Grid.Column="0"/>
+                                    <Button Text="Remove"
+                                            Clicked="OnRemoveItem"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="{StaticResource DangerColor}"
+                                            TextColor="{StaticResource WhiteColor}"
+                                            CornerRadius="8"
+                                            Padding="12,6"
+                                            FontSize="14"
+                                            Grid.Column="1"/>
+                                </Grid>
+                                
+                                <!-- Quantity Selector -->
+                                <StackLayout Orientation="Horizontal" Spacing="8" HorizontalOptions="Start">
+                                    <Button Text="-"
+                                            Clicked="OnDecreaseQty"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="{StaticResource PrimaryColor}"
+                                            TextColor="{StaticResource WhiteColor}"
+                                            WidthRequest="40"
+                                            HeightRequest="40"
+                                            CornerRadius="20"
+                                            FontSize="18"
+                                            FontAttributes="Bold"/>
+                                    <Label Text="{Binding MaxQty}"
+                                           FontSize="18"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource TextPrimary}"
+                                           WidthRequest="60"
+                                           HorizontalTextAlignment="Center"
+                                           VerticalOptions="Center"/>
+                                    <Button Text="+"
+                                            Clicked="OnIncreaseQty"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="{StaticResource PrimaryColor}"
+                                            TextColor="{StaticResource WhiteColor}"
+                                            WidthRequest="40"
+                                            HeightRequest="40"
+                                            CornerRadius="20"
+                                            FontSize="18"
+                                            FontAttributes="Bold"/>
+                                </StackLayout>
+                                
+                                <!-- Item Details -->
+                                <StackLayout Spacing="4">
+                                    <Label Text="{Binding ServingSize, StringFormat='Size: {0}'}"
+                                           FontSize="14"
+                                           TextColor="{StaticResource TextSecondary}"/>
+                                    <Label Text="{Binding RetailPrice, StringFormat='Price: {0:N2}'}"
+                                           FontSize="14"
+                                           TextColor="{StaticResource TextSecondary}"/>
+                                    <Label Text="{Binding Person, StringFormat='Chair: {0}'}"
+                                           FontSize="14"
+                                           TextColor="{StaticResource TextSecondary}"
+                                           IsVisible="{Binding Person, Converter={StaticResource IsGreaterThanZeroConverter}}"/>
+                                </StackLayout>
+                                
+                                <!-- Instructions -->
+                                <Entry Placeholder="Instructions"
+                                       Text="{Binding Description}"
+                                       TextChanged="OnInstructionsChanged"
+                                       BackgroundColor="#F5F5F5"
+                                       TextColor="{StaticResource TextPrimary}"
+                                       MaxLength="255"
+                                       x:Name="InstructionsEntry"/>
+                            </StackLayout>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Note -->
+            <Frame BackgroundColor="{StaticResource WhiteColor}"
+                   BorderColor="#E0E0E0"
+                   CornerRadius="12"
+                   Padding="16"
+                   Margin="0,0,0,12"
+                   HasShadow="True">
+                <Editor x:Name="BillNoteEditor"
+                        Placeholder="Note"
+                        TextChanged="OnBillNoteChanged"
+                        HeightRequest="100"
+                        BackgroundColor="Transparent"
+                        TextColor="{StaticResource TextPrimary}"/>
+            </Frame>
+
+            <!-- Summary -->
+            <Frame BackgroundColor="#f8f9fa"
+                   BorderColor="#E0E0E0"
+                   CornerRadius="12"
+                   Padding="16"
+                   Margin="0,0,0,12"
+                   HasShadow="True">
+                <StackLayout Spacing="8">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <Label Text="Sub Total:"
+                               FontSize="16"
+                               TextColor="{StaticResource TextPrimary}"
+                               Grid.Column="0"/>
+                        <Label x:Name="SubTotalLabel"
+                               Text="0.00"
+                               FontSize="16"
+                               TextColor="{StaticResource TextPrimary}"
+                               HorizontalOptions="End"
+                               Grid.Column="1"/>
+                    </Grid>
+                    
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" x:Name="ServiceChargeRow" IsVisible="False">
+                        <Label x:Name="ServiceChargeLabel"
+                               Text="Service Charges:"
+                               FontSize="16"
+                               TextColor="{StaticResource TextPrimary}"
+                               Grid.Column="0"/>
+                        <Label x:Name="ServiceChargeAmountLabel"
+                               Text="0.00"
+                               FontSize="16"
+                               TextColor="{StaticResource TextPrimary}"
+                               HorizontalOptions="End"
+                               Grid.Column="1"/>
+                    </Grid>
+                    
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" x:Name="TaxRow" IsVisible="False">
+                        <Label x:Name="TaxLabel"
+                               Text="Tax:"
+                               FontSize="16"
+                               TextColor="{StaticResource TextPrimary}"
+                               Grid.Column="0"/>
+                        <Label x:Name="TaxAmountLabel"
+                               Text="0.00"
+                               FontSize="16"
+                               TextColor="{StaticResource TextPrimary}"
+                               HorizontalOptions="End"
+                               Grid.Column="1"/>
+                    </Grid>
+                    
+                    <BoxView HeightRequest="2"
+                             BackgroundColor="{StaticResource PrimaryColor}"
+                             Margin="0,8,0,8"/>
+                    
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <Label Text="Grand Total:"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource PrimaryColor}"
+                               Grid.Column="0"/>
+                        <Label x:Name="GrandTotalLabel"
+                               Text="0.00"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource PrimaryColor}"
+                               HorizontalOptions="End"
+                               Grid.Column="1"/>
+                    </Grid>
+                </StackLayout>
+            </Frame>
+
+            <!-- Parcel Delivery Details (if Parcel service) -->
+            <Frame x:Name="ParcelDetailsFrame"
+                   BackgroundColor="{StaticResource WhiteColor}"
+                   BorderColor="#E0E0E0"
+                   CornerRadius="12"
+                   Padding="16"
+                   Margin="0,0,0,12"
+                   HasShadow="True"
+                   IsVisible="False">
+                <StackLayout Spacing="12">
+                    <Label Text="Parcel Delivery Details"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource PrimaryColor}"/>
+                    
+                    <Entry x:Name="PartyNameEntry"
+                           Placeholder="Name"
+                           TextColor="{StaticResource TextPrimary}"/>
+                    
+                    <Entry x:Name="PartyPhoneEntry"
+                           Placeholder="Phone"
+                           Keyboard="Telephone"
+                           TextColor="{StaticResource TextPrimary}"/>
+                    
+                    <Entry x:Name="PartyEmailEntry"
+                           Placeholder="Email"
+                           Keyboard="Email"
+                           TextColor="{StaticResource TextPrimary}"/>
+                    
+                    <Editor x:Name="PartyAddressEditor"
+                            Placeholder="Address"
+                            HeightRequest="80"
+                            TextColor="{StaticResource TextPrimary}"/>
+                </StackLayout>
+            </Frame>
+
+            <!-- Place Order Button -->
+            <Button Text="Place Order"
+                    Clicked="OnPlaceOrderClicked"
+                    BackgroundColor="{StaticResource PrimaryColor}"
+                    TextColor="{StaticResource WhiteColor}"
+                    CornerRadius="12"
+                    HeightRequest="56"
+                    FontSize="18"
+                    FontAttributes="Bold"
+                    Margin="0,12,0,20"/>
+
+            <!-- Empty State -->
+            <StackLayout x:Name="EmptyStateLayout"
+                        IsVisible="False"
+                        Spacing="20"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"
+                        Margin="0,40">
+                <Label Text="🛒"
+                       FontSize="80"
+                       HorizontalOptions="Center"
+                       Opacity="0.3"/>
+                <Label Text="Cart is empty"
+                       FontSize="20"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextSecondary}"
+                       HorizontalOptions="Center"/>
+            </StackLayout>
+
+        </StackLayout>
+    </ScrollView>
+</ContentPage>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -21,5 +21,6 @@ public class ItemPartyTaxCalculationModel
     public double TaxAmount { get; set; }
     public double FinalPrice { get; set; }
     public string? AppliesTo { get; set; }
+    public int SequenceNo { get; set; } = 0; // Sequence number for tax calculation order
 
 }

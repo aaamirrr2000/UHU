@@ -1,0 +1,464 @@
+@page "/"
+@layout Layout.BlankLayout
+@using NG.MicroERP.Shared.Models
+@inject NavigationManager Nav
+@inject Globals Globals
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject IJSRuntime JS
+@inject DesktopClientInfoService ClientInfo
+
+<Loading IsLoading="@LoadingPanel" />
+
+<!-- MAIN VERTICAL SPLIT LAYOUT -->
+<div class="login-container">
+
+    <!-- TOP SECTION: GRADIENT HEADER -->
+    <div class="top-section">
+        <div class="top-content">
+            <!-- Settings Icon (Top Right) -->
+            <div class="settings-icon" @onclick="OnSettingsClick">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" fill="white"/>
+                </svg>
+            </div>
+
+            <!-- Waiter Icon -->
+            <div class="waiter-icon">
+                <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Simplified waiter icon representation -->
+                    <circle cx="60" cy="40" r="20" fill="#8B6F47"/>
+                    <rect x="40" y="60" width="40" height="50" rx="5" fill="#4A90E2"/>
+                    <rect x="45" y="70" width="30" height="20" fill="white"/>
+                    <ellipse cx="60" cy="110" rx="15" ry="10" fill="#8B6F47"/>
+                    <!-- Cloche/Dish -->
+                    <path d="M50 50 L70 50 L75 45 L45 45 Z" fill="#C0C0C0" stroke="#999" stroke-width="2"/>
+                </svg>
+            </div>
+
+            <!-- Title -->
+            <h1 class="app-title">Swift Serve</h1>
+
+            <!-- Subtitle -->
+            <p class="app-subtitle">Restaurant Management System</p>
+        </div>
+    </div>
+
+    <!-- BOTTOM SECTION: LOGIN FORM -->
+    <div class="bottom-section">
+        <div class="login-form-container">
+            <!-- Welcome Message -->
+            <h2 class="welcome-title">Welcome Back</h2>
+            <p class="welcome-subtitle">Sign in to continue</p>
+
+            <!-- Username Field -->
+            <div class="input-wrapper">
+                <div class="input-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#4A90E2"/>
+                    </svg>
+                </div>
+                <input type="text" class="form-input" placeholder="Username" @bind="Username" @bind:event="oninput" disabled="@(!IsAccountActive)" />
+            </div>
+
+            <!-- Password Field -->
+            <div class="input-wrapper">
+                <div class="input-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" fill="#FF3F5F"/>
+                    </svg>
+                </div>
+                <input type="password" class="form-input" placeholder="Password" @bind="Password" @bind:event="oninput" disabled="@(!IsAccountActive)" />
+            </div>
+
+            @if (!IsAccountActive && !string.IsNullOrEmpty(AccountStatusMessage))
+            {
+                <div class="account-status-message">
+                    <p>@AccountStatusMessage</p>
+                </div>
+            }
+
+            <!-- Login Button -->
+            <button class="login-button" @onclick="async () => await Login()" disabled="@(!IsAccountActive)">
+                Login
+            </button>
+
+            <!-- Footer Branding -->
+            <div class="footer-branding">
+                <div class="branding-icon">
+                    <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Simplified cleaning/food icon -->
+                        <rect x="10" y="20" width="30" height="20" rx="3" fill="#FFB545"/>
+                        <circle cx="20" cy="30" r="3" fill="#3DCB6C"/>
+                        <circle cx="30" cy="30" r="3" fill="#4A86FF"/>
+                        <path d="M15 15 L25 10 L35 15" stroke="#FF3F5F" stroke-width="2" fill="none"/>
+                    </svg>
+                </div>
+                <p class="branding-text">A Project by NexGen Tech Studios</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+@code {
+    public string Username { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    private bool LoadingPanel { get; set; } = false;
+    private string clientInfoString = "Loading...";
+    private bool IsAccountActive { get; set; } = true; // Default to true to allow login if check fails
+    private string AccountStatusMessage { get; set; } = string.Empty;
+
+    private string BackgroundImagePath = "_content/NG.MicroERP.Shared/images/default.jpg";
+    private string BackgroundStyle => $"background: url('{BackgroundImagePath}') no-repeat center center; background-size: cover; background-color:#1976D2;";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // First, get organization to extract database name
+            var org = await Functions.GetAsync<List<OrganizationsModel>>("Organizations/Search", true) ?? new List<OrganizationsModel>();
+            Globals.Organization = org.FirstOrDefault()!;
+            clientInfoString = ClientInfo.GetClientInfoString();
+            Globals.ClientInfo = clientInfoString;
+
+            if (!string.IsNullOrEmpty(Globals.Organization?.Wallpaper))
+            {
+                BackgroundImagePath = Globals.GetImageUrl(Globals.Organization.Wallpaper);
+            }
+            else
+                BackgroundImagePath = "_content/NG.MicroERP.Shared/images/background.jpg";
+
+            // Check account status from ControlCenter
+            await CheckAccountStatus();
+        }
+        catch
+        {
+            BackgroundImagePath = "_content/NG.MicroERP.Shared/images/background.jpg";
+            // If check fails, allow login (fail open)
+            IsAccountActive = true;
+        }
+    }
+
+    private async Task CheckAccountStatus()
+    {
+        try
+        {
+            var accountStatus = await Functions.GetAsync<AccountStatusModel>("ControlCenter/CheckAccountStatus/Current", false);
+            
+            if (accountStatus != null)
+            {
+                IsAccountActive = accountStatus.IsActive;
+                AccountStatusMessage = accountStatus.Message ?? "";
+            }
+            else
+            {
+                // If API call fails, allow login (fail open)
+                IsAccountActive = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            // If check fails, allow login (fail open)
+            IsAccountActive = true;
+            Serilog.Log.Warning(ex, "Failed to check account status from ControlCenter");
+        }
+    }
+
+    private async Task Login()
+    {
+        try
+        {
+            LoadingPanel = true;
+            var res = await Functions.GetAsync<UsersModel>($"Login/Login/{Username}/{Password}", false);
+            LoadingPanel = false;
+
+            if (res == null || string.IsNullOrEmpty(res.Token))
+            {
+                SnackbarService.Add("User Name or Password is Incorrect.", Severity.Error);
+                return;
+            }
+
+            Globals.User = res;
+            Globals.User.Password = Globals.Decrypt(Globals.User.Password);
+            Globals.Token = res.Token;
+
+            // Store token in sessionStorage for new tab scenarios (e.g., report pages)
+            await JS.InvokeVoidAsync("sessionStorage.setItem", "authToken", Globals.Token);
+
+            var org = await Functions.GetAsync<List<OrganizationsModel>>("Organizations/Search", true) ?? new List<OrganizationsModel>();
+            Globals.Organization = org.FirstOrDefault()!;
+
+            var emp = await Functions.GetAsync<EmployeesModel>($"Employees/Get/{res.EmpId}", true) ?? new EmployeesModel();
+            Globals.Employee = emp;
+
+            var dept = await Functions.GetAsync<DepartmentsModel>($"Departments/Get/{emp.DepartmentId}", true) ?? new DepartmentsModel();
+            Globals.Department = dept;
+
+            if (Globals.Organization.Expiry <= DateTime.Now)
+            {
+                SnackbarService.Add("License Expired.", Severity.Error);
+            }
+            else
+            {
+                await Task.Delay(500);
+                Nav.NavigateTo($"/{Globals.User.Dashboard}");
+            }
+        }
+        catch
+        {
+            LoadingPanel = false;
+            SnackbarService.Add("An unexpected error occurred during login.", Severity.Error);
+        }
+    }
+
+    private void ForgotPassword()
+    {
+        Nav.NavigateTo("/ForgotPasswordPage");
+    }
+
+    private void OnSettingsClick()
+    {
+        // Handle settings click - can navigate to settings page or show dialog
+        SnackbarService.Add("Settings feature coming soon", Severity.Info);
+    }
+}
+
+<style>
+    /* MAIN CONTAINER - VERTICAL SPLIT */
+    .login-container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    /* TOP SECTION - GRADIENT HEADER (~40%) */
+    .top-section {
+        flex: 0 0 40%;
+        background: linear-gradient(180deg, #7B5FE8 0%, #512BD4 100%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .top-content {
+        text-align: center;
+        width: 100%;
+        max-width: 500px;
+        position: relative;
+    }
+
+    /* SETTINGS ICON - TOP RIGHT */
+    .settings-icon {
+        position: absolute;
+        top: 0;
+        right: 0;
+        cursor: pointer;
+        padding: 10px;
+        border-radius: 50%;
+        transition: background-color 0.3s;
+    }
+
+    .settings-icon:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* WAITER ICON */
+    .waiter-icon {
+        margin: 20px auto 20px auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* APP TITLE */
+    .app-title {
+        font-size: 32px;
+        font-weight: 700;
+        color: white;
+        margin: 10px 0;
+        letter-spacing: 2px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* APP SUBTITLE */
+    .app-subtitle {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.88);
+        margin: 5px 0 0 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* BOTTOM SECTION - LOGIN FORM (~60%) */
+    .bottom-section {
+        flex: 1;
+        background: #F5F5F5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 40px 30px;
+        box-sizing: border-box;
+    }
+
+    .login-form-container {
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+    }
+
+    /* WELCOME TITLE */
+    .welcome-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #212121;
+        margin: 0 0 10px 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* WELCOME SUBTITLE */
+    .welcome-subtitle {
+        font-size: 14px;
+        color: #666666;
+        margin: 0 0 30px 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* INPUT WRAPPER */
+    .input-wrapper {
+        position: relative;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+    }
+
+    /* FORM INPUT */
+    .form-input {
+        width: 100%;
+        padding: 12px 14px 12px 50px;
+        border: 1px solid #E0E0E0;
+        border-radius: 12px;
+        font-size: 16px;
+        background: white;
+        outline: none;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        box-sizing: border-box;
+    }
+
+    .form-input:focus {
+        border-color: #512BD4;
+        box-shadow: 0 0 0 2px rgba(81, 43, 212, 0.1);
+    }
+
+    .form-input:disabled {
+        background: #E0E0E0;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    .form-input::placeholder {
+        color: #999999;
+    }
+
+    /* LOGIN BUTTON */
+    .login-button {
+        width: 100%;
+        padding: 14px;
+        margin-top: 10px;
+        border: none;
+        border-radius: 12px;
+        font-size: 18px;
+        font-weight: 700;
+        color: white;
+        background: #512BD4;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .login-button:hover:not(:disabled) {
+        background: #3f2ba8;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(81, 43, 212, 0.3);
+    }
+
+    .login-button:active:not(:disabled) {
+        transform: translateY(0);
+    }
+
+    .login-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: #999999;
+    }
+
+    /* ACCOUNT STATUS MESSAGE */
+    .account-status-message {
+        margin: 15px 0;
+        padding: 10px;
+        background: #ffebee;
+        border-radius: 6px;
+        border-left: 4px solid #d32f2f;
+    }
+
+    .account-status-message p {
+        color: #d32f2f;
+        font-size: 14px;
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* FOOTER BRANDING */
+    .footer-branding {
+        margin-top: 30px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .branding-icon {
+        opacity: 0.6;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .branding-text {
+        font-size: 12px;
+        color: #666666;
+        margin: 0;
+        letter-spacing: 1.5px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* RESPONSIVE */
+    @@media (max-width: 768px) {
+        .top-section {
+            flex: 0 0 35%;
+        }
+
+        .app-title {
+            font-size: 28px;
+        }
+
+        .waiter-icon svg {
+            width: 80px;
+            height: 80px;
+        }
+    }
+</style>

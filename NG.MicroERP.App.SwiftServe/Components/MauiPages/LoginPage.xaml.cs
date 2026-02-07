@@ -109,25 +109,31 @@ public partial class LoginPage : ContentPage
                 if (MyGlobals.Organization.Expiry <= DateTime.Now)
                 {
                     await DisplayAlert("Login Failed", "License Expired.", "OK");
-
                 }
                 else
                 {
-                    if (MyGlobals.User.UserType!.ToUpper() == "WAITER")
+                    // Check user type and navigate accordingly
+                    var userType = MyGlobals.User.UserType!.ToUpper();
+                    
+                    if (userType == "WAITER" || userType == "KITCHEN")
                     {
-                        // Hide current page to prevent flicker
-                        this.IsVisible = false;
+                        // Navigate to TablesPage (MAUI) instead of Blazor MainPage
+                        var tablesPage = new TablesPage();
                         
-                        // Create and navigate to MainPage
-                        var mainPage = new MainPage();
-                        await Navigation.PushAsync(mainPage);
-                        
-                        // Remove LoginPage from navigation stack to prevent back navigation
-                        var navigationStack = Navigation.NavigationStack.ToList();
-                        if (navigationStack.Count > 1)
-                        {
-                            Navigation.RemovePage(navigationStack[0]);
-                        }
+                        // Replace the entire navigation stack with TablesPage
+                        Application.Current!.MainPage = new NavigationPage(tablesPage);
+                    }
+                    else if (userType == "ONLINE")
+                    {
+                        // Navigate directly to OrdersPage with service type filter
+                        var ordersPage = new OrdersPage("Online");
+                        Application.Current!.MainPage = new NavigationPage(ordersPage);
+                    }
+                    else
+                    {
+                        // Unknown user type - show warning page
+                        var warningPage = new UserTypeWarningPage();
+                        Application.Current!.MainPage = new NavigationPage(warningPage);
                     }
                 }
 

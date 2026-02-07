@@ -1,9 +1,9 @@
-﻿CREATE TABLE PriceList 
+CREATE TABLE PriceList 
 (
     Id                    INT              IDENTITY(1,1) PRIMARY KEY,
     OrganizationId        INT              NOT NULL        DEFAULT 1,
     ItemId                INT              NOT NULL,
-    PriceListName         VARCHAR(100)     NOT NULL,
+    PriceListName         VARCHAR(100)     NOT NULL,  -- Stores TypeCode.ListValue where ListName='PRICE LIST' (e.g., 'INDIVIDUAL CUSTOMERS', 'DEALERS')
     MinQuantity           INT              NOT NULL        DEFAULT 1,
     OneQuantityPrice      DECIMAL(18,2)    NOT NULL,
     MinQuantityPrice      DECIMAL(18,2)    NOT NULL,

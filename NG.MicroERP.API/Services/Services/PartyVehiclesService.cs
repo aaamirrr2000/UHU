@@ -1,4 +1,4 @@
-﻿using NG.MicroERP.API.Helper;
+using NG.MicroERP.API.Helper;
 using NG.MicroERP.Shared.Models;
 
 namespace NG.MicroERP.API.Services.Services;
@@ -50,7 +50,7 @@ public class PartyVehiclesService : IPartyVehiclesService
 
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM PartyVehicles WHERE UPPER(VehicleRegNo) = '{obj.VehicleRegNo!.ToUpper()}';";
+            string SQLDuplicate = $@"SELECT * FROM PartyVehicles WHERE UPPER(VehicleRegNo) = '{obj.VehicleRegNo!.ToUpper()}' AND IsSoftDeleted = 0;";
             string SQLInsert = $@"INSERT INTO PartyVehicles 
 			(
 				PartyId, 
@@ -105,7 +105,7 @@ public class PartyVehiclesService : IPartyVehiclesService
     {
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM PartyVehicles WHERE UPPER(code) = '{obj.VehicleRegNo!.ToUpper()}' and Id != {obj.Id};";
+            string SQLDuplicate = $@"SELECT * FROM PartyVehicles WHERE UPPER(VehicleRegNo) = '{obj.VehicleRegNo!.ToUpper()}' AND Id != {obj.Id} AND IsSoftDeleted = 0;";
             string SQLUpdate = $@"UPDATE PartyVehicles SET 
 					PartyId = {obj.PartyId}, 
 					VehicleRegNo = '{obj.VehicleRegNo!.ToUpper()}', 

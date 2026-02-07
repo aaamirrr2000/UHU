@@ -53,39 +53,43 @@
                 <div class="row" style="width:100%; display: flex;">
                     <!-- Code -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Code <span style='color:red;'>*</span></label>
                         <MudTextField id="Code"
+                                      Label="Code *"
                                       Variant="Variant.Outlined"
                                       Value="@record.Code"
                                       ValueChanged="@((string v) => record.Code = v?.ToUpper())"
                                       Placeholder="Code"
-                                      ReadOnly="true">
+                                      ReadOnly="true"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1">
                         </MudTextField>	<ValidationMessage For="@(() => record.Code)" />
                     </div>
 
                     <!-- Name -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Name <span style='color:red;'>*</span></label>
                         <MudTextField id="Name"
+                                      Label="Name *"
                                       Variant="Variant.Outlined"
                                       Value="@record.Name"
                                       ValueChanged="@((string v) => record.Name = v?.ToUpper())"
                                       Placeholder="Name"
-                                      ReadOnly="@isReadOnly">
+                                      ReadOnly="@isReadOnly"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1">
                         </MudTextField>	<ValidationMessage For="@(() => record.Name)" />
                     </div>
 
                     <!-- Party Type -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Party Type <span style='color:red;'>*</span></label>
                         <MudSelect T="string"
                                    Value="record.PartyType"
                                    ValueChanged="@((string v) => { record.PartyType = v; OnPartyTypeChange(); })"
+                                   Label="Party Type *"
                                    Placeholder="Party Type"
                                    Variant="Variant.Outlined"
                                    Clearable="true"
                                    ReadOnly="@isReadOnly"
-                                   FullWidth="true"
+                                   FullWidth="@true"
                                    Class="flex-grow-1">
                             <MudSelectItem T="string" Value="@("CUSTOMER")">Customer</MudSelectItem>
                             <MudSelectItem T="string" Value="@("SUPPLIER")">Supplier</MudSelectItem>
@@ -95,7 +99,6 @@
 
                     <!-- Parent Party -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Parent Party</label>
                         <AutoComplete TItem="PartiesModel"
                                       DataList="@Par"
                                       DisplayProperty="@(p => p.Name)"
@@ -103,42 +106,45 @@
                                       @bind-SelectedId="record.ParentId"
                                       Variant="Variant.Outlined"
                                       Label="Parent Party"
-                                      FullWidth="true" />
+                                      FullWidth="@true" />
                     </div>
 
                     <!-- NTN -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">NTN</label>
                         <MudTextField id="NTN"
+                                      Label="NTN"
                                       Variant="Variant.Outlined"
                                       Value="@record.NTN"
                                       ValueChanged="@((string v) => record.NTN = v?.ToUpper())"
                                       Placeholder="NTN"
-                                      ReadOnly="@isReadOnly">
+                                      ReadOnly="@isReadOnly"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1">
                         </MudTextField>
                     </div>
 
                     <!-- STN -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">STN</label>
                         <MudTextField id="STN"
+                                      Label="STN"
                                       Variant="Variant.Outlined"
                                       Value="@record.STN"
                                       ValueChanged="@((string v) => record.STN = v?.ToUpper())"
                                       Placeholder="STN"
-                                      ReadOnly="@isReadOnly">
+                                      ReadOnly="@isReadOnly"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1">
                         </MudTextField>
                     </div>
 
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Is Registered</label>
-
                         <MudSelect T="int"
                                    @bind-Value="record.IsRegistered"
+                                   Label="Is Registered"
                                    Placeholder="Is Registered"
                                    Variant="Variant.Outlined"
                                    Clearable="true"
-                                   FullWidth="true"
+                                   FullWidth="@true"
                                    Class="flex-grow-1">
                             @if (record.IsRegistered != 0 && record.IsRegistered != 1)
                             {
@@ -156,14 +162,13 @@
 
                     </div>
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Is Filer</label>
-
                         <MudSelect T="int"
                                    @bind-Value="record.IsFiler"
+                                   Label="Is Filer"
                                    Placeholder="Is Filer"
                                    Variant="Variant.Outlined"
                                    Clearable="true"
-                                   FullWidth="true"
+                                   FullWidth="@true"
                                    Class="flex-grow-1">
                             @if (record.IsFiler != 0 && record.IsFiler != 1)
                             {
@@ -182,13 +187,13 @@
                     </div>
                     <!-- Is Active -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Activation Status<span style='color:red;'>*</span></label>
                         <MudSelect T="int"
                                    @bind-Value="record.IsActive"
+                                   Label="Activation Status *"
                                    Placeholder="Is Active"
                                    Variant="Variant.Outlined"
                                    Clearable="true"
-                                   FullWidth="true"
+                                   FullWidth="@true"
                                    Class="flex-grow-1">
                             @if (record.IsActive != 0 && record.IsActive != 1)
                             {
@@ -228,19 +233,25 @@
                 <div class="row" style="width:100%; display: flex;">
                     <!-- Rating -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Rating</label>
-                        <MudNumericField @bind-Value="record.CustomerRating" Variant="Variant.Outlined" placeholder="Rating" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
+                        <MudNumericField @bind-Value="record.CustomerRating" 
+                                         Label="Rating"
+                                         Variant="Variant.Outlined" 
+                                         Placeholder="Rating" 
+                                         ReadOnly="@isReadOnly" 
+                                         Format="#,##0.00"
+                                         FullWidth="@true"
+                                         Class="flex-grow-1"></MudNumericField>
                     </div>
 
                     <!-- Class -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Class</label>
                         <MudSelect T="string"
                                    @bind-Value="record.CustomerClass"
+                                   Label="Class"
                                    Placeholder="Class"
                                    Variant="Variant.Outlined"
                                    Clearable="true"
-                                   FullWidth="true"
+                                   FullWidth="@true"
                                    Class="flex-grow-1">
                             @if (Cc != null && Cc.Any())
                             {
@@ -261,13 +272,18 @@
 
                     <!-- With Us Since -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">With Us Since</label>
-                        <MudDatePicker @bind-Date="record.CustomerSince" Variant="Variant.Outlined" DateFormat="yyyy-MM-dd" placeholder="With Us Since" ReadOnly="@isReadOnly"></MudDatePicker>
+                        <MudDatePicker @bind-Date="record.CustomerSince" 
+                                       Label="With Us Since"
+                                       Variant="Variant.Outlined" 
+                                       DateFormat="yyyy-MM-dd" 
+                                       Placeholder="With Us Since" 
+                                       ReadOnly="@isReadOnly"
+                                       FullWidth="@true"
+                                       Class="flex-grow-1"></MudDatePicker>
                     </div>
 
                     <!-- Sales Person Id -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Sales Person</label>
                         <AutoComplete TItem="EmployeesModel"
                                       DataList="@Sal"
                                       DisplayProperty="@(p => p.Fullname)"
@@ -275,18 +291,23 @@
                                       @bind-SelectedId="record.SalesPersonId"
                                       Variant="Variant.Outlined"
                                       Label="Sales Person"
-                                      FullWidth="true" />
+                                      FullWidth="@true" />
                     </div>
 
                     <!-- Credit Limit -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Credit Limit</label>
-                        <MudNumericField @bind-Value="record.CreditLimit" Variant="Variant.Outlined" placeholder="CreditLimit" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
+                        <MudNumericField @bind-Value="record.CreditLimit" 
+                                         Label="Credit Limit"
+                                         Variant="Variant.Outlined" 
+                                         Placeholder="CreditLimit" 
+                                         ReadOnly="@isReadOnly" 
+                                         Format="#,##0.00"
+                                         FullWidth="@true"
+                                         Class="flex-grow-1"></MudNumericField>
                     </div>
 
                     <!-- Payment Terms Id -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Payment Terms</label>
                         <AutoComplete TItem="PaymentTermsModel"
                                       DataList="@Pay"
                                       DisplayProperty="@(p => p.Description)"
@@ -294,12 +315,36 @@
                                       @bind-SelectedId="record.PaymentTermsId"
                                       Variant="Variant.Outlined"
                                       Label="Payment Terms"
-                                      FullWidth="true" />
+                                      FullWidth="@true" />
+                    </div>
+
+                    <!-- Price List -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudSelect T="int"
+                                   Value="record.PriceListId"
+                                   ValueChanged="@((int v) => record.PriceListId = v)"
+                                   Label="Price List"
+                                   Placeholder="Select Price List"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   ReadOnly="@isReadOnly"
+                                   FullWidth="@true"
+                                   Class="flex-grow-1">
+                            @if (PriceLists != null && PriceLists.Any())
+                            {
+                                @foreach (var priceList in PriceLists)
+                                {
+                                    <MudSelectItem T="int" Value="@priceList.Id">@priceList.ListValue</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <MudText Typo="Typo.caption" Class="text-muted mt-1">
+                            Price list to use for this party in sale invoices
+                        </MudText>
                     </div>
 
                     <!-- Account Id -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Account</label>
                         <AutoComplete TItem="ChartOfAccountsModel"
                                       DataList="@Acc"
                                       DisplayProperty="@(p => p.Name)"
@@ -307,7 +352,7 @@
                                       @bind-SelectedId="record.AccountId"
                                       Variant="Variant.Outlined"
                                       Label="Account"
-                                      FullWidth="true" />
+                                      FullWidth="@true" />
                     </div>
                 </div>
             </ChildContent>
@@ -332,19 +377,20 @@
                 <div class="row" style="width:100%; display: flex;">
                     <!-- Address -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Address</label>
                         <MudTextField id="Address"
+                                      Label="Address"
                                       Variant="Variant.Outlined"
                                       Value="@record.Address"
                                       ValueChanged="@((string v) => record.Address = v?.ToUpper())"
                                       Placeholder="Address"
-                                      ReadOnly="@isReadOnly">
+                                      ReadOnly="@isReadOnly"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1">
                         </MudTextField>
                     </div>
 
                     <!-- City Id -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">City/Area</label>
                         <AutoComplete TItem="AreasModel"
                                       DataList="@Cit"
                                       DisplayProperty="@(p => p.AreaName)"
@@ -352,73 +398,89 @@
                                       @bind-SelectedId="record.CityId"
                                       Variant="Variant.Outlined"
                                       Label="City/Area"
-                                      FullWidth="true" />
+                                      FullWidth="@true" />
                     </div>
 
                     <!-- Contact Person -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Contact Person</label>
                         <MudTextField id="ContactPerson"
+                                      Label="Contact Person"
                                       Variant="Variant.Outlined"
                                       Value="@record.ContactPerson"
                                       ValueChanged="@((string v) => record.ContactPerson = v?.ToUpper())"
                                       Placeholder="Contact Person"
-                                      ReadOnly="@isReadOnly">
+                                      ReadOnly="@isReadOnly"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1">
                         </MudTextField>
                     </div>
 
                     <!-- Contact Designation -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Contact Designation</label>
                         <MudTextField id="ContactDesignation"
+                                      Label="Contact Designation"
                                       Variant="Variant.Outlined"
                                       Value="@record.ContactDesignation"
                                       ValueChanged="@((string v) => record.ContactDesignation = v?.ToUpper())"
                                       Placeholder="Contact Designation"
-                                      ReadOnly="@isReadOnly">
+                                      ReadOnly="@isReadOnly"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1">
                         </MudTextField>
                     </div>
 
                     <!-- Contact Email -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Contact Email</label>
                         <MudTextField id="ContactEmail"
+                                      Label="Contact Email"
                                       Variant="Variant.Outlined"
                                       Value="@record.ContactEmail"
                                       ValueChanged="@((string v) => record.ContactEmail = v?.ToUpper())"
                                       Placeholder="Contact Email"
-                                      ReadOnly="@isReadOnly">
+                                      ReadOnly="@isReadOnly"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1">
                         </MudTextField>
                     </div>
 
                     <!-- Latitude -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Latitude</label>
                         <MudTextField id="Latitude"
+                                      Label="Latitude"
                                       Variant="Variant.Outlined"
                                       Value="@record.Latitude"
                                       ValueChanged="@((string v) => record.Latitude = v?.ToUpper())"
                                       Placeholder="Latitude"
-                                      ReadOnly="@isReadOnly">
+                                      ReadOnly="@isReadOnly"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1">
                         </MudTextField>
                     </div>
 
                     <!-- Longitude -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Longitude</label>
                         <MudTextField id="Longitude"
+                                      Label="Longitude"
                                       Variant="Variant.Outlined"
                                       Value="@record.Longitude"
                                       ValueChanged="@((string v) => record.Longitude = v?.ToUpper())"
                                       Placeholder="Longitude"
-                                      ReadOnly="@isReadOnly">
+                                      ReadOnly="@isReadOnly"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1">
                         </MudTextField>
                     </div>
 
                     <!-- Radius -->
                     <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
-                        <label class="form-label fw-bold mb-1">Radius</label>
-                        <MudNumericField @bind-Value="record.Radius" Variant="Variant.Outlined" placeholder="Radius" ReadOnly="@isReadOnly" Format="#,##0.00"></MudNumericField>
+                        <MudNumericField @bind-Value="record.Radius" 
+                                         Label="Radius"
+                                         Variant="Variant.Outlined" 
+                                         Placeholder="Radius" 
+                                         ReadOnly="@isReadOnly" 
+                                         Format="#,##0.00"
+                                         FullWidth="@true"
+                                         Class="flex-grow-1"></MudNumericField>
                     </div>
 
                     <!-- Image Upload Section -->
@@ -465,6 +527,7 @@
     List<ChartOfAccountsModel> Acc = new();
     List<AreasModel> Cit = new();
     List<TypeCodeModel> Cc = null!;
+    List<TypeCodeModel> PriceLists = new();
 
     [Parameter] public string Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
@@ -494,6 +557,7 @@
             Pay = await Functions.GetAsync<List<PaymentTermsModel>>($"PaymentTerms/Search", true) ?? new List<PaymentTermsModel>();
             Cit = await Functions.GetAsync<List<AreasModel>>($"Areas/Search", true) ?? new List<AreasModel>();
             Cc = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PARTY CLASS", true) ?? new List<TypeCodeModel>();
+            PriceLists = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PRICE LIST", true) ?? new List<TypeCodeModel>();
 
             // Load accounts based on party type if set
             if (!string.IsNullOrWhiteSpace(record.PartyType))

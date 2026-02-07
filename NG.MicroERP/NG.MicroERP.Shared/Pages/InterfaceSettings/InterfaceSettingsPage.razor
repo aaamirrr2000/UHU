@@ -1,0 +1,367 @@
+@page "/InterfaceSettingsPage/{Action}/{CurrentRecord?}"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <!-- Action Buttons Header -->
+    <div class="d-flex justify-content-end align-items-center mb-4 gap-2">
+        @if (Action != "VIEW")
+        {
+            <MudButton OnClick="Save" 
+                       Color="Color.Success" 
+                       Variant="Variant.Filled"
+                       StartIcon="@Icons.Material.Filled.Save"
+                       Size="Size.Medium">
+                @(Action == "INSERT" ? "Save" : "Update")
+            </MudButton>
+
+            @if (Action == "UPDATE")
+            {
+                <MudButton Color="Color.Error" 
+                           OnClick="Delete" 
+                           Variant="Variant.Filled"
+                           StartIcon="@Icons.Material.Filled.Delete"
+                           Size="Size.Medium">
+                    Delete
+                </MudButton>
+            }
+        }
+    </div>
+
+    <MudGrid>
+        <!-- Basic Details Card -->
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px;">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.SettingsApplications" 
+                             Size="Size.Large" 
+                             Color="Color.Primary" 
+                             Class="me-3" />
+                    <div>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Interface Setting Details</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Configure interface behavior settings</MudText>
+                    </div>
+                </div>
+                <MudDivider Class="mb-4" />
+
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="string"
+                                   Label="Category"
+                                   @bind-Value="record.Category"
+                                   Placeholder="Select category"
+                                   Variant="Variant.Outlined"
+                                   Clearable="false"
+                                   ReadOnly="@isReadOnly"
+                                   Required="true"
+                                   FullWidth="true"
+                                   Class="mb-3">
+                            <MudSelectItem T="string" Value="@("Sale Invoice")">Sale Invoice</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("Purchase Invoice")">Purchase Invoice</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("Inventory")">Inventory</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("Accounting")">Accounting</MudSelectItem>
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.Category)" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Setting Key"
+                                      @bind-Value="record.SettingKey"
+                                      Placeholder="Enter setting key"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      Required="true"
+                                      FullWidth="true"
+                                      Class="mb-3" />
+                        <ValidationMessage For="@(() => record.SettingKey)" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="string"
+                                   Label="Data Type"
+                                   @bind-Value="record.DataType"
+                                   Placeholder="Select data type"
+                                   Variant="Variant.Outlined"
+                                   Clearable="false"
+                                   ReadOnly="@isReadOnly"
+                                   Required="true"
+                                   FullWidth="true"
+                                   Class="mb-3"
+                                   @bind-Value:after="OnDataTypeChanged">
+                            <MudSelectItem T="string" Value="@("STRING")">String</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("BOOLEAN")">Boolean (Switch)</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("NUMBER")">Number</MudSelectItem>
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.DataType)" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        @if (record.DataType == "BOOLEAN")
+                        {
+                            <div class="d-flex align-items-center" style="height: 56px;">
+                                <MudText Typo="Typo.body1" Class="me-3 mb-0">Setting Value:</MudText>
+                                <MudSwitch @bind-Value="booleanValue"
+                                           Label="@(booleanValue ? "Enabled" : "Disabled")"
+                                           Color="Color.Success"
+                                           ReadOnly="@isReadOnly"
+                                           @bind-Value:after="OnBooleanValueChanged" />
+                            </div>
+                        }
+                        else if (record.DataType == "NUMBER")
+                        {
+                            <MudNumericField Label="Setting Value"
+                                             @bind-Value="numberValue"
+                                             Placeholder="Enter numeric value"
+                                             ReadOnly="@isReadOnly"
+                                             Variant="Variant.Outlined"
+                                             Required="true"
+                                             FullWidth="true"
+                                             Class="mb-3"
+                                             @bind-Value:after="OnNumberValueChanged" />
+                        }
+                        else
+                        {
+                            <MudTextField Label="Setting Value"
+                                          @bind-Value="record.SettingValue"
+                                          Placeholder="Enter setting value"
+                                          ReadOnly="@isReadOnly"
+                                          Variant="Variant.Outlined"
+                                          Required="true"
+                                          FullWidth="true"
+                                          Class="mb-3" />
+                        }
+                        <ValidationMessage For="@(() => record.SettingValue)" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudTextField Label="Description"
+                                      @bind-Value="record.Description"
+                                      Placeholder="Enter description"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      Lines="3"
+                                      FullWidth="true"
+                                      Class="mb-3" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="int"
+                                   Label="Activation Status"
+                                   @bind-Value="record.IsActive"
+                                   Placeholder="Select status"
+                                   Variant="Variant.Outlined"
+                                   Clearable="false"
+                                   ReadOnly="@isReadOnly"
+                                   Required="true"
+                                   FullWidth="true">
+                            @if (record.IsActive != 0 && record.IsActive != 1)
+                            {
+                                record.IsActive = 1;
+                            }
+                            <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                            <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.IsActive)" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+<style>
+    .mud-paper {
+        transition: box-shadow 0.3s ease;
+    }
+
+    .mud-paper:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
+
+@code
+{
+    InterfaceSettingsModel record = new();
+
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    
+    // Helper properties for different data types
+    private bool booleanValue
+    {
+        get => record.SettingValue?.ToLower() == "true";
+        set => record.SettingValue = value ? "true" : "false";
+    }
+    
+    private double numberValue
+    {
+        get => double.TryParse(record.SettingValue, out double val) ? val : 0;
+        set => record.SettingValue = value.ToString();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "InterfaceSettingsDashboard");
+        await GetAll();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+
+        if (Action == "INSERT")
+        {
+            record = new InterfaceSettingsModel();
+            record.IsActive = 1;
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.DataType = "STRING";
+            isReadOnly = false;
+        }
+        else if (Action == "UPDATE")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action == "VIEW")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<InterfaceSettingsModel>($"InterfaceSettings/Get/{id}", true) ?? new InterfaceSettingsModel();
+        LoadingPanel = false;
+    }
+
+    protected void GetDefaultValues()
+    {
+        if (record.OrganizationId == 0)
+            record.OrganizationId = Globals.User.OrganizationId;
+
+        if (string.IsNullOrWhiteSpace(record.DataType))
+            record.DataType = "STRING";
+
+        StateHasChanged();
+    }
+
+    private void OnDataTypeChanged()
+    {
+        // Reset value when data type changes
+        if (record.DataType == "BOOLEAN")
+        {
+            record.SettingValue = "false";
+        }
+        else if (record.DataType == "NUMBER")
+        {
+            record.SettingValue = "0";
+        }
+        else
+        {
+            record.SettingValue = "";
+        }
+        StateHasChanged();
+    }
+
+    private void OnBooleanValueChanged()
+    {
+        StateHasChanged();
+    }
+
+    private void OnNumberValueChanged()
+    {
+        StateHasChanged();
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new InterfaceSettingsModel();
+        record.IsActive = 1;
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.DataType = "STRING";
+        isReadOnly = false;
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        try
+        {
+            LoadingPanel = true;
+
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            if (string.IsNullOrWhiteSpace(record.DataType))
+                record.DataType = "STRING";
+
+            string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<InterfaceSettingsModel>($"InterfaceSettings/{url}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+            }
+            else
+            {
+                await OnSaved.InvokeAsync();
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                    await Edit(result.Result!.Id);
+                else
+                {
+                    await Clear();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"ERROR: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+}

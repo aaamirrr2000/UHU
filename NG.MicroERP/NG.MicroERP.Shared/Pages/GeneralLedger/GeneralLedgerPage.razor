@@ -17,9 +17,9 @@
     <div class="text-end mb-3" style="position: sticky; top: 0; background: white; z-index: 10; padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
         @if (Action != "VIEW")
         {
-            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-3 py-2 mr-2" Style="height:40px; min-width: 100px;">
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-3 py-2 mr-2" Style="height:40px; min-width: 100px;" Disabled="@_isSaving">
                 <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
-                @(Action == "INSERT" ? "Save" : "Update")
+                @(_isSaving ? "Saving..." : (Action == "INSERT" ? "Save" : "Update"))
             </MudButton>
 
             <!-- Preview Entry - Available before and after saving -->
@@ -58,10 +58,10 @@
         <MudCardContent Style="padding: 12px !important;">
             <div class="row g-2">
                 <div class="col-12 col-md-3 col-lg-3">
-                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Entry No</label>
                     <MudTextField id="EntryNo"
+                                  Label="Entry No"
                                   Value="@(record.EntryNo ?? "Auto-generated")"
-                                  placeholder="Entry No (Auto-generated)"
+                                  Placeholder="Entry No (Auto-generated)"
                                   ReadOnly="true"
                                   Variant="Variant.Outlined"
                                   Dense="@true"
@@ -69,11 +69,11 @@
                 </div>
 
                 <div class="col-12 col-md-3 col-lg-3">
-                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Entry Date</label>
                     <MudDatePicker @bind-Date="record.EntryDate"
                                    @bind-Date:after="OnEntryDateChanged"
+                                   Label="Entry Date"
                                    DateFormat="yyyy-MM-dd"
-                                   placeholder="Entry Date"
+                                   Placeholder="Entry Date"
                                    ReadOnly="@isReadOnly"
                                    Variant="Variant.Outlined"
                                    Dense="@true"
@@ -81,8 +81,8 @@
                 </div>
 
                 <div class="col-12 col-md-3 col-lg-3">
-                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Source</label>
                     <MudTextField Value="@(record.Source ?? "MANUAL")"
+                                  Label="Source"
                                   Variant="Variant.Outlined"
                                   Dense="@true"
                                   FullWidth="@true"
@@ -90,10 +90,10 @@
                 </div>
 
                 <div class="col-12 col-md-3 col-lg-3">
-                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Location</label>
                     @if (isReadOnly || Globals.User.GroupId != 1)
                     {
                         <MudTextField Value="@(Loc.FirstOrDefault(l => l.Id == record.LocationId)?.Name ?? "")"
+                                      Label="Location"
                                       Variant="Variant.Outlined"
                                       Dense="@true"
                                       FullWidth="@true"
@@ -113,10 +113,10 @@
                 </div>
 
                 <div class="col-12 col-md-3 col-lg-3">
-                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Reference Type</label>
                     @if (isReadOnly)
                     {
                         <MudTextField Value="@(record.ReferenceType ?? "JOURNAL")"
+                                      Label="Reference Type"
                                       Variant="Variant.Outlined"
                                       Dense="@true"
                                       FullWidth="@true"
@@ -126,6 +126,7 @@
                     {
                         <MudSelect T="string"
                                     @bind-Value="record.ReferenceType"
+                                    Label="Reference Type"
                                     Placeholder="Reference Type"
                                     Variant="Variant.Outlined"
                                     Clearable="true"
@@ -156,10 +157,10 @@
                 </div>
 
                 <div class="col-12 col-md-3 col-lg-3">
-                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Reference No</label>
                     <MudTextField id="ReferenceNo"
                                   @bind-Value="record.ReferenceNo"
-                                  placeholder="Reference No"
+                                  Label="Reference No"
+                                  Placeholder="Reference No"
                                   ReadOnly="@isReadOnly"
                                   Variant="Variant.Outlined"
                                   Dense="@true"
@@ -167,10 +168,10 @@
                 </div>
 
                 <div class="col-12 col-md-3 col-lg-3">
-                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Party (Optional)</label>
                     @if (isReadOnly)
                     {
                         <MudTextField Value="@(Par.FirstOrDefault(p => p.Id == record.PartyId)?.DisplayName ?? "")"
+                                      Label="Party (Optional)"
                                       Variant="Variant.Outlined"
                                       Dense="@true"
                                       FullWidth="@true"
@@ -190,10 +191,10 @@
                 </div>
 
                 <div class="col-12 col-md-3 col-lg-3">
-                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Description</label>
                     <MudTextField id="Description"
                                   @bind-Value="record.Description"
-                                  placeholder="Description"
+                                  Label="Description"
+                                  Placeholder="Description"
                                   ReadOnly="@isReadOnly"
                                   Variant="Variant.Outlined"
                                   Dense="@true"
@@ -201,7 +202,6 @@
                 </div>
 
                 <div class="col-12 col-md-3 col-lg-3">
-                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Currency</label>
                     <div class="d-flex align-items-center gap-2">
                         <MudText Typo="Typo.body2" Class="fw-bold">
                             @(Currencies.FirstOrDefault(c => c.Id == record.EnteredCurrencyId)?.DisplayName ?? Currencies.FirstOrDefault(c => c.Id == record.BaseCurrencyId)?.DisplayName ?? "N/A")
@@ -222,14 +222,13 @@
                 @if (showCurrencySelection && !isReadOnly)
                 {
                     <div class="col-12 col-md-3 col-lg-3">
-                        <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Select Currency</label>
                         <AutoComplete TItem="CurrenciesModel"
                                       DataList="@Currencies"
                                       DisplayProperty="@(p => p.DisplayName)"
                                       IdProperty="@(p => p.Id)"
                                       @bind-SelectedId="record.EnteredCurrencyId"
                                       @bind-SelectedId:after="OnEnteredCurrencyChanged"
-                                      Label="Currency"
+                                      Label="Select Currency"
                                       Variant="Variant.Outlined"
                                       FullWidth="@true" />
                     </div>
@@ -238,10 +237,10 @@
                 @if (record.EnteredCurrencyId != record.BaseCurrencyId || showCurrencySelection)
                 {
                     <div class="col-12 col-md-3 col-lg-3">
-                        <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Exchange Rate</label>
                         <MudNumericField @bind-Value="record.ExchangeRate"
+                                         Label="Exchange Rate"
                                          Format="#,##0.000000"
-                                         placeholder="Exchange Rate"
+                                         Placeholder="Exchange Rate"
                                          ReadOnly="@isReadOnly"
                                          Variant="Variant.Outlined"
                                          Dense="@true"
@@ -399,9 +398,9 @@
         <MudCardContent Style="padding: 12px !important;">
             <div class="row">
                 <div class="col-12 mb-3">
-                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Notes</label>
                     <MudTextField @bind-Value="record.Notes"
-                                  placeholder="Additional notes"
+                                  Label="Notes"
+                                  Placeholder="Additional notes"
                                   ReadOnly="@isReadOnly"
                                   Variant="Variant.Outlined"
                                   Dense="@true"
@@ -409,7 +408,6 @@
                                   FullWidth="@true" />
                 </div>
                 <div class="col-12">
-                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Document Attachment (Optional)</label>
                     <div class="mt-2">
                         @if (!isReadOnly)
                         {
@@ -458,6 +456,7 @@
 
     bool isReadOnly = true;
     private bool LoadingPanel { get; set; } = false;
+    private bool _isSaving = false;
     private string PeriodValidationMessage { get; set; } = string.Empty;
     private bool PeriodValidationChecked { get; set; } = false;
     private bool showCurrencySelection = false;
@@ -738,6 +737,9 @@
 
     protected async Task Save()
     {
+        if (_isSaving) return;
+        _isSaving = true;
+        await InvokeAsync(StateHasChanged);
         try
         {
             // Validate
@@ -790,6 +792,11 @@
             LoadingPanel = false;
             SnackbarService.Add($"Error saving General Ledger Entry: {ex.Message}", Severity.Error);
         }
+        finally
+        {
+            _isSaving = false;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     protected async Task ShowGLPreview()
@@ -815,15 +822,17 @@
                 record.OrganizationId = Globals.User.OrganizationId;
             }
 
-            // If record is saved, ensure we have latest data, otherwise use current form data
-            GeneralLedgerHeaderModel previewData;
+            GeneralLedgerHeaderModel? previewData;
             if (CurrentRecord > 0)
             {
-                // Get the full entry with details from database
+                LoadingPanel = true;
+                StateHasChanged();
                 previewData = await Functions.GetAsync<GeneralLedgerHeaderModel>($"GeneralLedger/Get/{CurrentRecord}", true);
+                LoadingPanel = false;
+                StateHasChanged();
                 if (previewData == null)
                 {
-                    SnackbarService.Add("Unable to load entry details", Severity.Error);
+                    SnackbarService.Add("Unable to generate preview. Unable to load entry details.", Severity.Error);
                     return;
                 }
             }
@@ -859,20 +868,20 @@
                 };
             }
 
+            int recordId = CurrentRecord > 0 ? CurrentRecord : 0;
             var parameters = new DialogParameters<InvoiceGLPreviewDialog>
             {
                 { x => x.PreviewData, previewData },
-                { x => x.RecordId, CurrentRecord },
+                { x => x.RecordId, recordId },
                 { x => x.IsPostedToGL, record.IsPosted == 1 },
                 { x => x.OnPostToGL, EventCallback.Factory.Create(this, async () => 
                 {
                     if (CurrentRecord == 0)
                     {
-                        SnackbarService.Add("Please save the entry before posting", Severity.Warning);
+                        SnackbarService.Add("Please save the entry before posting to GL", Severity.Warning);
                         return;
                     }
                     await PostEntry();
-                    // Refresh preview after posting
                     await ShowGLPreview();
                 }) }
             };
@@ -887,11 +896,13 @@
                 Position = DialogPosition.Center
             };
 
-            await dialogService.ShowAsync<InvoiceGLPreviewDialog>("General Ledger Entry Preview", parameters, options);
+            await dialogService.ShowAsync<InvoiceGLPreviewDialog>("Accounting Entry Preview", parameters, options);
         }
         catch (Exception ex)
         {
-            SnackbarService.Add($"Error: {ex.Message}", Severity.Error);
+            LoadingPanel = false;
+            StateHasChanged();
+            SnackbarService.Add($"Error generating preview: {ex.Message}", Severity.Error);
         }
     }
 

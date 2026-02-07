@@ -1,4 +1,4 @@
-﻿
+
 CREATE TABLE PartyFinancials
 (
 	Id					INT PRIMARY KEY IDENTITY(1,1),
@@ -16,9 +16,9 @@ CREATE TABLE PartyFinancials
 	UpdatedFrom         VARCHAR(255)		NULL DEFAULT NULL,
 	IsSoftDeleted       SMALLINT			NOT NULL DEFAULT 0,
 	RowVersion          ROWVERSION,
-	FOREIGN KEY (PartyId) REFERENCES Parties(Id),
-	FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
-	FOREIGN KEY (UpdatedBy) REFERENCES Users(Id)
+	CONSTRAINT FK_PartyFinancials_Party FOREIGN KEY (PartyId) REFERENCES Parties(Id),
+	CONSTRAINT FK_PartyFinancials_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+	CONSTRAINT FK_PartyFinancials_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id)
 );
 
 -- Insert 0 credit days for ALL parties (default)

@@ -1,4 +1,4 @@
-﻿@page "/TaxMasterPage/{Action}/{CurrentRecord?}"
+@page "/TaxMasterPage/{Action}/{CurrentRecord?}"
 
 @inject IJSRuntime JSRuntime
 @inject IDialogService dialogService
@@ -52,6 +52,21 @@
                 <hr style="height: 3px; border: none; background: linear-gradient(90deg, var(--mud-palette-primary) 0%, var(--mud-palette-primary-lighten) 100%); border-radius: 10px; margin: 0 0 24px 0;" />
 
                 <MudGrid>
+
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Tax Name *"
+                                      T="string"
+                                      Value="@record.TaxName"
+                                      ValueChanged="@((string v) => record.TaxName = v?.ToUpper())"
+                                      Placeholder="Tax Name"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true"
+                                      Required="@true"
+                                      Class="mb-3" />
+                        <ValidationMessage For="@(() => record.TaxName)" />
+                    </MudItem>
+
                     <MudItem xs="12" md="6">
                         @if (isReadOnly)
                         {
@@ -65,8 +80,8 @@
                         }
                         else
                         {
-                            <label class="form-label fw-bold mb-1">Account</label>
                             <AutoComplete TItem="ChartOfAccountsModel"
+                                          Label="Account"
                                           DataList="@Acc"
                                           DisplayProperty="@(p => p.Name)"
                                           IdProperty="@(p => p.Id)"
@@ -77,79 +92,7 @@
                         }
                     </MudItem>
 
-                    <MudItem xs="12" md="6">
-                        <MudTextField Label="Tax Name"
-                                     T="string"
-                                     Value="@record.TaxName"
-                                     ValueChanged="@((string v) => record.TaxName = v?.ToUpper())"
-                                     Placeholder="Tax Name"
-                                     ReadOnly="@isReadOnly"
-                                     Variant="Variant.Outlined"
-                                     FullWidth="@true"
-                                     Class="mb-3" />
-                        <ValidationMessage For="@(() => record.TaxName)" />
-                    </MudItem>
-
-                    <MudItem xs="12" md="6">
-                        <MudSelect T="string"
-                                   Label="Tax Rate Type"
-                                   @bind-Value="record.TaxType"
-                                   Placeholder="Select Tax Type"
-                                   Variant="Variant.Outlined"
-                                   Clearable="@true"
-                                   FullWidth="@true"
-                                   ReadOnly="@isReadOnly"
-                                   Class="mb-3">
-                            <MudSelectItem Value="@("PERCENTAGE")">
-                                <MudIcon Icon="@Icons.Material.Filled.Percent" Size="Size.Small" Class="me-2" />
-                                Percentage
-                            </MudSelectItem>
-                            <MudSelectItem Value="@("FIXED")">
-                                <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Size="Size.Small" Class="me-2" />
-                                Fixed Amount
-                            </MudSelectItem>
-                        </MudSelect>
-                        <ValidationMessage For="@(() => record.TaxType)" />
-                    </MudItem>
-
-                    <MudItem xs="12" md="6">
-                        <MudSelect T="string"
-                                   Label="Tax Calculation Type"
-                                   @bind-Value="record.TaxBaseType"
-                                   Placeholder="Select Tax Base Type"
-                                   Variant="Variant.Outlined"
-                                   Clearable="@true"
-                                   FullWidth="@true"
-                                   ReadOnly="@isReadOnly"
-                                   Class="mb-3">
-                            <MudSelectItem Value="@("BASE_ONLY")">
-                                <MudIcon Icon="@Icons.Material.Filled.Calculate" Size="Size.Small" Class="me-2" />
-                                Base Amount Only
-                            </MudSelectItem>
-                            <MudSelectItem Value="@("BASE_PLUS_SELECTED")">
-                                <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Size="Size.Small" Class="me-2" />
-                                Base + Selected Taxes
-                            </MudSelectItem>
-                            <MudSelectItem Value="@("RUNNING_TOTAL")">
-                                <MudIcon Icon="@Icons.Material.Filled.ShowChart" Size="Size.Small" Class="me-2" />
-                                Running Total
-                            </MudSelectItem>
-                        </MudSelect>
-                        <ValidationMessage For="@(() => record.TaxBaseType)" />
-                    </MudItem>
-
-                    <MudItem xs="12" md="6">
-                        <MudNumericField T="double"
-                                         Label="Rate"
-                                         @bind-Value="record.Rate"
-                                         Variant="Variant.Outlined"
-                                         Placeholder="Rate"
-                                         ReadOnly="@isReadOnly"
-                                         Format="#,##0.00"
-                                         FullWidth="@true"
-                                         Class="mb-3" />
-                        <ValidationMessage For="@(() => record.Rate)" />
-                    </MudItem>
+                  
 
                     <MudItem xs="12" md="6">
                         <MudTextField Label="Description"
@@ -161,6 +104,39 @@
                                      Variant="Variant.Outlined"
                                      FullWidth="@true"
                                      Class="mb-3" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        @if (isReadOnly)
+                        {
+                            <MudTextField Label="Condition Type"
+                                         T="string"
+                                         Value="@(record.ConditionType ?? "No Condition")"
+                                         ReadOnly="@true"
+                                         Variant="Variant.Outlined"
+                                         FullWidth="@true"
+                                         Class="mb-3" />
+                        }
+                        else
+                        {
+                            <MudSelect T="string"
+                                       Label="Condition Type"
+                                       @bind-Value="record.ConditionType"
+                                       Placeholder="Select condition type"
+                                       Variant="Variant.Outlined"
+                                       Clearable="@true"
+                                       FullWidth="@true"
+                                       ReadOnly="@isReadOnly"
+                                       Class="mb-3">
+                                @foreach (var conditionType in ConditionTypes)
+                                {
+                                    <MudSelectItem Value="@conditionType.ListValue">
+                                        @conditionType.ListValue
+                                    </MudSelectItem>
+                                }
+                            </MudSelect>
+                        }
+                        <MudText Typo="Typo.caption" Class="text-muted">Select condition type if this tax requires specific checks (e.g., Filer and Register Check Applied)</MudText>
                     </MudItem>
 
                     <MudItem xs="12" md="6">
@@ -198,6 +174,7 @@
 {
     TaxMasterModel record = new();
     List<ChartOfAccountsModel> Acc = new();
+    List<TypeCodeModel> ConditionTypes = new();
 
     [Parameter] public string Action { get; set; } = "INSERT";
     [Parameter] public int CurrentRecord { get; set; } = 0;
@@ -220,7 +197,10 @@
     protected async Task GetAll()
     {
         LoadingPanel = true;
-        Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"Account/Search", true) ?? new List<ChartOfAccountsModel>();
+
+        string interfaceType = "InterfaceType='TAX'";
+        Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/{interfaceType.ToUpper()}", true) ?? new List<ChartOfAccountsModel>();
+        ConditionTypes = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/TAX CONDITION TYPE", true) ?? new List<TypeCodeModel>();
 
         if (Action == "INSERT")
         {

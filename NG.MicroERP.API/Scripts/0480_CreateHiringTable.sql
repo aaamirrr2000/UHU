@@ -29,13 +29,13 @@ CREATE TABLE Hiring
     UpdatedFrom         VARCHAR(255)     NULL DEFAULT NULL,
     IsSoftDeleted       SMALLINT         NOT NULL DEFAULT 0,
 
-    FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
-    FOREIGN KEY (DepartmentId)   REFERENCES Departments(Id),
-    FOREIGN KEY (DesignationId)  REFERENCES Designations(Id),
-    FOREIGN KEY (LocationId)     REFERENCES Locations(Id),
-    FOREIGN KEY (HiredEmployeeId) REFERENCES Employees(Id),
-    FOREIGN KEY (CreatedBy)      REFERENCES Users(Id),
-    FOREIGN KEY (UpdatedBy)      REFERENCES Users(Id)
+    CONSTRAINT FK_Hiring_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
+    CONSTRAINT FK_Hiring_Department FOREIGN KEY (DepartmentId) REFERENCES Departments(Id),
+    CONSTRAINT FK_Hiring_Designation FOREIGN KEY (DesignationId) REFERENCES Designations(Id),
+    CONSTRAINT FK_Hiring_Location FOREIGN KEY (LocationId) REFERENCES Locations(Id),
+    CONSTRAINT FK_Hiring_HiredEmployee FOREIGN KEY (HiredEmployeeId) REFERENCES Employees(Id),
+    CONSTRAINT FK_Hiring_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Hiring_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id)
 );
 GO
 

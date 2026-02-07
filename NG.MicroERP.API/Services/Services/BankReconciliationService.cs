@@ -130,7 +130,7 @@ public class BankReconciliationService : IBankReconciliationService
         try
         {
             string reconciliationNo = dapper.GetCode("BR", "BankReconciliation", "ReconciliationNo")!;
-            string SQLDuplicate = $@"SELECT * FROM BankReconciliation WHERE UPPER(ReconciliationNo) = '{reconciliationNo.ToUpper()}' AND OrganizationId = {obj.OrganizationId};";
+            string SQLDuplicate = $@"SELECT * FROM BankReconciliation WHERE UPPER(ReconciliationNo) = '{reconciliationNo.ToUpper()}' AND OrganizationId = {obj.OrganizationId} AND IsSoftDeleted = 0;";
             
             // Calculate difference
             obj.Difference = obj.StatementBalance - obj.BookBalance;

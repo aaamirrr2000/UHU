@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -165,7 +165,7 @@ public class ItemsService : IItemsService
             string taxRuleIdValue = (obj.TaxRuleId.HasValue && obj.TaxRuleId.Value > 0) ? obj.TaxRuleId.Value.ToString() : "NULL";
             string expenseAccountIdValue = (obj.ExpenseAccountId.HasValue && obj.ExpenseAccountId.Value > 0) ? obj.ExpenseAccountId.Value.ToString() : "NULL";
             string revenueAccountIdValue = (obj.RevenueAccountId.HasValue && obj.RevenueAccountId.Value > 0) ? obj.RevenueAccountId.Value.ToString() : "NULL";
-            string SQLDuplicate = $@"SELECT * FROM Items WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
+            string SQLDuplicate = $@"SELECT * FROM Items WHERE UPPER(code) = '{obj.Code!.ToUpper()}' AND IsSoftDeleted = 0;";
             string SQLInsert = $@"
                                 INSERT INTO Items 
                                 (
@@ -263,7 +263,7 @@ public class ItemsService : IItemsService
             string taxRuleIdValueUpdate = (obj.TaxRuleId.HasValue && obj.TaxRuleId.Value > 0) ? obj.TaxRuleId.Value.ToString() : "NULL";
             string expenseAccountIdValueUpdate = (obj.ExpenseAccountId.HasValue && obj.ExpenseAccountId.Value > 0) ? obj.ExpenseAccountId.Value.ToString() : "NULL";
             string revenueAccountIdValueUpdate = (obj.RevenueAccountId.HasValue && obj.RevenueAccountId.Value > 0) ? obj.RevenueAccountId.Value.ToString() : "NULL";
-            string SQLDuplicate = $@"SELECT * FROM Items WHERE UPPER(code) = '{obj.Code!.ToUpper()}' and ID != {obj.Id};";
+            string SQLDuplicate = $@"SELECT * FROM Items WHERE UPPER(code) = '{obj.Code!.ToUpper()}' AND ID != {obj.Id} AND IsSoftDeleted = 0;";
             string SQLUpdate = $@"
                     UPDATE Items SET 
                         OrganizationId = {obj.OrganizationId}, 

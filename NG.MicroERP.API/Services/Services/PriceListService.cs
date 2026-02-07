@@ -1,4 +1,4 @@
-﻿using NG.MicroERP.API.Helper;
+using NG.MicroERP.API.Helper;
 using NG.MicroERP.Shared.Models;
 
 namespace NG.MicroERP.API.Services.Services;
@@ -8,6 +8,7 @@ public interface IPriceListService
 {
     Task<(bool, List<PriceListModel>)>? Search(string Criteria = "");
     Task<(bool, PriceListModel?)>? Get(int id);
+    Task<(bool, PriceListModel?)>? GetByItemAndPriceList(int itemId, string priceListName, int organizationId = 1);
     Task<(bool, PriceListModel, string)> Post(PriceListModel obj);
     Task<(bool, PriceListModel, string)> Put(PriceListModel obj);
     Task<(bool, string)> Delete(int id);
@@ -44,6 +45,30 @@ public class PriceListService : IPriceListService
             return (false, null);
         else
             return (true, result);
+    }
+
+    public async Task<(bool, PriceListModel?)>? GetByItemAndPriceList(int itemId, string priceListName, int organizationId = 1)
+    {
+        string priceListNameEscaped = priceListName?.Replace("'", "''") ?? "";
+        string SQL = $@"SELECT a.*, b.Name as ItemName 
+                        FROM PriceList as a
+                        LEFT JOIN Items as b on b.Id=a.ItemId 
+                        WHERE a.ItemId = {itemId} 
+                        AND UPPER(a.PriceListName) = UPPER('{priceListNameEscaped}') 
+                        AND a.OrganizationId = {organizationId}
+                        AND a.IsSoftDeleted = 0
+                        AND a.IsActive = 1
+                        AND (a.ExpiryDate IS NULL OR a.ExpiryDate >= CAST(GETDATE() AS DATE))
+                        AND a.EffectiveDate <= CAST(GETDATE() AS DATE)
+                        ORDER BY a.MinQuantity ASC"; // Get the lowest quantity price first
+        
+        var result = await dapper.SearchByQuery<PriceListModel>(SQL);
+        var item = result?.FirstOrDefault(); // Get the first matching record (lowest MinQuantity)
+        
+        if (item == null || item.Id == 0)
+            return (false, null);
+        else
+            return (true, item);
     }
 
 

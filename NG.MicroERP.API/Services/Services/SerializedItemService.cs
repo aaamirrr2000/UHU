@@ -70,7 +70,7 @@ public class SerializedItemService : ISerializedItemService
     {
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM SerializedItems WHERE UPPER(SerialNumber) = '{obj.SerialNumber!.ToUpper()}' AND OrganizationId = {obj.OrganizationId};";
+            string SQLDuplicate = $@"SELECT * FROM SerializedItems WHERE UPPER(SerialNumber) = '{obj.SerialNumber!.ToUpper()}' AND OrganizationId = {obj.OrganizationId} AND IsSoftDeleted = 0;";
             
             string SQLInsert = $@"INSERT INTO SerializedItems 
 			(

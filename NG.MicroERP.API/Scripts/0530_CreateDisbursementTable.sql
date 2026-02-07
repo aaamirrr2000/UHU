@@ -32,14 +32,14 @@ CREATE TABLE Disbursement
     UpdatedFrom         VARCHAR(255)     NULL DEFAULT NULL,
     IsSoftDeleted       SMALLINT         NOT NULL DEFAULT 0,
 
-    FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
-    FOREIGN KEY (EmployeeId)     REFERENCES Employees(Id),
-    FOREIGN KEY (DepartmentId)   REFERENCES Departments(Id),
-    FOREIGN KEY (BankAccountId)  REFERENCES ChartOfAccounts(Id),
-    FOREIGN KEY (ApprovedBy)     REFERENCES Users(Id),
-    FOREIGN KEY (PaidBy)         REFERENCES Users(Id),
-    FOREIGN KEY (CreatedBy)      REFERENCES Users(Id),
-    FOREIGN KEY (UpdatedBy)      REFERENCES Users(Id)
+    CONSTRAINT FK_Disbursement_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
+    CONSTRAINT FK_Disbursement_Employee FOREIGN KEY (EmployeeId) REFERENCES Employees(Id),
+    CONSTRAINT FK_Disbursement_Department FOREIGN KEY (DepartmentId) REFERENCES Departments(Id),
+    CONSTRAINT FK_Disbursement_BankAccount FOREIGN KEY (BankAccountId) REFERENCES ChartOfAccounts(Id),
+    CONSTRAINT FK_Disbursement_ApprovedBy FOREIGN KEY (ApprovedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Disbursement_PaidBy FOREIGN KEY (PaidBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Disbursement_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_Disbursement_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id)
 );
 GO
 

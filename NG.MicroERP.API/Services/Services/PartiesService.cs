@@ -63,7 +63,7 @@ public class PartiesService : IPartiesService
         try
         {
             string Code = dapper.GetCode("", "Parties", "Code")!;
-            string SQLDuplicate = $@"SELECT * FROM Parties WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
+            string SQLDuplicate = $@"SELECT * FROM Parties WHERE UPPER(code) = '{obj.Code!.ToUpper()}' AND IsSoftDeleted = 0;";
             // Convert 0 to NULL for nullable foreign key fields to avoid FK constraint violations
             string parentIdValue = obj.ParentId > 0 ? obj.ParentId.ToString() : "NULL";
             string salesPersonIdValue = obj.SalesPersonId > 0 ? obj.SalesPersonId.ToString() : "NULL";
@@ -162,7 +162,7 @@ public class PartiesService : IPartiesService
             string accountIdValue = obj.AccountId > 0 ? obj.AccountId.ToString() : "NULL";
             string cityIdValue = obj.CityId > 0 ? obj.CityId.ToString() : "NULL";
             
-            string SQLDuplicate = $@"SELECT * FROM Parties WHERE UPPER(code) = '{obj.Code!.ToUpper()}' and Id != {obj.Id};";
+            string SQLDuplicate = $@"SELECT * FROM Parties WHERE UPPER(code) = '{obj.Code!.ToUpper()}' AND Id != {obj.Id} AND IsSoftDeleted = 0;";
             string SQLUpdate = $@"UPDATE Parties SET 
 					OrganizationId = {obj.OrganizationId}, 
 					Code = '{obj.Code?.ToUpper().Replace("'", "''") ?? ""}', 

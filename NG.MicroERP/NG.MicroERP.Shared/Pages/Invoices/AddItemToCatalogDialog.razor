@@ -1,5 +1,6 @@
 @using NG.MicroERP.Shared.Models
 @using MudBlazor
+@inject Functions Functions
 
 <MudDialog>
     <DialogContent>
@@ -134,7 +135,7 @@
 
     public ItemsModel NewItem { get; set; } = new ItemsModel();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         NewItem.Name = ItemName;
         NewItem.BasePrice = UnitPrice;
@@ -144,6 +145,64 @@
         NewItem.CreatedFrom = CreatedFrom;
         NewItem.IsActive = 1;
         NewItem.StockType = "ITEM";
+
+        // Set default Revenue and Expense Account IDs from Chart of Accounts
+        // Priority: 'ITEM REVENUE' / 'ITEM EXPENSE' -> 'MANUAL ITEM REVENUE' / 'MANUAL ITEM EXPENSE'
+        try
+        {
+            // Get default Revenue Account (for SALE invoices)
+            // First try 'ITEM REVENUE', then fallback to 'MANUAL ITEM REVENUE'
+            if (!NewItem.RevenueAccountId.HasValue || NewItem.RevenueAccountId.Value == 0)
+            {
+                var revenueAccounts = await Functions.GetAsync<List<ChartOfAccountsModel>>(
+                    $"ChartOfAccounts/Search/InterfaceType='ITEM REVENUE'", true) ?? new List<ChartOfAccountsModel>();
+                
+                var revenueAccount = revenueAccounts?.FirstOrDefault(a => a.OrganizationId == OrganizationId && a.IsActive == 1);
+                
+                // Fallback to 'MANUAL ITEM REVENUE' if 'ITEM REVENUE' not found
+                if (revenueAccount == null || revenueAccount.Id == 0)
+                {
+                    revenueAccounts = await Functions.GetAsync<List<ChartOfAccountsModel>>(
+                        $"ChartOfAccounts/Search/InterfaceType='MANUAL ITEM REVENUE'", true) ?? new List<ChartOfAccountsModel>();
+                    revenueAccount = revenueAccounts?.FirstOrDefault(a => a.OrganizationId == OrganizationId && a.IsActive == 1);
+                }
+                
+                if (revenueAccount != null && revenueAccount.Id > 0)
+                {
+                    NewItem.RevenueAccountId = revenueAccount.Id;
+                }
+            }
+
+            // Get default Expense Account (for PURCHASE invoices)
+            // First try 'ITEM EXPENSE', then fallback to 'MANUAL ITEM EXPENSE'
+            if (!NewItem.ExpenseAccountId.HasValue || NewItem.ExpenseAccountId.Value == 0)
+            {
+                var expenseAccounts = await Functions.GetAsync<List<ChartOfAccountsModel>>(
+                    $"ChartOfAccounts/Search/InterfaceType='ITEM EXPENSE'", true) ?? new List<ChartOfAccountsModel>();
+                
+                var expenseAccount = expenseAccounts?.FirstOrDefault(a => a.OrganizationId == OrganizationId && a.IsActive == 1);
+                
+                // Fallback to 'MANUAL ITEM EXPENSE' if 'ITEM EXPENSE' not found
+                if (expenseAccount == null || expenseAccount.Id == 0)
+                {
+                    expenseAccounts = await Functions.GetAsync<List<ChartOfAccountsModel>>(
+                        $"ChartOfAccounts/Search/InterfaceType='MANUAL ITEM EXPENSE'", true) ?? new List<ChartOfAccountsModel>();
+                    expenseAccount = expenseAccounts?.FirstOrDefault(a => a.OrganizationId == OrganizationId && a.IsActive == 1);
+                }
+                
+                if (expenseAccount != null && expenseAccount.Id > 0)
+                {
+                    NewItem.ExpenseAccountId = expenseAccount.Id;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // If account lookup fails, continue without setting defaults
+            // The item will still be created, but account IDs will remain null
+            // and will fall back to invoice-level or InterfaceType lookup during GL posting
+            Console.WriteLine($"AddItemToCatalogDialog: Error fetching default accounts: {ex.Message}");
+        }
     }
 
     private void Cancel() => MudDialog.Cancel();

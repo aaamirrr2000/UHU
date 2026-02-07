@@ -23,12 +23,12 @@ CREATE TABLE PhysicalCashCount
     UpdatedFrom         VARCHAR(255)    NULL DEFAULT NULL,
     IsSoftDeleted       SMALLINT         NOT NULL DEFAULT 0,
 
-    FOREIGN KEY (OrganizationId)   REFERENCES Organizations(Id),
-    FOREIGN KEY (LocationId)      REFERENCES Locations(Id),
-    FOREIGN KEY (CountedBy)       REFERENCES Users(Id),
-    FOREIGN KEY (VerifiedBy)      REFERENCES Users(Id),
-    FOREIGN KEY (CreatedBy)       REFERENCES Users(Id),
-    FOREIGN KEY (UpdatedBy)       REFERENCES Users(Id)
+    CONSTRAINT FK_PhysicalCashCount_Organization FOREIGN KEY (OrganizationId) REFERENCES Organizations(Id),
+    CONSTRAINT FK_PhysicalCashCount_Location FOREIGN KEY (LocationId) REFERENCES Locations(Id),
+    CONSTRAINT FK_PhysicalCashCount_CountedBy FOREIGN KEY (CountedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_PhysicalCashCount_VerifiedBy FOREIGN KEY (VerifiedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_PhysicalCashCount_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+    CONSTRAINT FK_PhysicalCashCount_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id)
 );
 
 CREATE INDEX IX_PhysicalCashCount_OrganizationId ON PhysicalCashCount(OrganizationId);

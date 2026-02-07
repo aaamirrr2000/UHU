@@ -1,4 +1,4 @@
-﻿CREATE TABLE PartyDocuments
+CREATE TABLE PartyDocuments
 (
 	Id					INT PRIMARY KEY IDENTITY(1,1),
 	Guid				UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
@@ -15,9 +15,9 @@
 	UpdatedFrom         VARCHAR(255)		NULL DEFAULT NULL,
 	IsSoftDeleted       SMALLINT			NOT NULL DEFAULT 0,
 	RowVersion          ROWVERSION,
-	FOREIGN KEY (PartyId) REFERENCES Parties(Id),
-	FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
-	FOREIGN KEY (UpdatedBy) REFERENCES Users(Id)
+	CONSTRAINT FK_PartyDocuments_Party FOREIGN KEY (PartyId) REFERENCES Parties(Id),
+	CONSTRAINT FK_PartyDocuments_CreatedBy FOREIGN KEY (CreatedBy) REFERENCES Users(Id),
+	CONSTRAINT FK_PartyDocuments_UpdatedBy FOREIGN KEY (UpdatedBy) REFERENCES Users(Id)
 );
 
 INSERT INTO PartyDocuments (PartyId, DocumentType, DocumentNumber)

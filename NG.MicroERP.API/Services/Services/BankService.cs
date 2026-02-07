@@ -1,4 +1,4 @@
-﻿using NG.MicroERP.API.Helper;
+using NG.MicroERP.API.Helper;
 using NG.MicroERP.Shared.Models;
 
 namespace NG.MicroERP.API.Services.Services;
@@ -60,7 +60,7 @@ public class BankService : IBankService
         {
 
             string Code = dapper.GetCode("", "Bank", "Code", 3)!;
-            string SQLDuplicate = $@"SELECT * FROM Bank WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
+            string SQLDuplicate = $@"SELECT * FROM Bank WHERE UPPER(code) = '{obj.Code!.ToUpper()}' AND IsSoftDeleted = 0;";
             string SQLInsert = $@"INSERT INTO Bank 
 			(
 				OrganizationId, 
@@ -128,7 +128,7 @@ public class BankService : IBankService
     {
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM Bank WHERE UPPER(code) = '{obj.Code!.ToUpper()}' and Id != {obj.Id};";
+            string SQLDuplicate = $@"SELECT * FROM Bank WHERE UPPER(code) = '{obj.Code!.ToUpper()}' AND Id != {obj.Id} AND IsSoftDeleted = 0;";
             string SQLUpdate = $@"UPDATE Bank SET 
 					OrganizationId = {obj.OrganizationId}, 
 					Code = '{obj.Code!.ToUpper()}', 

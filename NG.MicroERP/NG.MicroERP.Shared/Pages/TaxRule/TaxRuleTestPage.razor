@@ -1,0 +1,626 @@
+@page "/TaxRuleTestPage"
+@page "/TaxRuleTestPage/{TaxRuleId:int}"
+
+@using Microsoft.AspNetCore.WebUtilities
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-2">
+    <!-- Input Fields in Single Row -->
+    <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px;">
+        <MudGrid Spacing="2" AlignItems="Center">
+            <!-- Price Type Selection -->
+            <MudItem xs="12" sm="3">
+                <MudSelect T="string"
+                           Label="Price Type"
+                           Value="priceType"
+                           ValueChanged="OnPriceTypeChanged"
+                           Variant="Variant.Outlined"
+                           FullWidth="true">
+                    <MudSelectItem Value=@("BASE")>Base Price</MudSelectItem>
+                    <MudSelectItem Value=@("RETAIL")>Retail Price</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+
+            <!-- Sample Amount -->
+            <MudItem xs="12" sm="3">
+                <MudNumericField @bind-Value="sampleAmount" 
+                                 Label="@(priceType == "BASE" ? "Base Amount" : "Retail Amount")" 
+                                 Variant="Variant.Outlined" 
+                                 Format="N2"
+                                 FullWidth="true" />
+            </MudItem>
+
+            <!-- Is Registered -->
+            <MudItem xs="12" sm="3">
+                <MudSelect T="int?"
+                           Label="Is Registered"
+                           @bind-Value="testIsRegistered"
+                           Placeholder="Select condition"
+                           Variant="Variant.Outlined"
+                           Clearable="@true"
+                           FullWidth="@true">
+                    <MudSelectItem T="int?" Value="@((int?)1)">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                        Yes (Registered)
+                    </MudSelectItem>
+                    <MudSelectItem T="int?" Value="@((int?)0)">
+                        <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" Class="me-2" />
+                        No (Unregistered)
+                    </MudSelectItem>
+                    <MudSelectItem T="int?" Value="@((int?)null)">
+                        <MudIcon Icon="@Icons.Material.Filled.Remove" Color="Color.Info" Size="Size.Small" Class="me-2" />
+                        Not Applicable
+                    </MudSelectItem>
+                </MudSelect>
+            </MudItem>
+
+            <!-- Is Filer -->
+            <MudItem xs="12" sm="3">
+                <MudSelect T="int?"
+                           Label="Is Filer"
+                           @bind-Value="testIsFiler"
+                           Placeholder="Select condition"
+                           Variant="Variant.Outlined"
+                           Clearable="@true"
+                           FullWidth="@true">
+                    <MudSelectItem T="int?" Value="@((int?)1)">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                        Yes (Filer)
+                    </MudSelectItem>
+                    <MudSelectItem T="int?" Value="@((int?)0)">
+                        <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" Class="me-2" />
+                        No (Non-Filer)
+                    </MudSelectItem>
+                    <MudSelectItem T="int?" Value="@((int?)null)">
+                        <MudIcon Icon="@Icons.Material.Filled.Remove" Color="Color.Info" Size="Size.Small" Class="me-2" />
+                        Not Applicable
+                    </MudSelectItem>
+                </MudSelect>
+            </MudItem>
+
+            <!-- Calculate Button -->
+            <MudItem xs="12" sm="3">
+                <MudButton OnClick="CalculateTaxes" 
+                           Color="Color.Primary" 
+                           Variant="Variant.Filled"
+                           StartIcon="@Icons.Material.Filled.Calculate"
+                           Size="Size.Medium"
+                           FullWidth="@true"
+                           Disabled="@(selectedTaxRuleId == null || selectedTaxRuleId == 0)"
+                           Style="height: 56px;">
+                    Calculate Taxes
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <!-- Results Section -->
+    @if (calculationResults != null && calculationResults.Any())
+    {
+        <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px;">
+            <div class="d-flex align-items-center mb-3">
+                <MudIcon Icon="@Icons.Material.Filled.Receipt" 
+                         Size="Size.Large" 
+                         Color="Color.Success" 
+                         Class="me-3" />
+                <div>
+                    <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Calculation Results</MudText>
+                    <MudText Typo="Typo.caption" Class="text-muted">Tax breakdown for the selected rule</MudText>
+                </div>
+            </div>
+            <hr style="height: 3px; border: none; background: linear-gradient(90deg, var(--mud-palette-success) 0%, var(--mud-palette-success-lighten) 100%); border-radius: 10px; margin: 0 0 24px 0;" />
+
+            <!-- Summary Card -->
+            <MudGrid Class="mb-4">
+                @if (priceType == "BASE")
+                {
+                    <MudItem xs="12" md="4">
+                        <MudCard Elevation="1" Class="pa-3 text-center">
+                            <MudText Typo="Typo.h6" Class="text-muted mb-2">Base Amount</MudText>
+                            <MudText Typo="Typo.h4" Class="fw-bold" Style="color: var(--mud-palette-primary);">
+                                @sampleAmount.ToString("N2")
+                            </MudText>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudCard Elevation="1" Class="pa-3 text-center">
+                            <MudText Typo="Typo.h6" Class="text-muted mb-2">Total Tax</MudText>
+                            <MudText Typo="Typo.h4" Class="fw-bold" Style="color: var(--mud-palette-error);">
+                                @totalTaxAmount.ToString("N2")
+                            </MudText>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudCard Elevation="1" Class="pa-3 text-center">
+                            <MudText Typo="Typo.h6" Class="text-muted mb-2">Final Amount (Retail)</MudText>
+                            <MudText Typo="Typo.h4" Class="fw-bold" Style="color: var(--mud-palette-success);">
+                                @finalAmount.ToString("N2")
+                            </MudText>
+                        </MudCard>
+                    </MudItem>
+                }
+                else
+                {
+                    <MudItem xs="12" md="4">
+                        <MudCard Elevation="1" Class="pa-3 text-center">
+                            <MudText Typo="Typo.h6" Class="text-muted mb-2">Retail Amount</MudText>
+                            <MudText Typo="Typo.h4" Class="fw-bold" Style="color: var(--mud-palette-success);">
+                                @sampleAmount.ToString("N2")
+                            </MudText>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudCard Elevation="1" Class="pa-3 text-center">
+                            <MudText Typo="Typo.h6" Class="text-muted mb-2">Total Tax</MudText>
+                            <MudText Typo="Typo.h4" Class="fw-bold" Style="color: var(--mud-palette-error);">
+                                @totalTaxAmount.ToString("N2")
+                            </MudText>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudCard Elevation="1" Class="pa-3 text-center">
+                            <MudText Typo="Typo.h6" Class="text-muted mb-2">Base Amount</MudText>
+                            <MudText Typo="Typo.h4" Class="fw-bold" Style="color: var(--mud-palette-primary);">
+                                @baseAmount.ToString("N2")
+                            </MudText>
+                        </MudCard>
+                    </MudItem>
+                }
+            </MudGrid>
+
+            <!-- Tax Details Grid -->
+            <MudDataGrid T="TaxCalculationResultModel" 
+                        Items="@(priceType == "BASE" ? calculationResults.OrderBy(x => x.SequenceNo) : calculationResults.OrderByDescending(x => x.SequenceNo))" 
+                        SortMode="SortMode.Multiple" 
+                        Filterable="false" 
+                        Hideable="false" 
+                        Dense="@true"
+                        Hover="true">
+                <Columns>
+                    <PropertyColumn Property="x => x.SequenceNo" Title="Seq" Sortable="true" Format="#,##0" CellStyle="text-align: right;" />
+                    <PropertyColumn Property="x => x.TaxName" Title="Tax Name" Sortable="true" />
+                    <TemplateColumn Title="Tax Type" Sortable="true">
+                        <CellTemplate Context="row">
+                            <MudChip T="string" 
+                                     Variant="Variant.Outlined"
+                                     Color="@(row.Item.TaxType == "PERCENTAGE" ? Color.Primary : Color.Success)"
+                                     Size="Size.Small">
+                                @row.Item.TaxType
+                            </MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Rate/Amount" Sortable="true" CellStyle="text-align: right;">
+                        <CellTemplate Context="row">
+                            @if (row.Item.TaxType == "PERCENTAGE")
+                            {
+                                <MudText>@($"{row.Item.TaxRate:N2}%")</MudText>
+                            }
+                            else
+                            {
+                                <MudText>@($"{row.Item.TaxRate:N2}")</MudText>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.TaxableAmount" Title="@(priceType == "BASE" ? "Taxable Amount" : "Taxable Amount (Reverse)")" Sortable="true" Format="N2" CellStyle="text-align: right;" />
+                    <PropertyColumn Property="x => x.TaxAmount" Title="Tax Amount" Sortable="true" Format="N2" CellStyle="text-align: right; font-weight: bold; color: var(--mud-palette-error);" />
+                    <TemplateColumn Title="Conditions" Sortable="false" CellStyle="text-align: center;">
+                        <CellTemplate Context="row">
+                            @if (row.Item.IsConditional == 1)
+                            {
+                                <div style="display: flex; gap: 4px; justify-content: center; flex-wrap: wrap;">
+                                    @if (row.Item.IsRegistered.HasValue)
+                                    {
+                                        <MudChip Color="@(row.Item.IsRegistered.Value == 1 ? Color.Success : Color.Error)" 
+                                                 Size="Size.Small" 
+                                                 Variant="Variant.Filled">
+                                            Reg: @(row.Item.IsRegistered.Value == 1 ? "Yes" : "No")
+                                        </MudChip>
+                                    }
+                                    @if (row.Item.IsFiler.HasValue)
+                                    {
+                                        <MudChip Color="@(row.Item.IsFiler.Value == 1 ? Color.Success : Color.Error)" 
+                                                 Size="Size.Small" 
+                                                 Variant="Variant.Filled">
+                                            Filer: @(row.Item.IsFiler.Value == 1 ? "Yes" : "No")
+                                        </MudChip>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <MudChip Color="Color.Info" Size="Size.Small" Variant="Variant.Outlined">
+                                    N/A
+                                </MudChip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        </MudPaper>
+    }
+    else if (hasCalculated && (calculationResults == null || !calculationResults.Any()))
+    {
+        <MudAlert Severity="Severity.Info" Class="mt-3">
+            No taxes found for the selected criteria. Please check:
+            <ul class="mb-0 mt-2">
+                <li>The tax rule is active and effective</li>
+                <li>The IsRegistered and IsFiler conditions match the tax rule details</li>
+                <li>The tax rule has tax details configured</li>
+            </ul>
+        </MudAlert>
+    }
+</MudContainer>
+
+@code
+{
+    [Parameter]
+    public int TaxRuleId { get; set; }
+
+    private List<TaxRuleModel> TaxRules = new();
+    private List<TaxRuleDetailModel> TaxRuleDetails = new();
+    private List<TaxCalculationResultModel> calculationResults = new();
+    
+    private int? selectedTaxRuleId = null;
+    private string priceType = "BASE"; // BASE or RETAIL
+    
+    // Get selected tax rule name for display
+    private string SelectedTaxRuleName => TaxRules.FirstOrDefault(x => x.Id == selectedTaxRuleId)?.RuleName ?? "Unknown";
+    private decimal sampleAmount = 1000m;
+    private int? testIsRegistered = null;
+    private int? testIsFiler = null;
+    
+    private bool LoadingPanel { get; set; } = false;
+    private bool hasCalculated = false;
+    
+    private decimal totalTaxAmount => (decimal)(calculationResults?.Sum(r => r.TaxAmount) ?? 0.0);
+    private decimal finalAmount => priceType == "BASE" ? sampleAmount + totalTaxAmount : sampleAmount;
+    private decimal baseAmount => priceType == "RETAIL" ? CalculateBaseFromRetail() : sampleAmount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "TaxRuleDashboard");
+        await LoadTaxRules();
+        
+        // Auto-select tax rule if TaxRuleId is provided
+        if (TaxRuleId > 0)
+        {
+            selectedTaxRuleId = TaxRuleId;
+        }
+        
+        // Also check query string parameter
+        var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("taxRuleId", out var taxRuleIdParam))
+        {
+            if (int.TryParse(taxRuleIdParam, out int taxRuleId) && taxRuleId > 0)
+            {
+                selectedTaxRuleId = taxRuleId;
+            }
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // When this component is used inside a dialog, TaxRuleId can change without re-initializing.
+        // Keep the selected rule in sync with the latest parameter and auto-select it.
+        if (TaxRuleId > 0 && selectedTaxRuleId != TaxRuleId)
+        {
+            selectedTaxRuleId = TaxRuleId;
+            calculationResults = new();
+            hasCalculated = false;
+            
+            // Ensure tax rules are loaded before setting selection
+            if (!TaxRules.Any())
+            {
+                await LoadTaxRules();
+            }
+        }
+        
+        // Auto-select if TaxRuleId is provided but not yet selected
+        if (TaxRuleId > 0 && (selectedTaxRuleId == null || selectedTaxRuleId == 0))
+        {
+            selectedTaxRuleId = TaxRuleId;
+        }
+    }
+
+    private async Task LoadTaxRules()
+    {
+        LoadingPanel = true;
+        try
+        {
+            TaxRules = await Functions.GetAsync<List<TaxRuleModel>>($"TaxRule/Search/IsActive=1", true) ?? new List<TaxRuleModel>();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading tax rules: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+
+    private async Task CalculateTaxes()
+    {
+        if (selectedTaxRuleId == null || selectedTaxRuleId == 0)
+        {
+            SnackbarService.Add("Please select a tax rule", Severity.Warning);
+            return;
+        }
+
+        if (sampleAmount <= 0)
+        {
+            SnackbarService.Add("Sample amount must be greater than 0", Severity.Warning);
+            return;
+        }
+
+        LoadingPanel = true;
+        hasCalculated = false;
+        calculationResults = new();
+        
+        try
+        {
+            // Load tax rule details
+            TaxRuleDetails = await Functions.GetAsync<List<TaxRuleDetailModel>>(
+                $"TaxRuleDetail/Search/a.TaxRuleId={selectedTaxRuleId}", true) 
+                ?? new List<TaxRuleDetailModel>();
+
+            if (TaxRuleDetails == null || !TaxRuleDetails.Any())
+            {
+                SnackbarService.Add("No tax details found for the selected rule", Severity.Warning);
+                return;
+            }
+
+            // Filter tax details based on conditions
+            var applicableTaxes = TaxRuleDetails
+                .Where(trd => 
+                    // Check if tax is conditional (has ConditionType text) and if conditions match
+                    (string.IsNullOrWhiteSpace(trd.ConditionType) || 
+                     (!string.IsNullOrWhiteSpace(trd.ConditionType) && 
+                      (trd.IsRegistered == null || trd.IsRegistered == testIsRegistered) &&
+                      (trd.IsFiler == null || trd.IsFiler == testIsFiler)))
+                )
+                .OrderBy(trd => trd.SequenceNo)
+                .ToList();
+
+            if (!applicableTaxes.Any())
+            {
+                SnackbarService.Add("No taxes match the selected conditions (IsRegistered/IsFiler)", Severity.Warning);
+                return;
+            }
+
+            if (priceType == "BASE")
+            {
+                // Forward calculation: Base -> Taxes -> Final
+                await CalculateForwardTaxes(applicableTaxes);
+            }
+            else
+            {
+                // Reverse calculation: Retail -> Taxes (reverse) -> Base
+                await CalculateReverseTaxes(applicableTaxes);
+            }
+
+            hasCalculated = true;
+            SnackbarService.Add($"Calculated {calculationResults.Count} tax(es)", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error calculating taxes: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CalculateForwardTaxes(List<TaxRuleDetailModel> applicableTaxes)
+    {
+        decimal runningTotal = sampleAmount; // Running total: base + all previous taxes
+        decimal basePlusSelectedTotal = sampleAmount; // Base + all BASE_ONLY and BASE_PLUS_SELECTED taxes
+        calculationResults = new List<TaxCalculationResultModel>();
+
+        foreach (var taxDetail in applicableTaxes)
+        {
+            var effectiveTaxType = !string.IsNullOrEmpty(taxDetail.TaxType) 
+                ? taxDetail.TaxType 
+                : "FLAT";
+            
+            var effectiveRate = taxDetail.TaxAmount ?? 0m;
+
+            // Determine taxable amount based on TaxBaseType
+            decimal taxableAmount;
+            
+            if (taxDetail.TaxBaseType == "BASE_ONLY")
+            {
+                taxableAmount = sampleAmount;
+            }
+            else if (taxDetail.TaxBaseType == "BASE_PLUS_SELECTED")
+            {
+                taxableAmount = basePlusSelectedTotal;
+            }
+            else if (taxDetail.TaxBaseType == "RUNNING_TOTAL")
+            {
+                taxableAmount = runningTotal;
+            }
+            else
+            {
+                taxableAmount = sampleAmount;
+            }
+
+            // Calculate tax amount
+            decimal taxAmount = 0m;
+            if (effectiveTaxType == "PERCENTAGE")
+            {
+                taxAmount = taxableAmount * effectiveRate / 100m;
+            }
+            else if (effectiveTaxType == "FLAT")
+            {
+                taxAmount = effectiveRate;
+            }
+
+            // Update running total (base + all taxes calculated so far)
+            runningTotal += taxAmount;
+            
+            // Update basePlusSelectedTotal (base + BASE_ONLY and BASE_PLUS_SELECTED taxes only)
+            if (taxDetail.TaxBaseType == "BASE_ONLY" || taxDetail.TaxBaseType == "BASE_PLUS_SELECTED")
+            {
+                basePlusSelectedTotal += taxAmount;
+            }
+
+            calculationResults.Add(new TaxCalculationResultModel
+            {
+                SequenceNo = taxDetail.SequenceNo,
+                TaxName = taxDetail.TaxName ?? "Unknown",
+                TaxType = effectiveTaxType,
+                TaxRate = (double)effectiveRate,
+                TaxableAmount = (double)taxableAmount,
+                TaxAmount = (double)taxAmount,
+                IsConditional = !string.IsNullOrWhiteSpace(taxDetail.ConditionType) ? 1 : 0,
+                IsRegistered = taxDetail.IsRegistered,
+                IsFiler = taxDetail.IsFiler
+            });
+        }
+    }
+
+    private async Task CalculateReverseTaxes(List<TaxRuleDetailModel> applicableTaxes)
+    {
+        // For reverse calculation, we need to work backwards from retail price
+        // We'll use an iterative approach to find the base amount
+        
+        decimal retailAmount = sampleAmount;
+        calculationResults = new List<TaxCalculationResultModel>();
+
+        // First, do a forward calculation with an estimated base to understand the tax structure
+        // Then use that to reverse calculate
+        
+        // Use binary search or iterative method to find base that produces the retail amount
+        decimal estimatedBase = retailAmount * 0.5m; // Start with 50% of retail as estimate
+        decimal tolerance = 0.01m;
+        int maxIterations = 100;
+        int iteration = 0;
+        
+        while (iteration < maxIterations)
+        {
+            // Calculate forward with estimated base
+            decimal runningTotal = estimatedBase;
+            decimal basePlusSelectedTotal = estimatedBase;
+            decimal totalCalculatedTax = 0m;
+            var tempResults = new List<(TaxRuleDetailModel detail, decimal taxAmount, decimal taxableAmount)>();
+
+            foreach (var taxDetail in applicableTaxes)
+            {
+                var effectiveTaxType = !string.IsNullOrEmpty(taxDetail.TaxType) ? taxDetail.TaxType : "FLAT";
+                var effectiveRate = taxDetail.TaxAmount ?? 0m;
+
+                decimal taxableAmount;
+                if (taxDetail.TaxBaseType == "BASE_ONLY")
+                {
+                    taxableAmount = estimatedBase;
+                }
+                else if (taxDetail.TaxBaseType == "BASE_PLUS_SELECTED")
+                {
+                    taxableAmount = basePlusSelectedTotal;
+                }
+                else if (taxDetail.TaxBaseType == "RUNNING_TOTAL")
+                {
+                    taxableAmount = runningTotal;
+                }
+                else
+                {
+                    taxableAmount = estimatedBase;
+                }
+
+                decimal taxAmount = 0m;
+                if (effectiveTaxType == "PERCENTAGE")
+                {
+                    taxAmount = taxableAmount * effectiveRate / 100m;
+                }
+                else if (effectiveTaxType == "FLAT")
+                {
+                    taxAmount = effectiveRate;
+                }
+
+                totalCalculatedTax += taxAmount;
+                runningTotal += taxAmount;
+                
+                if (taxDetail.TaxBaseType == "BASE_ONLY" || taxDetail.TaxBaseType == "BASE_PLUS_SELECTED")
+                {
+                    basePlusSelectedTotal += taxAmount;
+                }
+
+                tempResults.Add((taxDetail, taxAmount, taxableAmount));
+            }
+
+            decimal calculatedRetail = estimatedBase + totalCalculatedTax;
+            decimal difference = retailAmount - calculatedRetail;
+
+            if (Math.Abs(difference) < tolerance)
+            {
+                // Found the base! Now create results in reverse order
+                foreach (var (detail, taxAmount, taxableAmount) in tempResults.OrderByDescending(x => x.detail.SequenceNo))
+                {
+                    var effectiveTaxType = !string.IsNullOrEmpty(detail.TaxType) ? detail.TaxType : "FLAT";
+                    var effectiveRate = detail.TaxAmount ?? 0m;
+
+                    calculationResults.Add(new TaxCalculationResultModel
+                    {
+                        SequenceNo = detail.SequenceNo,
+                        TaxName = detail.TaxName ?? "Unknown",
+                        TaxType = effectiveTaxType,
+                        TaxRate = (double)effectiveRate,
+                        TaxableAmount = (double)taxableAmount,
+                        TaxAmount = (double)taxAmount,
+                        IsConditional = !string.IsNullOrWhiteSpace(detail.ConditionType) ? 1 : 0,
+                        IsRegistered = detail.IsRegistered,
+                        IsFiler = detail.IsFiler
+                    });
+                }
+                break;
+            }
+
+            // Adjust estimated base
+            if (calculatedRetail < retailAmount)
+            {
+                estimatedBase += difference * 0.5m; // Increase base
+            }
+            else
+            {
+                estimatedBase += difference * 0.5m; // Decrease base
+            }
+
+            iteration++;
+        }
+    }
+
+    private decimal CalculateBaseFromRetail()
+    {
+        if (calculationResults == null || !calculationResults.Any())
+            return sampleAmount;
+
+        // Sum all taxes and subtract from retail to get base
+        decimal totalTax = (decimal)calculationResults.Sum(r => r.TaxAmount);
+        return sampleAmount - totalTax;
+    }
+
+    private async Task OnPriceTypeChanged(string? newPriceType)
+    {
+        if (!string.IsNullOrEmpty(newPriceType))
+        {
+            priceType = newPriceType;
+            // Recalculate if we already have results
+            if (hasCalculated && selectedTaxRuleId.HasValue && selectedTaxRuleId.Value > 0)
+            {
+                await CalculateTaxes();
+            }
+        }
+    }
+}

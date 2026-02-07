@@ -109,7 +109,7 @@ public class StockMovementService : IStockMovementService
 
             // Generate document number based on document type
             string movementNo = dapper.GetCode(docPrefix, "StockMovements", "MovementNo")!;
-            string SQLDuplicate = $@"SELECT * FROM StockMovements WHERE UPPER(MovementNo) = '{movementNo.ToUpper()}' AND OrganizationId = {obj.OrganizationId};";
+            string SQLDuplicate = $@"SELECT * FROM StockMovements WHERE UPPER(MovementNo) = '{movementNo.ToUpper()}' AND OrganizationId = {obj.OrganizationId} AND IsSoftDeleted = 0;";
             
             // Insert Header
             string SQLInsertHeader = $@"INSERT INTO StockMovements 

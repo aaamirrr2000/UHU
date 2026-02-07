@@ -1,5 +1,5 @@
-﻿<div id="modal" class="modal" style="@((Visible ? "display:flex;" : "display:none;"))">
-    <div class="modal-content" style="width:@Width; height:@Height;">
+<div id="modal" class="modal" style="@((Visible ? "display:flex;" : "display:none;"))">
+    <div id="@_contentId" class="modal-content modal-content-draggable" style="width:@Width; height:@Height;">
         <div class="modal-title">
             <span>@Title</span>
             <span class="close" @onclick="Hide">&times;</span>
@@ -32,14 +32,14 @@
     [Parameter] public RenderFragment? FooterContent { get; set; }
 
     public bool Visible = false;
+    private string _contentId = "my-model-dialog-" + Guid.NewGuid().ToString("N")[..8];
+    private bool _draggableInitialized;
 
-    protected override async Task OnInitializedAsync()
-    {
-        //await UpdateModalSize();
-    }
+    [Inject] private IJSRuntime? JSRuntime { get; set; }
+
     protected override async Task OnParametersSetAsync()
     {
-        //await UpdateModalSize();
+        // no-op
     }
 
     public void Hide()
@@ -48,10 +48,27 @@
         StateHasChanged();
     }
 
-    public void Show()
+    public async void Show()
     {
         Visible = true;
+        _draggableInitialized = false;
         StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Visible && JSRuntime != null && !_draggableInitialized)
+        {
+            _draggableInitialized = true;
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("makeModalDraggable", _contentId);
+            }
+            catch
+            {
+                // JS may not be available (e.g. prerender or different host)
+            }
+        }
     }
 }
 

@@ -30,7 +30,7 @@ public class InvoiceController : ControllerBase
         return Ok(result.Item2);
     }
 
-    [HttpGet("Get")]
+    [HttpGet("Get/{id}")]
     public async Task<IActionResult> Get(int id)
     {
         var result = await Srv.Get(id)!;
@@ -38,7 +38,18 @@ public class InvoiceController : ControllerBase
             return NotFound("Record Not Found");
 
         return Ok(result.Item2);
+    }
 
+    [HttpGet("Get")]
+    public async Task<IActionResult> GetByQuery([FromQuery(Name = "Id")] int id)
+    {
+        if (id <= 0)
+            return NotFound("Record Not Found");
+        var result = await Srv.Get(id)!;
+        if (result.Item1 == false)
+            return NotFound("Record Not Found");
+
+        return Ok(result.Item2);
     }
 
     [HttpGet("GetInvoiceReport")]

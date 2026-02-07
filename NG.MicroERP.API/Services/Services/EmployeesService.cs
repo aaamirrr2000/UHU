@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -64,7 +64,7 @@ public class EmployeesService : IEmployeesService
         {
             string Code = dapper.GetCode("", "Employees", "EmpId", 5)!;
             
-            string SQLDuplicate = $@"SELECT * FROM employees WHERE UPPER(EmpId) = '{obj.EmpId!.ToUpper()}' OR (UPPER(Cnic) = '{obj.Cnic?.ToUpper()}' AND Cnic IS NOT NULL AND Cnic != '');";
+            string SQLDuplicate = $@"SELECT * FROM employees WHERE (UPPER(EmpId) = '{obj.EmpId!.ToUpper()}' OR (UPPER(Cnic) = '{obj.Cnic?.ToUpper()}' AND Cnic IS NOT NULL AND Cnic != '')) AND IsSoftDeleted = 0;";
             
             string dateOfBirth = obj.DateOfBirth.HasValue ? $"'{obj.DateOfBirth.Value.ToString("yyyy-MM-dd")}'" : "NULL";
             string hireDate = obj.HireDate.HasValue ? $"'{obj.HireDate.Value.ToString("yyyy-MM-dd")}'" : "NULL";
@@ -196,7 +196,7 @@ public class EmployeesService : IEmployeesService
     {
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM employees WHERE (UPPER(EmpId) = '{obj.EmpId!.ToUpper()}' AND ID != {obj.Id}) OR (UPPER(Cnic) = '{obj.Cnic?.ToUpper()}' AND Cnic IS NOT NULL AND Cnic != '' AND ID != {obj.Id});";
+            string SQLDuplicate = $@"SELECT * FROM employees WHERE ((UPPER(EmpId) = '{obj.EmpId!.ToUpper()}' AND ID != {obj.Id}) OR (UPPER(Cnic) = '{obj.Cnic?.ToUpper()}' AND Cnic IS NOT NULL AND Cnic != '' AND ID != {obj.Id})) AND IsSoftDeleted = 0;";
             
             string dateOfBirth = obj.DateOfBirth.HasValue ? $"'{obj.DateOfBirth.Value.ToString("yyyy-MM-dd")}'" : "NULL";
             string hireDate = obj.HireDate.HasValue ? $"'{obj.HireDate.Value.ToString("yyyy-MM-dd")}'" : "NULL";

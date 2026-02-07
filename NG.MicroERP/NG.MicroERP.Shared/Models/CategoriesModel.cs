@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,5 +23,6 @@ public class CategoriesModel
     public string? UpdatedFrom { get; set; } = string.Empty;
     public int IsSoftDeleted { get; set; } = 0;
     public double ItemCount { get; set; } = 0;
+    public int? TaxRuleId { get; set; }
 
 }

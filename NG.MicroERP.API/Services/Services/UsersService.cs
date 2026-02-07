@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.WebSockets;
@@ -159,7 +159,7 @@ public class UsersService : IUsersService
     {
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM Users WHERE UPPER(Username) = '{obj.Username!.ToUpper()}' and Id != {obj.Id};";
+            string SQLDuplicate = $@"SELECT * FROM Users WHERE UPPER(Username) = '{obj.Username!.ToUpper()}' AND Id != {obj.Id} AND IsSoftDeleted = 0;";
             string SQLUpdate = $@"UPDATE Users SET 
 					Username = '{obj.Username!.ToUpper()}', 
 					UserType = '{obj.UserType!.ToUpper()}', 

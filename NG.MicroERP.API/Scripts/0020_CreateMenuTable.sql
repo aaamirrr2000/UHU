@@ -89,17 +89,20 @@ VALUES
 (310, 'Shifts', NULL, 'Define work shifts and timings', 'ShiftsDashboard', 300, 'fa-solid fa-clock', 7200, 1, 1, NULL, 1, NULL),
 (311, 'System Backup', NULL, 'Backup and restore system data', 'BackupPage', 300, 'fa-solid fa-database', 7210, 1, 1, NULL, 1, NULL),
 (312, 'System Configuration', NULL, 'Configure system settings like backup, email, FTP, and images', 'SystemConfigurationDashboard', 300, 'fa-solid fa-sliders', 7220, 1, 1, NULL, 1, NULL),
+(313, 'Interface Configuration', NULL, 'Configure interface behavior and UI settings', 'InterfaceSettingsDashboard', 300, 'fa-solid fa-tv', 7220, 1, 1, NULL, 1, NULL),
 
 /*──────────────────────────── FINANCIAL SETUP ─────────────────────────────*/
 (400, 'Financial Setup', 'SETUP', 'Setup financial system parameters', NULL, 0, 'fa-solid fa-wallet', 7300, 1, 1, NULL, 1, NULL),
 (401, 'Chart of Accounts', NULL, 'Define accounting ledger structure', 'ChartOfAccountsDashboard', 400, 'fa-solid fa-project-diagram', 7310, 1, 1, NULL, 1, NULL),
-(402, 'Banks', NULL, 'Setup banks and bank branches', 'BankDashboard', 400, 'fa-solid fa-university', 7320, 1, 1, NULL, 1, NULL),
+(402, 'Banks Accounts', NULL, 'Setup banks and bank branches', 'BankDashboard', 400, 'fa-solid fa-university', 7320, 1, 1, NULL, 1, NULL),
 (403, 'Currencies', NULL, 'Define currencies and exchange rates', 'CurrenciesDashboard', 400, 'fa-solid fa-coins', 7330, 1, 1, NULL, 1, NULL),
+(410, 'Exchange Rates', NULL, 'Manage currency exchange rates and historical data', 'ExchangeRatesDashboard', 400, 'fa-solid fa-exchange-alt', 7335, 1, 1, NULL, 1, NULL),
 (404, 'Tax Master', NULL, 'Define taxes and rates', 'TaxMasterDashboard', 400, 'fa-solid fa-percent', 7340, 1, 1, NULL, 1, NULL),
 (405, 'Tax Rules', NULL, 'Configure tax applicability and rules', 'TaxRuleDashboard', 400, 'fa-solid fa-balance-scale', 7350, 1, 1, NULL, 1, NULL),
 (406, 'Payment Terms', NULL, 'Define payment terms and conditions', 'PaymentTermsDashboard', 400, 'fa-solid fa-file-contract', 7360, 1, 1, NULL, 1, NULL),
 (407, 'Price Lists', NULL, 'Setup sales and purchase price lists', 'PriceListDashboard', 400, 'fa-solid fa-list-alt', 7370, 1, 1, NULL, 1, NULL),
 (408, 'Services & Discounts', NULL, 'Configure service and discount charges for sale invoices', 'InvoiceChargesRulesDashboard', 400, 'fa-solid fa-concierge-bell', 7380, 1, 1, NULL, 1, NULL),
 (409, 'Period Close', NULL, 'Manage accounting periods for GL posting', 'PeriodCloseDashboard', 400, 'fa-solid fa-calendar-alt', 7390, 1, 1, NULL, 1, NULL);
+   
 
 SET IDENTITY_INSERT Menu OFF;

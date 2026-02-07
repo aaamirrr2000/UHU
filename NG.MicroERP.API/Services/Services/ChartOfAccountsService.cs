@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using Microsoft.Data.SqlClient;
 using NG.MicroERP.API.Helper;
 using NG.MicroERP.API.Services;
@@ -61,7 +61,7 @@ public class ChartOfAccountsService : IChartOfAccountsService
         try
         {
             string Code = GetAccountCode(obj.Type.ToUpper());
-            string SQLDuplicate = $@"SELECT * FROM ChartOfAccounts WHERE UPPER(code) = '{obj.Code!.ToUpper()}';";
+            string SQLDuplicate = $@"SELECT * FROM ChartOfAccounts WHERE UPPER(code) = '{obj.Code!.ToUpper()}' AND IsSoftDeleted = 0;";
             string SQLInsert = $@"INSERT INTO ChartOfAccounts 
 			(
 				OrganizationId, 
@@ -120,7 +120,7 @@ public class ChartOfAccountsService : IChartOfAccountsService
     {
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM ChartOfAccounts WHERE UPPER(code) = '{obj.Code!.ToUpper()}' and ID != {obj.Id};";
+            string SQLDuplicate = $@"SELECT * FROM ChartOfAccounts WHERE UPPER(code) = '{obj.Code!.ToUpper()}' AND ID != {obj.Id} AND IsSoftDeleted = 0;";
             string SQLUpdate = $@"
                                 UPDATE ChartOfAccounts SET 
                                     OrganizationId = {obj.OrganizationId}, 
@@ -169,7 +169,7 @@ public class ChartOfAccountsService : IChartOfAccountsService
     public async Task<(bool, string)> SoftDelete(ChartOfAccountsModel obj)
     {
         string SQLUpdate = $@"UPDATE ChartOfAccounts SET 
-					UpdatedOn = '{DateTime.UtcNow}', 
+					UpdatedOn = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}', 
 					UpdatedBy = '{obj.UpdatedBy!}',
 					IsSoftDeleted = 1 
 				WHERE Id = {obj.Id};";

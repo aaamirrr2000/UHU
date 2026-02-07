@@ -1,4 +1,4 @@
-﻿using NG.MicroERP.API.Helper;
+using NG.MicroERP.API.Helper;
 using NG.MicroERP.Shared.Models;
 
 namespace NG.MicroERP.API.Services.Services;
@@ -94,7 +94,7 @@ public class ShiftsService : IShiftsService
 
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM shifts WHERE UPPER(ShiftName) = '{obj.ShiftName!.ToUpper()}';";
+            string SQLDuplicate = $@"SELECT * FROM shifts WHERE UPPER(ShiftName) = '{obj.ShiftName!.ToUpper()}' AND IsSoftDeleted = 0;";
             string SQLInsert = $@"INSERT INTO shifts 
 			(
 				OrganizationId, 
@@ -144,7 +144,7 @@ public class ShiftsService : IShiftsService
     {
         try
         {
-            string SQLDuplicate = $@"SELECT * FROM shifts WHERE UPPER(ShiftName) = '{obj.ShiftName!.ToUpper()}' and Id != {obj.Id};";
+            string SQLDuplicate = $@"SELECT * FROM shifts WHERE UPPER(ShiftName) = '{obj.ShiftName!.ToUpper()}' AND Id != {obj.Id} AND IsSoftDeleted = 0;";
             string SQLUpdate = $@"UPDATE shifts SET 
 					OrganizationId = {obj.OrganizationId}, 
 					ShiftName = '{obj.ShiftName!.ToUpper()}', 
