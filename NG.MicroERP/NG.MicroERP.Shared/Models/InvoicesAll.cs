@@ -45,5 +45,9 @@ public class InvoicesAllModel
     public double ExchangeRate { get; set; } = 1.0;
     public string? CurrencyCode { get; set; } = string.Empty;
     public string? CurrencyName { get; set; } = string.Empty;
+    
+    // GL Posting Status
+    public int IsPostedToGL { get; set; } = 0;
+    public string? GLEntryNo { get; set; } = string.Empty;
 
 }

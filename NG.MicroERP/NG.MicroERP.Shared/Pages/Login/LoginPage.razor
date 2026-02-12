@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 @using System.Text.Json
 @using Microsoft.AspNetCore.Http
 @layout BlankLayout
@@ -137,11 +137,11 @@
             Globals.User.Password = Globals.Decrypt(Globals.User.Password);
             Globals.Token = res.Token;
 
-            // Store token in sessionStorage for new tab scenarios (e.g., report pages)
-            await JS.InvokeVoidAsync("sessionStorage.setItem", "authToken", Globals.Token);
-
             var org = await Functions.GetAsync<List<OrganizationsModel>>("Organizations/Search", true) ?? new List<OrganizationsModel>();
             Globals.Organization = org.FirstOrDefault()!;
+
+            // Store token, user, and org in sessionStorage for new tab / UniGet layout restore
+            await SessionStorageHelper.SaveSessionAsync(JS, Globals.Token, Globals.User, Globals.Organization);
 
             var emp = await Functions.GetAsync<EmployeesModel>($"Employees/Get/{res.EmpId}", true) ?? new EmployeesModel();
             Globals.Employee = emp;

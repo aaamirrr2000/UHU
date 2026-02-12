@@ -518,6 +518,12 @@ public static class CreateGLFromInvoiceHelper
                     }
                 }
 
+                if (glHeader.Details == null || glHeader.Details.Count == 0)
+                {
+                    transaction.Rollback();
+                    return (false, null!, "No GL details generated. Please ensure invoice items and required accounts are configured before posting.");
+                }
+
                 // Calculate totals
                 glHeader.TotalDebit = glHeader.Details.Sum(d => d.DebitAmount);
                 glHeader.TotalCredit = glHeader.Details.Sum(d => d.CreditAmount);

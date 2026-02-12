@@ -244,7 +244,7 @@ public static class PreviewGLFromInvoiceHelper
                                 Convert.ToInt32(invoice.Invoice.OrganizationId),
                                 isManualItem ? null : itemId, // Pass null for manual items to force MANUAL ITEM REVENUE lookup
                                 isManualItem ? null : itemRevenueAccountId,
-                                Convert.ToInt32(invoice.Invoice.AccountId) > 0 ? (int?)Convert.ToInt32(invoice.Invoice.AccountId) : null,
+                                isManualItem ? null : (Convert.ToInt32(invoice.Invoice.AccountId) > 0 ? (int?)Convert.ToInt32(invoice.Invoice.AccountId) : null),
                                 invoiceItem.ItemName?.ToString());
                             
                             ChartOfAccountsModel? revenueAccount = null;
@@ -322,7 +322,7 @@ public static class PreviewGLFromInvoiceHelper
                                 Convert.ToInt32(invoice.Invoice.OrganizationId),
                                 isManualItem ? null : (invoiceItem.ItemId > 0 ? invoiceItem.ItemId : null), // Pass null for manual items
                                 null,
-                                Convert.ToInt32(invoice.Invoice.AccountId) > 0 ? (int?)Convert.ToInt32(invoice.Invoice.AccountId) : null,
+                                isManualItem ? null : (Convert.ToInt32(invoice.Invoice.AccountId) > 0 ? (int?)Convert.ToInt32(invoice.Invoice.AccountId) : null),
                                 invoiceItem.ItemName);
                             
                             ChartOfAccountsModel? revenueAccount = null;

@@ -117,7 +117,9 @@ public class InvoiceService : IInvoiceService
             i.EnteredCurrencyId,
             ISNULL(i.ExchangeRate, 1.0) AS ExchangeRate,
             ISNULL(c.Code, '') AS CurrencyCode,
-            ISNULL(c.Name, '') AS CurrencyName
+            ISNULL(c.Name, '') AS CurrencyName,
+            ISNULL(i.IsPostedToGL, 0) AS IsPostedToGL,
+            ISNULL(i.GLEntryNo, '') AS GLEntryNo
         FROM Invoice i
         LEFT JOIN Parties p ON p.Id = i.PartyId
         LEFT JOIN Locations loc ON loc.Id = i.LocationId
@@ -941,12 +943,39 @@ public class InvoiceService : IInvoiceService
     {
         if (obj == null || obj.Id <= 0)
             return (false, "Invalid record: Id is required for soft delete.");
-        // Check if invoice is posted to GL - prevent deletion
-        var invoice = await dapper.SearchByQuery<InvoiceModel>($"SELECT * FROM Invoice WHERE Id = {obj.Id}");
-        if (invoice != null && invoice.Any() && invoice.First().IsPostedToGL == 1)
-        {
+        // Load invoice and guard conditions
+        var invoiceList = await dapper.SearchByQuery<InvoiceModel>($"SELECT * FROM Invoice WHERE Id = {obj.Id}");
+        var inv = (invoiceList != null && invoiceList.Any()) ? invoiceList.First() : null;
+        if (inv == null || inv.Id == 0)
+            return (false, "Invoice not found.");
+        
+        // Prevent deletion if posted to GL
+        if (inv.IsPostedToGL == 1)
             return (false, "Cannot delete invoice that is posted to General Ledger.");
+        
+        // Validate period is OPEN for module type (SALE/PURCHASE)
+        if (inv.TranDate.HasValue)
+        {
+            string moduleType = inv.InvoiceType?.ToUpper() == "PURCHASE" ? "PURCHASE" : "SALE";
+            var periodCheck = await new GeneralLedgerService().ValidatePeriod(inv.OrganizationId, inv.TranDate.Value, moduleType);
+            if (!periodCheck.Item1)
+                return (false, periodCheck.Item2);
         }
+        else
+        {
+            return (false, "Transaction date is missing on the invoice. Cannot validate period for deletion.");
+        }
+        
+        // Restrict deletion to same location as the invoice
+        if (obj.UpdatedBy <= 0)
+            return (false, "Deleting user is required.");
+        var userList = await dapper.SearchByQuery<UsersModel>($"SELECT * FROM Users WHERE Id = {obj.UpdatedBy} AND IsSoftDeleted = 0");
+        var user = (userList != null && userList.Any()) ? userList.First() : null;
+        if (user == null || user.Id == 0)
+            return (false, "Deleting user not found.");
+        if (user.LocationId <= 0 || inv.LocationId <= 0 || user.LocationId != inv.LocationId)
+            return (false, "Cannot delete invoice from a different location. Only users from the same location can delete.");
+        
         string SQLUpdate = $@"UPDATE Invoice SET
                                 Status = 'DELETED',
 								UpdatedOn = '{DateTime.Now:yyyy-MM-dd HH:mm:ss}', 

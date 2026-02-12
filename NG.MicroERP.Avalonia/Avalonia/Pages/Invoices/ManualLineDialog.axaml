@@ -1,0 +1,25 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Avalonia.Pages.Invoices.ManualLineDialog"
+        Title="Add Manual Line"
+        Width="420"
+        Height="320"
+        Background="#0c0e12"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*" Margin="16">
+        <TextBlock Grid.Row="0" Text="Item Name / Description *" Foreground="#8b929a" Margin="0,0,0,4" />
+        <TextBox Grid.Row="1" x:Name="TxtItemName" Background="#1e232b" Foreground="#e8eaed" Watermark="Name" Margin="0,0,0,12" />
+
+        <TextBlock Grid.Row="2" Text="Quantity *" Foreground="#8b929a" Margin="0,0,0,4" />
+        <TextBox Grid.Row="3" x:Name="TxtQty" Background="#1e232b" Foreground="#e8eaed" Watermark="1" Margin="0,0,0,12" />
+
+        <TextBlock Grid.Row="4" Text="Unit Price *" Foreground="#8b929a" Margin="0,0,0,4" />
+        <TextBox Grid.Row="5" x:Name="TxtUnitPrice" Background="#1e232b" Foreground="#e8eaed" Watermark="0" Margin="0,0,0,16" />
+
+        <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button Content="Cancel" Click="OnCancel" Background="#2a3140" Foreground="#e8eaed" />
+            <Button Content="Add" Click="OnAdd" Background="#5dd0c4" Foreground="#0c0e12" />
+        </StackPanel>
+    </Grid>
+</Window>

@@ -114,7 +114,7 @@
                                     </MudMenuItem>
                                     @if (row.Item.IsPostedToGL == 1 && !string.IsNullOrWhiteSpace(row.Item.GLEntryNo))
                                     {
-                                        <MudMenuItem OnClick="@(() => ViewGLEntry(row.Item.GLEntryNo))"
+                                        <MudMenuItem OnClick="@(() => ViewGLEntry(row.Item.Id, row.Item.GLEntryNo))"
                                                      Class="menu-item gl-item">
                                             <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="menu-icon" />
                                             <span>View GL Entry: @row.Item.GLEntryNo</span>
@@ -625,9 +625,44 @@
         }
     }
 
-    protected void ViewGLEntry(string glEntryNo)
+    protected async Task ViewGLEntry(int id, string glEntryNo)
     {
-        NavManager.NavigateTo($"/GeneralLedgerDashboard");
+        if (string.IsNullOrWhiteSpace(glEntryNo)) return;
+
+        try
+        {
+            // Create a stub to fetch the posted entry
+            var stub = new CashBookModel
+            {
+                Id = id,
+                OrganizationId = Globals.User.OrganizationId,
+                IsPostedToGL = 1,
+                GLEntryNo = glEntryNo
+            };
+
+            LoadingPanel = true;
+            var result = await Functions.PostAsync<GeneralLedgerHeaderModel>("GeneralLedger/PreviewGLFromCashBook", stub, true);
+            LoadingPanel = false;
+
+            if (result.Success == true && result.Result != null)
+            {
+                var parameters = new DialogParameters
+                {
+                    ["PostedData"] = result.Result
+                };
+                var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+                dialogService.Show<NG.MicroERP.Shared.Pages.Invoices.InvoiceGLPostedDialog>("Posted Accounting Entry", parameters, options);
+            }
+            else
+            {
+                SnackbarService.Add($"Error loading GL entry: {result.Message}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            LoadingPanel = false;
+            SnackbarService.Add($"Error loading GL entry: {ex.Message}", Severity.Error);
+        }
     }
 
     private async Task OnStartDateChanged()

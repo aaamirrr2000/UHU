@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:models="clr-namespace:NG.MicroERP.Shared.Models;assembly=NG.MicroERP.Shared"
+        x:Class="Avalonia.Pages.Invoices.InvoicePaymentDialog"
+        Title="Payments"
+        Width="500"
+        Height="400"
+        Background="#0c0e12"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="16">
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <ComboBox x:Name="ComboMethod" Width="140" />
+            <TextBox x:Name="TxtRef" Width="120" Watermark="Reference" />
+            <TextBox x:Name="TxtAmount" Width="100" Watermark="Amount" />
+            <Button Content="Add" x:Name="BtnAdd" Click="OnAddPayment" Background="#5dd0c4" Foreground="#0c0e12" />
+        </StackPanel>
+        <TextBlock Grid.Row="1" x:Name="TitleText" Text="Payments for Invoice" Foreground="#8b929a" Margin="0,0,0,4" />
+        <ListBox Grid.Row="2" x:Name="ListPayments" Height="180" Background="#1e232b">
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="{x:Type models:InvoicePaymentModel}">
+                    <Grid ColumnDefinitions="*,80,80,Auto">
+                        <TextBlock Text="{Binding PaymentMethod}" Foreground="#e8eaed" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="{Binding PaymentRef}" Foreground="#8b929a" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="2" Text="{Binding Amount, StringFormat=N2}" Foreground="#5dd0c4" VerticalAlignment="Center" />
+                        <Button Grid.Column="3" Content="Delete" Margin="4,0,0,0" Click="OnDeletePayment" Background="#2a3140" Foreground="#e8eaed" />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
+            <Button Content="Close" Click="OnClose" Background="#2a3140" Foreground="#e8eaed" />
+        </StackPanel>
+    </Grid>
+</Window>

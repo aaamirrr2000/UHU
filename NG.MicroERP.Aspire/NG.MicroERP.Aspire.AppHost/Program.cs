@@ -9,6 +9,11 @@ builder.AddProject<Projects.NG_MicroERP_Web>("nexgen-api-webapp")
     .WithReference(apiService)
     .WaitFor(apiService);
 
+// Avalonia desktop app (login and main window)
+var avaloniaDesktop = builder.AddProject<Projects.AvaloniaApp>("avalonia-desktop")
+    .WithExternalHttpEndpoints()
+    .WaitFor(nexgenApi);
+
 // ControlCenter Website - public-facing registration site
 var controlCenterWebsite = builder.AddProject<Projects.NG_ControlCenter_WebSite>("ng-controlcenter-website")
     .WithExternalHttpEndpoints()

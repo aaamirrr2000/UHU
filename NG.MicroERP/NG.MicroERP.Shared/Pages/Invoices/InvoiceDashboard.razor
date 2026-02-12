@@ -122,11 +122,22 @@
                                             <span>Delete</span>
                                         </MudMenuItem>
                                         <hr />
-                                        <MudMenuItem OnClick="@(async () => await PostToGL(row.Item.ID))"
-                                                     Class="menu-item post-item">
-                                            <MudIcon Icon="@Icons.Material.Filled.PostAdd" Class="menu-icon" />
-                                            <span>Post to General Ledger</span>
-                                        </MudMenuItem>
+                                        @if (row.Item.IsPostedToGL == 1)
+                                        {
+                                            <MudMenuItem OnClick="@(() => ViewGLEntry(row.Item.GLEntryNo, row.Item.ID))"
+                                                         Class="menu-item review-item">
+                                                <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" Class="menu-icon" />
+                                                <span>Review GL Entry</span>
+                                            </MudMenuItem>
+                                        }
+                                        else
+                                        {
+                                            <MudMenuItem OnClick="@(async () => await PostToGL(row.Item.ID))"
+                                                         Class="menu-item post-item">
+                                                <MudIcon Icon="@Icons.Material.Filled.PostAdd" Class="menu-icon" />
+                                                <span>Post to General Ledger</span>
+                                            </MudMenuItem>
+                                        }
                                     }
                                     <hr />
                                     <MudMenuItem OnClick="@(() => Print(row.Item.ID))"
@@ -157,6 +168,22 @@
                     <PropertyColumn Property="x => x.PartyName" Title="Party Name" Sortable="true" Filterable="true" />
                     <PropertyColumn Property="x => x.TranDate" Title="Tran Date" Sortable="true" Filterable="true" Format="dd-MMM-yyy" />
                     <PropertyColumn Property="x => x.Status" Title="Status" Sortable="true" Filterable="true" />
+                    <TemplateColumn Title="GL" Sortable="false" Filterable="false" HeaderClass="grid-header" CellClass="grid-cell" Width="100px">
+                        <CellTemplate>
+                            @if (context.Item.IsPostedToGL == 1)
+                            {
+                                <MudChip Size="Size.Small" Variant="Variant.Filled" Color="Color.Success">
+                                    Posted
+                                </MudChip>
+                            }
+                            else
+                            {
+                                <MudChip Size="Size.Small" Variant="Variant.Outlined" Color="Color.Default">
+                                    Unposted
+                                </MudChip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
                     <TemplateColumn Title="Account" Sortable="true" Filterable="true" HeaderClass="grid-header" CellClass="grid-cell" Width="150px">
                         <CellTemplate>
                             @if (!string.IsNullOrWhiteSpace(context.Item.AccountName))
@@ -600,9 +627,44 @@
         }
     }
 
-    protected void ViewGLEntry(string glEntryNo)
+    protected void ViewGLEntry(string glEntryNo, int invoiceId)
     {
-        NavManager.NavigateTo($"/GeneralLedgerDashboard");
+        if (string.IsNullOrWhiteSpace(glEntryNo))
+        {
+            SnackbarService.Add("GL Entry No is missing.", Severity.Warning);
+            return;
+        }
+        try
+        {
+            var stub = new InvoicesModel
+            {
+                Invoice = new InvoiceModel
+                {
+                    Id = invoiceId,
+                    OrganizationId = Globals.User.OrganizationId,
+                    IsPostedToGL = 1,
+                    GLEntryNo = glEntryNo
+                }
+            };
+            var result = Functions.PostAsync<GeneralLedgerHeaderModel>("GeneralLedger/PreviewGLFromInvoice", stub, true).GetAwaiter().GetResult();
+            if (result.Success == true && result.Result != null)
+            {
+                var parameters = new DialogParameters
+                {
+                    ["PostedData"] = result.Result
+                };
+                var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+                dialogService.Show<InvoiceGLPostedDialog>("Posted Accounting Entry", parameters, options);
+            }
+            else
+            {
+                SnackbarService.Add($"Error loading GL entry: {result.Message}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading GL entry: {ex.Message}", Severity.Error);
+        }
     }
 
     protected void Print(int id)

@@ -60,6 +60,7 @@ public class InvoiceItemReportModel
     public string ServingSize { get; set; } = string.Empty;
     public string StockCondition { get; set; } = string.Empty;
     public string ManualItem { get; set; } = string.Empty;
+    public int? AccountId { get; set; }
     public double Qty { get; set; }
     public double UnitPrice { get; set; }
     public double DiscountAmount { get; set; }
@@ -145,6 +146,7 @@ public class BillChargesReportModel : InvoiceChargesReportModel
 public class ManualLineData
 {
     public string ItemName { get; set; } = string.Empty;
+    public int? AccountId { get; set; }
     public double Qty { get; set; } = 1.0;
     public double UnitPrice { get; set; } = 0;
     public double DiscountAmount { get; set; } = 0;

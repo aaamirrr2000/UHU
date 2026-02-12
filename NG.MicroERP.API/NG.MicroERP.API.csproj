@@ -55,4 +55,6 @@
     <None Include="Scripts\0450_ExtendEmployeesTableForHRMS.sql" />
   </ItemGroup>
 
+  <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
+
 </Project>

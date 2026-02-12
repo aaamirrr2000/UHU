@@ -1,0 +1,110 @@
+@using NG.MicroERP.Shared.Models
+@using System.Linq
+@using MudBlazor
+@inject Functions Functions
+@inherits ComponentBase
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <MudText Typo="Typo.h6" Class="mb-0">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="me-2" />
+                    Posted Accounting Entry
+                </MudText>
+                <MudText Typo="Typo.caption" Color="Color.Success">
+                    This is the actual GL entry that was posted
+                </MudText>
+            </div>
+
+            @if (PostedData != null)
+            {
+                <MudPaper Elevation="2" Class="pa-3 mb-3">
+                    <MudText Typo="Typo.subtitle1" Class="mb-2 fw-bold">Entry Information</MudText>
+                    <MudGrid>
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.body2"><strong>Entry No:</strong> @PostedData.EntryNo</MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.body2"><strong>Date:</strong> @PostedData.EntryDate?.ToString("yyyy-MM-dd")</MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.body2"><strong>Reference:</strong> @PostedData.ReferenceNo</MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.body2"><strong>Description:</strong> @PostedData.Description</MudText>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+
+                <MudPaper Elevation="2" Class="pa-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <MudText Typo="Typo.subtitle1" Class="mb-0 fw-bold">Account Entries</MudText>
+                    </div>
+
+                    <MudTable Items="@PostedData.Details" Hover="true" Dense="true" Bordered="true" Striped="true">
+                        <HeaderContent>
+                            <MudTh>Account</MudTh>
+                            <MudTh class="text-end">Debit</MudTh>
+                            <MudTh class="text-end">Credit</MudTh>
+                            <MudTh>Description</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>
+                                <div>
+                                    <MudText Typo="Typo.body2" Class="fw-semibold">@context.AccountCode - @context.AccountName</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@context.AccountType</MudText>
+                                </div>
+                            </MudTd>
+                            <MudTd class="text-end">
+                                @if (context.DebitAmount > 0)
+                                {
+                                    <MudText Typo="Typo.body2" Color="Color.Error" Class="fw-semibold">
+                                        @context.DebitAmount.ToString("#,##0.00")
+                                    </MudText>
+                                }
+                            </MudTd>
+                            <MudTd class="text-end">
+                                @if (context.CreditAmount > 0)
+                                {
+                                    <MudText Typo="Typo.body2" Color="Color.Success" Class="fw-semibold">
+                                        @context.CreditAmount.ToString("#,##0.00")
+                                    </MudText>
+                                }
+                            </MudTd>
+                            <MudTd>
+                                <MudText Typo="Typo.body2">@context.Description</MudText>
+                            </MudTd>
+                        </RowTemplate>
+                        <FooterContent>
+                            <MudTd class="fw-bold">TOTAL</MudTd>
+                            <MudTd class="text-end fw-bold"></MudTd>
+                            <MudTd class="text-end fw-bold"></MudTd>
+                            <MudTd></MudTd>
+                        </FooterContent>
+                    </MudTable>
+                    
+                </MudPaper>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info">
+                    Unable to load posted entry.
+                </MudAlert>
+            }
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public GeneralLedgerHeaderModel? PostedData { get; set; }
+
+    private void Close()
+    {
+        MudDialog?.Close();
+    }
+}

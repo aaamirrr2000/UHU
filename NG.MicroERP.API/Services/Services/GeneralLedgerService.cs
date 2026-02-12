@@ -99,6 +99,10 @@ public class GeneralLedgerService : IGeneralLedgerService
 
     public async Task<(bool, GeneralLedgerHeaderModel, string)> Post(GeneralLedgerHeaderModel obj)
     {
+        using var connection = new SqlConnection(new Config().DefaultConnectionString);
+        await connection.OpenAsync();
+        using var transaction = connection.BeginTransaction();
+
         try
         {
             // Validate details
@@ -128,10 +132,24 @@ public class GeneralLedgerService : IGeneralLedgerService
             string entryNo = obj.EntryNo;
             if (string.IsNullOrWhiteSpace(entryNo))
             {
-                entryNo = dapper.GetCode("GL", "GeneralLedgerHeader", "EntryNo")!;
+                // We must use the same connection/transaction if we want to be safe, but GetCode makes its own connection.
+                // For now, let's just generate it. 
+                // ideally GetCode should accept a connection/transaction, but let's replicate the logic or use dapper directly here for safety in transaction.
+                // Replicating GetCode logic for safety within transaction:
+                string prefix = "GL";
+                string sqlGetCode = $@"SELECT MAX(CAST(SUBSTRING(EntryNo, {prefix.Length + 1}, LEN(EntryNo) - {prefix.Length}) AS INT))
+                                     FROM GeneralLedgerHeader WHERE LEFT(EntryNo, {prefix.Length}) = '{prefix}'";
+                var maxCode = await connection.QueryFirstOrDefaultAsync<int?>(sqlGetCode, transaction: transaction);
+                entryNo = prefix + ((maxCode ?? 0) + 1).ToString("000000");
+                obj.EntryNo = entryNo;
             }
 
             string SQLDuplicate = $@"SELECT * FROM GeneralLedgerHeader WHERE UPPER(EntryNo) = '{entryNo.ToUpper()}' AND IsSoftDeleted = 0;";
+            var duplicate = await connection.QueryFirstOrDefaultAsync<GeneralLedgerHeaderModel>(SQLDuplicate, transaction: transaction);
+            if (duplicate != null)
+            {
+                return (false, null!, "Duplicate Entry No found.");
+            }
             
             // Insert Header
             string SQLInsertHeader = $@"INSERT INTO GeneralLedgerHeader 
@@ -166,46 +184,82 @@ public class GeneralLedgerService : IGeneralLedgerService
 			) 
 			VALUES 
 			(
-				{obj.OrganizationId},
-				'{entryNo.ToUpper()}', 
-				'{obj.EntryDate:yyyy-MM-dd}',
-				'{obj.Source?.ToUpper().Replace("'", "''") ?? "MANUAL"}',
-				'{obj.Description!.ToUpper().Replace("'", "''")}', 
-				'{obj.ReferenceNo?.ToUpper().Replace("'", "''") ?? ""}',
-				'{obj.ReferenceType?.ToUpper().Replace("'", "''") ?? ""}',
-				{obj.ReferenceId},
-				{(obj.PartyId > 0 ? obj.PartyId.ToString() : "NULL")},
-				{(obj.LocationId > 0 ? obj.LocationId.ToString() : "NULL")},
-				{(obj.BaseCurrencyId > 0 ? obj.BaseCurrencyId.ToString() : "NULL")},
-				{(obj.EnteredCurrencyId > 0 ? obj.EnteredCurrencyId.ToString() : "NULL")},
-				{totalDebit},
-				{totalCredit},
-				{obj.IsReversed},
-				'{obj.ReversedEntryNo?.ToUpper().Replace("'", "''") ?? ""}',
-				{obj.IsPosted},
-				{(obj.PostedDate.HasValue ? $"'{obj.PostedDate.Value:yyyy-MM-dd HH:mm:ss}'" : "NULL")},
-				{(obj.PostedBy > 0 ? obj.PostedBy.ToString() : "NULL")},
-				{obj.IsAdjusted},
-				'{obj.AdjustmentEntryNo?.ToUpper().Replace("'", "''") ?? ""}',
-				'{obj.FileAttachment?.Replace("'", "''") ?? ""}',
-				'{obj.Notes?.ToUpper().Replace("'", "''") ?? ""}',
-				{obj.CreatedBy},
-				'{DateTime.Now:yyyy-MM-dd HH:mm:ss}',
-				'{obj.CreatedFrom!.ToUpper()}', 
-				{obj.IsSoftDeleted}
+				@OrganizationId,
+				@EntryNo, 
+				@EntryDate,
+				@Source,
+				@Description, 
+				@ReferenceNo,
+				@ReferenceType,
+				@ReferenceId,
+				@PartyId,
+				@LocationId,
+				@BaseCurrencyId,
+				@EnteredCurrencyId,
+				@TotalDebit,
+				@TotalCredit,
+				@IsReversed,
+				@ReversedEntryNo,
+				@IsPosted,
+				@PostedDate,
+				@PostedBy,
+				@IsAdjusted,
+				@AdjustmentEntryNo,
+				@FileAttachment,
+				@Notes,
+				@CreatedBy,
+				@CreatedOn,
+				@CreatedFrom, 
+				@IsSoftDeleted
 			);
 			SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
-            var res = await dapper.Insert(SQLInsertHeader, SQLDuplicate);
-            if (!res.Item1)
-                return (false, null!, "Duplicate Entry No found or insert failed.");
-
-            int headerId = res.Item2;
+            var headerIdDecimal = await connection.ExecuteScalarAsync<decimal>(SQLInsertHeader, new {
+                obj.OrganizationId,
+                EntryNo = entryNo.ToUpper(),
+                obj.EntryDate,
+                Source = obj.Source?.ToUpper() ?? "MANUAL",
+                Description = obj.Description?.ToUpper() ?? "",
+                ReferenceNo = obj.ReferenceNo?.ToUpper() ?? "",
+                ReferenceType = obj.ReferenceType?.ToUpper() ?? "",
+                obj.ReferenceId,
+                PartyId = obj.PartyId > 0 ? obj.PartyId : (int?)null,
+                LocationId = obj.LocationId > 0 ? obj.LocationId : (int?)null,
+                BaseCurrencyId = obj.BaseCurrencyId > 0 ? obj.BaseCurrencyId : (int?)null,
+                EnteredCurrencyId = obj.EnteredCurrencyId > 0 ? obj.EnteredCurrencyId : (int?)null,
+                totalDebit,
+                totalCredit,
+                obj.IsReversed,
+                ReversedEntryNo = obj.ReversedEntryNo?.ToUpper() ?? "",
+                obj.IsPosted,
+                obj.PostedDate,
+                PostedBy = obj.PostedBy > 0 ? obj.PostedBy : (int?)null,
+                obj.IsAdjusted,
+                AdjustmentEntryNo = obj.AdjustmentEntryNo?.ToUpper() ?? "",
+                FileAttachment = obj.FileAttachment ?? "",
+                Notes = obj.Notes?.ToUpper() ?? "",
+                obj.CreatedBy,
+                CreatedOn = DateTime.Now,
+                CreatedFrom = obj.CreatedFrom?.ToUpper() ?? "",
+                obj.IsSoftDeleted
+            }, transaction: transaction);
+            
+            int headerId = Convert.ToInt32(headerIdDecimal);
 
             // Insert Details
             int seqNo = 1;
             foreach (var detail in obj.Details)
             {
+                // Auto-resolve AccountId from Party if missing
+                if (detail.AccountId == 0 && detail.PartyId > 0)
+                {
+                     var partyAccount = await connection.QueryFirstOrDefaultAsync<int?>("SELECT AccountId FROM Parties WHERE Id = @Id", new { Id = detail.PartyId }, transaction: transaction);
+                     if (partyAccount.HasValue && partyAccount.Value > 0)
+                     {
+                         detail.AccountId = partyAccount.Value;
+                     }
+                }
+
                 string SQLInsertDetail = $@"INSERT INTO GeneralLedgerDetail 
 				(
 					HeaderId,
@@ -227,41 +281,63 @@ public class GeneralLedgerService : IGeneralLedgerService
 				) 
 				VALUES 
 				(
-					{headerId},
-					{detail.AccountId},
-					'{detail.Description?.ToUpper().Replace("'", "''") ?? ""}',
-					{detail.DebitAmount},
-					{detail.CreditAmount},
-					{(detail.PartyId > 0 ? detail.PartyId.ToString() : "NULL")},
-					{(detail.LocationId > 0 ? detail.LocationId.ToString() : "NULL")},
-					{(detail.CostCenterId > 0 ? detail.CostCenterId.ToString() : "NULL")},
-					{(detail.ProjectId > 0 ? detail.ProjectId.ToString() : "NULL")},
-					{(detail.CurrencyId > 0 ? detail.CurrencyId.ToString() : "NULL")},
-					{detail.ExchangeRate},
-					{seqNo++},
-					{obj.CreatedBy},
-					'{DateTime.Now:yyyy-MM-dd HH:mm:ss}',
-					'{obj.CreatedFrom!.ToUpper()}', 
-					{detail.IsSoftDeleted}
+					@HeaderId,
+					@AccountId,
+					@Description,
+					@DebitAmount,
+					@CreditAmount,
+					@PartyId,
+					@LocationId,
+					@CostCenterId,
+					@ProjectId,
+					@CurrencyId,
+					@ExchangeRate,
+					@SeqNo,
+					@CreatedBy, 
+					@CreatedOn, 
+					@CreatedFrom, 
+					@IsSoftDeleted
 				);";
 
-                var detailRes = await dapper.Insert(SQLInsertDetail);
-                if (!detailRes.Item1)
-                    return (false, null!, $"Failed to insert detail line {seqNo - 1}.");
+                await connection.ExecuteAsync(SQLInsertDetail, new {
+                    HeaderId = headerId,
+                    detail.AccountId,
+                    Description = detail.Description?.ToUpper() ?? "",
+                    detail.DebitAmount,
+                    detail.CreditAmount,
+                    PartyId = detail.PartyId > 0 ? detail.PartyId : (int?)null,
+                    LocationId = detail.LocationId > 0 ? detail.LocationId : (int?)null,
+                    CostCenterId = detail.CostCenterId > 0 ? detail.CostCenterId : (int?)null,
+                    ProjectId = detail.ProjectId > 0 ? detail.ProjectId : (int?)null,
+                    CurrencyId = detail.CurrencyId > 0 ? detail.CurrencyId : (int?)null,
+                    detail.ExchangeRate,
+                    SeqNo = seqNo++,
+                    obj.CreatedBy,
+                    CreatedOn = DateTime.Now,
+                    CreatedFrom = obj.CreatedFrom?.ToUpper() ?? "",
+                    detail.IsSoftDeleted
+                }, transaction: transaction);
             }
+
+            transaction.Commit();
 
             // Return the complete header with details
             var result = await Get(headerId);
-            return (true, result.Item2!, "");
+            return (true, result!.Item2!, "");
         }
         catch (Exception ex)
         {
+            transaction.Rollback();
             return (false, null!, ex.Message);
         }
     }
 
     public async Task<(bool, GeneralLedgerHeaderModel, string)> Put(GeneralLedgerHeaderModel obj)
     {
+        using var connection = new SqlConnection(new Config().DefaultConnectionString);
+        await connection.OpenAsync();
+        using var transaction = connection.BeginTransaction();
+
         try
         {
             // Validate details
@@ -276,52 +352,108 @@ public class GeneralLedgerService : IGeneralLedgerService
             if (Math.Abs(totalDebit - totalCredit) > 0.01)
                 return (false, null!, $"Entry is not balanced. Total Debit: {totalDebit:N2}, Total Credit: {totalCredit:N2}");
 
+            // Validate period is open
+            // Important: also check if we are changing the date, because if we move from open to closed period it should fail.
+            // But we should always validate the date we are trying to save.
+            var periodCheck = await ValidatePeriod(obj.OrganizationId, obj.EntryDate ?? DateTime.Now, "GENERALLEDGER");
+            if (!periodCheck.Item1)
+                return (false, null!, periodCheck.Item2);
+
             string SQLDuplicate = $@"SELECT * FROM GeneralLedgerHeader WHERE UPPER(EntryNo) = '{obj.EntryNo!.ToUpper()}' AND Id != {obj.Id} AND IsSoftDeleted = 0;";
-            
+            var duplicate = await connection.QueryFirstOrDefaultAsync<GeneralLedgerHeaderModel>(SQLDuplicate, transaction: transaction);
+            if (duplicate != null)
+            {
+                 return (false, null!, "Duplicate Entry No found.");
+            }
+
             // Update Header
             string SQLUpdateHeader = $@"UPDATE GeneralLedgerHeader SET 
-					OrganizationId = {obj.OrganizationId}, 
-					EntryNo = '{obj.EntryNo!.ToUpper()}',
-					EntryDate = '{obj.EntryDate:yyyy-MM-dd}',
-					Source = '{obj.Source?.ToUpper().Replace("'", "''") ?? "MANUAL"}',
-					Description = '{obj.Description!.ToUpper().Replace("'", "''")}', 
-					ReferenceNo = '{obj.ReferenceNo?.ToUpper().Replace("'", "''") ?? ""}',
-					ReferenceType = '{obj.ReferenceType?.ToUpper().Replace("'", "''") ?? ""}',
-					ReferenceId = {obj.ReferenceId},
-					PartyId = {(obj.PartyId > 0 ? obj.PartyId.ToString() : "NULL")},
-					LocationId = {(obj.LocationId > 0 ? obj.LocationId.ToString() : "NULL")},
-					BaseCurrencyId = {(obj.BaseCurrencyId > 0 ? obj.BaseCurrencyId.ToString() : "NULL")},
-					EnteredCurrencyId = {(obj.EnteredCurrencyId > 0 ? obj.EnteredCurrencyId.ToString() : "NULL")},
-					ExchangeRate = {(obj.ExchangeRate > 0 ? obj.ExchangeRate.ToString(System.Globalization.CultureInfo.InvariantCulture) : "1.000000")},
-					TotalDebit = {totalDebit},
-					TotalCredit = {totalCredit},
-					IsReversed = {obj.IsReversed},
-					ReversedEntryNo = '{obj.ReversedEntryNo?.ToUpper().Replace("'", "''") ?? ""}',
-					IsPosted = {obj.IsPosted},
-					PostedDate = {(obj.PostedDate.HasValue ? $"'{obj.PostedDate.Value:yyyy-MM-dd HH:mm:ss}'" : "NULL")},
-					PostedBy = {(obj.PostedBy > 0 ? obj.PostedBy.ToString() : "NULL")},
-					IsAdjusted = {obj.IsAdjusted},
-					AdjustmentEntryNo = '{obj.AdjustmentEntryNo?.ToUpper().Replace("'", "''") ?? ""}',
-					FileAttachment = '{obj.FileAttachment?.Replace("'", "''") ?? ""}',
-					Notes = '{obj.Notes?.ToUpper().Replace("'", "''") ?? ""}',
-					UpdatedBy = {obj.UpdatedBy}, 
-					UpdatedOn = '{DateTime.Now:yyyy-MM-dd HH:mm:ss}', 
-					UpdatedFrom = '{obj.UpdatedFrom!.ToUpper()}', 
-					IsSoftDeleted = {obj.IsSoftDeleted} 
-				WHERE Id = {obj.Id};";
+					OrganizationId = @OrganizationId, 
+					EntryNo = @EntryNo,
+					EntryDate = @EntryDate,
+					Source = @Source,
+					Description = @Description, 
+					ReferenceNo = @ReferenceNo,
+					ReferenceType = @ReferenceType,
+					ReferenceId = @ReferenceId,
+					PartyId = @PartyId,
+					LocationId = @LocationId,
+					BaseCurrencyId = @BaseCurrencyId,
+					EnteredCurrencyId = @EnteredCurrencyId,
+					ExchangeRate = @ExchangeRate,
+					TotalDebit = @TotalDebit,
+					TotalCredit = @TotalCredit,
+					IsReversed = @IsReversed,
+					ReversedEntryNo = @ReversedEntryNo,
+					IsPosted = @IsPosted,
+					PostedDate = @PostedDate,
+					PostedBy = @PostedBy,
+					IsAdjusted = @IsAdjusted,
+					AdjustmentEntryNo = @AdjustmentEntryNo,
+					FileAttachment = @FileAttachment,
+					Notes = @Notes,
+					UpdatedBy = @UpdatedBy, 
+					UpdatedOn = @UpdatedOn, 
+					UpdatedFrom = @UpdatedFrom, 
+					IsSoftDeleted = @IsSoftDeleted 
+				WHERE Id = @Id;";
 
-            var res = await dapper.Update(SQLUpdateHeader, SQLDuplicate);
-            if (!res.Item1)
-                return (false, null!, "Duplicate Entry No found or update failed.");
+            int affected = await connection.ExecuteAsync(SQLUpdateHeader, new {
+                obj.OrganizationId,
+                EntryNo = obj.EntryNo?.ToUpper(),
+                obj.EntryDate,
+                Source = obj.Source?.ToUpper() ?? "MANUAL",
+                Description = obj.Description?.ToUpper() ?? "",
+                ReferenceNo = obj.ReferenceNo?.ToUpper() ?? "",
+                ReferenceType = obj.ReferenceType?.ToUpper() ?? "",
+                obj.ReferenceId,
+                PartyId = obj.PartyId > 0 ? obj.PartyId : (int?)null,
+                LocationId = obj.LocationId > 0 ? obj.LocationId : (int?)null,
+                BaseCurrencyId = obj.BaseCurrencyId > 0 ? obj.BaseCurrencyId : (int?)null,
+                EnteredCurrencyId = obj.EnteredCurrencyId > 0 ? obj.EnteredCurrencyId : (int?)null,
+                obj.ExchangeRate,
+                totalDebit,
+                totalCredit,
+                obj.IsReversed,
+                ReversedEntryNo = obj.ReversedEntryNo?.ToUpper() ?? "",
+                obj.IsPosted,
+                obj.PostedDate,
+                PostedBy = obj.PostedBy > 0 ? obj.PostedBy : (int?)null,
+                obj.IsAdjusted,
+                AdjustmentEntryNo = obj.AdjustmentEntryNo?.ToUpper() ?? "",
+                FileAttachment = obj.FileAttachment ?? "",
+                Notes = obj.Notes?.ToUpper() ?? "",
+                obj.UpdatedBy,
+                UpdatedOn = DateTime.Now,
+                CreatedFrom = obj.UpdatedFrom?.ToUpper() ?? "",
+                obj.IsSoftDeleted,
+                obj.Id
+            }, transaction: transaction);
 
-            // Delete existing details
-            string SQLDeleteDetails = $@"UPDATE GeneralLedgerDetail SET IsSoftDeleted = 1 WHERE HeaderId = {obj.Id};";
-            await dapper.Update(SQLDeleteDetails);
+            if (affected == 0)
+            {
+                 transaction.Rollback();
+                 return (false, null!, "Update failed. Record may not exist.");
+            }
+
+            // Delete existing details (Soft Delete)
+            string SQLDeleteDetails = $@"UPDATE GeneralLedgerDetail SET IsSoftDeleted = 1 WHERE HeaderId = @Id";
+            await connection.ExecuteAsync(SQLDeleteDetails, new { Id = obj.Id }, transaction: transaction);
 
             // Insert new details
             int seqNo = 1;
             foreach (var detail in obj.Details)
             {
+                // Auto-resolve AccountId from Party if missing
+                if (detail.AccountId == 0 && detail.PartyId > 0)
+                {
+                     var partyAccount = await connection.QueryFirstOrDefaultAsync<int?>("SELECT AccountId FROM Parties WHERE Id = @Id", new { Id = detail.PartyId }, transaction: transaction);
+                     if (partyAccount.HasValue && partyAccount.Value > 0)
+                     {
+                         detail.AccountId = partyAccount.Value;
+                     }
+                }
+
                 string SQLInsertDetail = $@"INSERT INTO GeneralLedgerDetail 
 				(
 					HeaderId,
@@ -343,35 +475,53 @@ public class GeneralLedgerService : IGeneralLedgerService
 				) 
 				VALUES 
 				(
-					{obj.Id},
-					{detail.AccountId},
-					'{detail.Description?.ToUpper().Replace("'", "''") ?? ""}',
-					{detail.DebitAmount},
-					{detail.CreditAmount},
-					{(detail.PartyId > 0 ? detail.PartyId.ToString() : "NULL")},
-					{(detail.LocationId > 0 ? detail.LocationId.ToString() : "NULL")},
-					{(detail.CostCenterId > 0 ? detail.CostCenterId.ToString() : "NULL")},
-					{(detail.ProjectId > 0 ? detail.ProjectId.ToString() : "NULL")},
-					{(detail.CurrencyId > 0 ? detail.CurrencyId.ToString() : "NULL")},
-					{detail.ExchangeRate},
-					{seqNo++},
-					{obj.UpdatedBy},
-					'{DateTime.Now:yyyy-MM-dd HH:mm:ss}',
-					'{obj.UpdatedFrom!.ToUpper()}', 
-					{detail.IsSoftDeleted}
+					@HeaderId,
+					@AccountId,
+					@Description,
+					@DebitAmount,
+					@CreditAmount,
+					@PartyId,
+					@LocationId,
+					@CostCenterId,
+					@ProjectId,
+					@CurrencyId,
+					@ExchangeRate,
+					@SeqNo,
+					@CreatedBy, 
+					@CreatedOn, 
+					@CreatedFrom, 
+					@IsSoftDeleted
 				);";
 
-                var detailRes = await dapper.Insert(SQLInsertDetail);
-                if (!detailRes.Item1)
-                    return (false, null!, $"Failed to insert detail line {seqNo - 1}.");
+                await connection.ExecuteAsync(SQLInsertDetail, new {
+                    HeaderId = obj.Id,
+                    detail.AccountId,
+                    Description = detail.Description?.ToUpper() ?? "",
+                    detail.DebitAmount,
+                    detail.CreditAmount,
+                    PartyId = detail.PartyId > 0 ? detail.PartyId : (int?)null,
+                    LocationId = detail.LocationId > 0 ? detail.LocationId : (int?)null,
+                    CostCenterId = detail.CostCenterId > 0 ? detail.CostCenterId : (int?)null,
+                    ProjectId = detail.ProjectId > 0 ? detail.ProjectId : (int?)null,
+                    CurrencyId = detail.CurrencyId > 0 ? detail.CurrencyId : (int?)null,
+                    detail.ExchangeRate,
+                    SeqNo = seqNo++,
+                    obj.UpdatedBy,
+                    CreatedOn = DateTime.Now,
+                    CreatedFrom = obj.UpdatedFrom?.ToUpper() ?? "",
+                    detail.IsSoftDeleted
+                }, transaction: transaction);
             }
+
+            transaction.Commit();
 
             // Return the complete header with details
             var result = await Get(obj.Id);
-            return (true, result.Item2!, "");
+            return (true, result!.Item2!, "");
         }
         catch (Exception ex)
         {
+            transaction.Rollback();
             return (false, null!, ex.Message);
         }
     }

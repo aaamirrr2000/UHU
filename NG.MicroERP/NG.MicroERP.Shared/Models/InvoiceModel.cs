@@ -158,6 +158,7 @@ public class InvoiceDetailModel
     private static int lastUsedId = 0;
     public int Id { get; set; } = 0;
     public int ItemId { get; set; } = 0;
+    public int? AccountId { get; set; }
     public string? StockCondition { get; set; } = string.Empty;
     public string? ServingSize { get; set; } = string.Empty;
     public double Qty { get; set; } = 0;

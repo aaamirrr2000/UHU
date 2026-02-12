@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,5 +23,7 @@ public class GroupMenuModel
     public int OrganizationId { get; set; } = 0;
     public string? My_Privilege { get; set; }
     public bool IsToggled { get; set; } = false;
+    /// <summary>Optional route/query segment (e.g. REPORT for report menu items).</summary>
+    public string? AdditionalInfo { get; set; }
 
 }

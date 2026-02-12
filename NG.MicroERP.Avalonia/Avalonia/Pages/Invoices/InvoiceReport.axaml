@@ -1,0 +1,24 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:models="clr-namespace:NG.MicroERP.Shared.Models;assembly=NG.MicroERP.Shared"
+        x:Class="Avalonia.Pages.Invoices.InvoiceReport"
+        Title="Invoice Report"
+        Width="800"
+        Height="700"
+        Background="#0c0e12">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <Border Grid.Row="0" Background="#161a22" Padding="12" BorderBrush="#2a3140" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <Button x:Name="BtnBack" Content="Back" Click="OnBack" />
+                <Button x:Name="BtnPrint" Content="Print" Click="OnPrint" />
+            </StackPanel>
+        </Border>
+        <ScrollViewer Grid.Row="1" Margin="16">
+            <StackPanel x:Name="ReportPanel" Spacing="12">
+                <TextBlock x:Name="TxtLoading" Text="Loading…" Foreground="#8b929a" />
+            </StackPanel>
+        </ScrollViewer>
+        <TextBlock Grid.Row="2" x:Name="FooterText" Foreground="#6b7280" FontSize="11" Margin="16,8" />
+    </Grid>
+</Window>

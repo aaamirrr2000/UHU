@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Configuration;
 using NG.MicroERP.Shared.Models;
@@ -40,7 +40,11 @@ public class Globals
     public string? ClientInfo { get; set; }
     public string? SelectedMenuItem { get; set; }
     public bool IsSidebarExpanded { get; set; } = true;
-    
+    /// <summary>Incremented when session is restored from storage so UI can refresh.</summary>
+    public int SessionRestoredTrigger { get; set; }
+    /// <summary>True after an attempt to restore session from storage has run.</summary>
+    public bool SessionRestoreAttempted { get; set; }
+
     public event Action? OnSidebarToggle;
     public int AccessLevel { get; set; } = 0;
     

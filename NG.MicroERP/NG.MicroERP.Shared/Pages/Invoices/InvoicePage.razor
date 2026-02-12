@@ -1724,7 +1724,6 @@
         {
             record.Invoice.PartyName = party.Name;
             record.Invoice.PartyAddress = party.Address;
-            record.Invoice.AccountId = party.AccountId; // Set AccountId from party
             
             // Get price list name if party has a price list
             _currentPriceListName = string.Empty;
@@ -2271,6 +2270,12 @@
         try
         {
             EnsureInvoiceInitialized();
+            await ValidatePeriodAsync();
+            if (!string.IsNullOrWhiteSpace(PeriodValidationMessage) && PeriodValidationMessage.Contains("CLOSED", StringComparison.OrdinalIgnoreCase))
+            {
+                SnackbarService.Add("Period is CLOSED. Open the period to save this invoice.", Severity.Warning);
+                return;
+            }
             var actionType = CurrentRecord.GetValueOrDefault() != 0 ? "UPDATE" : "INSERT";
 
             // Recalculate invoice totals (including charges and discounts) before save
@@ -3064,46 +3069,8 @@
                 var product = ItemsData.FirstOrDefault(i => i.Id == item.ItemId);
                 if (product == null) continue;
 
-                // Check for price list price if party has a price list (only for sale invoices)
-                // Only update if unit price hasn't been manually set or is 0
-                if (item.UnitPrice == 0 || item.UnitPrice == product.BasePrice)
-                {
-                    if (SelectedParty?.PriceListId > 0 && 
-                        !string.Equals(InvoiceType, "PURCHASE", StringComparison.OrdinalIgnoreCase))
-                    {
-                        try
-                        {
-                            // Get TypeCode ListValue from PriceListId
-                            var typeCode = await Functions.GetAsync<TypeCodeModel>($"TypeCode/Get/{SelectedParty.PriceListId}", true);
-                            if (typeCode != null && !string.IsNullOrWhiteSpace(typeCode.ListValue))
-                            {
-                                var priceListItem = await Functions.GetAsync<PriceListModel>(
-                                    $"PriceList/GetByItemAndPriceList/{product.Id}/{Uri.EscapeDataString(typeCode.ListValue)}/{Globals.User.OrganizationId}", true);
-                                
-                                if (priceListItem != null && priceListItem.OneQuantityPrice > 0)
-                                {
-                                    item.UnitPrice = priceListItem.OneQuantityPrice;
-                                }
-                                else
-                                {
-                                    item.UnitPrice = product.BasePrice; // Use default if not in price list
-                                }
-                            }
-                            else
-                            {
-                                item.UnitPrice = product.BasePrice; // Use default if TypeCode not found
-                            }
-                        }
-                        catch
-                        {
-                            item.UnitPrice = product.BasePrice; // Use default if lookup fails
-                        }
-                    }
-                    else
-                    {
-                        item.UnitPrice = product.BasePrice; // Use default price
-                    }
-                }
+                if (item.UnitPrice == 0)
+                    item.UnitPrice = product.BasePrice;
 
                 // Only apply default discount if not purchase
                 item.DiscountAmount = InvoiceType.Equals("PURCHASE", StringComparison.OrdinalIgnoreCase)
@@ -3227,6 +3194,10 @@
                     }
                     // else: keep existing InvoiceCharges collection (user manually changed amounts, preserve charge structure)
                 }
+                
+                if (record.Invoice.ChargesAmount < 0) record.Invoice.ChargesAmount = 0;
+                if (record.Invoice.DiscountAmount < 0) record.Invoice.DiscountAmount = 0;
+                if (record.Invoice.DiscountAmount > record.Invoice.InvoiceAmount) record.Invoice.DiscountAmount = record.Invoice.InvoiceAmount;
             }
 
             // Total invoice amount = item totals + tax + charges - discount

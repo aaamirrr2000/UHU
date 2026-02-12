@@ -1,0 +1,27 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Avalonia.Pages.Invoices.LineEditDialog"
+        Title="Edit item — Enter to add, Esc to cancel"
+        Width="400"
+        Height="480"
+        MinHeight="440"
+        Background="#0c0e12"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="20,16">
+        <TextBlock Grid.Row="0" Text="Item" Foreground="#8b929a" Margin="0,0,0,2" />
+        <TextBox Grid.Row="1" x:Name="TxtItemName" Background="#1e232b" Foreground="#e8eaed" Margin="0,0,0,8" MinHeight="28" />
+        <TextBlock Grid.Row="2" Text="Qty" Foreground="#8b929a" Margin="0,0,0,2" />
+        <TextBox Grid.Row="3" x:Name="TxtQty" Background="#1e232b" Foreground="#e8eaed" Margin="0,0,0,8" MinHeight="28" />
+        <TextBlock Grid.Row="4" Text="Unit price" Foreground="#8b929a" Margin="0,0,0,2" />
+        <TextBox Grid.Row="5" x:Name="TxtUnitPrice" Background="#1e232b" Foreground="#e8eaed" Margin="0,0,0,8" MinHeight="28" />
+        <TextBlock Grid.Row="6" Text="Discount amount" Foreground="#8b929a" Margin="0,0,0,2" />
+        <TextBox Grid.Row="7" x:Name="TxtDiscount" Background="#1e232b" Foreground="#e8eaed" Margin="0,0,0,8" MinHeight="28" />
+        <TextBlock Grid.Row="8" Text="Tax amount" Foreground="#8b929a" Margin="0,0,0,2" />
+        <TextBox Grid.Row="9" x:Name="TxtTax" Background="#1e232b" Foreground="#e8eaed" Margin="0,0,0,12" MinHeight="28" />
+        <StackPanel Grid.Row="10" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,8,0,0">
+            <Button Content="Cancel" Click="OnCancel" Background="#2a3140" Foreground="#e8eaed" Padding="16,8" MinWidth="80" />
+            <Button Content="Update" Click="OnOk" Background="#5dd0c4" Foreground="#0c0e12" Padding="16,8" MinWidth="80" />
+        </StackPanel>
+    </Grid>
+</Window>
