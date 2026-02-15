@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:MicroERP.App.SwiftServe.Components.MauiPages.Controls"
              x:Class="MicroERP.App.SwiftServe.Components.MauiPages.OrderPage"
              Title="Menu Items"
-             BackgroundColor="#F5F5F5">
+             BackgroundColor="#F0F0F0">
 
     <ContentPage.Resources>
         <ResourceDictionary>
@@ -11,193 +12,100 @@
             <Color x:Key="WhiteColor">#FFFFFF</Color>
             <Color x:Key="TextPrimary">#212121</Color>
             <Color x:Key="TextSecondary">#666666</Color>
+            <Color x:Key="BorderColor">#E0E0E0</Color>
+            <Color x:Key="DangerColor">#dc3545</Color>
+            <Color x:Key="GreenAccent">#2E7D32</Color>
         </ResourceDictionary>
     </ContentPage.Resources>
 
-    <ScrollView>
-        <StackLayout Spacing="0" Padding="8">
-            
-            <!-- Header -->
-            <Frame BackgroundColor="{StaticResource PrimaryColor}"
-                   CornerRadius="12"
-                   Padding="20,16"
-                   Margin="0,0,0,12"
-                   HasShadow="True">
-                <StackLayout Spacing="8">
-                    <Label Text="Menu Items"
-                           FontSize="24"
-                           FontAttributes="Bold"
-                           TextColor="{StaticResource WhiteColor}"/>
-                    <Label x:Name="HeaderSubtitle"
-                           Text="Service: Dine-In"
-                           FontSize="14"
-                           TextColor="#E0FFFFFF"/>
-                    <StackLayout Orientation="Horizontal" Spacing="8" HorizontalOptions="End" Margin="0,8,0,0">
-                        <Button Text="🛒 Cart"
-                                Clicked="OnViewCartClicked"
-                                BackgroundColor="#E0FFFFFF"
-                                TextColor="{StaticResource PrimaryColor}"
-                                FontSize="14"
-                                Padding="15,8"
-                                CornerRadius="8"/>
-                        <Button Text="Back"
-                                Clicked="OnBackClicked"
-                                BackgroundColor="#E0FFFFFF"
-                                TextColor="{StaticResource PrimaryColor}"
-                                FontSize="14"
-                                Padding="15,8"
-                                CornerRadius="8"/>
-                    </StackLayout>
-                </StackLayout>
-            </Frame>
+    <Grid RowDefinitions="Auto,Auto,Auto,*">
+        <controls:NavigationMenu x:Name="NavMenu" Grid.Row="0" Grid.RowSpan="4" ZIndex="1000"/>
 
-            <!-- Category Buttons -->
-            <ScrollView Orientation="Horizontal" Margin="0,0,0,12">
-                <StackLayout Orientation="Horizontal" Spacing="8" x:Name="CategoryButtonsLayout"/>
-            </ScrollView>
+        <!-- Toast -->
+        <Border x:Name="ToastBorder" Grid.Row="0" IsVisible="False" StrokeThickness="0"
+                BackgroundColor="#E02E7D32" Padding="16,12" Margin="16,8,16,4">
+            <Border.StrokeShape><RoundRectangle CornerRadius="8"/></Border.StrokeShape>
+            <Label x:Name="ToastLabel" Text="✓ Added to cart" TextColor="{StaticResource WhiteColor}" FontSize="14"/>
+        </Border>
 
-            <!-- Loading Indicator -->
-            <ActivityIndicator x:Name="LoadingIndicator"
-                              IsRunning="True"
-                              IsVisible="False"
-                              Color="{StaticResource PrimaryColor}"
-                              HeightRequest="40"
-                              WidthRequest="40"
-                              HorizontalOptions="Center"
-                              Margin="0,20"/>
-
-            <!-- Menu Items Collection -->
-            <CollectionView x:Name="MenuItemsCollectionView"
-                           ItemsSource="{Binding MenuItems}"
-                           SelectionMode="None"
-                           Margin="0,0,0,20">
-                <CollectionView.ItemsLayout>
-                    <GridItemsLayout Orientation="Vertical"
-                                   Span="2"
-                                   HorizontalItemSpacing="8"
-                                   VerticalItemSpacing="8"/>
-                </CollectionView.ItemsLayout>
-                
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <Frame BackgroundColor="{StaticResource WhiteColor}"
-                               BorderColor="#E0E0E0"
-                               CornerRadius="12"
-                               Padding="16"
-                               HasShadow="True"
-                               Margin="4">
-                            <StackLayout Spacing="12">
-                                <!-- Item Name and Price -->
-                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                                    <Label Text="{Binding Name}"
-                                           FontSize="18"
-                                           FontAttributes="Bold"
-                                           TextColor="{StaticResource TextPrimary}"
-                                           Grid.Column="0"
-                                           LineBreakMode="TailTruncation"/>
-                                    <Label Text="{Binding RetailPrice, StringFormat='{0:N2}'}"
-                                           FontSize="18"
-                                           FontAttributes="Bold"
-                                           TextColor="{StaticResource PrimaryColor}"
-                                           Grid.Column="1"/>
-                                </Grid>
-                                
-                                <!-- Quantity Selector -->
-                                <StackLayout Orientation="Horizontal" Spacing="8" HorizontalOptions="Center">
-                                    <Button Text="-"
-                                            Clicked="OnDecreaseQty"
-                                            CommandParameter="{Binding .}"
-                                            BackgroundColor="{StaticResource PrimaryColor}"
-                                            TextColor="{StaticResource WhiteColor}"
-                                            WidthRequest="40"
-                                            HeightRequest="40"
-                                            CornerRadius="20"
-                                            FontSize="18"
-                                            FontAttributes="Bold"/>
-                                    <Label Text="{Binding MaxQty}"
-                                           FontSize="18"
-                                           FontAttributes="Bold"
-                                           TextColor="{StaticResource TextPrimary}"
-                                           WidthRequest="60"
-                                           HorizontalTextAlignment="Center"
-                                           VerticalOptions="Center"/>
-                                    <Button Text="+"
-                                            Clicked="OnIncreaseQty"
-                                            CommandParameter="{Binding .}"
-                                            BackgroundColor="{StaticResource PrimaryColor}"
-                                            TextColor="{StaticResource WhiteColor}"
-                                            WidthRequest="40"
-                                            HeightRequest="40"
-                                            CornerRadius="20"
-                                            FontSize="18"
-                                            FontAttributes="Bold"/>
-                                </StackLayout>
-                                
-                                <!-- Serving Size (if available) -->
-                                <StackLayout x:Name="ServingSizeLayout" Spacing="8" IsVisible="False">
-                                    <Label Text="Serving Size:"
-                                           FontSize="14"
-                                           FontAttributes="Bold"
-                                           TextColor="{StaticResource TextSecondary}"/>
-                                    <ScrollView Orientation="Horizontal">
-                                        <StackLayout Orientation="Horizontal" Spacing="8" x:Name="ServingSizeButtons"/>
-                                    </ScrollView>
-                                </StackLayout>
-                                
-                                <!-- Person/Chair Selector (if table has capacity) -->
-                                <StackLayout x:Name="PersonLayout" Spacing="8" IsVisible="False">
-                                    <Label Text="Person:"
-                                           FontSize="14"
-                                           FontAttributes="Bold"
-                                           TextColor="{StaticResource TextSecondary}"/>
-                                    <ScrollView Orientation="Horizontal">
-                                        <StackLayout Orientation="Horizontal" Spacing="8" x:Name="PersonButtons"/>
-                                    </ScrollView>
-                                </StackLayout>
-                                
-                                <!-- Add to Cart Button -->
-                                <Button Text="Add to Cart"
-                                        Clicked="OnAddToCart"
-                                        CommandParameter="{Binding .}"
-                                        BackgroundColor="{StaticResource PrimaryColor}"
-                                        TextColor="{StaticResource WhiteColor}"
-                                        CornerRadius="8"
-                                        HeightRequest="44"
-                                        FontSize="16"
-                                        FontAttributes="Bold"
-                                        Margin="0,8,0,0"/>
-                                
-                                <!-- View Cart Button (optional - can be added to header) -->
-                            </StackLayout>
-                        </Frame>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
-
-            <!-- Empty State -->
-            <StackLayout x:Name="EmptyStateLayout"
-                        IsVisible="False"
-                        Spacing="20"
-                        HorizontalOptions="Center"
-                        VerticalOptions="Center"
-                        Margin="0,40">
-                <Label Text="🍽"
-                       FontSize="80"
-                       HorizontalOptions="Center"
-                       Opacity="0.3"/>
-                <Label Text="No items found"
-                       FontSize="20"
-                       FontAttributes="Bold"
-                       TextColor="{StaticResource TextSecondary}"
-                       HorizontalOptions="Center"/>
-                <Label Text="No menu items available in this category."
-                       FontSize="14"
-                       TextColor="{StaticResource TextSecondary}"
-                       HorizontalOptions="Center"
-                       HorizontalTextAlignment="Center"/>
-            </StackLayout>
-
+        <!-- Header: Back | Menu Items | Cart (same as Cart page) -->
+        <StackLayout Grid.Row="1" Spacing="4" Margin="16,8,16,12">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                <Button Text="&lt;" Clicked="OnBackClicked" BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"
+                        FontSize="24" WidthRequest="44" HeightRequest="44" VerticalOptions="Center" Grid.Column="0"/>
+                <Label Text="Menu Items" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"
+                       HorizontalOptions="Center" VerticalOptions="Center" Grid.Column="1"/>
+                <Button Text="🛒" Clicked="OnViewCartClicked" BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"
+                        FontSize="22" WidthRequest="44" HeightRequest="44" VerticalOptions="Center" Grid.Column="2"/>
+            </Grid>
+            <Label x:Name="HeaderSubtitle" Text="Service: Dine-In" FontSize="13" TextColor="{StaticResource TextSecondary}"/>
         </StackLayout>
-    </ScrollView>
+
+        <!-- Category filter -->
+        <ScrollView Grid.Row="2" Orientation="Horizontal" Margin="16,0,16,8">
+            <StackLayout Orientation="Horizontal" Spacing="8" x:Name="CategoryButtonsLayout"/>
+        </ScrollView>
+
+        <!-- Menu items: white cards like Cart (circle + name, price, green pill, Add to Cart) -->
+        <ScrollView Grid.Row="3">
+            <StackLayout Padding="16" Margin="0,0,0,24" Spacing="0">
+                <CollectionView x:Name="MenuItemsCollectionView"
+                               ItemsSource="{Binding MenuItems}"
+                               SelectionMode="None">
+                    <CollectionView.ItemsLayout>
+                        <LinearItemsLayout Orientation="Vertical" ItemSpacing="12"/>
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Frame BackgroundColor="{StaticResource WhiteColor}"
+                                   BorderColor="{StaticResource BorderColor}"
+                                   CornerRadius="12"
+                                   Padding="14"
+                                   HasShadow="True"
+                                   Margin="0,0,0,12">
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                                    <Ellipse WidthRequest="64" HeightRequest="64" Fill="#F5F5F5" Grid.Column="0" VerticalOptions="Center"/>
+                                    <Label Text="🍽" FontSize="28" HorizontalOptions="Center" VerticalOptions="Center" Grid.Column="0"/>
+                                    <StackLayout Grid.Column="1" VerticalOptions="Center" Spacing="6">
+                                        <Label Text="{Binding Name}" FontSize="16" FontAttributes="Bold"
+                                               TextColor="{StaticResource TextPrimary}" LineBreakMode="TailTruncation"/>
+                                        <Label Text="{Binding RetailPrice, StringFormat='${0:N2}'}" FontSize="14"
+                                               TextColor="{StaticResource TextSecondary}"/>
+                                        <Border HeightRequest="36" BackgroundColor="{StaticResource GreenAccent}" StrokeThickness="0"
+                                                VerticalOptions="Start" HorizontalOptions="Start" Margin="0,4,0,0">
+                                            <Border.StrokeShape><RoundRectangle CornerRadius="18"/></Border.StrokeShape>
+                                            <Grid ColumnDefinitions="Auto,*,Auto" WidthRequest="110" ColumnSpacing="0">
+                                                <Button Text="−" Clicked="OnDecreaseQty" CommandParameter="{Binding .}"
+                                                        BackgroundColor="Transparent" TextColor="{StaticResource WhiteColor}"
+                                                        WidthRequest="36" FontSize="18" FontAttributes="Bold" VerticalOptions="Center" Grid.Column="0"/>
+                                                <Label Text="{Binding MaxQty}" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource WhiteColor}"
+                                                       HorizontalTextAlignment="Center" VerticalOptions="Center" Grid.Column="1"/>
+                                                <Button Text="+" Clicked="OnIncreaseQty" CommandParameter="{Binding .}"
+                                                        BackgroundColor="Transparent" TextColor="{StaticResource WhiteColor}"
+                                                        WidthRequest="36" FontSize="18" FontAttributes="Bold" VerticalOptions="Center" Grid.Column="2"/>
+                                            </Grid>
+                                        </Border>
+                                        <Button Text="🛒  Add to Cart" Clicked="OnAddToCart" CommandParameter="{Binding .}"
+                                                BackgroundColor="{StaticResource GreenAccent}" TextColor="{StaticResource WhiteColor}"
+                                                CornerRadius="10" HeightRequest="44" FontSize="15" FontAttributes="Bold" Margin="0,8,0,0"/>
+                                    </StackLayout>
+                                </Grid>
+                            </Frame>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <StackLayout x:Name="EmptyStateLayout" IsVisible="False" Spacing="16"
+                             HorizontalOptions="Center" VerticalOptions="Center" Margin="0,40">
+                    <Label Text="🍽" FontSize="72" HorizontalOptions="Center" Opacity="0.4"/>
+                    <Label Text="No items found" FontSize="20" FontAttributes="Bold" TextColor="{StaticResource TextSecondary}" HorizontalOptions="Center"/>
+                    <Label Text="No menu items in this category." FontSize="14" TextColor="{StaticResource TextSecondary}"
+                           HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
+                </StackLayout>
+            </StackLayout>
+        </ScrollView>
+
+        <controls:LoadingOverlay x:Name="LoadingOverlay" Grid.Row="0" Grid.RowSpan="4" IsVisible="False" Message="Loading menu..."/>
+    </Grid>
 </ContentPage>
 

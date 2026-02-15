@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Razor">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFrameworks>net9.0-android;net9.0-ios;net9.0-maccatalyst</TargetFrameworks>
@@ -100,9 +100,7 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.6" />
         <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.3" />
-        <PackageReference Include="MudBlazor" Version="8.7.0" />
 	</ItemGroup>
 
     <ItemGroup>
@@ -129,6 +127,9 @@
         <Generator>MSBuild:Compile</Generator>
       </MauiXaml>
       <MauiXaml Update="Components\MauiPages\OrderDetailsPage.xaml">
+        <Generator>MSBuild:Compile</Generator>
+      </MauiXaml>
+      <MauiXaml Update="Components\MauiPages\KitchenPage.xaml">
         <Generator>MSBuild:Compile</Generator>
       </MauiXaml>
       <MauiXaml Update="Components\MauiPages\GenerateBillPage.xaml">

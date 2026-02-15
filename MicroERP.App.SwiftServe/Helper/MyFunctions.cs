@@ -5,8 +5,6 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Configuration;
 using Microsoft.VisualBasic;
 
-using MudBlazor;
-
 using Newtonsoft.Json;
 
 using MicroERP.Shared.Models;
@@ -25,11 +23,28 @@ namespace MicroERP.App.SwiftServe.Helper;
 
 public static class MyFunctions
 {
+    /// <summary>
+    /// Builds the full API request URI so there is exactly one "api/" segment.
+    /// Works whether BaseURI is "https://localhost:7019/" or "https://localhost:7019/api/".
+    /// </summary>
+    private static string BuildApiUri(string url)
+    {
+        var baseUri = (MicroERP.App.SwiftServe.Helper.MyGlobals.BaseURI ?? "").Trim().TrimEnd('/');
+        if (string.IsNullOrEmpty(baseUri)) return url;
+        var path = (url ?? "").Trim().TrimStart('/');
+        bool baseEndsWithApi = baseUri.EndsWith("api", StringComparison.OrdinalIgnoreCase);
+        if (baseEndsWithApi && path.StartsWith("api/", StringComparison.OrdinalIgnoreCase))
+            path = path.Substring(4);
+        else if (!baseEndsWithApi && !path.StartsWith("api/", StringComparison.OrdinalIgnoreCase))
+            path = "api/" + path;
+        return baseUri + "/" + path;
+    }
+
     public static async Task<T?> GetAsync<T>(string url, bool useTokenAuthorize = false)
     {
         try
         {
-            string uri = $"{MicroERP.App.SwiftServe.Helper.MyGlobals.BaseURI}{url}";
+            string uri = BuildApiUri(url);
 
             using HttpClient httpClient = new();
             httpClient.DefaultRequestHeaders.Accept.Add(
@@ -84,7 +99,7 @@ public static class MyFunctions
     {
         try
         {
-            string uri = $"{MicroERP.App.SwiftServe.Helper.MyGlobals.BaseURI}{url}";
+            string uri = BuildApiUri(url);
 
             using HttpClient httpClient = new();
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -187,10 +202,10 @@ public static class MyFunctions
     {
         try
         {
+            string fullUri = BuildApiUri(url);
             using HttpClient httpClient = new();
             httpClient.Timeout = TimeSpan.FromMinutes(30);
             httpClient.DefaultRequestHeaders.Clear();
-            httpClient.BaseAddress = new Uri(MicroERP.App.SwiftServe.Helper.MyGlobals.BaseURI);
 
             if (Authorized == true)
             {
@@ -199,7 +214,7 @@ public static class MyFunctions
 
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            HttpResponseMessage responseMessage = await httpClient.DeleteAsync(url).ConfigureAwait(false);
+            HttpResponseMessage responseMessage = await httpClient.DeleteAsync(fullUri).ConfigureAwait(false);
             if (responseMessage.IsSuccessStatusCode)
             {
                 string resultMessage = responseMessage.Content.ReadAsStringAsync().Result;

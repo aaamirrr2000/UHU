@@ -7,7 +7,7 @@
 
     <ContentPage.Resources>
         <ResourceDictionary>
-            <!-- Primary Colors matching MudBlazor theme -->
+            <!-- Primary theme colors -->
             <Color x:Key="PrimaryColor">#512BD4</Color>
             <Color x:Key="PrimaryLightColor">#7B5FE8</Color>
             <Color x:Key="PrimaryDarkColor">#2B0B98</Color>

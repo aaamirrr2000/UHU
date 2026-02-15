@@ -1,4 +1,5 @@
 using MicroERP.App.SwiftServe.Helper;
+using MicroERP.App.SwiftServe.Components.MauiPages.Controls;
 using MicroERP.Shared.Models;
 using Microsoft.Maui.Controls;
 using System.Collections.ObjectModel;
@@ -16,6 +17,7 @@ public partial class ClientFeedbackPage : ContentPage
     public ClientFeedbackPage(int id)
     {
         InitializeComponent();
+        NavigationPage.SetTitleView(this, NavigationMenu.CreateTitleView(this, NavMenu));
         _invoiceId = id;
         LoadFeedbackData();
     }

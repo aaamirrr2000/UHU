@@ -35,6 +35,7 @@ public static class MyGlobals
     
     // Restaurant Management (SwiftServe specific)
     public static ServiceChargeInfo ServiceCharge { get; set; } = new ServiceChargeInfo();
+    public static ServiceChargeInfo Discount { get; set; } = new ServiceChargeInfo();
     public static double GST { get; set; } = 0;
     public static string _serviceType { get; set; } = "Dine-In";
     public static RestaurantTablesModel? _selectedTable { get; set; }

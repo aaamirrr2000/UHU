@@ -171,7 +171,8 @@ public class InvoiceDetailModel
     public DateTime TranDate { get; set; } = DateTime.Today;
     public int IsSoftDeleted { get; set; } = 0;
   
-    // UI & Navigation Fields
+    // UI & Navigation Fields (from Invoice/joined tables when loaded via Search)
+    public string? SeqNo { get; set; } = string.Empty;
     public string Item { get; set; } = string.Empty;
     public string StockType { get; set; } = string.Empty;
     public bool IsSelected { get; set; } = false;

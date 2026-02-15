@@ -1,6 +1,7 @@
 using MicroERP.App.SwiftServe.Helper;
 using MicroERP.App.SwiftServe.Components.MauiPages;
 using Microsoft.Maui.Controls;
+using Microsoft.Maui.Controls.Shapes;
 using System.Collections.Generic;
 using Microsoft.Maui.Storage;
 
@@ -46,6 +47,12 @@ public partial class NavigationMenu : ContentView
             case "WAITER":
                 _menuItems.Add(new MenuItem
                 {
+                    Text = "Kitchen",
+                    PageType = typeof(KitchenPage),
+                    Icon = "🍳"
+                });
+                _menuItems.Add(new MenuItem
+                {
                     Text = "Orders History",
                     PageType = typeof(OrdersPage),
                     Icon = "📋"
@@ -71,6 +78,12 @@ public partial class NavigationMenu : ContentView
             case "KITCHEN":
                 _menuItems.Add(new MenuItem
                 {
+                    Text = "Kitchen",
+                    PageType = typeof(KitchenPage),
+                    Icon = "🍳"
+                });
+                _menuItems.Add(new MenuItem
+                {
                     Text = "All Orders",
                     PageType = typeof(OrdersPage),
                     Icon = "📋"
@@ -78,6 +91,12 @@ public partial class NavigationMenu : ContentView
                 break;
 
             case "ADMIN":
+                _menuItems.Add(new MenuItem
+                {
+                    Text = "Kitchen",
+                    PageType = typeof(KitchenPage),
+                    Icon = "🍳"
+                });
                 _menuItems.Add(new MenuItem
                 {
                     Text = "Orders History",
@@ -94,6 +113,12 @@ public partial class NavigationMenu : ContentView
                 break;
 
             default:
+                _menuItems.Add(new MenuItem
+                {
+                    Text = "Kitchen",
+                    PageType = typeof(KitchenPage),
+                    Icon = "🍳"
+                });
                 _menuItems.Add(new MenuItem
                 {
                     Text = "Orders History",
@@ -123,30 +148,46 @@ public partial class NavigationMenu : ContentView
         {
             if (item.IsSeparator && MenuItemsContainer.Children.Count > 0)
             {
-                // Add separator
                 var separator = new BoxView
                 {
                     HeightRequest = 1,
                     BackgroundColor = Color.FromArgb("#E0E0E0"),
-                    Margin = new Thickness(8, 12)
+                    Margin = new Thickness(12, 8)
                 };
                 MenuItemsContainer.Children.Add(separator);
             }
 
-            var menuButton = new Button
+            var row = new Grid { ColumnDefinitions = new ColumnDefinitionCollection { new ColumnDefinition { Width = GridLength.Auto }, new ColumnDefinition { Width = GridLength.Star } }, Padding = new Thickness(14, 10), MinimumHeightRequest = 48 };
+            var iconLabel = new Label
             {
-                Text = $"{item.Icon} {item.Text}",
-                BackgroundColor = Colors.Transparent,
-                TextColor = Color.FromArgb("#212121"),
-                HorizontalOptions = LayoutOptions.FillAndExpand,
-                CornerRadius = 8,
-                HeightRequest = 48,
-                Margin = new Thickness(4, 2),
-                Padding = new Thickness(12, 0)
+                Text = item.Icon,
+                FontSize = 20,
+                VerticalOptions = LayoutOptions.Center,
+                Margin = new Thickness(0, 0, 12, 0)
             };
+            var textLabel = new Label
+            {
+                Text = item.Text,
+                FontSize = 16,
+                TextColor = Color.FromArgb("#212121"),
+                VerticalOptions = LayoutOptions.Center,
+                VerticalTextAlignment = TextAlignment.Center
+            };
+            row.Add(iconLabel, 0, 0);
+            row.Add(textLabel, 1, 0);
 
-            menuButton.Clicked += (s, e) => OnMenuItemClicked(item);
-            MenuItemsContainer.Children.Add(menuButton);
+            var wrap = new Border
+            {
+                Content = row,
+                StrokeThickness = 0,
+                BackgroundColor = Color.FromArgb("#F5F5F5"),
+                Margin = new Thickness(0, 3),
+                StrokeShape = new RoundRectangle { CornerRadius = 10 }
+            };
+            var tap = new TapGestureRecognizer();
+            tap.Tapped += (s, e) => OnMenuItemClicked(item);
+            wrap.GestureRecognizers.Add(tap);
+            MenuItemsContainer.Children.Add(wrap);
         }
     }
 
@@ -195,9 +236,14 @@ public partial class NavigationMenu : ContentView
         }
     }
 
-    private void OnMenuButtonClicked(object sender, EventArgs e)
+    /// <summary>Opens or closes the flyout. Call from the nav bar menu button.</summary>
+    public void ToggleMenu()
     {
-        ToggleMenu();
+        _isMenuOpen = !_isMenuOpen;
+        SidebarFlyout.IsVisible = _isMenuOpen;
+        Overlay.IsVisible = _isMenuOpen;
+        NavigationMenuControl.HorizontalOptions = _isMenuOpen ? LayoutOptions.Fill : LayoutOptions.Start;
+        NavigationMenuControl.VerticalOptions = _isMenuOpen ? LayoutOptions.Fill : LayoutOptions.Start;
     }
 
     private void OnCloseMenuClicked(object sender, EventArgs e)
@@ -210,18 +256,45 @@ public partial class NavigationMenu : ContentView
         CloseMenu();
     }
 
-    private void ToggleMenu()
-    {
-        _isMenuOpen = !_isMenuOpen;
-        SidebarFlyout.IsVisible = _isMenuOpen;
-        Overlay.IsVisible = _isMenuOpen;
-    }
-
     private void CloseMenu()
     {
         _isMenuOpen = false;
         SidebarFlyout.IsVisible = false;
         Overlay.IsVisible = false;
+        NavigationMenuControl.HorizontalOptions = LayoutOptions.Start;
+        NavigationMenuControl.VerticalOptions = LayoutOptions.Start;
+    }
+
+    /// <summary>Builds a title view for the nav bar: [☰] [title]. Use as page.TitleView.</summary>
+    public static View CreateTitleView(Page page, NavigationMenu navMenu)
+    {
+        var menuBtn = new Button
+        {
+            Text = "☰",
+            FontSize = 22,
+            BackgroundColor = Colors.Transparent,
+            TextColor = Colors.White,
+            Padding = new Thickness(12, 0),
+            WidthRequest = 48,
+            HeightRequest = 44,
+            VerticalOptions = LayoutOptions.Center
+        };
+        menuBtn.Clicked += (_, _) => navMenu.ToggleMenu();
+
+        var titleLabel = new Label
+        {
+            Text = page.Title ?? "",
+            TextColor = Colors.White,
+            FontSize = 18,
+            VerticalOptions = LayoutOptions.Center,
+            VerticalTextAlignment = TextAlignment.Center,
+            Margin = new Thickness(8, 0, 0, 0)
+        };
+
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitionCollection { new ColumnDefinition { Width = GridLength.Auto }, new ColumnDefinition { Width = GridLength.Star } } };
+        grid.Add(menuBtn, 0, 0);
+        grid.Add(titleLabel, 1, 0);
+        return grid;
     }
 
     private void UpdateUserInfo()

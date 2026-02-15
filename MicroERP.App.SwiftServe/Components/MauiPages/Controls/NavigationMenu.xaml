@@ -2,23 +2,28 @@
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MicroERP.App.SwiftServe.Components.MauiPages.Controls.NavigationMenu"
-             x:Name="NavigationMenuControl">
+             x:Name="NavigationMenuControl"
+             HorizontalOptions="Start"
+             VerticalOptions="Start">
 
     <ContentView.Resources>
         <ResourceDictionary>
             <Color x:Key="PrimaryColor">#512BD4</Color>
+            <Color x:Key="PrimaryLightColor">#7B5FE8</Color>
             <Color x:Key="WhiteColor">#FFFFFF</Color>
             <Color x:Key="TextPrimary">#212121</Color>
             <Color x:Key="TextSecondary">#666666</Color>
+            <Color x:Key="BorderColor">#E0E0E0</Color>
             <Color x:Key="BackgroundLight">#F5F5F5</Color>
+            <Color x:Key="MenuItemHighlight">#F0EBFC</Color>
         </ResourceDictionary>
     </ContentView.Resources>
 
     <Grid RowDefinitions="*" ColumnDefinitions="*">
-        <!-- Overlay (when menu is open) - fills entire area so tap-to-close works -->
+        <!-- Overlay when menu is open -->
         <BoxView x:Name="Overlay"
                  Grid.Row="0" Grid.Column="0"
-                 BackgroundColor="#80000000"
+                 BackgroundColor="#99000000"
                  IsVisible="False"
                  HorizontalOptions="FillAndExpand"
                  VerticalOptions="FillAndExpand"
@@ -28,7 +33,7 @@
             </BoxView.GestureRecognizers>
         </BoxView>
 
-        <!-- Sidebar Flyout -->
+        <!-- Sidebar: flush with edges so it feels part of the app -->
         <Border x:Name="SidebarFlyout"
                 Grid.Row="0" Grid.Column="0"
                 BackgroundColor="{StaticResource WhiteColor}"
@@ -37,52 +42,53 @@
                 HorizontalOptions="Start"
                 VerticalOptions="Fill"
                 WidthRequest="280"
-                Margin="0"
                 ZIndex="1000">
             <Border.StrokeShape>
-                <RoundRectangle CornerRadius="0,12,12,0"/>
+                <RoundRectangle CornerRadius="0"/>
             </Border.StrokeShape>
             <Grid RowDefinitions="Auto,*,Auto" ColumnDefinitions="*">
-                <!-- Header -->
-                <Frame Grid.Row="0"
-                       BackgroundColor="{StaticResource PrimaryColor}"
-                       CornerRadius="0,12,0,0"
-                       Padding="16"
-                       HasShadow="False">
-                    <StackLayout Orientation="Horizontal"
-                                 HorizontalOptions="FillAndExpand"
-                                 Spacing="12">
-                        <Label Text="Menu"
-                               FontSize="20"
+                <!-- Header with gradient -->
+                <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Padding="0">
+                    <Grid.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="{StaticResource PrimaryLightColor}" Offset="0"/>
+                            <GradientStop Color="{StaticResource PrimaryColor}" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Grid.Background>
+                    <VerticalStackLayout Padding="20,20,20,16" Spacing="4">
+                        <Label Text="SwiftServe"
+                               FontSize="22"
                                FontAttributes="Bold"
-                               TextColor="{StaticResource WhiteColor}"
-                               VerticalOptions="Center"/>
-                        <Button Text="✕"
-                                FontSize="18"
-                                BackgroundColor="Transparent"
-                                TextColor="{StaticResource WhiteColor}"
-                                Clicked="OnCloseMenuClicked"
-                                HorizontalOptions="End"
-                                WidthRequest="32"
-                                HeightRequest="32"
-                                Margin="0,0,-8,0"/>
-                    </StackLayout>
-                </Frame>
-                <!-- Menu Items -->
+                               TextColor="{StaticResource WhiteColor}"/>
+                        <Label Text="Navigation"
+                               FontSize="13"
+                               Opacity="0.9"
+                               TextColor="{StaticResource WhiteColor}"/>
+                    </VerticalStackLayout>
+                    <Button Grid.Column="1" Text="✕"
+                            FontSize="20"
+                            BackgroundColor="#40FFFFFF"
+                            TextColor="{StaticResource WhiteColor}"
+                            Clicked="OnCloseMenuClicked"
+                            WidthRequest="44" HeightRequest="44"
+                            CornerRadius="22"
+                            Margin="12,12,16,0"
+                            Padding="0"/>
+                </Grid>
+                <!-- Menu items -->
                 <ScrollView Grid.Row="1" VerticalOptions="FillAndExpand">
                     <StackLayout x:Name="MenuItemsContainer"
-                                Spacing="4"
-                                Padding="8">
-                        <!-- Menu items will be added programmatically -->
-                    </StackLayout>
+                                 Spacing="6"
+                                 Padding="12,8,12,12"/>
                 </ScrollView>
                 <!-- Footer -->
-                <Frame Grid.Row="2"
-                       BackgroundColor="{StaticResource BackgroundLight}"
-                       CornerRadius="0,0,12,0"
-                       Padding="16"
-                       HasShadow="False">
-                    <StackLayout Spacing="8">
+                <Border Grid.Row="2" StrokeThickness="0"
+                        BackgroundColor="{StaticResource BackgroundLight}"
+                        Padding="16,14">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="0,0,16,0"/>
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="12">
                         <Label x:Name="UserInfoLabel"
                                Text="User"
                                FontSize="14"
@@ -92,28 +98,13 @@
                                 Clicked="OnLogoutClicked"
                                 BackgroundColor="{StaticResource PrimaryColor}"
                                 TextColor="{StaticResource WhiteColor}"
-                                CornerRadius="8"
-                                HeightRequest="40"
-                                FontSize="14"/>
-                    </StackLayout>
-                </Frame>
+                                CornerRadius="10"
+                                HeightRequest="44"
+                                FontSize="15"
+                                FontAttributes="Bold"/>
+                    </VerticalStackLayout>
+                </Border>
             </Grid>
         </Border>
-
-        <!-- Menu Button (Hamburger) - Fixed Position -->
-        <Button x:Name="MenuButton"
-                Grid.Row="0" Grid.Column="0"
-                Text="☰"
-                FontSize="24"
-                BackgroundColor="Transparent"
-                TextColor="{StaticResource PrimaryColor}"
-                Clicked="OnMenuButtonClicked"
-                HorizontalOptions="Start"
-                VerticalOptions="Start"
-                Margin="8"
-                WidthRequest="48"
-                HeightRequest="48"
-                ZIndex="1001"/>
     </Grid>
 </ContentView>
-

@@ -1,5 +1,7 @@
 using MicroERP.App.SwiftServe.Helper;
+using MicroERP.App.SwiftServe.Components.MauiPages.Controls;
 using MicroERP.App.SwiftServe.Services;
+using MicroERP.App.SwiftServe.ViewModels;
 using MicroERP.Shared.Models;
 using Microsoft.Maui.Controls;
 using System.Collections.ObjectModel;
@@ -11,12 +13,12 @@ namespace MicroERP.App.SwiftServe.Components.MauiPages;
 public partial class OrderPage : ContentPage
 {
     private ObservableCollection<CategoriesModel> _categories = new();
-    private ObservableCollection<ItemsModel> _menuItems = new();
+    private ObservableCollection<MenuItemViewModel> _menuItems = new();
     private CategoriesModel _selectedCategory;
     private bool _isLoading = false;
     private CartStateService _cartState;
 
-    public ObservableCollection<ItemsModel> MenuItems
+    public ObservableCollection<MenuItemViewModel> MenuItems
     {
         get => _menuItems;
         set
@@ -30,11 +32,9 @@ public partial class OrderPage : ContentPage
     {
         InitializeComponent();
         BindingContext = this;
-        
-        // Get CartStateService (could be injected via DI or accessed statically)
+        NavigationPage.SetTitleView(this, NavigationMenu.CreateTitleView(this, NavMenu));
         _cartState = Application.Current?.Handler?.MauiContext?.Services?.GetService<CartStateService>() 
                      ?? new CartStateService();
-        
         LoadData();
     }
 
@@ -108,15 +108,15 @@ public partial class OrderPage : ContentPage
         try
         {
             _isLoading = true;
-            LoadingIndicator.IsVisible = true;
-            LoadingIndicator.IsRunning = true;
+            if (LoadingOverlay != null) { LoadingOverlay.IsVisible = true; LoadingOverlay.Message = "Loading menu..."; }
             MenuItemsCollectionView.IsVisible = false;
             EmptyStateLayout.IsVisible = false;
 
             _selectedCategory = category;
             MenuItems.Clear();
 
-            var fetchedItems = await MyFunctions.GetAsync<List<ItemsModel>>($"api/Items/Search/CategoriesId={category.Id}", true) ?? new();
+            var criteria = Uri.EscapeDataString($"CategoryId={category.Id}");
+            var fetchedItems = await MyFunctions.GetAsync<List<ItemsModel>>($"api/Items/Search/{criteria}", true) ?? new();
 
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
@@ -159,8 +159,7 @@ public partial class OrderPage : ContentPage
                         Unit = item.Unit,
                         CategoryId = item.CategoryId
                     };
-                    
-                    MenuItems.Add(menuItem);
+                    MenuItems.Add(new MenuItemViewModel(menuItem));
                 }
             }
 
@@ -169,13 +168,13 @@ public partial class OrderPage : ContentPage
         catch (Exception ex)
         {
             Serilog.Log.Error(ex, $"Error loading items for category {category.Name}: {ex.Message}");
+            if (LoadingOverlay != null) LoadingOverlay.IsVisible = false;
             await DisplayAlert("Error", $"Failed to load items: {ex.Message}", "OK");
         }
         finally
         {
             _isLoading = false;
-            LoadingIndicator.IsVisible = false;
-            LoadingIndicator.IsRunning = false;
+            if (LoadingOverlay != null) LoadingOverlay.IsVisible = false;
             MenuItemsCollectionView.IsVisible = MenuItems.Any();
         }
     }
@@ -189,23 +188,30 @@ public partial class OrderPage : ContentPage
 
     private void OnIncreaseQty(object sender, EventArgs e)
     {
-        if (sender is Button button && button.CommandParameter is ItemsModel item)
+        var vm = GetViewModelFromSender(sender);
+        if (vm != null)
         {
-            item.MaxQty++;
-            UpdateItemPrice(item);
+            vm.MaxQty++;
+            UpdateItemPrice(vm.Item);
+            vm.NotifyAllProperties();
         }
     }
 
     private void OnDecreaseQty(object sender, EventArgs e)
     {
-        if (sender is Button button && button.CommandParameter is ItemsModel item)
+        var vm = GetViewModelFromSender(sender);
+        if (vm != null && vm.MaxQty > 1)
         {
-            if (item.MaxQty > 1)
-            {
-                item.MaxQty--;
-                UpdateItemPrice(item);
-            }
+            vm.MaxQty--;
+            UpdateItemPrice(vm.Item);
+            vm.NotifyAllProperties();
         }
+    }
+
+    private static MenuItemViewModel? GetViewModelFromSender(object sender)
+    {
+        if (sender is not Button button) return null;
+        return button.CommandParameter as MenuItemViewModel ?? button.BindingContext as MenuItemViewModel;
     }
 
     private void UpdateItemPrice(ItemsModel item)
@@ -219,35 +225,47 @@ public partial class OrderPage : ContentPage
 
     private async void OnAddToCart(object sender, EventArgs e)
     {
-        if (sender is Button button && button.CommandParameter is ItemsModel item)
+        var vm = GetViewModelFromSender(sender);
+        if (vm == null) return;
+        var item = vm.Item;
+        try
         {
-            try
+            var newItem = new ItemsModel
             {
-                var newItem = new ItemsModel
-                {
-                    Id = item.Id,
-                    Name = item.Name,
-                    MaxQty = item.MaxQty,
-                    Unit = item.Unit,
-                    RetailPrice = item.RetailPrice,
-                    ServingSize = item.ServingSize,
-                    Person = item.Person,
-                    Description = item.Description
-                };
-                
-                _cartState.CartItems?.Add(newItem);
-                _cartState.SelectedTable = MyGlobals._selectedTable;
-                _cartState.ServiceType = MyGlobals._serviceType;
-                
-                // Show notification that item was added (user can continue shopping)
-                await DisplayAlert("Added to Cart", $"{item.Name} has been added to your cart", "OK");
-            }
-            catch (Exception ex)
-            {
-                Serilog.Log.Error(ex, $"Error adding item to cart: {ex.Message}");
-                await DisplayAlert("Error", $"Failed to add item to cart: {ex.Message}", "OK");
-            }
+                Id = item.Id,
+                Name = item.Name,
+                MaxQty = item.MaxQty,
+                Unit = item.Unit,
+                RetailPrice = item.RetailPrice,
+                ServingSize = item.ServingSize,
+                Person = item.Person,
+                Description = item.Description,
+                RevenueAccountId = item.RevenueAccountId,
+                ExpenseAccountId = item.ExpenseAccountId
+            };
+            _cartState.CartItems?.Add(newItem);
+            _cartState.SelectedTable = MyGlobals._selectedTable;
+            _cartState.ServiceType = MyGlobals._serviceType;
+            // Non-blocking toast: show message and auto-hide after 2 seconds (no OK tap)
+            if (ToastLabel != null) ToastLabel.Text = $"✓ Added: {item.Name}";
+            if (ToastBorder != null) ToastBorder.IsVisible = true;
+            _ = DismissToastAfterAsync(2000);
+            vm.MaxQty = 1;
+            UpdateItemPrice(vm.Item);
+            vm.NotifyAllProperties();
         }
+        catch (Exception ex)
+        {
+            Serilog.Log.Error(ex, $"Error adding item to cart: {ex.Message}");
+            await DisplayAlert("Error", $"Failed to add item to cart: {ex.Message}", "OK");
+        }
+    }
+
+    private async Task DismissToastAfterAsync(int milliseconds)
+    {
+        await Task.Delay(milliseconds);
+        if (ToastBorder != null)
+            MainThread.BeginInvokeOnMainThread(() => ToastBorder.IsVisible = false);
     }
 
     private void OnViewCartClicked(object sender, EventArgs e)

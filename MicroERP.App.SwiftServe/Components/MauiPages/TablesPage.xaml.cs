@@ -1,4 +1,5 @@
 using MicroERP.App.SwiftServe.Helper;
+using MicroERP.App.SwiftServe.Components.MauiPages.Controls;
 using MicroERP.Shared.Models;
 using Microsoft.Maui.Controls;
 using System.Collections.ObjectModel;
@@ -38,7 +39,8 @@ public partial class TablesPage : ContentPage, INotifyPropertyChanged
     {
         InitializeComponent();
         BindingContext = this;
-        
+        NavigationPage.SetTitleView(this, NavigationMenu.CreateTitleView(this, NavMenu));
+
         // Ensure BaseURI is set
         if (string.IsNullOrEmpty(MyGlobals.BaseURI))
         {
@@ -68,8 +70,7 @@ public partial class TablesPage : ContentPage, INotifyPropertyChanged
         try
         {
             _isLoading = true;
-            LoadingIndicator.IsVisible = true;
-            LoadingIndicator.IsRunning = true;
+            if (LoadingOverlay != null) { LoadingOverlay.IsVisible = true; LoadingOverlay.Message = "Loading tables..."; }
 
             string apiUrl = BuildApiUrl("api/RestaurantTables/Search");
             
@@ -117,8 +118,7 @@ public partial class TablesPage : ContentPage, INotifyPropertyChanged
         finally
         {
             _isLoading = false;
-            LoadingIndicator.IsVisible = false;
-            LoadingIndicator.IsRunning = false;
+            if (LoadingOverlay != null) LoadingOverlay.IsVisible = false;
         }
     }
 
@@ -174,6 +174,12 @@ public partial class TablesPage : ContentPage, INotifyPropertyChanged
             UpdateTableCount();
             UpdateEmptyState();
         });
+    }
+
+    private void OnBackClicked(object sender, EventArgs e)
+    {
+        if (Navigation.NavigationStack.Count > 1)
+            Navigation.PopAsync();
     }
 
     private async void OnRefreshClicked(object sender, EventArgs e)

@@ -1,4 +1,5 @@
 using MicroERP.App.SwiftServe.Helper;
+using MicroERP.App.SwiftServe.Components.MauiPages.Controls;
 using MicroERP.Shared.Models;
 using Microsoft.Maui.Controls;
 using System.Collections.ObjectModel;
@@ -11,7 +12,7 @@ public partial class OrdersPage : ContentPage
 {
     private ObservableCollection<InvoiceModel> _allInvoices = new();
     private ObservableCollection<InvoiceModel> _filteredInvoices = new();
-    private DateTime _fromDate = DateTime.Today;
+    private DateTime _fromDate = DateTime.Today.AddDays(-6); // Default: last 7 days so order history shows recent orders
     private string _searchQuery = string.Empty;
     private string _serviceTypeFilter = null;
     private System.Timers.Timer _refreshTimer;
@@ -36,10 +37,14 @@ public partial class OrdersPage : ContentPage
         }
     }
 
+    /// <summary>Parameterless constructor for navigation menu (e.g. Order History).</summary>
+    public OrdersPage() : this(null) { }
+
     public OrdersPage(string serviceTypeFilter = null)
     {
         InitializeComponent();
         BindingContext = this;
+        NavigationPage.SetTitleView(this, NavigationMenu.CreateTitleView(this, NavMenu));
         _serviceTypeFilter = serviceTypeFilter;
         
         if (!string.IsNullOrEmpty(serviceTypeFilter))
@@ -92,7 +97,7 @@ public partial class OrdersPage : ContentPage
             string encodedUsername = Uri.EscapeDataString(username);
             string encodedPassword = Uri.EscapeDataString(password);
 
-            var user = await MyFunctions.GetAsync<UsersModel>($"api/Login/Login/{encodedUsername}/{encodedPassword}", false);
+            var user = await MyFunctions.GetAsync<UsersModel>($"Login/Login/{encodedUsername}/{encodedPassword}", false);
 
             if (user != null && !string.IsNullOrEmpty(user.Token))
             {
@@ -105,7 +110,7 @@ public partial class OrdersPage : ContentPage
                     MyGlobals.BaseURI = !string.IsNullOrEmpty(savedUrl) ? savedUrl : "https://localhost:7019/api/";
                 }
 
-                var org = await MyFunctions.GetAsync<List<OrganizationsModel>>($"api/Organizations/Search", true) ?? new List<OrganizationsModel>();
+                var org = await MyFunctions.GetAsync<List<OrganizationsModel>>("api/Organizations/Search", true) ?? new List<OrganizationsModel>();
                 if (org.Any())
                 {
                     MyGlobals.Organization = org.FirstOrDefault()!;
@@ -122,20 +127,17 @@ public partial class OrdersPage : ContentPage
     {
         try
         {
-            LoadingIndicator.IsVisible = true;
-            LoadingIndicator.IsRunning = true;
+            if (LoadingOverlay != null) { LoadingOverlay.IsVisible = true; LoadingOverlay.Message = "Loading orders..."; }
             OrdersCollectionView.IsVisible = false;
             EmptyStateLayout.IsVisible = false;
 
-            double gmtOffset = Convert.ToDouble(MyGlobals.Organization.GMT);
-            var localStart = FromDate.Date;
-            var localEnd = localStart.AddDays(1);
-            var utcStart = localStart.AddHours(-gmtOffset);
-            var utcEnd = localEnd.AddHours(-gmtOffset);
+            // Date range: FromDate through FromDate+6 (7 days), date-only comparison like web Invoice Summary
+            var startDate = FromDate.Date.ToString("yyyy-MM-dd");
+            var endDateExclusive = FromDate.Date.AddDays(7).ToString("yyyy-MM-dd");
+            string criteria = $"i.InvoiceType = 'SALE INVOICE' AND CAST(ISNULL(i.TranDate, i.CreatedOn) AS DATE) >= CAST('{startDate}' AS DATE) AND CAST(ISNULL(i.TranDate, i.CreatedOn) AS DATE) < CAST('{endDateExclusive}' AS DATE)";
+            string encodedCriteria = Uri.EscapeDataString(criteria);
 
-            string criteria = $"i.TranDate >= '{utcStart:yyyy-MM-dd HH:mm:ss}' AND i.TranDate < '{utcEnd:yyyy-MM-dd HH:mm:ss}' AND i.InvoiceType = 'BILL'";
-            
-            var res = await MyFunctions.GetAsync<List<InvoiceModel>>($"Invoice/Search/{criteria}", true);
+            var res = await MyFunctions.GetAsync<List<InvoiceModel>>($"Invoice/Search/{encodedCriteria}", true);
             if (res != null)
             {
                 _allInvoices = new ObservableCollection<InvoiceModel>(res);
@@ -169,8 +171,7 @@ public partial class OrdersPage : ContentPage
         }
         finally
         {
-            LoadingIndicator.IsVisible = false;
-            LoadingIndicator.IsRunning = false;
+            if (LoadingOverlay != null) LoadingOverlay.IsVisible = false;
             OrdersCollectionView.IsVisible = _filteredInvoices.Any();
         }
     }
@@ -220,6 +221,12 @@ public partial class OrdersPage : ContentPage
                 item.ElapsedTime = GetElapsedTime(item.CreatedOn);
             }
         });
+    }
+
+    private void OnBackClicked(object sender, EventArgs e)
+    {
+        if (Navigation.NavigationStack.Count > 1)
+            Navigation.PopAsync();
     }
 
     private void OnDateChanged(object sender, DateChangedEventArgs e)

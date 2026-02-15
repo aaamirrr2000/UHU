@@ -5,13 +5,13 @@
              x:Class="MicroERP.App.SwiftServe.App">
     <Application.Resources>
         <ResourceDictionary>
-
-        <!--
-            For information about styling .NET MAUI pages
-            please refer to the documentation:
-            https://go.microsoft.com/fwlink/?linkid=2282329
-        -->
-
+            <!-- Standard navigation bar for all pages -->
+            <Color x:Key="NavBarBackground">#512BD4</Color>
+            <Color x:Key="NavBarText">#FFFFFF</Color>
+            <Style TargetType="NavigationPage" ApplyToDerivedTypes="True">
+                <Setter Property="BarBackgroundColor" Value="{StaticResource NavBarBackground}" />
+                <Setter Property="BarTextColor" Value="{StaticResource NavBarText}" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

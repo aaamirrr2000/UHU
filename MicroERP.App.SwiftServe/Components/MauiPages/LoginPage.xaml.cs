@@ -86,7 +86,10 @@ public partial class LoginPage : ContentPage
             if (MyGlobals.BaseURI == null || MyGlobals.BaseURI.Trim() == string.Empty)
                 lblURL.Text = MyGlobals.BaseURI;
 
-            var res = await MyFunctions.GetAsync<UsersModel>($"api/Login/Login/{userName}/{password}", false);
+            // BaseURI already ends with "api/", so use "Login/Login/..." not "api/Login/Login/..."
+            var encodedUsername = Uri.EscapeDataString(userName);
+            var encodedPassword = Uri.EscapeDataString(password);
+            var res = await MyFunctions.GetAsync<UsersModel>($"api/Login/Login/{encodedUsername}/{encodedPassword}", false);
 
             if (res != null)
             {
@@ -100,20 +103,23 @@ public partial class LoginPage : ContentPage
                 // Log token storage for debugging
                 Serilog.Log.Information($"Token stored in static MyGlobals - Length: {MyGlobals.Token?.Length ?? 0}, IsEmpty: {string.IsNullOrEmpty(MyGlobals.Token)}, Token preview: {(string.IsNullOrEmpty(MyGlobals.Token) ? "EMPTY" : MyGlobals.Token.Substring(0, Math.Min(20, MyGlobals.Token.Length)) + "...")}");
 
-                var org = await MyFunctions.GetAsync<List<OrganizationsModel>>($"api/Organizations/Search", true) ?? new List<OrganizationsModel>();
+                var org = await MyFunctions.GetAsync<List<OrganizationsModel>>("api/Organizations/Search", true) ?? new List<OrganizationsModel>();
                 if (org != null && org.Any())
                 {
-                    MyGlobals.Organization = org.FirstOrDefault()!;
+                    var firstOrg = org.FirstOrDefault();
+                    if (firstOrg != null)
+                        MyGlobals.Organization = firstOrg;
                 }
 
-                if (MyGlobals.Organization.Expiry <= DateTime.Now)
+                // Only check expiry if we have an organization with Expiry set
+                if (MyGlobals.Organization != null && MyGlobals.Organization.Expiry.HasValue && MyGlobals.Organization.Expiry.Value <= DateTime.Now)
                 {
                     await DisplayAlert("Login Failed", "License Expired.", "OK");
                 }
                 else
                 {
-                    // Check user type and navigate accordingly
-                    var userType = MyGlobals.User.UserType!.ToUpper();
+                    // Check user type and navigate accordingly (handle null/empty UserType)
+                    var userType = (MyGlobals.User.UserType ?? string.Empty).Trim().ToUpperInvariant();
                     
                     if (userType == "WAITER" || userType == "KITCHEN")
                     {

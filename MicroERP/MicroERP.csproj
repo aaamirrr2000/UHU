@@ -41,7 +41,30 @@
     <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
     <DisableStaticWebAssetsCompression>true</DisableStaticWebAssetsCompression>
+    <CompressionEnabled>false</CompressionEnabled>
   </PropertyGroup>
+
+  <!-- Workaround: BrotliCompress task in SDK 10 requires DOTNET_HOST_PATH when Static Web Assets compression runs -->
+  <PropertyGroup Condition="'$(DOTNET_HOST_PATH)' == '' and '$(OS)' == 'Windows_NT'">
+    <_DotNetHostPath>$(Env:ProgramFiles)\dotnet\dotnet.exe</_DotNetHostPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(DOTNET_HOST_PATH)' == '' and '$(OS)' != 'Windows_NT'">
+    <_DotNetHostPath>$(Env:DOTNET_ROOT)/dotnet</_DotNetHostPath>
+  </PropertyGroup>
+  <Target Name="SetDotNetHostPathForBuild" BeforeTargets="Build;CompressStaticWebAssets;BrotliCompress;_CompressStaticWebAssets" Condition="'$(DOTNET_HOST_PATH)' == '' and '$(_DotNetHostPath)' != ''">
+    <SetEnvironmentVariable Name="DOTNET_HOST_PATH" Value="$(_DotNetHostPath)" />
+  </Target>
+  <UsingTask TaskName="SetEnvironmentVariable" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <Name ParameterType="System.String" Required="true" />
+      <Value ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        System.Environment.SetEnvironmentVariable(Name, Value, System.EnvironmentVariableTarget.Process);
+      ]]></Code>
+    </Task>
+  </UsingTask>
 
   <ItemGroup>
     <!-- App Icon -->

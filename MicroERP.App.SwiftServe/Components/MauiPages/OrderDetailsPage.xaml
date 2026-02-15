@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:MicroERP.App.SwiftServe.Components.MauiPages.Controls"
              x:Class="MicroERP.App.SwiftServe.Components.MauiPages.OrderDetailsPage"
              Title="Order Details"
              BackgroundColor="#F5F5F5">
@@ -18,13 +19,13 @@
         </ResourceDictionary>
     </ContentPage.Resources>
 
-    <ScrollView>
+    <Grid RowDefinitions="*">
+        <controls:NavigationMenu x:Name="NavMenu" Grid.Row="0" Grid.RowSpan="2" ZIndex="1000"/>
+        <ScrollView Grid.Row="0">
         <StackLayout Spacing="12" Padding="8">
-            
-            <!-- Header -->
             <Frame BackgroundColor="{StaticResource PrimaryColor}"
                    CornerRadius="12"
-                   Padding="20,16"
+                   Padding="60,16,20,16"
                    Margin="0,0,0,12"
                    HasShadow="True">
                 <StackLayout Spacing="8">
@@ -45,7 +46,7 @@
                 </StackLayout>
             </Frame>
 
-            <!-- Order Info -->
+            <!-- Order header -->
             <Frame BackgroundColor="{StaticResource WhiteColor}"
                    BorderColor="#E0E0E0"
                    CornerRadius="12"
@@ -53,20 +54,58 @@
                    Margin="0,0,0,12"
                    HasShadow="True">
                 <StackLayout Spacing="8">
-                    <Label Text="Order Details Page - Full Implementation in Progress"
-                           FontSize="16"
-                           TextColor="{StaticResource TextSecondary}"
-                           HorizontalOptions="Center"
-                           Margin="0,20"/>
-                    <Label Text="This page will display order details, item grouping by person, and status management."
-                           FontSize="14"
-                           TextColor="{StaticResource TextSecondary}"
-                           HorizontalOptions="Center"
-                           HorizontalTextAlignment="Center"/>
+                    <Label x:Name="OrderCodeLabel" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
+                    <Label x:Name="OrderMetaLabel" FontSize="14" TextColor="{StaticResource TextSecondary}"/>
                 </StackLayout>
             </Frame>
 
+            <!-- Line items with live status -->
+            <Frame BackgroundColor="{StaticResource WhiteColor}"
+                   BorderColor="#E0E0E0"
+                   CornerRadius="12"
+                   Padding="16"
+                   Margin="0,0,0,12"
+                   HasShadow="True">
+                <StackLayout Spacing="8">
+                    <Label Text="Items" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
+                    <CollectionView x:Name="DetailsCollectionView" ItemsSource="{Binding InvoiceDetails}" SelectionMode="None">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame BackgroundColor="#FAFAFA" BorderColor="#EEEEEE" CornerRadius="8" Padding="12" Margin="0,0,0,6" HasShadow="False">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                        <StackLayout Grid.Column="0" Spacing="4">
+                                            <Label Text="{Binding Item}" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
+                                            <Label Text="{Binding Qty, StringFormat='Qty: {0}'}" FontSize="13" TextColor="{StaticResource TextSecondary}"/>
+                                            <Label Text="{Binding UnitPrice, StringFormat='Price: {0:F2}'}" FontSize="13" TextColor="{StaticResource TextSecondary}"/>
+                                        </StackLayout>
+                                        <Border Grid.Column="1" Padding="10,6" VerticalOptions="Center" BackgroundColor="{StaticResource InfoColor}" StrokeThickness="0">
+                                            <Border.StrokeShape><RoundRectangle CornerRadius="8"/></Border.StrokeShape>
+                                            <Border.Triggers>
+                                                <DataTrigger TargetType="Border" Binding="{Binding InvoiceDetailStatus}" Value="COMPLETE">
+                                                    <Setter Property="BackgroundColor" Value="{StaticResource SuccessColor}"/>
+                                                </DataTrigger>
+                                                <DataTrigger TargetType="Border" Binding="{Binding InvoiceDetailStatus}" Value="IN_PROGRESS">
+                                                    <Setter Property="BackgroundColor" Value="{StaticResource WarningColor}"/>
+                                                </DataTrigger>
+                                            </Border.Triggers>
+                                            <Label Text="{Binding InvoiceDetailStatus}" FontSize="12" FontAttributes="Bold" TextColor="{StaticResource WhiteColor}"/>
+                                        </Border>
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </StackLayout>
+            </Frame>
+
+            <!-- Final bill / Pay -->
+            <Button Text="Final bill / Pay" Clicked="OnFinalBillClicked"
+                    BackgroundColor="{StaticResource SuccessColor}" TextColor="{StaticResource WhiteColor}"
+                    CornerRadius="10" Padding="14" FontSize="16" FontAttributes="Bold" Margin="0,8,0,0"/>
+
         </StackLayout>
     </ScrollView>
+        <controls:LoadingOverlay x:Name="LoadingOverlay" Grid.Row="0" IsVisible="False" Message="Loading..."/>
+    </Grid>
 </ContentPage>
 

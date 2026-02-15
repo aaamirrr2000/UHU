@@ -1,4 +1,5 @@
 using MicroERP.App.SwiftServe.Helper;
+using MicroERP.App.SwiftServe.Components.MauiPages.Controls;
 using Microsoft.Maui.Controls;
 
 namespace MicroERP.App.SwiftServe.Components.MauiPages;
@@ -12,6 +13,7 @@ public partial class UserTypeWarningPage : ContentPage
     {
         InitializeComponent();
         BindingContext = this;
+        NavigationPage.SetTitleView(this, NavigationMenu.CreateTitleView(this, NavMenu));
     }
 
     protected override void OnAppearing()

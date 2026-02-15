@@ -42,23 +42,26 @@ GO
 
 SET IDENTITY_INSERT Items ON;
 
--- TaxRuleId=1 (No Tax) assigned by default; change to 2 for Pakistan Sale Tax Rule when item is taxable
-INSERT INTO Items (Id, Code, Name, Description, CategoryId, StockType, Unit, CostPrice, BasePrice, DefaultDiscount, TaxRuleId, ExpenseAccountId, RevenueAccountId, IsFavorite, IsActive, CreatedBy, CreatedFrom, UpdatedBy, UpdatedFrom)
+-- Food menu items with ServingSize = JSON array of ServingSizeModel (Size, Price, Pic)
+-- RevenueAccountId = 58 (REVENUE OF SALES / ITEM REVENUE), ExpenseAccountId = 57 (COST OF PURCHASES / ITEM EXPENSE) from ChartOfAccounts
+INSERT INTO Items (Id, Code, Name, Description, CategoryId, StockType, Unit, MinQty, MaxQty, ReorderQty, ServingSize, CostPrice, BasePrice, DefaultDiscount, TaxRuleId, ExpenseAccountId, RevenueAccountId, IsFavorite, IsActive, CreatedBy, CreatedFrom, UpdatedBy, UpdatedFrom)
 VALUES
-	(1, '000000000001', 'MEDICINES', 'PHARMACEUTICAL MEDICINES AND DRUGS', 1, 'ITEM', 'PCS', 0.00, 0.00, 0.00, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
-	(2, '000000000002', 'COSMETICS', 'BEAUTY AND COSMETIC PRODUCTS', 2, 'ITEM', 'PCS', 0.00, 0.00, 0.00, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
-	(3, '000000000003', 'GROCERY', 'GENERAL GROCERY ITEMS', 3, 'ITEM', 'PCS', 0.00, 0.00, 0.00, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
-	(4, '000000000004', 'PERSONAL CARE', 'PERSONAL HYGIENE AND CARE PRODUCTS', 4, 'ITEM', 'PCS', 0.00, 0.00, 0.00, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
-	(5, '000000000005', 'MEDICAL DEVICES', 'MEDICAL EQUIPMENT AND DEVICES', 5, 'ITEM', 'PCS', 0.00, 0.00, 0.00, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
-	(6, '000000000006', 'SUPPLEMENTS', 'VITAMINS AND DIETARY SUPPLEMENTS', 6, 'ITEM', 'PCS', 0.00, 0.00, 0.00, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
-	(7, '000000000007', 'BABY CARE', 'BABY PRODUCTS AND CARE ITEMS', 7, 'ITEM', 'PCS', 0.00, 0.00, 0.00, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
-	(8, '000000000008', 'HEALTH CARE', 'GENERAL HEALTH CARE PRODUCTS', 8, 'ITEM', 'PCS', 0.00, 0.00, 0.00, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
-	(9, '000000000009', 'SURGICAL ITEMS', 'SURGICAL SUPPLIES AND EQUIPMENT', 9, 'ITEM', 'PCS', 0.00, 0.00, 0.00, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
-	(10, '000000000010', 'AYURVEDIC AND HERBAL', 'AYURVEDIC AND HERBAL MEDICINES', 10, 'ITEM', 'PCS', 0.00, 0.00, 0.00, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
-	(11, '000000000011', 'HOMEOPATHIC', 'HOMEOPATHIC REMEDIES', 11, 'ITEM', 'PCS', 0.00, 0.00, 0.00, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
-	(12, '000000000012', 'EYE CARE', 'EYE CARE PRODUCTS AND MEDICATIONS', 12, 'ITEM', 'PCS', 0.00, 0.00, 0.00, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
-	(13, '000000000013', 'DENTAL CARE', 'DENTAL HYGIENE PRODUCTS', 13, 'ITEM', 'PCS', 0.00, 0.00, 0.00, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
-	(14, '000000000014', 'FITNESS AND WELLNESS', 'FITNESS AND WELLNESS PRODUCTS', 14, 'ITEM', 'PCS', 0.00, 0.00, 0.00, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
-	(15, '000000000015', 'OVER THE COUNTER', 'OTC MEDICATIONS', 15, 'ITEM', 'PCS', 0.00, 0.00, 0.00, 1, 57, 58, 0, 1, 1, NULL, 1, NULL);
+	(1, '000000000001', 'Garlic Bread', 'Toasted bread with garlic butter and herbs', 1, 'ITEM', 'Pc', 0, 1, 0, N'[{"Size":"Half","Price":2.49,"Pic":""},{"Size":"Full","Price":4.99,"Pic":""}]', 0, 4.99, 0, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
+	(2, '000000000002', 'Soup of the Day', 'Chef daily soup with bread roll', 1, 'ITEM', 'Bowl', 0, 1, 0, N'[{"Size":"Cup","Price":3.99,"Pic":""},{"Size":"Bowl","Price":5.49,"Pic":""}]', 0, 5.49, 0, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
+	(3, '000000000003', 'Bruschetta', 'Toasted bread with tomato, basil and mozzarella', 1, 'ITEM', 'Pc', 0, 1, 0, N'[{"Size":"Single","Price":4.99,"Pic":""},{"Size":"Share","Price":6.99,"Pic":""}]', 0, 6.99, 0, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
+	(4, '000000000004', 'Chicken Wings', 'Crispy wings with your choice of sauce', 1, 'ITEM', 'Portion', 0, 1, 0, N'[{"Size":"6 pcs","Price":6.99,"Pic":""},{"Size":"12 pcs","Price":10.99,"Pic":""}]', 0, 8.99, 0, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
+	(5, '000000000005', 'Caesar Salad', 'Romaine lettuce, parmesan, croutons, Caesar dressing', 1, 'ITEM', 'Bowl', 0, 1, 0, N'[{"Size":"Half","Price":4.99,"Pic":""},{"Size":"Full","Price":7.49,"Pic":""}]', 0, 7.49, 0, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
+	(6, '000000000006', 'Grilled Chicken Breast', 'Juicy chicken breast with herbs and lemon', 2, 'ITEM', 'Pc', 0, 1, 0, N'[{"Size":"Regular","Price":14.99,"Pic":""},{"Size":"Large","Price":17.99,"Pic":""}]', 0, 14.99, 0, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
+	(7, '000000000007', 'Beef Burger', 'Angus beef patty with lettuce, tomato and fries', 2, 'ITEM', 'Pc', 0, 1, 0, N'[{"Size":"Single","Price":12.99,"Pic":""},{"Size":"Double","Price":15.99,"Pic":""}]', 0, 12.99, 0, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
+	(8, '000000000008', 'Fish and Chips', 'Beer-battered cod with chunky fries and tartar sauce', 2, 'ITEM', 'Portion', 0, 1, 0, N'[{"Size":"Regular","Price":13.99,"Pic":""}]', 0, 13.99, 0, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
+	(9, '000000000009', 'Margherita Pizza', 'Tomato sauce, mozzarella and fresh basil', 2, 'ITEM', 'Pc', 0, 1, 0, N'[{"Size":"Small","Price":9.99,"Pic":""},{"Size":"Medium","Price":11.99,"Pic":""},{"Size":"Large","Price":14.99,"Pic":""}]', 0, 11.99, 0, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
+	(10, '000000000010', 'Pasta Carbonara', 'Spaghetti with bacon, egg and parmesan cream sauce', 2, 'ITEM', 'Bowl', 0, 1, 0, N'[{"Size":"Regular","Price":12.49,"Pic":""}]', 0, 12.49, 0, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
+	(11, '000000000011', 'Chocolate Brownie', 'Warm brownie with vanilla ice cream', 3, 'ITEM', 'Pc', 0, 1, 0, N'[{"Size":"Single","Price":6.99,"Pic":""}]', 0, 6.99, 0, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
+	(12, '000000000012', 'Tiramisu', 'Classic Italian dessert with coffee and mascarpone', 3, 'ITEM', 'Pc', 0, 1, 0, N'[{"Size":"Single","Price":7.49,"Pic":""}]', 0, 7.49, 0, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
+	(13, '000000000013', 'Ice Cream Sundae', 'Three scoops with whipped cream and sauce', 3, 'ITEM', 'Pc', 0, 1, 0, N'[{"Size":"2 Scoops","Price":4.99,"Pic":""},{"Size":"3 Scoops","Price":5.99,"Pic":""}]', 0, 5.99, 0, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
+	(14, '000000000014', 'Fresh Orange Juice', 'Freshly squeezed orange juice', 4, 'ITEM', 'Glass', 0, 1, 0, N'[{"Size":"Small","Price":3.49,"Pic":""},{"Size":"Large","Price":4.99,"Pic":""}]', 0, 3.99, 0, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
+	(15, '000000000015', 'Iced Coffee', 'Chilled coffee with milk and ice', 4, 'ITEM', 'Glass', 0, 1, 0, N'[{"Size":"Regular","Price":4.49,"Pic":""},{"Size":"Large","Price":5.49,"Pic":""}]', 0, 4.49, 0, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
+	(16, '000000000016', 'French Fries', 'Crispy golden fries with salt', 5, 'ITEM', 'Portion', 0, 1, 0, N'[{"Size":"Regular","Price":3.99,"Pic":""},{"Size":"Large","Price":5.49,"Pic":""}]', 0, 3.99, 0, 1, 57, 58, 0, 1, 1, NULL, 1, NULL),
+	(17, '000000000017', 'Garden Salad', 'Mixed greens with vinaigrette', 5, 'ITEM', 'Bowl', 0, 1, 0, N'[{"Size":"Side","Price":3.99,"Pic":""},{"Size":"Large","Price":4.99,"Pic":""}]', 0, 4.99, 0, 1, 57, 58, 0, 1, 1, NULL, 1, NULL);
 
 SET IDENTITY_INSERT Items OFF;
