@@ -1,0 +1,203 @@
+@page "/ChargesRulesPage/{Action}/{CurrentRecord?}"
+
+@using MicroERP.Shared.Models
+@using Microsoft.AspNetCore.Components.Forms
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+    <EditForm Model="Model">
+    <MudExpansionPanels MultiExpansion="true">
+        <MudExpansionPanel Text="Basic Details" Expanded=true Style="margin-bottom:10px;">
+
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+
+                    <i class="fa fa-info-circle"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Service Charges & Discounts</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain ChargesRules</MudText>
+                    </div>
+                </div>
+                
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudAutocomplete T="ChartOfAccountsModel"
+                                         Value="SelectedAccount"
+                                         ValueChanged="OnAccountChanged"
+                                         ToStringFunc="@(p => p?.Name)"
+                                         SearchFunc="@( (searchText, cancellationToken) =>
+                                                        Task.FromResult(
+                                                            string.IsNullOrWhiteSpace(searchText)
+                                                                ? Accounts
+                                                                : Accounts.Where(p =>
+                                                                    p.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                                                                )
+                                                        )
+                                                )"
+                                         Label="Account *"
+                                         Clearable="true"
+                                         Variant="Variant.Outlined"
+                                         Dense="true"
+                                         CoerceText="true"
+                                         CoerceValue="true"
+                                         ResetValueOnEmptyText="true"
+                                         Immediate="true"
+                                         FullWidth="@true"
+                                         ReadOnly="@IsReadOnly"
+                                         Class="flex-grow-1" />
+                        <ValidationMessage For="@(() => Model.AccountId)" />
+                    </div>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudSelect T="string"
+                                   @bind-Value="Model.AmountType"
+                                   Label="Amount Type *"
+                                   Placeholder="Percentage OR Flat"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="@true"
+                                   ReadOnly="@IsReadOnly"
+                                   Class="flex-grow-1">
+
+                            <!-- Percentage Tax -->
+                            <MudSelectItem Value="@("PERCENTAGE")">
+                                <MudIcon Icon="@Icons.Material.Filled.Percent" Size="Size.Small" Class="me-2" />
+                                Percentage
+                            </MudSelectItem>
+
+                            <!-- Fixed Amount Tax -->
+                            <MudSelectItem Value="@("FLAT")">
+                                <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Size="Size.Small" Class="me-2" />
+                                Fixed Amount
+                            </MudSelectItem>
+
+                        </MudSelect>
+
+                        <ValidationMessage For="@(() => Model.AmountType)" />
+                    </div>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudNumericField @bind-Value="Model.Amount" 
+                                         Label="Amount *"
+                                         Variant="Variant.Outlined" 
+                                         Placeholder="Amount" 
+                                         ReadOnly="@IsReadOnly" 
+                                         Format="#,##0.00"
+                                         FullWidth="@true"
+                                         Class="flex-grow-1"></MudNumericField>
+                        <ValidationMessage For="@(() => Model.Amount)" />
+                    </div>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudSelect T="string"
+                                   @bind-Value="Model.ChargeCategory"
+                                   Label="Charge Category *"
+                                   Placeholder="Service OR Discount"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="@true"
+                                   ReadOnly="@IsReadOnly"
+                                   Class="flex-grow-1">
+
+                            <!-- Percentage Tax -->
+                            <MudSelectItem Value=@("SERVICE")>
+                                <MudIcon Icon="@Icons.Material.Filled.BuildCircle" Size="Size.Small" Class="me-2" />
+                                Service
+                            </MudSelectItem>
+
+                            <MudSelectItem Value=@("DISCOUNT")>
+                                <MudIcon Icon="@Icons.Material.Filled.MoneyOff" Size="Size.Small" Class="me-2" />
+                                Discount
+                            </MudSelectItem>
+
+
+                        </MudSelect>
+                    	<ValidationMessage For="@(() => Model.ChargeCategory)" />
+                    </div>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudDatePicker @bind-Date="Model.EffectiveFrom" 
+                                       Label="Effective From *" Variant="Variant.Outlined" DateFormat="dd MMM yyyy" 
+                                       Placeholder="Effective From" 
+                                       ReadOnly="@IsReadOnly"
+                                       FullWidth="@true"
+                                       Class="flex-grow-1"></MudDatePicker>
+                        <ValidationMessage For="@(() => Model.EffectiveFrom)" />
+                    </div>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudDatePicker @bind-Date="Model.EffectiveTo" 
+                                       Label="Effective To" Variant="Variant.Outlined" DateFormat="dd MMM yyyy" 
+                                       Placeholder="Effective To" 
+                                       ReadOnly="@IsReadOnly"
+                                       FullWidth="@true"
+                                       Class="flex-grow-1"></MudDatePicker>
+                    </div>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudSelect T="int"
+                                   @bind-Value="Model.IsActive"
+                                   Label="Activation Status *"
+                                   Placeholder="Is Active"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="@true"
+                                   ReadOnly="@IsReadOnly"
+                                   Class="flex-grow-1">
+                            @if (Model.IsActive != 0 && Model.IsActive != 1)
+                            {
+                                Model.IsActive = 1;
+                            }
+                            <MudSelectItem T="int" Value="1">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                Enable
+                            </MudSelectItem>
+                            <MudSelectItem T="int" Value="0">
+                                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" Class="me-2" />
+                                Disable
+                            </MudSelectItem>
+                        </MudSelect>
+
+                        <ValidationMessage For="@(() => Model.IsActive)" />
+                    </div>
+
+                </div>
+            </ChildContent>
+
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+    </EditForm>
+</div>
+
+@code
+{
+    [Parameter] public ChargesRulesModel Model { get; set; } = new();
+    [Parameter] public List<ChartOfAccountsModel> Accounts { get; set; } = new();
+    [Parameter] public bool IsReadOnly { get; set; }
+    
+    // We need to maintain local state for Autocomplete to work properly with object binding
+    // But we need to sync it with Model.AccountId
+    private ChartOfAccountsModel SelectedAccount { get; set; } = new();
+
+    protected override void OnParametersSet()
+    {
+        // Sync SelectedAccount with Model.AccountId
+        if (Model.AccountId > 0 && Accounts != null && Accounts.Any())
+        {
+            if (SelectedAccount == null || SelectedAccount.Id != Model.AccountId)
+            {
+                SelectedAccount = Accounts.FirstOrDefault(a => a.Id == Model.AccountId) ?? new ChartOfAccountsModel();
+            }
+        }
+        else if (Model.AccountId == 0)
+        {
+             SelectedAccount = new ChartOfAccountsModel();
+        }
+    }
+
+    private void OnAccountChanged(ChartOfAccountsModel account)
+    {
+        SelectedAccount = account;
+        Model.AccountId = account?.Id ?? 0;
+    }
+}
+

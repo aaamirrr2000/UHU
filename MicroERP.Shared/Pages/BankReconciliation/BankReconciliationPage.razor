@@ -1,0 +1,393 @@
+﻿@page "/BankReconciliationPage/{Action}/{CurrentRecord?}"
+@using MicroERP.Shared.Models
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 100%; overflow-y: auto;">
+    <div class="text-end mb-3" style="position: sticky; top: 0; background: white; z-index: 10; padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
+        @if (Action != "VIEW")
+        {
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-3 py-2 mr-2" Style="height:40px; min-width: 100px;">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                @(Action == "INSERT" ? "Save" : "Update")
+            </MudButton>
+            @if (Action == "UPDATE")
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-3 py-2 mr-2" Style="height:40px; min-width: 100px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                    Delete
+                </MudButton>
+            }
+        }
+    </div>
+
+    <!-- Reconciliation Header -->
+    <MudCard Elevation="1" Class="mb-2" Style="padding: 8px;">
+        <MudCardContent Style="padding: 12px !important;">
+            <div class="row g-2">
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Reconciliation No</label>
+                    <MudTextField @bind-Value="record.ReconciliationNo" ReadOnly="@true" Variant="Variant.Outlined" Dense="@true" FullWidth="@true" />
+                    <MudText Typo="Typo.caption" Class="text-muted">Auto-generated</MudText>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Bank Account <span style='color:red;'>*</span></label>
+                    @if (isReadOnly)
+                    {
+                        <MudTextField Value="@(BankAccounts.FirstOrDefault(b => b.Id == record.BankAccountId)?.DisplayName ?? "")" Variant="Variant.Outlined" Dense="@true" FullWidth="@true" ReadOnly="@true" />
+                    }
+                    else
+                    {
+                        <AutoComplete TItem="ChartOfAccountsModel" DataList="@BankAccounts" DisplayProperty="@(b => b.DisplayName)" IdProperty="@(b => b.Id)" @bind-SelectedId="record.BankAccountId" @bind-SelectedId:after="OnBankAccountChanged" Variant="Variant.Outlined" Label="Bank Account" FullWidth="@true" />
+                    }
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Statement Date <span style='color:red;'>*</span></label>
+                    <MudDatePicker @bind-Date="record.StatementDate" DateFormat="dd MMM yyyy" ReadOnly="@isReadOnly" Variant="Variant.Outlined" Dense="@true" FullWidth="@true" @bind-Date:after="OnStatementDateChanged" />
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Status</label>
+                    <MudSelect T="string" @bind-Value="record.Status" Variant="Variant.Outlined" Dense="@true" FullWidth="@true" ReadOnly="@isReadOnly">
+                        <MudSelectItem Value="@("OPEN")">OPEN</MudSelectItem>
+                        <MudSelectItem Value="@("RECONCILED")">RECONCILED</MudSelectItem>
+                        <MudSelectItem Value="@("CLOSED")">CLOSED</MudSelectItem>
+                    </MudSelect>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Opening Balance</label>
+                    <MudNumericField @bind-Value="record.OpeningBalance" Format="#,##0.00" Variant="Variant.Outlined" Dense="@true" FullWidth="@true" ReadOnly="@isReadOnly" @bind-Value:after="CalculateBalances" />
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Statement Balance</label>
+                    <MudNumericField @bind-Value="record.StatementBalance" Format="#,##0.00" Variant="Variant.Outlined" Dense="@true" FullWidth="@true" ReadOnly="@isReadOnly" @bind-Value:after="CalculateBalances" />
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Book Balance</label>
+                    <MudNumericField @bind-Value="record.BookBalance" Format="#,##0.00" Variant="Variant.Outlined" Dense="@true" FullWidth="@true" ReadOnly="@true" />
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Difference</label>
+                    <MudNumericField @bind-Value="record.Difference" Format="#,##0.00" Variant="Variant.Outlined" Dense="@true" FullWidth="@true" ReadOnly="@true" />
+                    @if (record.Difference == 0)
+                    {
+                        <MudText Typo="Typo.caption" Class="text-success">âœ“ Balanced</MudText>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.caption" Class="text-danger">âš  Unbalanced</MudText>
+                    }
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Notes</label>
+                    <MudTextField @bind-Value="record.Notes" ReadOnly="@isReadOnly" Variant="Variant.Outlined" Dense="@true" Lines="2" FullWidth="@true" />
+                </div>
+            </div>
+        </MudCardContent>
+    </MudCard>
+
+    <!-- Statement Transactions -->
+    <MudCard Elevation="1" Class="mb-2" Style="padding: 8px;">
+        <MudCardContent Style="padding: 12px !important;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <MudText Typo="Typo.subtitle2" Class="fw-bold">Statement Transactions</MudText>
+                @if (!isReadOnly)
+                {
+                    <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Success" Size="Size.Small" Dense="@true" OnClick="AddStatementTransaction">Add Transaction</MudButton>
+                }
+            </div>
+            <div style="max-height: 300px; overflow-y: auto;">
+                <MudTable Items="@StatementTransactions" Hover="true" Dense="@true" Bordered="true" Striped="true" StickyHeader="true">
+                    <HeaderContent>
+                        <MudTh Style="width:5%;">#</MudTh>
+                        <MudTh Style="width:5%;">â‹®</MudTh>
+                        <MudTh Style="width:15%;">Date</MudTh>
+                        <MudTh Style="width:15%;">Type</MudTh>
+                        <MudTh Style="width:20%;">Reference</MudTh>
+                        <MudTh Style="width:25%;">Description</MudTh>
+                        <MudTh Style="width:15%;" Class="text-end">Amount</MudTh>
+                    </HeaderContent>
+                    <RowTemplate Context="detail">
+                        @{ var index = StatementTransactions.IndexOf(detail) + 1; }
+                        <MudTd>@index</MudTd>
+                        <MudTd>
+                            @if (!isReadOnly)
+                            {
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="@true">
+                                    <MudMenuItem OnClick="@(() => RemoveStatementTransaction(detail))" Color="Color.Error">
+                                        <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" />Delete
+                                    </MudMenuItem>
+                                </MudMenu>
+                            }
+                        </MudTd>
+                        <MudTd>
+                            @if (isReadOnly)
+                            {
+                                <MudTextField Value="@detail.TransactionDate?.ToString("yyyy-MM-dd")" Variant="Variant.Outlined" FullWidth="@true" Dense="@true" ReadOnly="@true" />
+                            }
+                            else
+                            {
+                                <MudDatePicker @bind-Date="detail.TransactionDate" DateFormat="dd MMM yyyy" Variant="Variant.Outlined" FullWidth="@true" Dense="@true" />
+                            }
+                        </MudTd>
+                        <MudTd>
+                            <MudSelect T="string" @bind-Value="detail.TransactionType" Variant="Variant.Outlined" FullWidth="@true" Dense="@true" ReadOnly="@isReadOnly">
+                                <MudSelectItem Value="@("DEPOSIT")">DEPOSIT</MudSelectItem>
+                                <MudSelectItem Value="@("WITHDRAWAL")">WITHDRAWAL</MudSelectItem>
+                                <MudSelectItem Value="@("CHARGE")">CHARGE</MudSelectItem>
+                                <MudSelectItem Value="@("INTEREST")">INTEREST</MudSelectItem>
+                            </MudSelect>
+                        </MudTd>
+                        <MudTd>
+                            <MudTextField @bind-Value="detail.ReferenceNo" Variant="Variant.Outlined" FullWidth="@true" Dense="@true" ReadOnly="@isReadOnly" />
+                        </MudTd>
+                        <MudTd>
+                            <MudTextField @bind-Value="detail.Description" Variant="Variant.Outlined" FullWidth="@true" Dense="@true" ReadOnly="@isReadOnly" />
+                        </MudTd>
+                        <MudTd>
+                            <MudNumericField @bind-Value="detail.Amount" Format="#,##0.00" Variant="Variant.Outlined" FullWidth="@true" Dense="@true" ReadOnly="@isReadOnly" @bind-Value:after="CalculateBalances" />
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </div>
+        </MudCardContent>
+    </MudCard>
+
+    <!-- Book Transactions -->
+    <MudCard Elevation="1" Class="mb-2" Style="padding: 8px;">
+        <MudCardContent Style="padding: 12px !important;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <MudText Typo="Typo.subtitle2" Class="fw-bold">Book Transactions</MudText>
+                @if (!isReadOnly && record.BankAccountId > 0 && record.StatementDate.HasValue)
+                {
+                    <MudButton StartIcon="@Icons.Material.Filled.Refresh" Variant="Variant.Filled" Color="Color.Info" Size="Size.Small" Dense="@true" OnClick="LoadBookTransactions">Load from Books</MudButton>
+                }
+            </div>
+            <div style="max-height: 300px; overflow-y: auto;">
+                @if (BookTransactions != null && BookTransactions.Any())
+                {
+                    <MudTable Items="@BookTransactions" Hover="true" Dense="@true" Bordered="true" Striped="true" StickyHeader="true">
+                        <HeaderContent>
+                            <MudTh Style="width:5%;">#</MudTh>
+                            <MudTh Style="width:15%;">Date</MudTh>
+                            <MudTh Style="width:15%;">Type</MudTh>
+                            <MudTh Style="width:20%;">Reference</MudTh>
+                            <MudTh Style="width:25%;">Description</MudTh>
+                            <MudTh Style="width:15%;" Class="text-end">Amount</MudTh>
+                            <MudTh Style="width:5%;">Match</MudTh>
+                        </HeaderContent>
+                        <RowTemplate Context="detail">
+                            @{ var index = BookTransactions.IndexOf(detail) + 1; }
+                            <MudTd>@index</MudTd>
+                            <MudTd>@detail.TransactionDate?.ToString("yyyy-MM-dd")</MudTd>
+                            <MudTd>@detail.TransactionType</MudTd>
+                            <MudTd>@detail.ReferenceNo</MudTd>
+                            <MudTd>@detail.Description</MudTd>
+                            <MudTd class="text-end">@detail.Amount.ToString("N2")</MudTd>
+                            <MudTd>
+                                @if (detail.IsMatched == 1)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                                }
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Class="text-muted">No book transactions found. Click "Load from Books" to fetch transactions.</MudText>
+                }
+            </div>
+        </MudCardContent>
+    </MudCard>
+</div>
+
+@code {
+    BankReconciliationModel record = new();
+    List<ChartOfAccountsModel> BankAccounts = new();
+    List<BankReconciliationDetailModel> StatementTransactions = new();
+    List<BankReconciliationDetailModel> BookTransactions = new();
+
+    [Parameter] public string? Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load bank accounts (Chart of Accounts with InterfaceType='BANK')
+        BankAccounts = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/OrganizationId={Globals.User.OrganizationId} AND InterfaceType='BANK' AND IsActive=1", true) ?? new List<ChartOfAccountsModel>();
+
+        if (Action == "INSERT")
+        {
+            Clear();
+            isReadOnly = false;
+        }
+        else if (CurrentRecord > 0)
+        {
+            await Get(CurrentRecord);
+        }
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<BankReconciliationModel>($"BankReconciliation/Get/{id}", true) ?? new BankReconciliationModel();
+        
+        // Separate statement and book transactions
+        StatementTransactions = record.Details?.Where(d => d.Source?.ToUpper() == "STATEMENT").ToList() ?? new List<BankReconciliationDetailModel>();
+        BookTransactions = record.Details?.Where(d => d.Source?.ToUpper() == "BOOK").ToList() ?? new List<BankReconciliationDetailModel>();
+        
+        CalculateBalances();
+        isReadOnly = Action == "VIEW";
+        LoadingPanel = false;
+    }
+
+    protected void Clear()
+    {
+        Action = "INSERT";
+        record = new BankReconciliationModel();
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.Status = "OPEN";
+        record.StatementDate = DateTime.Today;
+        StatementTransactions = new List<BankReconciliationDetailModel>();
+        BookTransactions = new List<BankReconciliationDetailModel>();
+        isReadOnly = false;
+    }
+
+    protected void AddStatementTransaction()
+    {
+        StatementTransactions.Add(new BankReconciliationDetailModel
+        {
+            TransactionType = "DEPOSIT",
+            TransactionDate = DateTime.Today,
+            Source = "STATEMENT",
+            Amount = 0
+        });
+        StateHasChanged();
+    }
+
+    protected void RemoveStatementTransaction(BankReconciliationDetailModel detail)
+    {
+        StatementTransactions.Remove(detail);
+        CalculateBalances();
+        StateHasChanged();
+    }
+
+    protected async Task LoadBookTransactions()
+    {
+        if (record.BankAccountId == 0 || !record.StatementDate.HasValue)
+        {
+            SnackbarService.Add("Please select Bank Account and Statement Date first.", Severity.Warning);
+            return;
+        }
+
+        LoadingPanel = true;
+        try
+        {
+            var dateStr = record.StatementDate.Value.ToString("yyyy-MM-dd");
+            var result = await Functions.GetAsync<List<BankReconciliationDetailModel>>($"BankReconciliation/GetBookTransactions/{record.BankAccountId}/{dateStr}", true);
+            BookTransactions = result ?? new List<BankReconciliationDetailModel>();
+            CalculateBalances();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading book transactions: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    protected void OnBankAccountChanged()
+    {
+        CalculateBalances();
+        StateHasChanged();
+    }
+
+    protected void OnStatementDateChanged()
+    {
+        CalculateBalances();
+        StateHasChanged();
+    }
+
+    protected void CalculateBalances()
+    {
+        // Calculate statement balance from statement transactions
+        double statementTotal = StatementTransactions.Sum(t => 
+            t.TransactionType?.ToUpper() == "DEPOSIT" || t.TransactionType?.ToUpper() == "INTEREST" 
+                ? t.Amount 
+                : -t.Amount);
+        record.StatementBalance = record.OpeningBalance + statementTotal;
+
+        // Calculate book balance from book transactions
+        double bookTotal = BookTransactions.Sum(t => t.Amount);
+        record.BookBalance = record.OpeningBalance + bookTotal;
+
+        // Calculate difference
+        record.Difference = record.StatementBalance - record.BookBalance;
+
+        // Update record details
+        record.Details = StatementTransactions.Concat(BookTransactions).ToList();
+
+        StateHasChanged();
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete this record?");
+        if (res == false) return;
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        if (record.BankAccountId == 0)
+        {
+            SnackbarService.Add("Please select a Bank Account.", Severity.Warning);
+            return;
+        }
+
+        if (!record.StatementDate.HasValue)
+        {
+            SnackbarService.Add("Please select a Statement Date.", Severity.Warning);
+            return;
+        }
+
+        CalculateBalances();
+
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedFrom = Globals.ClientInfo;
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = Globals.ClientInfo;
+
+        LoadingPanel = true;
+        var result = await Functions.PostAsync<BankReconciliationModel>($"BankReconciliation/{Action}", record, true);
+        LoadingPanel = false;
+
+        if (result.Success == false || result.Result == null)
+        {
+            SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+        }
+        else
+        {
+            await OnSaved.InvokeAsync();
+            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+        }
+    }
+}
+
+

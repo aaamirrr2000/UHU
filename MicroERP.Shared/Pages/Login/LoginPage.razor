@@ -1,0 +1,341 @@
+@page "/"
+@using System.Text.Json
+@using Microsoft.AspNetCore.Http
+@layout BlankLayout
+@inject NavigationManager Nav
+@inject Globals Globals
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject IJSRuntime JS
+@inject ClientInfoService ClientInfo
+
+<Loading IsLoading="@LoadingPanel" />
+
+<!-- MAIN SPLIT LAYOUT -->
+<div class="split-container">
+
+    <!-- LEFT LOGIN PANEL -->
+    <div class="left-panel">
+        <div class="login-box-image-style">
+
+            <img src="@Globals.GetImageUrl(Globals.Organization.Logo)"
+                 alt="Company Logo"
+                 class="brand-logo" style="width:200px; height:150px; border-radius: 5px;"/>
+
+            <h2 class="login-title">Login</h2>
+
+            <p class="login-subtext">
+                Welcome back! Login to access the Smart Marketplace.<br />
+                Can’t login? <a class="recover-link" @onclick="ForgotPassword">recover your password</a>
+            </p>
+
+            <input type="text" class="input-field" placeholder="Username" @bind="Username" disabled="@(!IsAccountActive)" />
+            <input type="password" class="input-field" placeholder="Password" @bind="Password" disabled="@(!IsAccountActive)" />
+
+            @if (!IsAccountActive && !string.IsNullOrEmpty(AccountStatusMessage))
+            {
+                <div class="account-status-message">
+                    <p style="color: #d32f2f; font-size: 14px; margin-bottom: 15px; padding: 10px; background: #ffebee; border-radius: 6px; border-left: 4px solid #d32f2f;">
+                        @AccountStatusMessage
+                    </p>
+                </div>
+            }
+
+            <button class="btn-gradient" @onclick="async () => await Login()" disabled="@(!IsAccountActive)" style="@(IsAccountActive ? "" : "opacity: 0.5; cursor: not-allowed;")">
+                Continue
+            </button>
+
+        </div>
+    </div>
+
+
+    <!-- RIGHT PANEL BACKGROUND IMAGE -->
+    <div class="right-panel" style="@BackgroundStyle"></div>
+
+</div>
+
+
+@code {
+    public string Username { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    private bool LoadingPanel { get; set; } = false;
+    private string clientInfoString = "Loading...";
+    private bool IsAccountActive { get; set; } = true; // Default to true to allow login if check fails
+    private string AccountStatusMessage { get; set; } = string.Empty;
+
+    private string BackgroundImagePath = "_content/MicroERP.Shared/images/default.jpg";
+    private string BackgroundStyle => $"background: url('{BackgroundImagePath}') no-repeat center center; background-size: cover; background-color:#1976D2;";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // First, get organization to extract database name
+            var org = await Functions.GetAsync<List<OrganizationsModel>>("Organizations/Search", true) ?? new List<OrganizationsModel>();
+            Globals.Organization = org.FirstOrDefault()!;
+            clientInfoString = ClientInfo.GetClientInfoString();
+            Globals.ClientInfo = clientInfoString;
+
+            if (!string.IsNullOrEmpty(Globals.Organization.Wallpaper))
+            {
+                BackgroundImagePath = Globals.GetImageUrl(Globals.Organization.Wallpaper);
+            }
+            else
+                BackgroundImagePath = "_content/MicroERP.Shared/images/background.jpg";
+
+            // Check account status from ControlCenter
+            await CheckAccountStatus();
+        }
+        catch
+        {
+            BackgroundImagePath = "_content/MicroERP.Shared/images/background.jpg";
+            // If check fails, allow login (fail open)
+            IsAccountActive = true;
+        }
+    }
+
+    private async Task CheckAccountStatus()
+    {
+        try
+        {
+            var accountStatus = await Functions.GetAsync<AccountStatusModel>("ControlCenter/CheckAccountStatus/Current", false);
+            
+            if (accountStatus != null)
+            {
+                IsAccountActive = accountStatus.IsActive;
+                AccountStatusMessage = accountStatus.Message ?? "";
+            }
+            else
+            {
+                // If API call fails, allow login (fail open)
+                IsAccountActive = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            // If check fails, allow login (fail open)
+            IsAccountActive = true;
+            Serilog.Log.Warning(ex, "Failed to check account status from ControlCenter");
+        }
+    }
+
+    private async Task Login()
+    {
+        try
+        {
+            LoadingPanel = true;
+            var res = await Functions.GetAsync<UsersModel>($"Login/Login/{Username}/{Password}", false);
+            LoadingPanel = false;
+
+            if (res == null || string.IsNullOrEmpty(res.Token))
+            {
+                SnackbarService.Add("User Name or Password is Incorrect.", Severity.Error);
+                return;
+            }
+
+            Globals.User = res;
+            Globals.User.Password = Globals.Decrypt(Globals.User.Password);
+            Globals.Token = res.Token;
+
+            var org = await Functions.GetAsync<List<OrganizationsModel>>("Organizations/Search", true) ?? new List<OrganizationsModel>();
+            Globals.Organization = org.FirstOrDefault()!;
+
+            // Store token, user, and org in sessionStorage for new tab / UniGet layout restore
+            await SessionStorageHelper.SaveSessionAsync(JS, Globals.Token, Globals.User, Globals.Organization);
+
+            var emp = await Functions.GetAsync<EmployeesModel>($"Employees/Get/{res.EmpId}", true) ?? new EmployeesModel();
+            Globals.Employee = emp;
+
+            var dept = await Functions.GetAsync<DepartmentsModel>($"Departments/Get/{emp.DepartmentId}", true) ?? new DepartmentsModel();
+            Globals.Department = dept;
+
+            if (Globals.Organization.Expiry <= DateTime.Now)
+            {
+                SnackbarService.Add("License Expired.", Severity.Error);
+            }
+            else
+            {
+                await Task.Delay(500);
+                Nav.NavigateTo($"/{Globals.User.Dashboard}");
+            }
+        }
+        catch
+        {
+            LoadingPanel = false;
+            SnackbarService.Add("An unexpected error occurred during login.", Severity.Error);
+        }
+    }
+
+    private void ForgotPassword()
+    {
+        Nav.NavigateTo("/ForgotPasswordPage");
+    }
+}
+
+<style>
+
+    /* MAIN 2-COLUMN LAYOUT */
+    .split-container {
+        display: flex;
+        height: 100vh;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    /* LEFT LOGIN PANEL */
+    .left-panel {
+        flex: 0 0 40%; /* Left panel always 40% width */
+        background: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 40px;
+        box-sizing: border-box;
+    }
+
+    /* LOGIN BOX */
+    .login-box {
+        width: 100%;
+        max-width: 350px;
+    }
+
+    .login-header {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    /* FORM STYLING */
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 15px;
+    }
+
+    .btn-primary {
+        width: 100%;
+        margin-top: 10px;
+        padding: 12px;
+        font-size: 16px;
+        border-radius: 6px;
+        background-color: #ff5c39; /* SeedProd orange */
+        border: none;
+    }
+
+    .btn-link {
+        background: none;
+        border: none;
+        color: gray;
+        margin-top: 10px;
+    }
+
+    .forgot-password {
+        text-align: center;
+    }
+
+    /* RIGHT IMAGE PANEL */
+    .right-panel {
+        flex: 1;
+        background-size: cover !important;
+        background-position: center !important;
+    }
+
+    /* MOBILE – hide right panel */
+    @@media (max-width: 900px) {
+        .left-panel {
+            flex: 1 !important;
+            width: 100%;
+        }
+
+        .right-panel {
+            display: none;
+        }
+    }
+
+    .login-box-image-style {
+        width: 100%;
+        max-width: 360px;
+        text-align: center;
+    }
+
+    /* LOGO */
+    .brand-logo {
+        width: 80px;
+        margin-bottom: 20px;
+    }
+
+    /* TITLE */
+    .login-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: #333;
+    }
+
+    /* SUBTEXT */
+    .login-subtext {
+        font-size: 14px;
+        color: #777;
+        line-height: 1.5;
+        margin-bottom: 30px;
+    }
+
+    .recover-link {
+        color: #ff5faf;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    /* INPUT FIELDS */
+    .input-field {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        font-size: 14px;
+        background: #fafafa;
+        outline: none;
+    }
+
+        .input-field:focus {
+            border-color: #d06bff;
+            background: white;
+        }
+
+    /* GRADIENT BUTTON */
+    .btn-gradient {
+        width: 100%;
+        padding: 13px;
+        border: none;
+        border-radius: 25px;
+        margin-top: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        background: linear-gradient(90deg, #fc466b, #3f5efb);
+        color: white;
+        transition: 0.3s;
+    }
+
+        .btn-gradient:hover:not(:disabled) {
+            opacity: 0.85;
+        }
+
+        .btn-gradient:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: linear-gradient(90deg, #ccc, #999);
+        }
+
+    .input-field:disabled {
+        background: #e0e0e0;
+        cursor: not-allowed;
+    }
+
+    .account-status-message {
+        margin-bottom: 15px;
+    }
+</style>
+

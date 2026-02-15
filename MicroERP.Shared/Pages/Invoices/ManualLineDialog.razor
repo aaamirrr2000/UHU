@@ -1,0 +1,559 @@
+@using MicroERP.Shared.Models
+@using MudBlazor
+
+<MudDialog>
+    <TitleContent>
+        <MudGrid Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudItem xs="10">
+                <MudText Typo="Typo.h6" Class="dialog-title">
+                    <MudIcon Icon="@Icons.Material.Filled.AddShoppingCart" Class="me-2" Style="color: var(--mud-palette-primary);" />
+                    Add Manual Line Item
+                </MudText>
+            </MudItem>
+        </MudGrid>
+    </TitleContent>
+    
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="manual-line-dialog-container">
+            <!-- Item Information Section -->
+            <MudPaper Elevation="2" Class="pa-4 mb-4 manual-section-card">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Description" 
+                             Size="Size.Medium" 
+                             Color="Color.Primary" 
+                             Class="me-2" />
+                    <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Item Information</MudText>
+                </div>
+                <MudDivider Class="mb-4" Style="height: 2px; background: linear-gradient(90deg, var(--mud-palette-primary) 0%, transparent 100%);" />
+                
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="Data.ItemName"
+                                  Label="Item Name / Description *"
+                                  Variant="Variant.Outlined"
+                                  FullWidth="true"
+                                  Margin="Margin.Dense"
+                                  Required="true"
+                                  RequiredError="Item name is required"
+                                  Class="manual-line-field"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Label" />
+                </MudItem>
+            </MudPaper>
+
+            <!-- Quantity & Pricing Section -->
+            <MudPaper Elevation="2" Class="pa-4 mb-4 manual-section-card">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.AttachMoney" 
+                             Size="Size.Medium" 
+                             Color="Color.Success" 
+                             Class="me-2" />
+                    <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Quantity & Pricing</MudText>
+                </div>
+                <MudDivider Class="mb-4" Style="height: 2px; background: linear-gradient(90deg, var(--mud-palette-success) 0%, transparent 100%);" />
+                
+                <MudGrid Spacing="3">
+
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="double"
+                                        Value="Data.Qty"
+                                        ValueChanged="OnQtyChanged"
+                                        Label="Quantity *"
+                                        Variant="Variant.Outlined"
+                                        FullWidth="true"
+                                        Margin="Margin.Dense"
+                                        Min="0.01"
+                                        Format="#,##0.00"
+                                        Required="true"
+                                        RequiredError="Quantity is required"
+                                        Class="manual-line-field"
+                                        Adornment="Adornment.Start"
+                                        AdornmentIcon="@Icons.Material.Filled.ShoppingCart" />
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="double"
+                                        Value="Data.UnitPrice"
+                                        ValueChanged="OnUnitPriceChanged"
+                                        Label="Unit Price *"
+                                        Variant="Variant.Outlined"
+                                        FullWidth="true"
+                                        Margin="Margin.Dense"
+                                        Min="0"
+                                        Format="#,##0.00"
+                                        Required="true"
+                                        RequiredError="Unit price is required"
+                                        Class="manual-line-field"
+                                        Adornment="Adornment.Start"
+                                        AdornmentIcon="@Icons.Material.Filled.MonetizationOn" />
+                    </MudItem>
+
+                    @if (!IsPurchaseInvoice)
+                    {
+                        <MudItem xs="12" sm="6">
+                            <MudNumericField T="double"
+                                            Value="Data.DiscountAmount"
+                                            ValueChanged="OnDiscountChanged"
+                                            Label="Discount Amount"
+                                            Variant="Variant.Outlined"
+                                            FullWidth="true"
+                                            Margin="Margin.Dense"
+                                            Min="0"
+                                            Format="#,##0.00"
+                                            Class="manual-line-field"
+                                            Adornment="Adornment.Start"
+                                            AdornmentIcon="@Icons.Material.Filled.LocalOffer" />
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
+
+            <!-- Tax Information Section -->
+            <MudPaper Elevation="2" Class="pa-4 mb-4 manual-section-card">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Receipt" 
+                             Size="Size.Medium" 
+                             Color="Color.Warning" 
+                             Class="me-2" />
+                    <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Tax Information</MudText>
+                </div>
+                <MudDivider Class="mb-4" Style="height: 2px; background: linear-gradient(90deg, var(--mud-palette-warning) 0%, transparent 100%);" />
+                
+                <MudGrid Spacing="3">
+
+                    <!-- Tax Rule Dropdown -->
+                    <MudItem xs="12" sm="@(IsPurchaseInvoice ? 12 : 6)">
+                        <MudSelect T="int?"
+                                   Label="Tax Rule"
+                                   @bind-Value="Data.TaxRuleId"
+                                   Variant="Variant.Outlined"
+                                   Clearable="@true"
+                                   FullWidth="true"
+                                   Margin="Margin.Dense"
+                                   Class="manual-line-field"
+                                   OnSelectionChanged="OnTaxRuleChanged"
+                                   Adornment="Adornment.Start"
+                                   AdornmentIcon="@Icons.Material.Filled.Rule">
+                            @foreach (var taxRule in TaxRules)
+                            {
+                                <MudSelectItem T="int?" Value="@taxRule.Id">@taxRule.RuleName</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    @if (Data.TaxRuleId.HasValue && Data.TaxRuleId.Value > 0 && Data.TaxAmount > 0)
+                    {
+                        <MudItem xs="12">
+                            <MudPaper Elevation="1" Class="pa-3" Style="background: linear-gradient(135deg, rgba(33, 150, 243, 0.12) 0%, rgba(33, 150, 243, 0.06) 100%); border-radius: 8px; border: 1px solid rgba(33, 150, 243, 0.25);">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Size="Size.Medium" Color="Color.Info" Class="me-2" />
+                                        <div>
+                                            <MudText Typo="Typo.body2" Style="font-weight: 600; color: var(--mud-palette-info); margin-bottom: 2px;">
+                                                Calculated Tax Amount
+                                            </MudText>
+                                            <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary); font-size: 0.7rem;">
+                                                Based on selected tax rule and entered amount
+                                            </MudText>
+                                        </div>
+                                    </div>
+                                    <MudText Typo="Typo.h5" Style="font-weight: 700; color: var(--mud-palette-info); font-family: 'Courier New', monospace;">
+                                        @Data.TaxAmount.ToString("#,##0.00")
+                                    </MudText>
+                                </div>
+                            </MudPaper>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
+
+            <!-- Total Summary Card -->
+            <MudPaper Elevation="4" Class="manual-line-total-paper">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Summarize" 
+                                 Size="Size.Large" 
+                                 Color="Color.Primary" 
+                                 Class="me-3" />
+                        <div>
+                            <MudText Typo="Typo.h6" Class="fw-bold mb-0" Style="color: var(--mud-palette-text-primary);">
+                                Line Total
+                            </MudText>
+                            <MudText Typo="Typo.caption" Class="text-muted">
+                                Quantity × Unit Price - Discount + Tax
+                            </MudText>
+                        </div>
+                    </div>
+                    <MudText Typo="Typo.h4" Class="fw-bold mb-0 manual-total-amount">
+                        @LineTotal.ToString("#,##0.00")
+                    </MudText>
+                </div>
+            </MudPaper>
+        </MudContainer>
+    </DialogContent>
+    
+    <DialogActions>
+        <MudButton OnClick="Cancel" 
+                   Variant="Variant.Text" 
+                   Color="Color.Default"
+                   StartIcon="@Icons.Material.Filled.Close"
+                   Class="dialog-action-btn">
+            Cancel
+        </MudButton>
+        <MudButton Color="Color.Primary" 
+                   Variant="Variant.Filled" 
+                   OnClick="Save" 
+                   Disabled="@(!CanAddLine)"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   Class="dialog-action-btn">
+            Add Line
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+<style>
+    .manual-line-dialog-container {
+        padding: 20px !important;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(250, 250, 255, 0.95) 100%);
+    }
+
+    .manual-line-field {
+        margin-bottom: 4px;
+    }
+
+    :deep(.manual-line-field .mud-input-root) {
+        min-height: 48px !important;
+        height: 48px !important;
+    }
+
+    :deep(.manual-line-field .mud-input-root input) {
+        min-height: 48px !important;
+        height: 48px !important;
+        font-size: 1rem !important;
+        padding: 12px 16px !important;
+    }
+
+    :deep(.manual-line-field .mud-select) {
+        min-height: 48px !important;
+    }
+
+    :deep(.manual-line-field .mud-select .mud-input-root) {
+        min-height: 48px !important;
+        height: 48px !important;
+    }
+
+    .manual-section-card {
+        border-radius: 16px !important;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(248, 250, 252, 1) 100%);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .manual-section-card:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+        transform: translateY(-2px);
+    }
+
+    .manual-line-total-paper {
+        padding: 20px 24px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border: 2px solid var(--mud-palette-primary);
+        border-radius: 16px;
+        margin-top: 8px;
+        box-shadow: 0 4px 20px rgba(63, 81, 181, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .manual-line-total-paper:hover {
+        box-shadow: 0 6px 24px rgba(63, 81, 181, 0.4);
+        transform: translateY(-2px);
+    }
+
+    .manual-total-amount {
+        color: white !important;
+        font-family: 'Courier New', 'Consolas', monospace;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        letter-spacing: 1px;
+    }
+
+    .dialog-title {
+        font-weight: 600;
+        color: var(--mud-palette-text-primary);
+    }
+
+    /* Style dialog actions using MudDialog's built-in structure */
+    :deep(.mud-dialog-actions) {
+        padding: 20px 24px;
+        border-top: 1px solid rgba(0, 0, 0, 0.08);
+        gap: 12px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(248, 250, 252, 1) 100%);
+    }
+
+    .dialog-action-btn {
+        min-width: 120px;
+        padding: 10px 24px;
+        font-weight: 600;
+        text-transform: none;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .dialog-action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Enhanced input field styling */
+    :deep(.manual-line-field .mud-input-root) {
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    :deep(.manual-line-field .mud-input-root:hover) {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    :deep(.manual-line-field .mud-input-root-focused) {
+        box-shadow: 0 4px 12px rgba(63, 81, 181, 0.2);
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .manual-line-dialog-container {
+        background: linear-gradient(135deg, rgba(30, 30, 30, 0.95) 0%, rgba(40, 40, 45, 0.95) 100%);
+    }
+
+    .mud-theme-dark .manual-section-card {
+        background: linear-gradient(135deg, rgba(40, 40, 40, 1) 0%, rgba(35, 35, 40, 1) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .mud-theme-dark :deep(.mud-dialog-actions) {
+        background: linear-gradient(135deg, rgba(30, 30, 30, 1) 0%, rgba(35, 35, 40, 1) 100%);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+</style>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string InvoiceType { get; set; } = "SALE";
+    [Parameter] public int? PartyId { get; set; } = null;
+    [Parameter] public PartiesModel? Party { get; set; } = null;
+
+    [Inject] private Functions Functions { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    public ManualLineData Data { get; set; } = new ManualLineData();
+    private List<TaxRuleModel> TaxRules = new();
+    private List<TaxRuleDetailModel> TaxRuleDetails = new();
+    private bool LoadingPanel { get; set; } = false;
+
+    private bool IsPurchaseInvoice => !string.IsNullOrEmpty(InvoiceType) && InvoiceType.ToUpper().Contains("PURCHASE");
+
+    private double LineTotal => (Data.Qty * Data.UnitPrice) - Data.DiscountAmount + Data.TaxAmount;
+
+    private bool CanAddLine => Data.Qty > 0 && Data.UnitPrice > 0 && !string.IsNullOrWhiteSpace(Data.ItemName);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTaxRules();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && Data.TaxRuleId.HasValue && Data.TaxRuleId.Value > 0 && Data.Qty > 0 && Data.UnitPrice > 0)
+        {
+            await CalculateTaxFromRule();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadTaxRules()
+    {
+        try
+        {
+            LoadingPanel = true;
+            string appliesTo = IsPurchaseInvoice ? "PURCHASE" : "SALE";
+            TaxRules = await Functions.GetAsync<List<TaxRuleModel>>(
+                $"TaxRule/Search/AppliesTo='{appliesTo}' and IsActive=1 and IsSoftDeleted=0", true) 
+                ?? new List<TaxRuleModel>();
+
+            if (TaxRules.Any() && !Data.TaxRuleId.HasValue)
+            {
+                await OnTaxRuleChanged(TaxRules.First().Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading tax rules: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    private async Task OnTaxRuleChanged(int? taxRuleId)
+    {
+        Data.TaxRuleId = taxRuleId;
+        if (taxRuleId.HasValue && taxRuleId.Value > 0 && Data.Qty > 0 && Data.UnitPrice > 0)
+        {
+            await CalculateTaxFromRule();
+        }
+        else
+        {
+            Data.TaxAmount = 0;
+        }
+    }
+
+    private async Task OnQtyChanged(double newQty)
+    {
+        Data.Qty = newQty;
+        if (Data.TaxRuleId.HasValue && Data.TaxRuleId.Value > 0 && Data.Qty > 0 && Data.UnitPrice > 0)
+        {
+            await CalculateTaxFromRule();
+        }
+    }
+
+    private async Task OnUnitPriceChanged(double newPrice)
+    {
+        Data.UnitPrice = newPrice;
+        if (Data.TaxRuleId.HasValue && Data.TaxRuleId.Value > 0 && Data.Qty > 0 && Data.UnitPrice > 0)
+        {
+            await CalculateTaxFromRule();
+        }
+    }
+
+    private async Task OnDiscountChanged(double newDiscount)
+    {
+        Data.DiscountAmount = newDiscount;
+        if (Data.TaxRuleId.HasValue && Data.TaxRuleId.Value > 0 && Data.Qty > 0 && Data.UnitPrice > 0)
+        {
+            await CalculateTaxFromRule();
+        }
+    }
+
+    private async Task CalculateTaxFromRule()
+    {
+        if (!Data.TaxRuleId.HasValue || Data.TaxRuleId.Value <= 0 || Data.Qty <= 0 || Data.UnitPrice <= 0)
+        {
+            Data.TaxAmount = 0;
+            return;
+        }
+
+        try
+        {
+            LoadingPanel = true;
+            
+            // Load tax rule details
+            TaxRuleDetails = await Functions.GetAsync<List<TaxRuleDetailModel>>(
+                $"TaxRuleDetail/Search/a.TaxRuleId={Data.TaxRuleId.Value}", true) 
+                ?? new List<TaxRuleDetailModel>();
+
+            if (TaxRuleDetails == null || !TaxRuleDetails.Any())
+            {
+                Data.TaxAmount = 0;
+                return;
+            }
+
+            // Filter by party: only GST + one Advance Tax (the one matching party IsRegistered/IsFiler) apply
+            var applicableDetails = new List<TaxRuleDetailModel>();
+            foreach (var detail in TaxRuleDetails.OrderBy(trd => trd.SequenceNo))
+            {
+                var taxMaster = await Functions.GetAsync<TaxMasterModel>($"TaxMaster/Get/{detail.TaxId}", true);
+                if (taxMaster == null) continue;
+                bool hasPartyCondition = detail.IsRegistered.HasValue || detail.IsFiler.HasValue || !string.IsNullOrWhiteSpace(taxMaster.ConditionType);
+                bool shouldApply = true;
+                if (Party != null && hasPartyCondition)
+                {
+                    bool registeredMatch = detail.IsRegistered == null || detail.IsRegistered == (Party.IsRegistered == 1 ? 1 : 0);
+                    bool filerMatch = detail.IsFiler == null || detail.IsFiler == (Party.IsFiler == 1 ? 1 : 0);
+                    shouldApply = registeredMatch && filerMatch;
+                }
+                if (shouldApply)
+                    applicableDetails.Add(detail);
+            }
+
+            if (!applicableDetails.Any())
+            {
+                Data.TaxAmount = 0;
+                return;
+            }
+
+            // Calculate base amount (unit price * quantity - discount)
+            decimal baseAmount = (decimal)(Data.UnitPrice * Data.Qty - Data.DiscountAmount);
+            decimal runningTotal = baseAmount;
+            decimal basePlusSelectedTotal = baseAmount;
+            decimal totalTax = 0;
+
+            foreach (var detail in applicableDetails)
+            {
+                decimal taxableAmount;
+                
+                if (detail.TaxBaseType == "BASE_ONLY")
+                {
+                    taxableAmount = baseAmount;
+                }
+                else if (detail.TaxBaseType == "BASE_PLUS_SELECTED")
+                {
+                    taxableAmount = basePlusSelectedTotal;
+                }
+                else if (detail.TaxBaseType == "RUNNING_TOTAL")
+                {
+                    taxableAmount = runningTotal;
+                }
+                else
+                {
+                    taxableAmount = baseAmount;
+                }
+
+                decimal taxAmount = 0;
+                if (detail.TaxType == "PERCENTAGE" && detail.TaxAmount.HasValue)
+                {
+                    taxAmount = taxableAmount * (decimal)detail.TaxAmount.Value / 100m;
+                }
+                else if (detail.TaxType == "FLAT" && detail.TaxAmount.HasValue)
+                {
+                    taxAmount = (decimal)detail.TaxAmount.Value;
+                }
+
+                totalTax += taxAmount;
+                runningTotal += taxAmount;
+                
+                if (detail.TaxBaseType == "BASE_ONLY" || detail.TaxBaseType == "BASE_PLUS_SELECTED")
+                {
+                    basePlusSelectedTotal += taxAmount;
+                }
+            }
+
+            Data.TaxAmount = (double)totalTax;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error calculating tax: {ex.Message}", Severity.Error);
+            Data.TaxAmount = 0;
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(Data.ItemName))
+        {
+            return;
+        }
+        if (Data.Qty <= 0 || Data.UnitPrice < 0)
+        {
+            return;
+        }
+        // Convert item name to uppercase
+        Data.ItemName = Data.ItemName.ToUpper();
+        MudDialog.Close(DialogResult.Ok(Data));
+    }
+}
+

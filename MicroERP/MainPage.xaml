@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<TabbedPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+            xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+            xmlns:local="clr-namespace:MicroERP"
+            xmlns:shared="clr-namespace:MicroERP.Shared;assembly=MicroERP.Shared"
+            xmlns:pages="clr-namespace:MicroERP.Pages"
+            x:Class="MicroERP.MainPage"
+            BackgroundColor="white">
+
+    <!-- ? Tab 1: Web -->
+    <ContentPage Title="ERP" IconImageSource="blazor_icon.png">
+        <BlazorWebView x:Name="blazorWebView" HostPage="wwwroot/index.html">
+            <BlazorWebView.RootComponents>
+                <RootComponent Selector="#app" ComponentType="{x:Type shared:Routes}" />
+            </BlazorWebView.RootComponents>
+        </BlazorWebView>
+    </ContentPage>
+
+    <!-- ? Tab 2: Attendance -->
+    <pages:AttendancePage Title="Attendance" IconImageSource="attendance_icon.png" />
+
+    <!-- ? Tab 3: About Us Page (Native UI) -->
+    <ContentPage Title="About Us" IconImageSource="maui_icon.png">
+        <StackLayout Padding="24" Spacing="24" VerticalOptions="Start" HorizontalOptions="Center" Margin="20">
+            <!-- App Logo -->
+            <Image Source="your_logo.png"
+                   HeightRequest="100"
+                   WidthRequest="100"
+                   Aspect="AspectFit"
+                   HorizontalOptions="Center"
+                   Margin="0,10,0,0" />
+
+            <!-- App Title -->
+            <Label Text="About Our App"
+                   FontSize="28"
+                   FontAttributes="Bold"
+                   TextColor="#1A1A1A"
+                   HorizontalOptions="Center"
+                   Margin="0,10,0,0" />
+
+            <!-- Description -->
+            <Label Text="Welcome to our app! We're focused on creating intuitive, user-friendly mobile experiences to help simplify your life. Whether it's organizing tasks or staying connected, we aim to deliver excellence through design and technology."
+                   FontSize="16"
+                   TextColor="#333333"
+                   HorizontalTextAlignment="Center"
+                   LineHeight="1.4"
+                   Margin="0,0,0,10" />
+
+            <!-- Decorative Divider -->
+            <BoxView HeightRequest="1"
+                     WidthRequest="100"
+                     Color="#CCCCCC"
+                     HorizontalOptions="Center"
+                     Margin="0,10" />
+
+            <!-- Version Info -->
+            <Label Text="Version 1.0.0"
+                   FontSize="14"
+                   TextColor="#666666"
+                   HorizontalOptions="Center"
+                   Margin="0,0,0,20" />
+        </StackLayout>
+    </ContentPage>
+
+</TabbedPage>
+

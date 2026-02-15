@@ -1,0 +1,378 @@
+﻿@page "/UsersPage/{Action}/{CurrentRecord?}"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+
+
+    <MudExpansionPanels MultiExpansion="true">
+        <MudGrid>
+        <!-- User Authentication Panel -->
+        <MudItem xs="12" md="6">
+            <MudExpansionPanel Text="User Authentication" Expanded="true">
+                <TitleContent>
+                    <div class="d-flex align-items-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Lock" class="mr-3" />
+                        <MudText Typo="Typo.h6" Class="mb-0">User Authentication</MudText>
+                    </div>
+                </TitleContent>
+                <ChildContent>
+
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="User Name"
+                                      @bind-Value="record.Username"
+                                      Placeholder="Enter username"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true"
+                                      Required="@true"
+                                      Class="mb-3" />
+                        <ValidationMessage For="@(() => record.Username)" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="string"
+                                   Label="User Type"
+                                   @bind-Value="record.UserType"
+                                   Placeholder="Select user type"
+                                   Variant="Variant.Outlined"
+                                   Clearable="@true"
+                                   ReadOnly="@isReadOnly"
+                                   FullWidth="@true">
+                            @if (Use != null && Use.Any())
+                            {
+                                if (string.IsNullOrWhiteSpace(record.UserType))
+                                {
+                                    record.UserType = Use.First().ListValue;
+                                }
+                                foreach (var i in Use)
+                                {
+                                    <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.UserType)" />
+                    </MudItem>
+                </MudGrid>
+                </ChildContent>
+            </MudExpansionPanel>
+        </MudItem>
+
+        <!-- User Assignment Panel -->
+        <MudItem xs="12" md="6">
+            <MudExpansionPanel Text="User Assignment" Expanded="true">
+                <TitleContent>
+                    <div class="d-flex align-items-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Assignment" class="mr-3" />
+                        <MudText Typo="Typo.h6" Class="mb-0">User Assignment</MudText>
+                    </div>
+                </TitleContent>
+                <ChildContent>
+
+                <MudGrid>
+                    <MudItem xs="12">
+                        @if (isReadOnly)
+                        {
+                            <MudTextField Label="Employee"
+                                          Value="@(Emp?.FirstOrDefault(e => e.Id == record.EmpId)?.Fullname ?? "")"
+                                          ReadOnly="@true"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="@true"
+                                          Class="mb-3" />
+                        }
+                        else
+                        {
+                            <AutoComplete TItem="EmployeesModel"
+                                          DataList="@Emp"
+                                          IdProperty="@(e => e.Id)"
+                                          DisplayProperty="@(e => e.Fullname)"
+                                          @bind-SelectedId="record.EmpId"
+                                          Variant="Variant.Outlined"
+                                          Label=""
+                                          FullWidth="@true"
+                                          Class="mb-3" />
+                        }
+                        <ValidationMessage For="@(() => record.EmpId)" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudSelect T="int"
+                                   Label="Group"
+                                   @bind-Value="record.GroupId"
+                                   Placeholder="Select group"
+                                   Variant="Variant.Outlined"
+                                   Clearable="@true"
+                                   ReadOnly="@isReadOnly"
+                                   FullWidth="@true">
+                            @if (Gro != null && Gro.Any())
+                            {
+                                foreach (var i in Gro)
+                                {
+                                    <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.GroupId)" />
+                    </MudItem>
+                </MudGrid>
+                </ChildContent>
+            </MudExpansionPanel>
+        </MudItem>
+
+        <!-- Access & Status Panel -->
+        <MudItem xs="12" md="6">
+            <MudExpansionPanel Text="Access & Status" Expanded="true">
+                <TitleContent>
+                    <div class="d-flex align-items-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Security" class="mr-3" />
+                        <MudText Typo="Typo.h6" Class="mb-0">Access & Status</MudText>
+                    </div>
+                </TitleContent>
+                <ChildContent>
+
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        @if (isReadOnly || Globals.User.GroupId != 1)
+                        {
+                            <MudTextField Label="Location"
+                                          Value="@(Loc?.FirstOrDefault(l => l.Id == record.LocationId)?.Name ?? "")"
+                                          ReadOnly="@true"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="@true"
+                                          Class="mb-3" />
+                        }
+                        else
+                        {
+                            <MudSelect T="int"
+                                       Label="Location"
+                                       @bind-Value="record.LocationId"
+                                       Placeholder="Select location"
+                                       Variant="Variant.Outlined"
+                                       Clearable="@true"
+                                       ReadOnly="@isReadOnly"
+                                       FullWidth="@true"
+                                       Class="mb-3">
+                                @if (Loc != null && Loc.Any())
+                                {
+                                    foreach (var i in Loc)
+                                    {
+                                        <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                                    }
+                                }
+                            </MudSelect>
+                        }
+                        <ValidationMessage For="@(() => record.LocationId)" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="int"
+                                   Label="Active Status"
+                                   @bind-Value="record.IsActive"
+                                   Placeholder="Select status"
+                                   Variant="Variant.Outlined"
+                                   Clearable="false"
+                                   ReadOnly="@isReadOnly"
+                                   FullWidth="@true">
+                            @if (record.IsActive != 0 && record.IsActive != 1)
+                            {
+                                record.IsActive = 1;
+                            }
+                            <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                            <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.IsActive)" />
+                    </MudItem>
+                </MudGrid>
+                </ChildContent>
+            </MudExpansionPanel>
+        </MudItem>
+        </MudGrid>
+    </MudExpansionPanels>
+</MudContainer>
+
+<style>
+    .mud-paper {
+        transition: box-shadow 0.3s ease;
+    }
+
+    .mud-paper:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
+
+@code
+{
+    UsersModel record = new();
+    List<TypeCodeModel> Use = null!;
+    List<EmployeesModel> Emp = new();
+    List<GroupsModel> Gro = new();
+    List<LocationsModel> Loc = new();
+
+    private string? searchTerm;
+    private EmployeesModel? SelectedEmployee;
+    
+    [Parameter] public UsersModel? Model { get; set; }
+    [Parameter] public string? Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Model != null)
+        {
+            record = Model;
+        }
+        else if (CurrentRecord > 0 && (record.Id != CurrentRecord || record.Id == 0))
+        {
+            await Get(CurrentRecord);
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        Use = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/USER TYPE", true) ?? new List<TypeCodeModel>();
+        Emp = await Functions.GetAsync<List<EmployeesModel>>($"Employees/Search", true) ?? new List<EmployeesModel>();
+        Gro = await Functions.GetAsync<List<GroupsModel>>($"Groups/Search", true) ?? new List<GroupsModel>();
+        Loc = await Functions.GetAsync<List<LocationsModel>>($"Locations/Search", true) ?? new List<LocationsModel>();
+
+        if (Action == "INSERT" && Model == null)
+        {
+            record = new UsersModel();
+            record.IsActive = 1;
+            isReadOnly = false;
+        }
+        else if (Action == "UPDATE" && Model == null)
+        {
+            await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action == "VIEW" && Model == null)
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<UsersModel>($"Users/Get/{id}", true) ?? new UsersModel();
+        LoadingPanel = false;
+    }
+
+    protected void GetDefaultValues()
+    {
+        if (Gro != null && Gro.Any() && record.GroupId == 0)
+            record.GroupId = Gro.First().Id;
+        if (Loc != null && Loc.Any() && record.LocationId == 0)
+        {
+            record.LocationId = Globals.User.GroupId == 1 ? Loc.First().Id : Globals.User.LocationId;
+        }
+        // Lock location for non-admin users
+        if (Globals.User.GroupId != 1)
+        {
+            record.LocationId = Globals.User.LocationId;
+        }
+
+        StateHasChanged();
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new UsersModel();
+        record.IsActive = 1;
+        isReadOnly = false;
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        isReadOnly = true;
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        try
+        {
+            LoadingPanel = true;
+
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<UsersModel>($"Users/{url}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"Record Not Saved", Severity.Error);
+            }
+            else
+            {
+                await OnSaved.InvokeAsync();
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                    await Edit(result.Result!.Id);
+                else
+                {
+                    await Clear();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+}

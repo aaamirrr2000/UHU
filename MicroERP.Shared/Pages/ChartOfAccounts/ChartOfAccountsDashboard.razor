@@ -1,0 +1,684 @@
+@page "/ChartOfAccountsDashboard"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 2px;">
+    <div class="dashboard-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountTree" Class="me-2" Style="color: white;" />
+                    Chart of Accounts
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">Manage your chart of accounts hierarchy</MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
+                           Size="Size.Small" 
+                           Variant="Variant.Outlined" 
+                           Class="coa-header-btn"
+                           OnClick="@(() => Refresh())">
+                    Refresh
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.TwoTone.Expand" 
+                           Size="Size.Small" 
+                           Variant="Variant.Outlined" 
+                           Class="coa-header-btn"
+                           OnClick="@(() => ExpandAllNodes())">
+                    Expand All
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.TwoTone.ExpandLess" 
+                           Size="Size.Small" 
+                           Variant="Variant.Outlined" 
+                           Class="coa-header-btn"
+                           OnClick="@(() => CollapseAllNodes())">
+                    Collapse All
+                </MudButton>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" style="margin: 2px; height: 90vh; display: flex;">
+        <MyDrawer @ref="_drawer" Title="Chart Of Accounts" FaIcon="fas fa-address-book">
+        <HeaderContent>
+            @if (Action != "VIEW")
+            {
+                <MudButton OnClick="@(() => Save())"
+                           Variant="Variant.Filled"
+                           Color="Color.Success"
+                           StartIcon="@Icons.Material.Filled.Save"
+                           Size="Size.Small"
+                           Class="me-2">
+                    @(Action == "INSERT" ? "Save" : "Update")
+                </MudButton>
+
+                @if (Action == "UPDATE")
+                {
+                    <MudButton OnClick="@(() => Delete(record))"
+                               Variant="Variant.Filled"
+                               Color="Color.Error"
+                               StartIcon="@Icons.Material.Filled.Delete"
+                               Size="Size.Small">
+                        Delete
+                    </MudButton>
+                }
+            }
+        </HeaderContent>
+            <ChildContent>
+                <EditForm Model="record" OnSubmit="Save">
+                    <MudForm>
+                        <ChartOfAccountsPage Action="@Action" Model="record" OnSaved="ChildSaved" />
+                    </MudForm>
+                </EditForm>
+            </ChildContent>
+            <FooterContent>
+            </FooterContent>
+        </MyDrawer>
+
+        <MudPaper Elevation="3" Class="coa-tree-container" Style="width: 100%; max-width: 900px; height: 80vh; border-radius: 12px; overflow: hidden;">
+            <!-- Tree Header -->
+            <div class="coa-tree-header">
+                <div class="coa-header-grid">
+                    <MudText Typo="Typo.caption" Class="coa-header-text" Style="font-weight: 600;">Actions</MudText>
+                    <MudText Typo="Typo.caption" Class="coa-header-text" Style="font-weight: 600;">Code</MudText>
+                    <MudText Typo="Typo.caption" Class="coa-header-text" Style="font-weight: 600;">Type</MudText>
+                    <MudText Typo="Typo.caption" Class="coa-header-text" Style="font-weight: 600;">Account Name</MudText>
+                    <MudText Typo="Typo.caption" Class="coa-header-text text-end" Style="font-weight: 600;">Balance</MudText>
+                </div>
+            </div>
+
+            <!-- Tree Content -->
+            <div class="coa-tree-content">
+                <MudTreeView Items="@TreeItems"
+                             T="ChartOfAccountsModel"
+                             Hover="true"
+                             Dense="false"
+                             SelectedValueChanged="OnSelectedValueChanged"
+                             @ref="treeViewRef"
+                             Class="coa-treeview">
+
+                    <ItemTemplate Context="item">
+                        <MudTreeViewItem Items="@item.Children" Value="@item.Value">
+                            <BodyContent>
+                                <div class="coa-tree-row">
+                                    <!-- Determine color and icon (professional palette) -->
+                                    @{
+                                        var (color, icon) = item.Value.Type switch
+                                        {
+                                            "ASSET" => ("coa-type-asset", Icons.Material.Filled.AccountBalance),
+                                            "LIABILITY" => ("coa-type-liability", Icons.Material.Filled.AccountBalanceWallet),
+                                            "EXPENSE" => ("coa-type-expense", Icons.Material.Filled.TrendingDown),
+                                            "REVENUE" => ("coa-type-revenue", Icons.Material.Filled.TrendingUp),
+                                            "EQUITY" => ("coa-type-equity", Icons.Material.Filled.ShowChart),
+                                            _ => ("coa-type-default", Icons.Material.Filled.Category)
+                                        };
+                                        var hasChildren = item.Children != null && item.Children.Any();
+                                    }
+
+                                    <!-- Action Menu -->
+                                    <div class="coa-action-menu">
+                                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" 
+                                                 Color="Color.Inherit" 
+                                                 Dense="true"
+                                                 Size="Size.Small"
+                                                 Class="coa-menu-button">
+                                            @if (Globals.AccessLevel == 1)
+                                            {
+                                                <MudMenuItem OnClick="@(() => Clear(item.Value))" Class="coa-menu-item">
+                                                    <MudIcon Icon="@Icons.Material.Filled.Add" Class="me-2" Size="Size.Small" />
+                                                    <span>Add Child</span>
+                                                </MudMenuItem>
+                                                <MudDivider Class="my-1" />
+                                            }
+                                            <MudMenuItem OnClick="@(() => View(item.Value))" Class="coa-menu-item">
+                                                <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="me-2" Size="Size.Small" />
+                                                <span>View</span>
+                                            </MudMenuItem>
+                                            @if (Globals.AccessLevel == 1)
+                                            {
+                                                <MudMenuItem OnClick="@(() => Edit(item.Value))" Class="coa-menu-item">
+                                                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="me-2" Size="Size.Small" />
+                                                    <span>Edit</span>
+                                                </MudMenuItem>
+                                                <MudMenuItem OnClick="@(() => Delete(item.Value))" 
+                                                             Color="Color.Error" 
+                                                             Class="coa-menu-item">
+                                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" Size="Size.Small" />
+                                                    <span>Delete</span>
+                                                </MudMenuItem>
+                                            }
+                                        </MudMenu>
+                                    </div>
+
+                                    <!-- Account Code -->
+                                    <div class="coa-code-cell">
+                                        <MudChip Size="Size.Small" 
+                                                 Variant="Variant.Outlined" 
+                                                 Class="@($"coa-code-chip {color}")">
+                                            @item.Value.Code
+                                        </MudChip>
+                                    </div>
+
+                                    <!-- Account Type -->
+                                    <div class="coa-type-cell">
+                                        <MudChip Size="Size.Small" 
+                                                 Variant="Variant.Outlined" 
+                                                 Class="@($"coa-type-chip {color}")">
+                                            <MudIcon Icon="@icon" Size="Size.Small" Class="me-1" />
+                                            @item.Value.Type
+                                        </MudChip>
+                                    </div>
+
+                                    <!-- Account Name -->
+                                    <div class="coa-name-cell">
+                                        @if (!string.IsNullOrEmpty(item.Value.Pic))
+                                        {
+                                            <i class="@($"{item.Value.Pic} coa-type-icon {color}")" style="font-size: 18px; margin-right: 8px;"></i>
+                                        }
+                                        else
+                                        {
+                                            <MudIcon Icon="@icon" Size="Size.Small" Class="@($"me-2 coa-type-icon {color}")" />
+                                        }
+                                        <MudText Typo="Typo.body2" 
+                                                 Class="coa-name-text text-truncate"
+                                                 Style="font-weight: 500; color: var(--mud-palette-text-primary);">
+                                            @item.Value.Name
+                                        </MudText>
+                                    </div>
+
+                                    <!-- Balance -->
+                                    <div class="coa-balance-cell text-end">
+                                        @if (item.Value.OpeningBalance != 0)
+                                        {
+                                            <MudText Typo="Typo.body2" 
+                                                     Class="@($"coa-balance-text {color}")">
+                                                @item.Value.OpeningBalance.ToString("N2")
+                                            </MudText>
+                                        }
+                                        else
+                                        {
+                                            <MudText Typo="Typo.body2" 
+                                                     Class="text-muted"
+                                                     Style="font-weight: 400;">
+                                                -
+                                            </MudText>
+                                        }
+                                    </div>
+                                </div>
+                            </BodyContent>
+                        </MudTreeViewItem>
+                    </ItemTemplate>
+                </MudTreeView>
+            </div>
+        </MudPaper>
+
+        <style>
+            /* Tree Container */
+            .coa-tree-container {
+                display: flex;
+                flex-direction: column;
+                background: var(--mud-palette-surface);
+            }
+
+            /* Tree Header */
+            .coa-tree-header {
+                background: #37474f;
+                padding: 12px 16px;
+                border-bottom: 1px solid rgba(255,255,255,0.08);
+            }
+
+            .coa-header-grid {
+                display: grid;
+                grid-template-columns: 60px 120px 140px 1fr 140px;
+                gap: 12px;
+                align-items: center;
+            }
+
+            .coa-header-text {
+                color: #eceff1 !important;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                font-size: 11px;
+            }
+
+            /* Tree Content */
+            .coa-tree-content {
+                flex: 1;
+                overflow-y: auto;
+                overflow-x: hidden;
+                background: var(--mud-palette-background);
+            }
+
+            /* Tree View Styling */
+            .coa-treeview {
+                padding: 8px 0;
+            }
+
+            .coa-treeview .mud-treeview-item {
+                margin: 2px 0;
+            }
+
+            .coa-treeview .mud-treeview-item-content {
+                padding: 0 8px;
+                border-radius: 8px;
+                transition: all 0.2s ease;
+            }
+
+            .coa-treeview .mud-treeview-item-content:hover {
+                background-color: var(--mud-palette-action-hover);
+            }
+
+            /* Tree Row */
+            .coa-tree-row {
+                display: grid;
+                grid-template-columns: 60px 120px 140px 1fr 140px;
+                gap: 12px;
+                align-items: center;
+                padding: 10px 8px;
+                min-height: 48px;
+                border-radius: 8px;
+                transition: all 0.2s ease;
+                position: relative;
+            }
+
+            .coa-tree-row:hover {
+                background-color: var(--mud-palette-action-hover);
+            }
+
+            .coa-tree-row::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 3px;
+                background: #546e7a;
+                border-radius: 0 3px 3px 0;
+                opacity: 0;
+                transition: opacity 0.2s ease;
+            }
+
+            .coa-tree-row:hover::before {
+                opacity: 1;
+            }
+
+            /* Professional type colors (muted, business-appropriate) */
+            .coa-type-asset { color: #1565c0 !important; border-color: #1565c0 !important; }
+            .coa-type-asset.coa-type-icon { color: #1565c0 !important; }
+            .coa-type-liability { color: #455a64 !important; border-color: #455a64 !important; }
+            .coa-type-liability.coa-type-icon { color: #455a64 !important; }
+            .coa-type-expense { color: #546e7a !important; border-color: #546e7a !important; }
+            .coa-type-expense.coa-type-icon { color: #546e7a !important; }
+            .coa-type-revenue { color: #2e7d32 !important; border-color: #2e7d32 !important; }
+            .coa-type-revenue.coa-type-icon { color: #2e7d32 !important; }
+            .coa-type-equity { color: #37474f !important; border-color: #37474f !important; }
+            .coa-type-equity.coa-type-icon { color: #37474f !important; }
+            .coa-type-default { color: #607d8b !important; border-color: #607d8b !important; }
+            .coa-type-default.coa-type-icon { color: #607d8b !important; }
+            .coa-code-chip.coa-type-asset,
+            .coa-type-chip.coa-type-asset { border-color: #1565c0; color: #1565c0; }
+            .coa-code-chip.coa-type-liability,
+            .coa-type-chip.coa-type-liability { border-color: #455a64; color: #455a64; }
+            .coa-code-chip.coa-type-expense,
+            .coa-type-chip.coa-type-expense { border-color: #546e7a; color: #546e7a; }
+            .coa-code-chip.coa-type-revenue,
+            .coa-type-chip.coa-type-revenue { border-color: #2e7d32; color: #2e7d32; }
+            .coa-code-chip.coa-type-equity,
+            .coa-type-chip.coa-type-equity { border-color: #37474f; color: #37474f; }
+            .coa-code-chip.coa-type-default,
+            .coa-type-chip.coa-type-default { border-color: #607d8b; color: #607d8b; }
+
+            /* Action Menu */
+            .coa-action-menu {
+                display: flex;
+                justify-content: center;
+            }
+
+            .coa-menu-button {
+                opacity: 0.6;
+                transition: opacity 0.2s ease;
+            }
+
+            .coa-tree-row:hover .coa-menu-button {
+                opacity: 1;
+            }
+
+            .coa-menu-item {
+                min-height: 36px;
+                padding: 6px 16px;
+            }
+
+            /* Code Cell */
+            .coa-code-cell {
+                display: flex;
+                align-items: center;
+            }
+
+            .coa-code-chip {
+                font-weight: 600;
+                font-size: 11px;
+                letter-spacing: 0.3px;
+                min-width: 80px;
+                justify-content: center;
+            }
+
+            /* Type Cell */
+            .coa-type-cell {
+                display: flex;
+                align-items: center;
+            }
+
+            .coa-type-chip {
+                font-weight: 500;
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                min-width: 100px;
+                justify-content: center;
+            }
+
+            /* Name Cell */
+            .coa-name-cell {
+                display: flex;
+                align-items: center;
+                min-width: 0;
+                overflow: hidden;
+            }
+
+            .coa-name-text {
+                font-size: 13px;
+                line-height: 1.4;
+            }
+
+            /* Balance Cell */
+            .coa-balance-cell {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                padding-right: 8px;
+            }
+
+            .coa-balance-text {
+                font-size: 13px;
+                font-family: 'Roboto Mono', monospace;
+                font-weight: 600;
+            }
+            .coa-balance-text.coa-type-asset { color: #1565c0 !important; }
+            .coa-balance-text.coa-type-liability { color: #455a64 !important; }
+            .coa-balance-text.coa-type-expense { color: #546e7a !important; }
+            .coa-balance-text.coa-type-revenue { color: #2e7d32 !important; }
+            .coa-balance-text.coa-type-equity { color: #37474f !important; }
+            .coa-balance-text.coa-type-default { color: #607d8b !important; }
+
+            /* Tree Indentation */
+            .coa-treeview .mud-treeview-item {
+                position: relative;
+            }
+
+            .coa-treeview .mud-treeview-item-toggle {
+                width: 24px;
+                height: 24px;
+                margin-right: 8px;
+                border-radius: 4px;
+                transition: all 0.2s ease;
+            }
+
+            .coa-treeview .mud-treeview-item-toggle:hover {
+                background-color: var(--mud-palette-action-hover);
+            }
+
+            /* Dark Mode Adjustments */
+            .mud-theme-dark .coa-tree-header {
+                background: #263238;
+                border-bottom-color: rgba(255,255,255,0.06);
+            }
+            .mud-theme-dark .coa-header-text {
+                color: #b0bec5 !important;
+            }
+
+            .mud-theme-dark .coa-tree-content {
+                background: var(--mud-palette-background);
+            }
+
+            /* Scrollbar Styling */
+            .coa-tree-content::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            .coa-tree-content::-webkit-scrollbar-track {
+                background: var(--mud-palette-background);
+            }
+
+            .coa-tree-content::-webkit-scrollbar-thumb {
+                background: var(--mud-palette-action-disabled);
+                border-radius: 4px;
+            }
+
+            .coa-tree-content::-webkit-scrollbar-thumb:hover {
+                background: var(--mud-palette-action-disabled-background);
+            }
+        </style>
+
+    </div>
+</MudContainer>
+
+<style>
+    .dashboard-header {
+        --coa-header-bg: #37474f;
+        --coa-header-text: #eceff1;
+        --coa-border: rgba(255,255,255,0.08);
+        padding: 20px;
+        background: var(--coa-header-bg);
+        border-radius: 8px;
+        color: var(--coa-header-text);
+        margin-bottom: 8px;
+        border: 1px solid var(--coa-border);
+    }
+
+    .dashboard-header .mud-typography {
+        color: var(--coa-header-text) !important;
+    }
+
+    .dashboard-header .text-muted {
+        color: rgba(236, 239, 241, 0.85) !important;
+    }
+
+    .coa-header-btn {
+        border-color: rgba(255,255,255,0.4) !important;
+        color: var(--coa-header-text) !important;
+    }
+    .coa-header-btn:hover {
+        background: rgba(255,255,255,0.08) !important;
+        border-color: rgba(255,255,255,0.6) !important;
+    }
+
+    .mud-theme-dark .dashboard-header {
+        background: #263238;
+        border-color: rgba(255,255,255,0.06);
+    }
+    .mud-theme-dark .dashboard-header .mud-typography,
+    .mud-theme-dark .dashboard-header .text-muted {
+        color: #b0bec5 !important;
+    }
+    .mud-theme-dark .coa-header-btn {
+        border-color: rgba(255,255,255,0.3) !important;
+        color: #b0bec5 !important;
+    }
+</style>
+@code
+{
+    private List<TreeItemData<ChartOfAccountsModel>> TreeItems { get; set; } = new();
+    List<ChartOfAccountsModel> data = new();
+    ChartOfAccountsModel record = new();
+    private ChartOfAccountsModel? SelectedItem;
+    private MudTreeView<ChartOfAccountsModel>? treeViewRef;
+
+    public string? Action { get; set; } = "INSERT";
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "ChartOfAccountsDashboard");
+        await GetAll();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        var data = await Functions.GetAsync<List<ChartOfAccountsModel>>("ChartOfAccounts/Search", true)
+                  ?? new List<ChartOfAccountsModel>();
+
+        TreeItems = BuildTree(data);
+
+        LoadingPanel = false;
+    }
+
+    private List<TreeItemData<ChartOfAccountsModel>> BuildTree(List<ChartOfAccountsModel> flatList, int parentId = 0)
+    {
+        // Get all valid parent IDs that exist in the list
+        var validParentIds = flatList.Select(x => x.Id).ToHashSet();
+        
+        // For root level (parentId = 0), include:
+        // 1. Accounts with ParentId = 0 (true root accounts)
+        // 2. Orphaned accounts (ParentId != 0 but parent doesn't exist in the list)
+        var rootItems = flatList
+            .Where(x => parentId == 0 
+                ? (x.ParentId == 0 || (x.ParentId != 0 && !validParentIds.Contains(x.ParentId)))
+                : x.ParentId == parentId)
+            .Select(x => new TreeItemData<ChartOfAccountsModel>
+            {
+                Value = x,
+                Children = BuildTree(flatList, x.Id)
+            }).ToList();
+        
+        return rootItems;
+    }
+
+    private async Task ExpandAllNodes()
+    {
+        if (treeViewRef != null)
+        {
+            await treeViewRef.ExpandAllAsync();
+        }
+    }
+
+    private async Task CollapseAllNodes()
+    {
+        if (treeViewRef != null)
+        {
+            await treeViewRef.CollapseAllAsync();
+        }
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<ChartOfAccountsModel>($"ChartOfAccounts/Get/{id}", true) ?? new ChartOfAccountsModel();
+        LoadingPanel = false;
+    }
+
+    private async Task OnSelectedValueChanged(ChartOfAccountsModel? selectedItem)
+    {
+        SelectedItem = selectedItem;
+        if (SelectedItem != null)
+        {
+            //SnackbarService.Add($"Clicked node ID: {SelectedItem.Id}, Name: {SelectedItem.Name}", Severity.Success);
+            //Console.WriteLine($"Clicked node ID: {SelectedItem.Id}, Name: {SelectedItem.Name}");
+        }
+        //await Get(selectedItem.Id);
+    }
+
+
+    protected async Task Clear(ChartOfAccountsModel item)
+    {
+        record = new ChartOfAccountsModel
+        {
+            ParentId = item.Id,
+            Type = item.Type,
+            IsActive = 1,
+            OrganizationId = Globals.User.OrganizationId
+        };
+        Action = "INSERT";
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+        StateHasChanged();
+    }
+
+    protected async Task Refresh()
+    {
+        await GetAll();
+    }
+
+    protected async Task View(ChartOfAccountsModel item)
+    {
+        await Get(item.Id);
+        Action = "VIEW";
+        isReadOnly = true;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(ChartOfAccountsModel item)
+    {
+        await Get(item.Id);
+        Action = "UPDATE";
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Delete(ChartOfAccountsModel item)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Get(item.Id);
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedFrom = Globals.ClientInfo;
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = Globals.ClientInfo;
+
+        var result = await Functions.PostAsync<ChartOfAccountsModel>($"ChartOfAccounts/{Action}", record, true);
+        if (result.Success == true)
+        {
+            SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
+            if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) await Edit(result.Result!);
+        }
+        else
+        {
+            SnackbarService.Add($"Record Not Deleted", Severity.Error);
+        }
+
+        LoadingPanel = false;
+        await _drawer.CloseDrawerAsync();
+
+    }
+
+    private async Task ChildSaved()
+    {
+        await GetAll();
+        await _drawer.CloseDrawerAsync();
+        StateHasChanged();
+    }
+}
+

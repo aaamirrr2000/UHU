@@ -1,0 +1,967 @@
+<MudTabs Rounded="true" Centered="false" Elevation="2" Class="mb-2 invoice-items-tabs-professional" ScrollButtons="ScrollButtons.Auto" Variant="Variant.Filled">
+    <MudTabPanel Text=@($"Items ({SelectedItems.Count:#,##0})") Class="p-3">
+        <div class="d-flex flex-column gap-3 invoice-items-container-professional" style="max-height: calc(100vh - 200px); overflow: hidden; width: 100%;">
+            <!-- Categories Panel -->
+            <MudPaper Elevation="3" Class="invoice-categories-panel-professional" Style="width: 100%; border-radius: 12px; padding: 16px; background: linear-gradient(135deg, rgba(63, 81, 181, 0.08) 0%, rgba(63, 81, 181, 0.03) 100%); border: 2px solid rgba(63, 81, 181, 0.2); box-shadow: 0 4px 12px rgba(63, 81, 181, 0.12);">
+
+                <!-- Categories Header -->
+                <div class="d-flex align-items-center mb-3" style="border-bottom: 3px solid rgba(63, 81, 181, 0.15); padding-bottom: 10px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Category" Size="Size.Medium" Color="Color.Primary" Class="me-2" />
+                    <MudText Typo="Typo.subtitle1" Class="fw-bold mb-0" Style="color: var(--mud-palette-primary); font-size: 1rem; letter-spacing: 0.5px;">Categories</MudText>
+                    <MudSpacer />
+                    <MudChip T="string" Variant="Variant.Text" Size="Size.Small" Style="color: var(--mud-palette-primary); opacity: 0.7;">
+                        @FilteredCategories.Count() total
+                    </MudChip>
+                </div>
+
+                <!-- Categories Search -->
+                <div style="margin-bottom: 12px;">
+                    <MudTextField Dense="true"
+                                  Placeholder="🔍 Search categories by name…"
+                                  @bind-Value="_categorySearch"
+                                  Variant="Variant.Outlined"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  FullWidth="@true"
+                                  Class="w-100 modern-search-field"
+                                  Style="background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.95) 100%); border-radius: 10px; border: 1px solid rgba(63, 81, 181, 0.2); box-shadow: 0 2px 8px rgba(63, 81, 181, 0.08);" />
+                </div>
+
+                <!-- Categories List - Horizontal Scroll -->
+                <div style="overflow-x: auto; overflow-y: visible; padding-bottom: 8px; margin: -4px; padding: 4px;">
+                    <div style="display: flex; flex-direction: row; gap: 10px; flex-wrap: nowrap; align-items: flex-start; padding: 4px;">
+                        @foreach (var category in FilteredCategories)
+                        {
+                            var isActive = ActiveCategory?.Id == category.Id;
+                            var tileColor = GetTileColor(category.Id);
+                            var tileGradient = GetTileGradient(category.Id);
+                            
+                            <MudPaper Elevation="@(isActive ? 4 : 2)"
+                                      Class="compact-category-card"
+                                      @onclick="async () => await HandleCategoryClick(category)"
+                                      Style="@($"border-radius: 10px; transition: all 0.3s ease; cursor: pointer; height: 110px; width: 100px; min-width: 100px; position: relative; overflow: hidden; border: {(isActive ? "2px solid var(--mud-palette-primary)" : "1px solid rgba(0, 0, 0, 0.1)")}; box-shadow: {(isActive ? "0 4px 12px rgba(63, 81, 181, 0.3)" : "0 2px 6px rgba(0, 0, 0, 0.1)")}; background: white;")">
+                                <div style="display: flex; flex-direction: column; height: 100%; padding: 10px; align-items: center; justify-content: space-between;">
+                                    <!-- Icon on Top -->
+                                    <div style="flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; margin-bottom: 6px;">
+                                        <div style="width: 50px; height: 50px; border-radius: 8px; background: @tileGradient; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">
+                                            <i class="fas fa-tags" style="font-size: 1.4rem; color: white;"></i>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Name and Count Below -->
+                                    <div style="width: 100%; text-align: center;">
+                                        <MudText Typo="Typo.body2" Style="font-size: 0.7rem; font-weight: 600; color: var(--mud-palette-text-primary); line-height: 1.2; margin-bottom: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
+                                            @category.Name
+                                        </MudText>
+                                        <MudText Typo="Typo.caption" Style="font-size: 0.65rem; font-weight: 700; color: var(--mud-palette-primary);">
+                                            @category.ItemCount
+                                        </MudText>
+                                    </div>
+                                </div>
+                                
+                                <!-- Hover Overlay -->
+                                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(63, 81, 181, 0.05); opacity: 0; transition: opacity 0.3s ease; pointer-events: none;"></div>
+                            </MudPaper>
+                        }
+                    </div>
+                </div>
+            </MudPaper>
+
+            <!-- Items Panel -->
+            <MudPaper Elevation="3" Class="flex-grow-1 invoice-items-panel-professional" Style="display: flex; flex-direction: column; max-height: calc(100vh - 350px); overflow: hidden; flex: 1; width: 100%; border-radius: 12px; padding: 16px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%); border: 2px solid rgba(63, 81, 181, 0.2); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);">
+                
+                <!-- Items Header -->
+                <div class="d-flex align-items-center mb-3" style="border-bottom: 3px solid rgba(63, 81, 181, 0.15); padding-bottom: 10px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Medium" Color="Color.Primary" Class="me-2" />
+                    <MudText Typo="Typo.subtitle1" Class="fw-bold mb-0" Style="color: var(--mud-palette-primary); font-size: 1rem; letter-spacing: 0.5px;">Items</MudText>
+                    <MudSpacer />
+                    <MudChip T="string" Variant="Variant.Text" Size="Size.Small" Style="color: var(--mud-palette-primary); opacity: 0.7;">
+                        @FilteredItems.Count() items
+                    </MudChip>
+                </div>
+
+                <!-- Items Search Bar -->
+                <div style="flex-shrink: 0; margin-bottom: 14px; width: 100%;">
+                    <MudTextField Dense="true"
+                                  Placeholder="🔍 Search items by name, code, or category…"
+                                  @bind-Value="_itemSearch"
+                                  Variant="Variant.Outlined"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  FullWidth="@true"
+                                  Class="w-100 modern-search-field"
+                                  Style="background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.95) 100%); border-radius: 10px; border: 1px solid rgba(63, 81, 181, 0.2); box-shadow: 0 2px 8px rgba(63, 81, 181, 0.08);" />
+                </div>
+
+                <!-- Items Grid -->
+                <div style="flex:1; overflow-y:auto; overflow-x:hidden; padding-right:4px; width: 100%;">
+                    <MudGrid GutterSize="GutterSize.Small" Style="width: 100%; margin: 0;">
+                        @foreach (var i in FilteredItems)
+                        {
+                            var tileColor = GetTileColor(i.Id);
+                            var tileGradient = GetTileGradient(i.Id);
+                            <MudItem xs="6" sm="4" md="3" lg="2" xl="2" Style="width: 100%; max-width: 100%; min-width: 0;">
+                                <MudPaper Elevation="2"
+                                          Class="compact-item-card"
+                                          @onclick="async () => await HandleItemClick(i.Id.ToString())"
+                                          Style="border-radius: 10px; transition: all 0.3s ease; cursor: pointer; height: 140px; position: relative; overflow: hidden; border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); background: white;">
+                                    <div style="display: flex; flex-direction: column; height: 100%; padding: 10px; align-items: center; justify-content: space-between;">
+                                        <!-- Icon on Top -->
+                                        <div style="flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; margin-bottom: 8px;">
+                                            @if (!string.IsNullOrWhiteSpace(i.Pic))
+                                            {
+                                                <img src="@Globals.GetImageUrl(i.Pic)" 
+                                                     alt="@i.Name" 
+                                                     style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" />
+                                            }
+                                            else
+                                            {
+                                                <div style="width: 60px; height: 60px; border-radius: 8px; background: linear-gradient(135deg, var(--mud-palette-primary) 0%, var(--mud-palette-primary-darken) 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                                    <i class="@GetItemIcon(i.StockType)" style="font-size: 1.8rem; color: white;"></i>
+                                                </div>
+                                            }
+                                        </div>
+                                        
+                                        <!-- Name and Price Below -->
+                                        <div style="width: 100%; text-align: center;">
+                                            <MudText Typo="Typo.body2" Style="font-size: 0.75rem; font-weight: 600; color: var(--mud-palette-text-primary); line-height: 1.3; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
+                                                @i.Name
+                                            </MudText>
+                                            <MudText Typo="Typo.body1" Style="font-size: 0.9rem; font-weight: 700; color: var(--mud-palette-primary); font-family: 'Courier New', monospace;">
+                                                @GetRetailPriceDisplay(i).ToString("#,##0.00")
+                                            </MudText>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Hover Overlay -->
+                                    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(63, 81, 181, 0.05); opacity: 0; transition: opacity 0.3s ease; pointer-events: none;"></div>
+                                </MudPaper>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </div>
+            </MudPaper>
+        </div>
+    </MudTabPanel>
+
+    <MudTabPanel Text=@($"Favorites ({FavItemsData.Count:#,##0})") Class="p-3">
+        <MudPaper Elevation="3" Style="border-radius: 12px; padding: 16px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%); border: 2px solid rgba(229, 57, 53, 0.2); box-shadow: 0 4px 12px rgba(229, 57, 53, 0.08);">
+            <div class="d-flex align-items-center mb-3" style="border-bottom: 3px solid rgba(229, 57, 53, 0.15); padding-bottom: 10px;">
+                <MudIcon Icon="@Icons.Material.Filled.Favorite" Size="Size.Medium" Color="Color.Error" Class="me-2" />
+                <MudText Typo="Typo.subtitle1" Class="fw-bold mb-0" Style="color: var(--mud-palette-error); font-size: 1rem; letter-spacing: 0.5px;">Favorites</MudText>
+                <MudSpacer />
+                <MudChip T="string" Variant="Variant.Text" Size="Size.Small" Style="color: var(--mud-palette-error); opacity: 0.7;">
+                    @FilteredFavorites.Count() items
+                </MudChip>
+            </div>
+            
+            <MudTextField Dense="true" 
+                          Class="mb-3 modern-search-field" 
+                          Placeholder="🔍 Search favorites…"
+                          Variant="Variant.Outlined"
+                          @bind-Value="_favoritesSearch"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          FullWidth="@true"
+                          Style="background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.95) 100%); border-radius: 10px; border: 1px solid rgba(229, 57, 53, 0.2); box-shadow: 0 2px 8px rgba(229, 57, 53, 0.08);" />
+
+            <div style="max-height: calc(100vh - 280px); overflow-y: auto;">
+                <MudGrid GutterSize="GutterSize.Small" Style="width: 100%; margin: 0;">
+                    @foreach (var fav in FilteredFavorites)
+                    {
+                        var tileColor = GetTileColor(fav.Id);
+                        var tileGradient = GetTileGradient(fav.Id);
+                        <MudItem xs="6" sm="4" md="3" lg="2" xl="2" Style="width: 100%; max-width: 100%; min-width: 0;">
+                            <MudPaper Elevation="2"
+                                      Class="compact-item-card"
+                                      @onclick="async () => await HandleItemClick(fav.Id.ToString())"
+                                      Style="border-radius: 10px; transition: all 0.3s ease; cursor: pointer; height: 140px; position: relative; overflow: hidden; border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); background: white;">
+                                <div style="display: flex; flex-direction: column; height: 100%; padding: 10px; align-items: center; justify-content: space-between;">
+                                    <!-- Icon on Top -->
+                                    <div style="flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; margin-bottom: 8px;">
+                                        @if (!string.IsNullOrWhiteSpace(fav.Pic))
+                                        {
+                                            <img src="@Globals.GetImageUrl(fav.Pic)" 
+                                                 alt="@fav.Name" 
+                                                 style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" />
+                                        }
+                                        else
+                                        {
+                                            <div style="width: 60px; height: 60px; border-radius: 8px; background: linear-gradient(135deg, var(--mud-palette-error) 0%, var(--mud-palette-error-darken) 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                                <i class="@GetItemIcon(fav.StockType)" style="font-size: 1.8rem; color: white;"></i>
+                                            </div>
+                                        }
+                                    </div>
+                                    
+                                    <!-- Name and Price Below -->
+                                    <div style="width: 100%; text-align: center;">
+                                        <MudText Typo="Typo.body2" Style="font-size: 0.75rem; font-weight: 600; color: var(--mud-palette-text-primary); line-height: 1.3; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
+                                            @fav.Name
+                                        </MudText>
+                                        <MudText Typo="Typo.body1" Style="font-size: 0.9rem; font-weight: 700; color: var(--mud-palette-error); font-family: 'Courier New', monospace;">
+                                            @GetRetailPriceDisplay(fav).ToString("#,##0.00")
+                                        </MudText>
+                                    </div>
+                                </div>
+                                
+                                <!-- Hover Overlay -->
+                                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(229, 57, 53, 0.05); opacity: 0; transition: opacity 0.3s ease; pointer-events: none;"></div>
+                            </MudPaper>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </div>
+        </MudPaper>
+    </MudTabPanel>
+
+    <MudTabPanel Text=@($"Recent ({RecentItemsData.Count:#,##0})") Class="p-3">
+        <MudPaper Elevation="3" Style="border-radius: 12px; padding: 16px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%); border: 2px solid rgba(33, 150, 243, 0.2); box-shadow: 0 4px 12px rgba(33, 150, 243, 0.08);">
+            <div class="d-flex align-items-center mb-3" style="border-bottom: 3px solid rgba(33, 150, 243, 0.15); padding-bottom: 10px;">
+                <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Medium" Color="Color.Info" Class="me-2" />
+                <MudText Typo="Typo.subtitle1" Class="fw-bold mb-0" Style="color: var(--mud-palette-info); font-size: 1rem; letter-spacing: 0.5px;">Recent Items</MudText>
+                <MudSpacer />
+                <MudChip T="string" Variant="Variant.Text" Size="Size.Small" Style="color: var(--mud-palette-info); opacity: 0.7;">
+                    @FilteredRecent.Count() items
+                </MudChip>
+            </div>
+            
+            <MudTextField Dense="@true" 
+                          Class="mb-3 modern-search-field" 
+                          Placeholder="🔍 Search recent items…"
+                          Variant="Variant.Outlined"
+                          @bind-Value="_recentSearch"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          FullWidth="@true"
+                          Style="background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.95) 100%); border-radius: 10px; border: 1px solid rgba(33, 150, 243, 0.2); box-shadow: 0 2px 8px rgba(33, 150, 243, 0.08);" />
+
+            <div style="max-height: calc(100vh - 280px); overflow-y: auto;">
+                <MudGrid GutterSize="GutterSize.Small" Style="width: 100%; margin: 0;">
+                    @foreach (var recent in FilteredRecent)
+                    {
+                        var tileColor = GetTileColor(recent.Id);
+                        var tileGradient = GetTileGradient(recent.Id);
+                        <MudItem xs="6" sm="4" md="3" lg="2" xl="2" Style="width: 100%; max-width: 100%; min-width: 0;">
+                            <MudPaper Elevation="2"
+                                      Class="compact-item-card"
+                                      @onclick="async () => await HandleItemClick(recent.Id.ToString())"
+                                      Style="border-radius: 10px; transition: all 0.3s ease; cursor: pointer; height: 140px; position: relative; overflow: hidden; border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); background: white;">
+                                <div style="display: flex; flex-direction: column; height: 100%; padding: 10px; align-items: center; justify-content: space-between;">
+                                    <!-- Icon on Top -->
+                                    <div style="flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; margin-bottom: 8px;">
+                                        @if (!string.IsNullOrWhiteSpace(recent.Pic))
+                                        {
+                                            <img src="@Globals.GetImageUrl(recent.Pic)" 
+                                                 alt="@recent.Name" 
+                                                 style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" />
+                                        }
+                                        else
+                                        {
+                                            <div style="width: 60px; height: 60px; border-radius: 8px; background: linear-gradient(135deg, var(--mud-palette-info) 0%, var(--mud-palette-info-darken) 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                                <i class="@GetItemIcon(recent.StockType)" style="font-size: 1.8rem; color: white;"></i>
+                                            </div>
+                                        }
+                                    </div>
+                                    
+                                    <!-- Name and Price Below -->
+                                    <div style="width: 100%; text-align: center;">
+                                        <MudText Typo="Typo.body2" Style="font-size: 0.75rem; font-weight: 600; color: var(--mud-palette-text-primary); line-height: 1.3; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
+                                            @recent.Name
+                                        </MudText>
+                                        <MudText Typo="Typo.body1" Style="font-size: 0.9rem; font-weight: 700; color: var(--mud-palette-info); font-family: 'Courier New', monospace;">
+                                            @GetRetailPriceDisplay(recent).ToString("#,##0.00")
+                                        </MudText>
+                                    </div>
+                                </div>
+                                
+                                <!-- Hover Overlay -->
+                                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(33, 150, 243, 0.05); opacity: 0; transition: opacity 0.3s ease; pointer-events: none;"></div>
+                            </MudPaper>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </div>
+        </MudPaper>
+    </MudTabPanel>
+</MudTabs>
+
+@code {
+    [Inject] private MicroERP.Shared.Helper.Globals Globals { get; set; } = null!;
+    
+    [Parameter] public List<CategoriesModel> Categories { get; set; } = new();
+    [Parameter] public List<ItemsModel> SelectedItems { get; set; } = new();
+    [Parameter] public List<ItemsModel> FavItemsData { get; set; } = new();
+    [Parameter] public List<ItemsModel> RecentItemsData { get; set; } = new();
+    [Parameter] public int MaxItems { get; set; } = 12;
+    [Parameter] public ItemsModel ClickedItem { get; set; } = new();
+    [Parameter] public ItemsModel SelectedFavItem { get; set; } = new();
+    [Parameter] public ItemsModel SelectedRecentItem { get; set; } = new();
+    [Parameter] public EventCallback<CategoriesModel> OnCategorySelected { get; set; }
+    [Parameter] public EventCallback<string> OnItemSelected { get; set; }
+    [Parameter] public CategoriesModel ActiveCategory { get; set; }
+    [Parameter] public string InvoiceType { get; set; }
+    [Parameter] public Func<ItemsModel, double> GetDisplayPrice { get; set; }
+    [Parameter] public Func<ItemsModel, int, Task<double>> GetRetailPrice { get; set; }
+    [Parameter] public Func<ItemsModel, bool> HasTaxRule { get; set; }
+
+    private string _categorySearch = string.Empty;
+    private string _itemSearch = string.Empty;
+    private string _favoritesSearch = string.Empty;
+    private string _recentSearch = string.Empty;
+
+    private IEnumerable<CategoriesModel> FilteredCategories
+    {
+        get
+        {
+            var allItem = new CategoriesModel
+            {
+                Id = 0,
+                Name = "All Items",
+                ItemCount = Categories.Sum(c => c.ItemCount)
+            };
+
+            var filtered = string.IsNullOrWhiteSpace(_categorySearch)
+                ? Categories
+                : Categories.Where(c => c.Name != null && c.Name.Contains(_categorySearch, StringComparison.OrdinalIgnoreCase));
+
+            return new[] { allItem }.Concat(filtered);
+        }
+    }
+
+    private IEnumerable<ItemsModel> FilteredItems
+    {
+        get
+        {
+            if (SelectedItems == null || !SelectedItems.Any())
+                return Enumerable.Empty<ItemsModel>();
+
+            if (string.IsNullOrWhiteSpace(_itemSearch))
+                return SelectedItems;
+
+            return SelectedItems.Where(f =>
+                (!string.IsNullOrWhiteSpace(f.Name) && f.Name.Contains(_itemSearch, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrWhiteSpace(f.Code) && f.Code.Contains(_itemSearch, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrWhiteSpace(f.CategoryName) && f.CategoryName.Contains(_itemSearch, StringComparison.OrdinalIgnoreCase))
+            );
+        }
+    }
+
+    private IEnumerable<ItemsModel> FilteredFavorites
+    {
+        get
+        {
+            if (FavItemsData == null || !FavItemsData.Any())
+                return Enumerable.Empty<ItemsModel>();
+
+            if (string.IsNullOrWhiteSpace(_favoritesSearch))
+                return FavItemsData;
+
+            return FavItemsData.Where(f =>
+                (!string.IsNullOrWhiteSpace(f.Name) && f.Name.Contains(_favoritesSearch, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrWhiteSpace(f.Code) && f.Code.Contains(_favoritesSearch, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrWhiteSpace(f.CategoryName) && f.CategoryName.Contains(_favoritesSearch, StringComparison.OrdinalIgnoreCase))
+            );
+        }
+    }
+
+    private IEnumerable<ItemsModel> FilteredRecent
+    {
+        get
+        {
+            if (RecentItemsData == null || !RecentItemsData.Any())
+                return Enumerable.Empty<ItemsModel>();
+
+            if (string.IsNullOrWhiteSpace(_recentSearch))
+                return RecentItemsData;
+
+            return RecentItemsData.Where(f =>
+                (!string.IsNullOrWhiteSpace(f.Name) && f.Name.Contains(_recentSearch, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrWhiteSpace(f.Code) && f.Code.Contains(_recentSearch, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrWhiteSpace(f.CategoryName) && f.CategoryName.Contains(_recentSearch, StringComparison.OrdinalIgnoreCase))
+            );
+        }
+    }
+
+    private bool _isInitialized = false;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _isInitialized = true;
+    }
+
+    private async Task HandleCategoryClick(CategoriesModel category)
+    {
+        if (!_isInitialized || !OnCategorySelected.HasDelegate) return;
+
+        try
+        {
+            await OnCategorySelected.InvokeAsync(category);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error handling category click: {ex.Message}");
+        }
+    }
+
+    private async Task HandleItemClick(string itemId)
+    {
+        if (!_isInitialized || !OnItemSelected.HasDelegate) return;
+
+        try
+        {
+            await OnItemSelected.InvokeAsync(itemId);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error handling item click: {ex.Message}");
+        }
+    }
+    
+    private double GetRetailPriceDisplay(ItemsModel item)
+    {
+        if (item == null) return 0;
+        return item.RetailPrice;
+    }
+
+    private string GetCategoryTileStyle(string tileGradient, bool isActive)
+    {
+        string borderStyle = isActive 
+            ? "3px solid rgba(255,255,255,0.9)" 
+            : "2px solid rgba(255,255,255,0.4)";
+        string shadowStyle = isActive
+            ? "0 8px 24px rgba(0, 0, 0, 0.25)"
+            : "0 4px 16px rgba(0, 0, 0, 0.15)";
+        
+        return $"background: {tileGradient}; border-radius: 12px; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; height: 90px; width: 160px; flex-shrink: 0; position: relative; overflow: hidden; border: {borderStyle}; box-shadow: {shadowStyle};";
+    }
+
+    // Windows Tile Color Generation - Consistent colors based on item ID
+    private string GetTileColor(int itemId)
+    {
+        // Attractive Windows-style color palette
+        string[] colors = new[]
+        {
+            "#0078D4", // Blue
+            "#107C10", // Green
+            "#D13438", // Red
+            "#FF8C00", // Orange
+            "#8764B8", // Purple
+            "#00BCF2", // Cyan
+            "#FFB900", // Yellow
+            "#E81123", // Red Accent
+            "#00B294", // Teal
+            "#FF6B6B", // Coral
+            "#4ECDC4", // Turquoise
+            "#45B7D1", // Sky Blue
+            "#96CEB4", // Mint
+            "#FFEAA7", // Light Yellow
+            "#DDA15E", // Tan
+            "#6C5CE7", // Indigo
+            "#A29BFE", // Lavender
+            "#FD79A8", // Pink
+            "#00B894", // Emerald
+            "#0984E3", // Royal Blue
+            "#FDCB6E", // Gold
+            "#E17055", // Salmon
+            "#74B9FF", // Light Blue
+            "#55EFC4", // Aqua
+            "#A29BFE"  // Periwinkle
+        };
+        
+        return colors[Math.Abs(itemId) % colors.Length];
+    }
+
+    private string GetTileGradient(int itemId)
+    {
+        var baseColor = GetTileColor(itemId);
+        // Convert hex to RGB for gradient
+        var rgb = HexToRgb(baseColor);
+        var darkerRgb = DarkenRgb(rgb, 0.15);
+        
+        return $"linear-gradient(135deg, {baseColor} 0%, rgb({darkerRgb.r}, {darkerRgb.g}, {darkerRgb.b}) 100%)";
+    }
+
+    private (int r, int g, int b) HexToRgb(string hex)
+    {
+        hex = hex.TrimStart('#');
+        if (hex.Length == 6)
+        {
+            return (
+                Convert.ToInt32(hex.Substring(0, 2), 16),
+                Convert.ToInt32(hex.Substring(2, 2), 16),
+                Convert.ToInt32(hex.Substring(4, 2), 16)
+            );
+        }
+        return (0, 120, 212); // Default blue
+    }
+
+    private (int r, int g, int b) DarkenRgb((int r, int g, int b) rgb, double factor)
+    {
+        return (
+            Math.Max(0, (int)(rgb.r * (1 - factor))),
+            Math.Max(0, (int)(rgb.g * (1 - factor))),
+            Math.Max(0, (int)(rgb.b * (1 - factor)))
+        );
+    }
+
+    private string GetItemIcon(string stockType)
+    {
+        return stockType?.ToUpper() switch
+        {
+            "SERVICE" => "fas fa-concierge-bell",
+            "FIXED ASSET" => "fas fa-building",
+            _ => "fas fa-box"
+        };
+    }
+}
+
+<style>
+    /* Professional Tabs Styling */
+    .invoice-items-tabs-professional {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.99) 0%, rgba(255, 255, 255, 0.96) 100%);
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(63, 81, 181, 0.1);
+    }
+
+    /* Container Layout - Vertical Stack */
+    .invoice-items-container-professional {
+        gap: 16px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Categories Panel */
+    .invoice-categories-panel-professional {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .invoice-categories-panel-professional:hover {
+        box-shadow: 0 6px 16px rgba(63, 81, 181, 0.15);
+    }
+
+    .category-item-professional {
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .category-item-professional:hover {
+        background: linear-gradient(135deg, rgba(63, 81, 181, 0.15) 0%, rgba(63, 81, 181, 0.08) 100%) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(63, 81, 181, 0.2);
+    }
+
+    /* Category Active State */
+    .category-active {
+        box-shadow: 0 6px 20px rgba(63, 81, 181, 0.25) !important;
+    }
+
+    /* Horizontal scrollbar for categories */
+    .invoice-categories-panel-professional::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .invoice-categories-panel-professional::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
+    }
+
+    .invoice-categories-panel-professional::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, rgba(63, 81, 181, 0.4) 0%, rgba(63, 81, 181, 0.2) 100%);
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+
+    .invoice-categories-panel-professional::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, rgba(63, 81, 181, 0.6) 0%, rgba(63, 81, 181, 0.4) 100%);
+    }
+
+    /* Items Panel */
+    .invoice-items-panel-professional {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .invoice-items-panel-professional:hover {
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Windows Tile Style */
+    .item-tile-windows,
+    .category-tile-windows {
+        position: relative;
+        padding: 0 !important;
+        margin-bottom: 16px;
+        overflow: hidden;
+    }
+
+    .modern-item-tile:hover,
+    .modern-category-tile:hover {
+        transform: translateY(-8px) scale(1.05);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3) !important;
+        border-color: rgba(255, 255, 255, 0.6) !important;
+        z-index: 10;
+    }
+
+    .item-tile-windows:hover,
+    .category-tile-windows:hover {
+        transform: translateY(-8px) scale(1.05);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3) !important;
+        z-index: 10;
+    }
+
+    .tile-content-wrapper {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-rows: 1fr 1fr;
+        height: 100%;
+        padding: 16px;
+        position: relative;
+        z-index: 2;
+        gap: 14px;
+    }
+
+    /* Category-specific tile styling - smaller sizes */
+    .category-tile-windows .tile-content-wrapper {
+        padding: 10px;
+        gap: 10px;
+    }
+
+    .category-tile-windows .tile-icon-background {
+        width: 50px;
+        min-height: 50px;
+        height: 50px;
+    }
+
+    .category-tile-windows .tile-left-section {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .item-tile-windows {
+        margin-bottom: 16px;
+    }
+
+    .tile-icon-column {
+        grid-column: 1;
+        grid-row: 1 / 3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .tile-icon-background {
+        width: 85px;
+        height: 100%;
+        min-height: 140px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.35);
+        backdrop-filter: blur(12px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: inset 0 2px 10px rgba(255, 255, 255, 0.5), 0 8px 20px rgba(0, 0, 0, 0.25);
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .item-tile-windows:hover .tile-icon-background,
+    .category-tile-windows:hover .tile-icon-background {
+        background: rgba(255, 255, 255, 0.5);
+        box-shadow: inset 0 2px 12px rgba(255, 255, 255, 0.6), 0 10px 24px rgba(0, 0, 0, 0.3);
+        border-color: rgba(255, 255, 255, 0.7);
+        transform: scale(1.05);
+    }
+
+    .tile-content-column {
+        grid-column: 2;
+        grid-row: 1 / 3;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-width: 0;
+    }
+
+    .tile-price-section {
+        grid-column: 2;
+        grid-row: 1;
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-end;
+        width: 100%;
+    }
+
+    .tile-name-section {
+        grid-column: 2;
+        grid-row: 2;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        align-items: flex-start;
+        min-width: 0;
+        gap: 6px;
+        width: 100%;
+    }
+
+    .tile-item-name {
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        line-height: 1.4;
+        display: block;
+        width: 100%;
+        overflow: visible;
+        text-align: left;
+    }
+
+    .tile-category-badge {
+        background: rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(10px);
+        padding: 5px 12px;
+        border-radius: 8px;
+        display: inline-block;
+        max-width: fit-content;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-top: 6px;
+    }
+
+    .item-tile-windows:hover .tile-category-badge,
+    .category-tile-windows:hover .tile-category-badge {
+        background: rgba(255, 255, 255, 0.45);
+        box-shadow: 0 5px 16px rgba(0, 0, 0, 0.2);
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.7);
+    }
+
+    .tile-hover-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0);
+        transition: background 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1;
+        pointer-events: none;
+        border-radius: inherit;
+    }
+
+    .item-tile-windows:hover .tile-hover-overlay,
+    .category-tile-windows:hover .tile-hover-overlay {
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Enhanced price display */
+    .tile-price-section {
+        animation: fadeInUp 0.3s ease-out;
+    }
+
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Pulse animation for active category */
+    .category-active {
+        animation: pulseGlow 2s ease-in-out infinite;
+    }
+
+    @@keyframes pulseGlow {
+        0%, 100% {
+            box-shadow: 0 8px 24px rgba(63, 81, 181, 0.25);
+        }
+        50% {
+            box-shadow: 0 12px 32px rgba(63, 81, 181, 0.35);
+        }
+    }
+
+    /* Scrollbar Styling */
+    .invoice-categories-panel-professional::-webkit-scrollbar,
+    .invoice-items-panel-professional::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    .invoice-categories-panel-professional::-webkit-scrollbar-track,
+    .invoice-items-panel-professional::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
+    }
+
+    .invoice-categories-panel-professional::-webkit-scrollbar-thumb,
+    .invoice-items-panel-professional::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, rgba(63, 81, 181, 0.4) 0%, rgba(63, 81, 181, 0.2) 100%);
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+
+    .invoice-categories-panel-professional::-webkit-scrollbar-thumb:hover,
+    .invoice-items-panel-professional::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, rgba(63, 81, 181, 0.6) 0%, rgba(63, 81, 181, 0.4) 100%);
+    }
+
+    /* Dark Mode Support */
+    .mud-theme-dark .invoice-items-tabs-professional {
+        background: linear-gradient(135deg, rgba(30, 30, 30, 0.99) 0%, rgba(30, 30, 30, 0.96) 100%);
+        border-color: rgba(63, 81, 181, 0.2);
+    }
+
+    .mud-theme-dark .invoice-categories-panel-professional {
+        background: linear-gradient(135deg, rgba(63, 81, 181, 0.12) 0%, rgba(63, 81, 181, 0.06) 100%);
+        border-color: rgba(63, 81, 181, 0.25);
+    }
+
+    .mud-theme-dark .invoice-items-panel-professional {
+        background: linear-gradient(135deg, rgba(40, 40, 40, 0.98) 0%, rgba(40, 40, 40, 0.95) 100%);
+        border-color: rgba(63, 81, 181, 0.25);
+    }
+
+    .mud-theme-dark .tile-icon-background {
+        background: rgba(255, 255, 255, 0.15) !important;
+        border-color: rgba(255, 255, 255, 0.25) !important;
+    }
+
+    .mud-theme-dark .item-tile-windows:hover .tile-icon-background,
+    .mud-theme-dark .category-tile-windows:hover .tile-icon-background {
+        background: rgba(255, 255, 255, 0.2) !important;
+        border-color: rgba(255, 255, 255, 0.3) !important;
+    }
+
+    /* Prevent Overflow */
+    .invoice-items-container-professional {
+        width: 100% !important;
+        max-width: 100%;
+    }
+
+    .invoice-items-panel-professional {
+        overflow-x: hidden !important;
+    }
+
+    .invoice-items-panel-professional .mud-grid {
+        width: 100% !important;
+        max-width: 100%;
+    }
+
+    .invoice-items-panel-professional .mud-grid-item {
+        max-width: 100% !important;
+        overflow: hidden;
+    }
+
+    /* Categories horizontal scroll styling */
+    .invoice-categories-panel-professional > div:last-child {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(63, 81, 181, 0.4) rgba(0, 0, 0, 0.04);
+    }
+
+    /* Enhanced visual polish */
+    .invoice-items-tabs-professional .mud-tabs-header {
+        border-bottom: 2px solid rgba(63, 81, 181, 0.1);
+    }
+
+    .invoice-items-tabs-professional .mud-tab {
+        transition: all 0.2s ease;
+    }
+
+    .invoice-items-tabs-professional .mud-tab:hover {
+        background: rgba(63, 81, 181, 0.05);
+    }
+
+    .invoice-items-tabs-professional .mud-tab-active {
+        color: var(--mud-palette-primary);
+        border-bottom: 3px solid var(--mud-palette-primary);
+    }
+
+    /* MudChip styling for counts */
+    .mud-chip-variant-text {
+        transition: all 0.2s ease;
+    }
+
+    .mud-chip-variant-text:hover {
+        background: rgba(63, 81, 181, 0.08);
+    }
+
+    /* Modern search field styling */
+    .modern-search-field .mud-input-root {
+        transition: all 0.3s ease;
+    }
+
+    .modern-search-field .mud-input-root:hover {
+        box-shadow: 0 4px 12px rgba(63, 81, 181, 0.12) !important;
+    }
+
+    .modern-search-field .mud-input-root:focus-within {
+        box-shadow: 0 6px 16px rgba(63, 81, 181, 0.18) !important;
+        border-color: rgba(63, 81, 181, 0.4) !important;
+    }
+
+    /* Enhanced item tile price styling */
+    .tile-price-section MudText {
+        transition: all 0.3s ease;
+    }
+
+    .item-tile-windows:hover .tile-price-section MudText {
+        transform: scale(1.1);
+        text-shadow: 0 3px 6px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    /* Enhanced category tile styling */
+    .category-tile-windows .tile-icon-background {
+        width: 55px;
+        min-height: 55px;
+        height: 55px;
+        border-radius: 10px;
+    }
+
+    /* Smooth grid transitions */
+    .mud-grid {
+        transition: all 0.3s ease;
+    }
+
+    /* Enhanced tab styling */
+    .invoice-items-tabs-professional .mud-tab {
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        transition: all 0.3s ease;
+    }
+
+    .invoice-items-tabs-professional .mud-tab-active {
+        font-weight: 700;
+        transform: translateY(-2px);
+    }
+
+    /* Improved scrollbar for items grid */
+    .invoice-items-panel-professional > div:last-child {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(63, 81, 181, 0.4) rgba(0, 0, 0, 0.04);
+    }
+
+    .invoice-items-panel-professional > div:last-child::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    .invoice-items-panel-professional > div:last-child::-webkit-scrollbar-track {
+        background: rgba(63, 81, 181, 0.05);
+        border-radius: 5px;
+    }
+
+    .invoice-items-panel-professional > div:last-child::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, rgba(63, 81, 181, 0.5) 0%, rgba(63, 81, 181, 0.3) 100%);
+        border-radius: 5px;
+        border: 2px solid rgba(63, 81, 181, 0.1);
+    }
+
+    .invoice-items-panel-professional > div:last-child::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, rgba(63, 81, 181, 0.7) 0%, rgba(63, 81, 181, 0.5) 100%);
+    }
+</style>
+

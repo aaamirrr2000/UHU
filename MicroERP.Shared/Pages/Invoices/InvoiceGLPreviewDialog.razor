@@ -1,0 +1,402 @@
+@using MicroERP.Shared.Models
+@using MicroERP.Shared.Controls
+@inject Functions Functions
+
+<MudDialog>
+    <DialogContent>
+        <div style="position: relative;">
+        <MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <MudText Typo="Typo.h6" Class="mb-0">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="me-2" />
+                    @(IsPostedToGL ? "Posted Accounting Entry" : "Accounting Entry Preview")
+                </MudText>
+                <MudText Typo="Typo.caption" Color="@(IsPostedToGL ? Color.Success : Color.Info)">
+                    @(IsPostedToGL ? "This is the actual GL entry that was posted" : "This is a preview of the GL entries that will be created")
+                </MudText>
+            </div>
+            
+            @if (IsPostedToGL)
+            {
+                <MudAlert Severity="Severity.Success" Class="mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="me-2" />
+                    This entry has already been posted to General Ledger. Entry No: @PreviewData?.EntryNo
+                </MudAlert>
+            }
+
+            @if (PreviewData != null && PreviewData.HasWarnings)
+            {
+                <MudAlert Severity="Severity.Warning" Class="mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Warning" Class="me-2" />
+                    <MudText Typo="Typo.body2" Class="fw-bold mb-2">Missing Accounts or Configuration Issues Detected:</MudText>
+                    <ul style="margin: 0; padding-left: 20px;">
+                        @foreach (var warning in PreviewData.Warnings)
+                        {
+                            <li><MudText Typo="Typo.body2">@warning</MudText></li>
+                        }
+                    </ul>
+                    <MudText Typo="Typo.body2" Class="mt-2 fw-semibold">
+                        Please configure the missing accounts in Chart of Accounts before posting to GL. The "Save" button is disabled until all accounts are configured.
+                    </MudText>
+                </MudAlert>
+            }
+
+            @if (PreviewData != null)
+            {
+                <MudPaper Elevation="2" Class="pa-3 mb-3">
+                    <MudText Typo="Typo.subtitle1" Class="mb-2 fw-bold">Entry Information</MudText>
+                    <MudGrid>
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.body2"><strong>Entry No:</strong> @PreviewData.EntryNo</MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.body2"><strong>Date:</strong> @PreviewData.EntryDate?.ToString("yyyy-MM-dd")</MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.body2"><strong>Reference:</strong> @PreviewData.ReferenceNo</MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.body2"><strong>Description:</strong> @PreviewData.Description</MudText>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+
+                <MudPaper Elevation="2" Class="pa-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <MudText Typo="Typo.subtitle1" Class="mb-0 fw-bold">Account Entries</MudText>
+                        <div class="d-flex align-items-center gap-2">
+                            <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small">
+                                <MudButton Variant="@(IsDetailedView ? Variant.Filled : Variant.Text)"
+                                          Color="@(IsDetailedView ? Color.Primary : Color.Default)"
+                                          OnClick="() => IsDetailedView = true"
+                                          StartIcon="@Icons.Material.Filled.List">
+                                    Detailed
+                                </MudButton>
+                                <MudButton Variant="@(!IsDetailedView ? Variant.Filled : Variant.Text)"
+                                          Color="@(!IsDetailedView ? Color.Primary : Color.Default)"
+                                          OnClick="() => IsDetailedView = false"
+                                          StartIcon="@Icons.Material.Filled.ViewList">
+                                    Consolidated
+                                </MudButton>
+                            </MudButtonGroup>
+                            @* Save and Post to GL only when Consolidated view is selected; posting saves consolidated journal *@
+                            @if (!IsPostedToGL && RecordId > 0 && !IsDetailedView && (PreviewData == null || !PreviewData.HasWarnings))
+                            {
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Success"
+                                           Size="Size.Small"
+                                           StartIcon="@Icons.Material.Filled.Save"
+                                           OnClick="PostToGL"
+                                           Disabled="@IsPosting">
+                                    @(IsPosting ? "Posting..." : "Save and Post to GL")
+                                </MudButton>
+                            }
+                        </div>
+                    </div>
+
+                    @if (IsDetailedView)
+                    {
+                        @* Detailed view: each transaction shows business scenario + description, then journal grid *@
+                        @foreach (var block in DetailedViewSections)
+                        {
+                            <MudPaper Elevation="1" Class="pa-3 mb-3" Style="background: #fafafa;">
+                                <div class="mb-2">
+                                    <MudText Typo="Typo.subtitle2" Class="mb-1 fw-bold" Style="color: #1565c0;">
+                                        <MudIcon Icon="@block.Icon" Size="Size.Small" Class="me-1" />
+                                        @block.Heading
+                                    </MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">@block.Description</MudText>
+                                </div>
+                                <JournalEntryTable Details="@block.Lines" ShowTotals="false" ShowReconciledAlert="false" />
+                            </MudPaper>
+                        }
+                        <MudDivider Class="my-3" />
+                        <MudPaper Elevation="0" Class="pa-2" Style="background: #e3f2fd;">
+                            <MudGrid>
+                                <MudItem xs="4"><MudText Typo="Typo.body1" Class="fw-bold">TOTAL</MudText></MudItem>
+                                <MudItem xs="4" Class="text-end">
+                                    <MudText Typo="Typo.body1" Color="Color.Error" Class="fw-bold">@PreviewData.TotalDebit.ToString("#,##0.00")</MudText>
+                                </MudItem>
+                                <MudItem xs="4" Class="text-end">
+                                    <MudText Typo="Typo.body1" Color="Color.Success" Class="fw-bold">@PreviewData.TotalCredit.ToString("#,##0.00")</MudText>
+                                </MudItem>
+                            </MudGrid>
+                        </MudPaper>
+                    }
+                    else
+                    {
+                        @* Consolidated view: same structure as Posted dialog (JournalEntryTable) *@
+                        <JournalEntryTable Details="@DisplayDetails"
+                                          ShowTotals="true"
+                                          ShowReconciledAlert="true"
+                                          TotalDebitOverride="@PreviewData.TotalDebit"
+                                          TotalCreditOverride="@PreviewData.TotalCredit"
+                                          UnreconciledMessage="@($"Entry is not balanced: Debit ({PreviewData.TotalDebit:#,##0.00}) ≠ Credit ({PreviewData.TotalCredit:#,##0.00})")" />
+                    }
+
+                    @if (IsDetailedView)
+                    {
+                        @* Totals and reconciled already shown in detailed view blocks; show overall summary *@
+                        <MudAlert Severity="@(Math.Abs(PreviewData.TotalDebit - PreviewData.TotalCredit) < 0.01 ? Severity.Success : Severity.Warning)" Class="mt-3">
+                            <MudIcon Icon="@(Math.Abs(PreviewData.TotalDebit - PreviewData.TotalCredit) < 0.01 ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Warning)" Class="me-2" />
+                            @(Math.Abs(PreviewData.TotalDebit - PreviewData.TotalCredit) < 0.01 ? "Entry is balanced: Debit = Credit" : $"Entry is not balanced: Debit ({PreviewData.TotalDebit:#,##0.00}) ≠ Credit ({PreviewData.TotalCredit:#,##0.00})")
+                        </MudAlert>
+                    }
+                </MudPaper>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info">
+                    Unable to generate preview. Please ensure all entry details are complete.
+                </MudAlert>
+            }
+        </MudContainer>
+        @* In-dialog loading overlay (on top of content when posting) *@
+        @if (IsPosting)
+        {
+            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+                <div class="d-flex flex-column align-items-center gap-2">
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+                    <MudText Typo="Typo.body1">Posting to General Ledger...</MudText>
+                </div>
+            </div>
+        }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+    [Parameter] public GeneralLedgerHeaderModel? PreviewData { get; set; }
+    [Parameter] public int RecordId { get; set; } = 0;
+    [Parameter] public bool IsPostedToGL { get; set; } = false;
+    [Parameter] public EventCallback OnPostToGL { get; set; }
+    
+    [Inject] private IDialogService DialogService { get; set; } = null!;
+    [Inject] private Globals Globals { get; set; } = null!;
+    [Inject] private ISnackbar SnackbarService { get; set; } = null!;
+    
+    private bool IsPosting { get; set; } = false;
+    private bool IsDetailedView { get; set; } = false; // Default to Consolidated so Save and Post to GL is visible; post saves consolidated journal
+
+    /// <summary>
+    /// Details in backend order: JournalGroup 1 (Sale/Purchase invoice) then JournalGroup 2 (Payment), by SeqNo. Two journals only.
+    /// </summary>
+    private IEnumerable<GeneralLedgerDetailModel> SortedDetails
+    {
+        get
+        {
+            if (PreviewData?.Details == null || !PreviewData.Details.Any())
+                return Enumerable.Empty<GeneralLedgerDetailModel>();
+            return PreviewData.Details
+                .OrderBy(d => d.JournalGroup)
+                .ThenBy(d => d.SeqNo);
+        }
+    }
+
+    /// <summary>
+    /// For detailed view: exactly two sections — JournalGroup 1 (Sale/Purchase invoice) and JournalGroup 2 (Payment). Order by SeqNo.
+    /// </summary>
+    private IReadOnlyList<(string Heading, string Description, string Icon, IEnumerable<GeneralLedgerDetailModel> Lines)> DetailedViewSections
+    {
+        get
+        {
+            var sorted = SortedDetails.ToList();
+            if (sorted.Count == 0)
+                return Array.Empty<(string, string, string, IEnumerable<GeneralLedgerDetailModel>)>();
+
+            var group1 = sorted.Where(d => d.JournalGroup == 1).ToList();
+            var group2 = sorted.Where(d => d.JournalGroup == 2).ToList();
+            var result = new List<(string Heading, string Description, string Icon, IEnumerable<GeneralLedgerDetailModel> Lines)>();
+            if (group1.Any())
+            {
+                bool isPurchase = group1.Any(d => (d.Description ?? "").StartsWith("Purchase -", StringComparison.OrdinalIgnoreCase));
+                string key = isPurchase ? "PURCHASE" : "INVOICE";
+                result.Add((GetSectionHeading(key, group1), GetSectionDescription(key, group1), GetSectionIcon(key), group1));
+            }
+            if (group2.Any())
+            {
+                // Group payment section by account so one line per account (e.g. one Receivable Cr total, not one per payment method)
+                var paymentConsolidated = group2
+                    .GroupBy(d => d.AccountId)
+                    .Select(g =>
+                    {
+                        double totalDebit = g.Sum(x => x.DebitAmount);
+                        double totalCredit = g.Sum(x => x.CreditAmount);
+                        double net = totalDebit - totalCredit;
+                        if (Math.Abs(net) < 0.01) return null;
+                        var first = g.First();
+                        return new GeneralLedgerDetailModel
+                        {
+                            AccountId = first.AccountId,
+                            AccountCode = first.AccountCode,
+                            AccountName = first.AccountName,
+                            AccountType = first.AccountType,
+                            Description = g.Count() > 1 ? $"{g.Count()} entries consolidated" : (first.Description ?? ""),
+                            DebitAmount = net > 0 ? net : 0,
+                            CreditAmount = net < 0 ? Math.Abs(net) : 0,
+                            PartyId = first.PartyId
+                        };
+                    })
+                    .Where(x => x != null)
+                    .Cast<GeneralLedgerDetailModel>()
+                    .ToList();
+                result.Add((GetSectionHeading("PAYMENT METHOD", paymentConsolidated), GetSectionDescription("PAYMENT METHOD", paymentConsolidated), GetSectionIcon("PAYMENT METHOD"), paymentConsolidated));
+            }
+            return result;
+        }
+    }
+
+    private static string GetSectionHeading(string displayKey, List<GeneralLedgerDetailModel> lines)
+    {
+        var first = lines.FirstOrDefault();
+        return (displayKey ?? "").ToUpperInvariant() switch
+        {
+            "INVOICE" => "First entry — Sale invoice",
+            "PURCHASE" => "Vendor invoice received",
+            "PAYMENT METHOD" => "Second entry — Payment made",
+            "OTHER" => first?.Description ?? "Other",
+            _ => first?.Description ?? displayKey ?? "Other"
+        };
+    }
+
+    /// <summary>
+    /// Sale invoice: First entry = Receivable Dr | Item Revenue Cr, Manual Item Revenue Cr, GST Cr, Advance Tax Cr, Service Charges Cr | Sales Discount Dr. Second entry = Payment Method Dr | Receivable Cr. Receivable is from Party's ChartOfAccounts.
+    /// </summary>
+    private static string GetSectionDescription(string displayKey, List<GeneralLedgerDetailModel> lines)
+    {
+        return (displayKey ?? "").ToUpperInvariant() switch
+        {
+            "INVOICE" => "Journal: Receivable Dr | Item Revenue Cr, Manual Item Revenue Cr, General Sales Tax Cr, Advance Tax Cr, Service Charges Cr | Sales Discount Dr.",
+            "PURCHASE" => "Journal: Expense Debit | Payable Credit.",
+            "PAYMENT METHOD" => "Journal: Payment Method Dr (Cash, Credit Card, etc.) | Receivable Cr.",
+            _ => "Journal entries below."
+        };
+    }
+
+    private static string GetSectionIcon(string displayKey)
+    {
+        return (displayKey ?? "").ToUpperInvariant() switch
+        {
+            "INVOICE" or "PURCHASE" => Icons.Material.Filled.ReceiptLong,
+            "PAYMENT METHOD" => Icons.Material.Filled.Payment,
+            _ => Icons.Material.Filled.ReceiptLong
+        };
+    }
+
+    /// <summary>
+    /// Returns either detailed or consolidated view based on IsDetailedView flag
+    /// </summary>
+    private IEnumerable<GeneralLedgerDetailModel> DisplayDetails
+    {
+        get
+        {
+            if (IsDetailedView)
+            {
+                return SortedDetails;
+            }
+            else
+            {
+                // Consolidated view: Group by AccountId and sum amounts
+                // Then filter out entries where debit - credit = 0 (balanced entries)
+                // For remaining entries, show the difference in the respective column
+                var consolidatedEntries = new List<GeneralLedgerDetailModel>();
+                
+                foreach (var group in SortedDetails.GroupBy(d => d.AccountId))
+                {
+                    var totalDebit = group.Sum(d => d.DebitAmount);
+                    var totalCredit = group.Sum(d => d.CreditAmount);
+                    
+                    // Calculate the net difference
+                    double netAmount = totalDebit - totalCredit;
+                    
+                    // Skip entries where difference is zero (or very close to zero)
+                    if (Math.Abs(netAmount) < 0.01)
+                    {
+                        continue;
+                    }
+                    
+                    // Create entry with difference shown in the respective column (preserve InterfaceType for sorting)
+                    var firstEntry = group.First();
+                    consolidatedEntries.Add(new GeneralLedgerDetailModel
+                    {
+                        AccountId = group.Key,
+                        AccountCode = firstEntry.AccountCode,
+                        AccountName = firstEntry.AccountName,
+                        AccountType = firstEntry.AccountType,
+                        InterfaceType = firstEntry.InterfaceType ?? string.Empty,
+                        DebitAmount = netAmount > 0 ? netAmount : 0,
+                        CreditAmount = netAmount < 0 ? Math.Abs(netAmount) : 0,
+                        Description = group.Count() > 1 
+                            ? $"{group.Count()} entries consolidated" 
+                            : firstEntry.Description
+                    });
+                }
+                
+                // Same sort as detailed view: debits first, then credits; second sort by InterfaceType, then amount, then account code
+                var consolidatedDebits = consolidatedEntries
+                    .Where(d => d.DebitAmount > 0 && d.CreditAmount == 0)
+                    .OrderBy(d => d.InterfaceType ?? string.Empty)
+                    .ThenByDescending(d => d.DebitAmount)
+                    .ThenBy(d => d.AccountCode ?? string.Empty)
+                    .ThenBy(d => d.AccountName ?? string.Empty);
+                var consolidatedCredits = consolidatedEntries
+                    .Where(d => d.CreditAmount > 0 && d.DebitAmount == 0)
+                    .OrderBy(d => d.InterfaceType ?? string.Empty)
+                    .ThenByDescending(d => d.CreditAmount)
+                    .ThenBy(d => d.AccountCode ?? string.Empty)
+                    .ThenBy(d => d.AccountName ?? string.Empty);
+                var consolidatedInvalid = consolidatedEntries
+                    .Where(d => d.DebitAmount > 0 && d.CreditAmount > 0);
+                return consolidatedDebits.Concat(consolidatedCredits).Concat(consolidatedInvalid);
+            }
+        }
+    }
+
+    private void Close()
+    {
+        MudDialog?.Close();
+    }
+    
+    private async Task PostToGL()
+    {
+        if (RecordId == 0)
+        {
+            SnackbarService.Add("Record ID is required", Severity.Warning);
+            return;
+        }
+
+        var confirmed = await Functions.ShowConfirmation(DialogService, 
+            "Do you want to transfer this entry to General Ledger? Once posted, it cannot be edited or deleted.");
+        
+        if (!confirmed)
+            return;
+
+        IsPosting = true;
+        await InvokeAsync(StateHasChanged); // Show in-dialog overlay immediately
+        try
+        {
+            if (OnPostToGL.HasDelegate)
+            {
+                await OnPostToGL.InvokeAsync();
+            }
+            else
+            {
+                SnackbarService.Add("Post to GL callback not configured", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error posting to GL: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            IsPosting = false;
+        }
+    }
+}
+
+

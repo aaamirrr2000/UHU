@@ -1,0 +1,452 @@
+@page "/OrderPage"
+@using System.Collections.ObjectModel
+@using System.Text.Json
+@using MudBlazor
+@using MicroERP.App.SwiftServe.Helper
+@inject NavigationManager Nav
+@inject CartStateService CartState
+@layout MyMenuLayout
+@using Microsoft.AspNetCore.WebUtilities
+@using System.Text
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 8px;">
+    <div class="order-header mb-3">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <h4 class="mb-0 fw-bold" style="color: white;">
+                    <i class="fas fa-utensils me-2"></i>
+                    Menu Items
+                </h4>
+                <p class="text-muted mt-1 mb-0" style="color: rgba(255,255,255,0.85) !important;">
+                    @if (MyGlobals._selectedTable is not null)
+                    {
+                        <span>Table: @(MyGlobals._selectedTable?.TableNumber) | </span>
+                    }
+                    Service: @MyGlobals._serviceType
+                </p>
+            </div>
+            <div>
+                <button class="btn btn-sm" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 8px;" @onclick="GoBack" title="Back to Tables">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        @foreach (var category in _categories)
+        {
+            <button class="btn btn-sm m-1" style="background-color: #512BD4; color: white; border-radius: 8px;" @onclick="() => LoadItemsByCategory(category)">
+                @category.Name
+            </button>
+        }
+    </div>
+
+    @if (_isLoading)
+    {
+        <MudPaper Elevation="2" Class="pa-8" Style="border-radius: 12px;">
+            <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 400px;">
+                <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+                <MudText Typo="Typo.body1" Class="mt-4 text-muted">Loading menu items...</MudText>
+            </MudStack>
+        </MudPaper>
+    }
+    else if (_menuItems?.Any() == true)
+    {
+        <MudGrid Spacing="2">
+            @foreach (var item in _menuItems)
+            {
+                <MudItem xs="12" sm="6" md="4" lg="3">
+                    <MudCard Elevation="2" Class="h-100 menu-item-card" Style="border-radius: 12px; transition: all 0.3s ease;">
+                        <MudCardContent Class="pa-3">
+
+                            <!-- Item Name and Price -->
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start" Class="mb-2">
+                                <MudText Typo="Typo.h6" Class="font-weight-bold text-truncate" Style="flex: 1; margin-right: 8px;">
+                                    @item.Name
+                                </MudText>
+                                <MudText Typo="Typo.h6" Class="font-weight-bold text-primary">
+                                    @item.RetailPrice.ToString("N2")
+                                </MudText>
+                            </MudStack>
+                            
+                            <!-- Rating -->
+                            @if (item.Rating > 0)
+                            {
+                                <MudStack Row="true" Spacing="1" Class="mb-2">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        var starColor = i <= item.Rating ? "#FFD700" : "#ccc";
+                                        var starStyle = $"font-size: 16px; color: {starColor};";
+                                        <MudIcon Icon="@Icons.Material.Filled.Star" 
+                                                 Size="Size.Small" 
+                                                 Style="@starStyle" />
+                                    }
+                                </MudStack>
+                            }
+
+                            <!-- Quantity Selector -->
+                            <MudStack Spacing="1" Class="mb-2">
+                                <MudText Typo="Typo.caption" Class="font-weight-bold text-muted">Quantity:</MudText>
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Remove" 
+                                                   Size="Size.Small" 
+                                                   Variant="Variant.Outlined"
+                                                   Color="Color.Primary"
+                                                   OnClick="@(() => DecreaseQty(item))" />
+                                    <MudTextField @bind-Value="item.MaxQty" 
+                                                  Variant="Variant.Outlined" 
+                                                  Margin="Margin.Dense"
+                                                  Style="width: 80px; text-align: center;"
+                                                  ReadOnly="true" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Add" 
+                                                   Size="Size.Small" 
+                                                   Variant="Variant.Outlined"
+                                                   Color="Color.Primary"
+                                                   OnClick="@(() => IncreaseQty(item))" />
+                                </MudStack>
+                            </MudStack>
+
+                            <!-- Serving Size Selector -->
+                            @if (item.ServingSizes?.Any() == true)
+                            {
+                                <MudStack Spacing="1" Class="mb-2">
+                                    <MudText Typo="Typo.caption" Class="font-weight-bold text-muted">Serving Size:</MudText>
+                                    <MudStack Row="true" Spacing="1" Style="flex-wrap: wrap;">
+                                        @foreach (var size in item.ServingSizes)
+                                        {
+                                            <MudButton Variant="@(item.ServingSize == size.Size ? Variant.Filled : Variant.Outlined)" 
+                                                       Color="Color.Primary" 
+                                                       Size="Size.Small"
+                                                       OnClick="@(() => OnServingSizeChanged(size.Size, item))"
+                                                       Style="text-transform: none; min-width: 60px;">
+                                                @size.Size
+                                            </MudButton>
+                                        }
+                                    </MudStack>
+                                </MudStack>
+                            }
+
+                            <!-- Chair Selector -->
+                            @if (MyGlobals._selectedTable?.Capacity > 0)
+                            {
+                                <MudStack Spacing="1" Class="mb-2">
+                                    <MudText Typo="Typo.caption" Class="font-weight-bold text-muted">Person:</MudText>
+                                    <MudStack Row="true" Spacing="1" Style="flex-wrap: wrap;">
+                                        @for (int i = 1; i <= MyGlobals._selectedTable.Capacity; i++)
+                                        {
+                                            var chairNumber = i;
+                                            var titleText = $"Person {chairNumber}";
+                                            <MudIconButton Icon="@Icons.Material.Filled.Person" 
+                                                           Size="Size.Small" 
+                                                           Variant="@(chairNumber == item.Person ? Variant.Filled : Variant.Outlined)"
+                                                           Color="Color.Primary"
+                                                           OnClick="@(() => SelectChairForItem(item, chairNumber))"
+                                                           Title="@titleText">
+                                                @chairNumber
+                                            </MudIconButton>
+                                        }
+                                    </MudStack>
+                                </MudStack>
+                            }
+
+                            <!-- Add to Cart Button -->
+                            <MudButton Variant="Variant.Filled" 
+                                       Color="Color.Primary" 
+                                       FullWidth="true"
+                                       StartIcon="@Icons.Material.Filled.ShoppingCart"
+                                       OnClick="@(() => AddItemToCart(item))"
+                                       Class="mt-2"
+                                       Style="text-transform: none;">
+                                Add to Cart
+                            </MudButton>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+    else if (!_isLoading)
+    {
+        <MudPaper Elevation="2" Class="pa-8" Style="border-radius: 12px;">
+            <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 400px;">
+                <MudIcon Icon="@Icons.Material.Filled.RestaurantMenu" Size="Size.Large" Color="Color.Primary" Style="font-size: 80px; opacity: 0.3;" />
+                <MudText Typo="Typo.h6" Class="mt-4 text-muted">No items found</MudText>
+                <MudText Typo="Typo.body2" Class="text-muted text-center mt-2">
+                    No menu items available in this category.
+                </MudText>
+            </MudStack>
+        </MudPaper>
+    }
+
+@code {
+    [Parameter] public RestaurantTablesModel? Table { get; set; }
+    [CascadingParameter] private List<ItemsModel> _cart  { get; set; } 
+    private string _serviceType = "";
+    private List<CategoriesModel> _categories = new();
+    private List<ItemsModel> _menuItems = new();
+
+    private bool _isLoading = false;
+    private int _selectedChair = 0;
+
+    private void SelectChairForItem(ItemsModel item, int chairNumber)
+    {
+        item.Person = chairNumber;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        var queryParams = QueryHelpers.ParseQuery(uri.Query);
+
+        if (queryParams.TryGetValue("tableId", out var tableIdStr) && int.TryParse(tableIdStr, out var tableId))
+        {
+            string apiUrl = BuildApiUrl($"api/RestaurantTables/Get?id={tableId}");
+            MyGlobals._selectedTable = await MyFunctions.GetAsync<RestaurantTablesModel>(apiUrl, true);
+        }
+        else
+        {
+            Console.WriteLine("tableId not found in query.");
+        }
+
+        await LoadCategories();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (_selectedChair == 0 && MyGlobals._selectedTable?.Capacity > 0)
+        {
+            _selectedChair = 1; 
+        }
+    }
+
+
+    private async Task LoadCategories()
+    {
+        _categories = await MyFunctions.GetAsync<List<CategoriesModel>>("api/Categories/Search", true) ?? new();
+        if (_categories.Any())
+        {
+            await LoadItemsByCategory(_categories[0]);
+        }
+    }
+
+    private async Task LoadItemsByCategory(CategoriesModel category)
+    {
+        try
+        {
+            _isLoading = true;
+            StateHasChanged();
+            _menuItems.Clear();
+
+            var fetchedItems = await MyFunctions.GetAsync<List<ItemsModel>>($"api/Items/Search/CategoriesId={category.Id}", true) ?? new();
+
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+            foreach (var item in fetchedItems)
+            {
+                if (item.IsActive == 1) // Only show active items
+                {
+                    List<ServingSizeModel> sizes = new();
+                    
+                    if (!string.IsNullOrWhiteSpace(item.ServingSize))
+                    {
+                        try
+                        {
+                            sizes = JsonSerializer.Deserialize<List<ServingSizeModel>>(item.ServingSize, options) ?? new();
+                        }
+                        catch
+                        {
+                            sizes = new();
+                        }
+                    }
+
+                    // If no serving sizes, create a default one
+                    if (!sizes.Any())
+                    {
+                        sizes.Add(new ServingSizeModel
+                        {
+                            Size = "Regular",
+                            Price = item.RetailPrice > 0 ? item.RetailPrice : item.BasePrice
+                        });
+                    }
+
+                    var menuItem = new ItemsModel
+                    {
+                        Id = item.Id,
+                        Name = item.Name,
+                        MaxQty = 1,
+                        RetailPrice = sizes.FirstOrDefault()?.Price ?? item.RetailPrice,
+                        ServingSizes = sizes,
+                        ServingSize = sizes.FirstOrDefault()?.Size ?? "Regular",
+                        Rating = item.Rating,
+                        Unit = item.Unit,
+                        CategoryId = item.CategoryId
+                    };
+                    
+                    _menuItems.Add(menuItem);
+                }
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Error(ex, $"Error loading items for category {category.Name}: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void IncreaseQty(ItemsModel item)
+    {
+        item.MaxQty++;
+        UpdateItemPrice(item);
+        StateHasChanged();
+    }
+
+    private void DecreaseQty(ItemsModel item)
+    {
+        if (item.MaxQty > 1)
+        {
+            item.MaxQty--;
+            UpdateItemPrice(item);
+            StateHasChanged();
+        }
+    }
+
+    private void OnServingSizeChanged(string selectedSize, ItemsModel item)
+    {
+        item.ServingSize = selectedSize;
+        UpdateItemPrice(item);
+        StateHasChanged();
+    }
+
+    private void UpdateItemPrice(ItemsModel item)
+    {
+        var selectedSize = item.ServingSizes?.FirstOrDefault(s => s.Size == item.ServingSize);
+        if (selectedSize != null)
+        {
+            item.RetailPrice = Convert.ToDouble(selectedSize.Price) * item.MaxQty;
+        }
+    }
+
+    private async Task AddItemToCart(ItemsModel item)
+    {
+        try
+        {
+            var newItem = new ItemsModel
+            {
+                Id = item.Id,
+                Name = item.Name,
+                MaxQty = item.MaxQty,
+                Unit = item.Unit,
+                RetailPrice = item.RetailPrice,
+                ServingSize = item.ServingSize,
+                Person = item.Person,
+                Description = item.Description
+            };
+            
+            _cart?.Add(newItem);
+            CartState.CartItems?.Add(newItem);
+            CartState.SelectedTable = MyGlobals._selectedTable;
+            CartState.ServiceType = MyGlobals._serviceType;
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Error(ex, $"Error adding item to cart: {ex.Message}");
+        }
+    }
+
+     private void GoBack()
+    {
+        Nav.NavigateTo($"/TablesPage");
+    }
+
+    /// <summary>
+    /// Builds the API URL by ensuring proper format based on BaseURI
+    /// Functions.GetAsync concatenates BaseURI + url directly
+    /// If endpoint already has "api/", we need to check if BaseURI also has "api/" to avoid duplication
+    /// </summary>
+    private string BuildApiUrl(string endpoint)
+    {
+        if (string.IsNullOrEmpty(MyGlobals.BaseURI))
+            return endpoint.TrimStart('/');
+
+        string baseUri = MyGlobals.BaseURI.TrimEnd('/');
+        string normalizedEndpoint = endpoint.TrimStart('/');
+
+        // Check if BaseURI already includes "api" (case-insensitive)
+        bool baseUriHasApi = baseUri.EndsWith("/api", StringComparison.OrdinalIgnoreCase) || 
+                            baseUri.EndsWith("/api/", StringComparison.OrdinalIgnoreCase) ||
+                            baseUri.EndsWith("api", StringComparison.OrdinalIgnoreCase);
+
+        // Check if endpoint already starts with "api/"
+        bool endpointHasApi = normalizedEndpoint.StartsWith("api/", StringComparison.OrdinalIgnoreCase);
+
+        if (baseUriHasApi && endpointHasApi)
+        {
+            // Both have "api/", remove it from endpoint to avoid duplication
+            return normalizedEndpoint.Substring(4); // Remove "api/"
+        }
+        else if (!baseUriHasApi && !endpointHasApi)
+        {
+            // Neither has "api/", add it to endpoint
+            return $"api/{normalizedEndpoint}";
+        }
+        else
+        {
+            // One has "api/" and the other doesn't, return endpoint as-is
+            return normalizedEndpoint;
+        }
+    }
+
+}
+</MudContainer>
+
+<style>
+    .order-header {
+        padding: 16px 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .order-header h4 {
+        color: white !important;
+    }
+
+    .order-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    .menu-item-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .menu-item-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+        border-color: var(--mud-palette-primary);
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .order-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+
+    .mud-theme-dark .menu-item-card {
+        border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .mud-theme-dark .menu-item-card:hover {
+        border-color: var(--mud-palette-primary);
+    }
+</style>

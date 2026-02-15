@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MicroERP.App.Pages.BillPrintPage"
+             BackgroundColor="White"
+             NavigationPage.HasNavigationBar="False"
+             Title="BillPrintPage">
+
+
+    <ContentPage.Background>
+        <LinearGradientBrush EndPoint="0,1">
+            <GradientStop Color="#E6F0FA" Offset="0.0" />
+            <GradientStop Color="#FFFFFF" Offset="1.0" />
+        </LinearGradientBrush>
+    </ContentPage.Background>
+    
+    <ScrollView>
+
+        <Border StrokeThickness="0"
+        Margin="10"
+        Padding="20"
+        BackgroundColor="White"
+        HorizontalOptions="Fill"
+        StrokeShape="RoundRectangle 15">
+            <Border.Shadow>
+                <Shadow Brush="#20000000" Offset="0,5" Radius="10" Opacity="0.3" />
+            </Border.Shadow>
+
+            <VerticalStackLayout Padding="20" Spacing="5">
+
+                <ActivityIndicator x:Name="LoginSpinner"
+                                     IsVisible="False"
+                                     IsRunning="False"
+                                     Color="#00C4B4"
+                                     HeightRequest="40" />
+
+                <Label x:Name="txtOrganization"
+                   FontSize="24"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center"
+                   TextColor="#333" FontFamily="Orbitron" CharacterSpacing="2"/>
+
+                <Label x:Name="txtOrganizationAddress"
+                   FontSize="14"
+                   HorizontalOptions="Center"
+                   TextColor="Gray" FontFamily="Orbitron" CharacterSpacing="2"/>
+
+                <Label x:Name="txtContact"
+                   FontSize="12"
+                   HorizontalOptions="Center"
+                   TextColor="Gray" FontFamily="Orbitron" CharacterSpacing="2"/>
+
+                <!-- Bill Header -->
+                <Grid ColumnDefinitions="*,*"
+                  RowDefinitions="Auto,Auto"
+                  ColumnSpacing="20"
+                  RowSpacing="5">
+
+                    <Label Grid.Column="0" x:Name="txtSeqNo" FontAttributes="Bold" TextColor="Black"/>
+                    <Label Grid.Column="1" x:Name="txtTranDate" HorizontalOptions="End" TextColor="#333"/>
+
+                    <Label Grid.Column="0" Grid.Row="1" x:Name="txtLocation" TextColor="#333"/>
+                </Grid>
+
+                <!-- Bill Details Table Header -->
+                <Grid ColumnDefinitions="3*,3*,2*,2*,2*,*" Padding="5" BackgroundColor="Black">
+                    <Label Grid.Column="0" Text="Item" FontAttributes="Bold" FontFamily="Roboto"/>
+                    <Label Grid.Column="1" Text="Size" FontAttributes="Bold" FontFamily="Roboto"/>
+                    <Label Grid.Column="2" Text="Qty" FontAttributes="Bold"  HorizontalTextAlignment="Center" FontFamily="Roboto"/>
+                    <Label Grid.Column="3" Text="Rate" FontAttributes="Bold" HorizontalTextAlignment="Center" FontFamily="Roboto"/>
+                    <Label Grid.Column="4" Text="Total" FontAttributes="Bold" HorizontalTextAlignment="End" FontFamily="Roboto"/>
+                    <Label Grid.Column="5" Text="" FontAttributes="Bold" HorizontalTextAlignment="End" FontFamily="Roboto"/>
+                </Grid>
+
+                <!-- Bill Details List -->
+                <CollectionView x:Name="BillDetailsCollectionView" Margin="0,10">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border
+                            StrokeThickness="0"
+                            Margin="5"
+                            Padding="2"
+                            Stroke="Gray"
+                            HorizontalOptions="Fill"
+                            StrokeDashArray="2,1"
+                            StrokeShape="RoundRectangle">
+
+                                <Grid ColumnDefinitions="3*,3*,2*,2*,2*,*" Padding="5" >
+                                    <Label Grid.Column="0" Text="{Binding Item}" FontSize="10" TextColor="#222" VerticalOptions="Center" />
+                                    <Label Grid.Column="1" Text="{Binding ServingSize}" FontSize="10" TextColor="#222" VerticalOptions="Center" />
+                                    <Label Grid.Column="2" Text="{Binding Qty}" FontSize="10" TextColor="#222" HorizontalTextAlignment="Center" VerticalOptions="Center" />
+                                    <Label Grid.Column="3"  Text="{Binding UnitPrice, StringFormat='{0:N2}'}" FontSize="10" TextColor="#222" HorizontalTextAlignment="End" VerticalOptions="Center" />
+                                    <Label Grid.Column="4" Text="{Binding Item_Amount, StringFormat='{0:N2}'}" FontSize="10" TextColor="#222" HorizontalTextAlignment="End" VerticalOptions="Center" />
+                                    <Label Grid.Column="5" Text="{Binding Status}" FontSize="10" TextColor="#222" HorizontalTextAlignment="End" VerticalOptions="Center" />
+                                </Grid>
+
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+
+                <StackLayout VerticalOptions="End">
+
+                    <BoxView HeightRequest="1" BackgroundColor="#ccc" Margin="0,0"/>
+                    <!-- Totals -->
+                    <Grid ColumnDefinitions="3*,3*,2*,2*,2*,*" Padding="5">
+                        <Label Grid.Column="4" x:Name="txtGrandTotal" FontSize="11" FontAttributes="Bold" TextColor="Black" HorizontalTextAlignment="End"/>
+                    </Grid>
+
+                    <!-- Footer -->
+                    <BoxView HeightRequest="1" BackgroundColor="#ccc" Margin="0,0"/>
+                    <Label Text="Thank you for your business!" HorizontalOptions="Center" FontFamily="Orbitron" CharacterSpacing="2"/>
+                </StackLayout>
+
+            </VerticalStackLayout>
+        </Border>
+    </ScrollView>
+    
+</ContentPage>

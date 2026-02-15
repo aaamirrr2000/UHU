@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MicroERP.App.Pages.OrderPage"
+             BackgroundColor="#F5F7FA"
+             NavigationPage.HasNavigationBar="False"
+             Title="OrderPage">
+
+    <ContentPage.Background>
+        <LinearGradientBrush EndPoint="0,1">
+            <GradientStop Color="#E6F0FA" Offset="0.0" />
+            <GradientStop Color="#FFFFFF" Offset="1.0" />
+        </LinearGradientBrush>
+    </ContentPage.Background>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="10">
+
+            <!-- Header Card -->
+            <Border StrokeThickness="0"
+                    Margin="10"
+                    Padding="20"
+                    BackgroundColor="White"
+                    HorizontalOptions="Fill"
+                    StrokeShape="RoundRectangle 15">
+                <Border.Shadow>
+                    <Shadow Brush="#20000000" Offset="0,5" Radius="10" Opacity="0.3" />
+                </Border.Shadow>
+
+                <VerticalStackLayout>
+                    <Grid ColumnDefinitions="2*" Padding="5">
+
+                        <VerticalStackLayout Grid.Column="0" Spacing="2">
+                            <Label x:Name="TableNameLabel"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="#333333"
+                               VerticalOptions="Center"
+                               Text="" />
+
+                            <Label x:Name="lblServiceType"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="#333333"
+                               VerticalOptions="Center"
+                               Text="" />
+
+                        </VerticalStackLayout>
+
+                        <HorizontalStackLayout Grid.Column="1" Spacing="10" HorizontalOptions="End">
+                            <Grid>
+                                <!-- Cart image button -->
+                                <ImageButton Source="cart.png"
+                                             Clicked="OnViewCartClicked"
+                                             CommandParameter="{Binding}"
+                                             CornerRadius="3"
+                                             HeightRequest="44"
+                                             WidthRequest="44"
+                                             BackgroundColor="Transparent" />
+
+                                <!-- Notification badge -->
+                                <Border BackgroundColor="Red"
+                                        StrokeShape="RoundRectangle, 50"
+                                        StrokeThickness="0"
+                                        HeightRequest="20"
+                                        WidthRequest="20"
+                                        HorizontalOptions="End"
+                                        VerticalOptions="Start"
+                                        Margin="0,-5,-5,0">
+
+                                    <Label x:Name="lblCount"
+                                           Text="3"
+                                           FontSize="12"
+                                           FontAttributes="Bold"
+                                           TextColor="White"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center" />
+                                </Border>
+                            </Grid>
+                        </HorizontalStackLayout>
+                    </Grid>
+                </VerticalStackLayout>
+
+            </Border>
+
+            <!-- Category Buttons -->
+            <ScrollView Orientation="Horizontal" HeightRequest="50" HorizontalScrollBarVisibility="Never">
+                <HorizontalStackLayout x:Name="CategoryButtonsPanel" Spacing="10" Padding="4,0" />
+            </ScrollView>
+
+            <!-- Loading Indicator -->
+            <ActivityIndicator x:Name="LoadingIndicator"
+                               IsRunning="False"
+                               IsVisible="False"
+                               Color="#999999" />
+
+            <!-- Food Items -->
+            <CollectionView x:Name="ItemsCollectionView" Margin="0,10,0,0">
+                
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="12" />
+                </CollectionView.ItemsLayout>
+                
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border StrokeThickness="0"
+                                Margin="10"
+                                Padding="10"
+                                BackgroundColor="White"
+                                HorizontalOptions="Fill"
+                                StrokeShape="RoundRectangle 15">
+                            
+                            <Border.Shadow>
+                                <Shadow Brush="#20000000" Offset="0,5" Radius="10" Opacity="0.3" />
+                            </Border.Shadow>
+
+                            <VerticalStackLayout Spacing="5">
+                                <!-- Name and Price -->
+                                <Grid ColumnDefinitions="3*,*,2*" Padding="5">
+                                    <Label Text="{Binding Name}"
+                                           Grid.Column="0"
+                                           FontSize="20"
+                                           FontAttributes="Bold"
+                                           TextColor="#D00000" />
+
+                                    <Label Text="{Binding ServingSize}"
+                                           Grid.Column="1"
+                                           FontSize="12"
+                                           FontAttributes="Bold"
+                                           TextColor="Gray" />
+
+                                    <Label Text="{Binding RetailPrice, StringFormat='{0:N2}'}"
+                                           Grid.Column="2"
+                                           FontSize="20"
+                                           FontAttributes="Bold"
+                                           TextColor="#D00000"
+                                           HorizontalOptions="End" />
+                                </Grid>
+
+                                <!-- Serving Sizes -->
+                                <ScrollView Orientation="Horizontal" HeightRequest="50" HorizontalScrollBarVisibility="Never">
+                                    <HorizontalStackLayout BindableLayout.ItemsSource="{Binding ServingSizes}" Spacing="10">
+                                        <BindableLayout.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Text="{Binding Size}"
+                                                        BackgroundColor="#15C39A"
+                                                        TextColor="White"
+                                                        HeightRequest="50"
+                                                        FontSize="14"
+                                                        FontFamily="Roboto"
+                                                        CornerRadius="2"
+                                                        CommandParameter="{Binding}"
+                                                        Clicked="OnServingSizeButtonClicked" />
+                                            </DataTemplate>
+                                        </BindableLayout.ItemTemplate>
+                                    </HorizontalStackLayout>
+                                </ScrollView>
+
+                                <!-- Quantity and Add Button -->
+                                <Grid ColumnDefinitions="*,*,*" Padding="0">
+                                    <HorizontalStackLayout Grid.Column="0"
+                                                           Spacing="10"
+                                                           VerticalOptions="Center"
+                                                           HorizontalOptions="Start">
+                                        <Button Text="-"
+                                                TextColor="White"
+                                                BackgroundColor="Black"
+                                                HeightRequest="40"
+                                                WidthRequest="20"
+                                                FontSize="16"
+                                                FontFamily="Roboto"
+                                                CornerRadius="2"
+                                                Clicked="OnDecreaseQty"
+                                                CommandParameter="{Binding}" />
+                                        <Label Text="{Binding MaxQty}"
+                                               FontSize="16"
+                                               WidthRequest="20"
+                                               HorizontalTextAlignment="Center"
+                                               VerticalOptions="Center"
+                                               TextColor="#222222" />
+                                        <Button Text="+"
+                                                TextColor="White"
+                                                BackgroundColor="Black"
+                                                HeightRequest="40"
+                                                WidthRequest="20"
+                                                FontSize="16"
+                                                FontFamily="Roboto"
+                                                CornerRadius="2"
+                                                Clicked="OnIncreaseQty"
+                                                CommandParameter="{Binding}" />
+                                    </HorizontalStackLayout>
+
+
+                                    <!--<HorizontalStackLayout Padding="10" Spacing="20" Grid.Column="1">
+                                        <Label Text="Takeaway?" VerticalOptions="Center" TextColor="#D00000" FontFamily="Roboto" />
+                                        <Switch  HorizontalOptions="Start" Toggled="OnSwitchToggled"/>
+                                    </HorizontalStackLayout>-->
+
+                                    <Button Text="Order"
+                                            Clicked="OnAddItemClicked"
+                                            CommandParameter="{Binding}"
+                                            BackgroundColor="#CAC3AD"
+                                            TextColor="White"
+                                            HeightRequest="40"
+                                            FontSize="16"
+                                            FontAttributes="Bold"
+                                            FontFamily="Roboto"
+                                            CornerRadius="2"
+                                            HorizontalOptions="Fill"
+                                            Grid.Column="2" />
+                                </Grid>
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
+

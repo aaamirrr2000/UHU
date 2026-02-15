@@ -1,0 +1,299 @@
+﻿@page "/DesignationsPage/{Action}/{CurrentRecord?}"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+
+
+    <MudExpansionPanels MultiExpansion="true">
+        <MudGrid>
+            <!-- Designation Information Panel -->
+            <MudItem xs="12" md="6">
+                <MudExpansionPanel Text="Designation Information" Expanded="true">
+                    <TitleContent>
+                        <div class="d-flex align-items-center">
+                            <MudIcon Icon="@Icons.Material.Filled.Work" class="mr-3" />
+                            <MudText Typo="Typo.h6" Class="mb-0">Designation Information</MudText>
+                        </div>
+                    </TitleContent>
+                    <ChildContent>
+
+
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudTextField Label="Designation Name"
+                                      @bind-Value="record.DesignationName"
+                                      Placeholder="Enter designation name"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      Required="true"
+                                      FullWidth="true"
+                                      Class="mb-3" />
+                        <ValidationMessage For="@(() => record.DesignationName)" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        @if (isReadOnly)
+                        {
+                            <MudTextField Label="Parent Designation"
+                                          Value="@(Par?.FirstOrDefault(p => p.Id == record.ParentId)?.DesignationName ?? "")"
+                                          ReadOnly="true"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="true"
+                                          Class="mb-3" />
+                        }
+                        else
+                        {
+                            <AutoComplete TItem="DesignationsModel"
+                                          DataList="@Par"
+                                          DisplayProperty="@(p => p.DesignationName)"
+                                          IdProperty="@(p => p.Id)"
+                                          @bind-SelectedId="record.ParentId"
+                                          Variant="Variant.Outlined"
+                                          Label="Parent Designation"
+                                          FullWidth="true"
+                                          Class="mb-3" />
+                        }
+                        <ValidationMessage For="@(() => record.ParentId)" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudSelect T="int"
+                                   Label="Department"
+                                   @bind-Value="record.DepartmentId"
+                                   Placeholder="Select department"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   ReadOnly="@isReadOnly"
+                                   FullWidth="true"
+                                   Class="mb-3">
+                            @if (Dep != null && Dep.Any())
+                            {
+                                foreach (var i in Dep)
+                                {
+                                    <MudSelectItem T="int" Value="@i.Id">@i.DepartmentName</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.DepartmentId)" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudTextField Label="Description"
+                                      @bind-Value="record.Description"
+                                      Placeholder="Enter description"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      Lines="3"
+                                      FullWidth="true" />
+                    </MudItem>
+                </MudGrid>
+                    </ChildContent>
+                </MudExpansionPanel>
+        </MudItem>
+
+        <!-- Status Card -->
+        <MudItem xs="12" md="6">
+                <MudExpansionPanel Text="Status" Expanded="true">
+                    <TitleContent>
+                        <div class="d-flex align-items-center">
+                            <MudIcon Icon="@Icons.Material.Filled.ToggleOn" class="mr-3" />
+                            <MudText Typo="Typo.h6" Class="mb-0">Status</MudText>
+                        </div>
+                    </TitleContent>
+                    <ChildContent>
+
+
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudSelect T="int"
+                                   Label="Active Status"
+                                   @bind-Value="record.IsActive"
+                                   Placeholder="Select status"
+                                   Variant="Variant.Outlined"
+                                   Clearable="false"
+                                   ReadOnly="@isReadOnly"
+                                   FullWidth="true">
+                            @if (record.IsActive != 0 && record.IsActive != 1)
+                            {
+                                record.IsActive = 1;
+                            }
+                            <MudSelectItem T="int" Value="1">Enable</MudSelectItem>
+                            <MudSelectItem T="int" Value="0">Disable</MudSelectItem>
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.IsActive)" />
+                    </MudItem>
+                </MudGrid>
+                    </ChildContent>
+                </MudExpansionPanel>
+        </MudItem>
+        </MudGrid>
+    </MudExpansionPanels>
+</MudContainer>
+
+<style>
+    .mud-paper {
+        transition: box-shadow 0.3s ease;
+    }
+
+    .mud-paper:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
+
+@code
+{
+    DesignationsModel record = new();
+    List<OrganizationsModel> Org = new();
+    List<DesignationsModel> Par = new();
+    List<DepartmentsModel> Dep = new();
+
+    [Parameter] public DesignationsModel? Model { get; set; }
+    [Parameter] public string? Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Model != null)
+        {
+            record = Model;
+        }
+        else if (CurrentRecord > 0 && (record.Id != CurrentRecord || record.Id == 0))
+        {
+            await Get(CurrentRecord);
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        Par = await Functions.GetAsync<List<DesignationsModel>>($"Designations/Search", true) ?? new List<DesignationsModel>();
+        Dep = await Functions.GetAsync<List<DepartmentsModel>>($"Departments/Search", true) ?? new List<DepartmentsModel>();
+
+        if (Action == "INSERT")
+        {
+            record = new DesignationsModel();
+            record.IsActive = 1;
+            isReadOnly = false;
+        }
+        else if (Action == "UPDATE" && Model == null)
+        {
+            await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action == "VIEW" && Model == null)
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<DesignationsModel>($"Designations/Get/{id}", true) ?? new DesignationsModel();
+        LoadingPanel = false;
+    }
+
+    protected void GetDefaultValues()
+    {
+        if (Par != null && Par.Any() && record.ParentId == 0)
+            record.ParentId = Par.First().Id;
+
+        if (Dep != null && Dep.Any() && record.DepartmentId == 0)
+            record.DepartmentId = Dep.First().Id;
+
+        StateHasChanged();
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new DesignationsModel();
+        record.IsActive = 1;
+        isReadOnly = false;
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        try
+        {
+            LoadingPanel = true;
+
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<DesignationsModel>($"Designations/{url}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"Record Not Saved", Severity.Error);
+            }
+            else
+            {
+                await OnSaved.InvokeAsync();
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                    await Edit(result.Result!.Id);
+                else
+                {
+                    await Clear();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+}

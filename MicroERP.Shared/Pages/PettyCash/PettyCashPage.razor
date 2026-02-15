@@ -1,0 +1,532 @@
+@page "/PettyCashPage/{Action}/{CurrentRecord?}"
+
+@using MicroERP.Shared.Models
+@using MicroERP.Shared.Pages.Invoices
+@using Microsoft.AspNetCore.Components.Forms
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject FileUploadService FileUploadService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+    <EditForm Model="Model">
+        <!-- Period Validation Warning -->
+        @if (!string.IsNullOrWhiteSpace(PeriodValidationMessage))
+        {
+            <MudAlert Severity="Severity.Warning" Class="mb-2" Variant="Variant.Outlined" Dense="true">
+                <MudText Typo="Typo.body2">@PeriodValidationMessage</MudText>
+            </MudAlert>
+        }
+        else if (PeriodValidationChecked && Model?.TranDate != null && Model.OrganizationId > 0)
+        {
+            <MudAlert Severity="Severity.Success" Class="mb-2" Variant="Variant.Outlined" Dense="true">
+                <MudText Typo="Typo.body2">âœ“ Period is OPEN - You can save transactions for this date.</MudText>
+            </MudAlert>
+        }
+
+    <br />
+
+    <MudExpansionPanel Text="Transaction Details" Expanded="true" Style="margin-bottom:10px;">
+        <TitleContent>
+            <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                <i class="fa fa-file-invoice"
+                   style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                </i>
+                <div class="ms-2">
+                    <MudText Typo="Typo.h6" Class="fw-bold">Transaction Details</MudText>
+                    <MudText Typo="Typo.caption" Class="text-muted">Enter all transaction information</MudText>
+                </div>
+            </div>
+            
+        </TitleContent>
+
+        <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudSelect T="string"
+                                   @bind-Value="Model.TranType"
+                                   Placeholder="Transaction Type"
+                                   Variant="Variant.Outlined"
+                                   Label="Transaction Type *"
+                                   Clearable="false"
+                                   FullWidth="true"
+                                   Class="flex-grow-1"
+                                   @bind-Value:after="OnTransactionTypeChanged">
+                            <MudSelectItem Value=@("PAYMENT")>Payment</MudSelectItem>
+                            <MudSelectItem Value=@("RECEIPT")>Receipt</MudSelectItem>
+                        </MudSelect>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => Model.TranType)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudDatePicker @bind-Date="Model.TranDate"
+                                       @bind-Date:after="OnTranDateChanged" DateFormat="dd MMM yyyy"
+                                       placeholder="Transaction Date"
+                                       ReadOnly="@isReadOnly" Variant="Variant.Outlined"
+                                       Label="Transaction Date *"
+                                       Class="flex-grow-1"></MudDatePicker>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => Model.TranDate)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudNumericField @bind-Value="Model.Amount"
+                                         placeholder="Amount"
+                                         ReadOnly="@isReadOnly"
+                                         Format="#,##0.00"
+                                         Variant="Variant.Outlined"
+                                         Label="Amount *"
+                                         FullWidth="true"
+                                         Class="flex-grow-1"></MudNumericField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => Model.Amount)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        @if (Globals.User.GroupId == 1)
+                        {
+                            <AutoComplete TItem="LocationsModel"
+                                          DataList="@Loc"
+                                          DisplayProperty="@(p => p.Name)"
+                                          IdProperty="@(p => p.Id)"
+                                          @bind-SelectedId="Model.LocationId"
+                                          Variant="Variant.Outlined"
+                                          Label="Location *"
+                                          FullWidth="true" />
+                        }
+                        else
+                        {
+                            <MudTextField Value="@(Loc.FirstOrDefault(l => l.Id == Model.LocationId)?.Name ?? "")"
+                                          Variant="Variant.Outlined"
+                                          Label="Location *"
+                                          ReadOnly="true"
+                                          FullWidth="true" />
+                        }
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => Model.LocationId)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudSelect @bind-Value="Model.AccountId"
+                                   @key="Model.AccountId"
+                                   @bind-Value:after="OnAccountChanged"
+                                   Placeholder="Select Account"
+                                   Variant="Variant.Outlined"
+                                   Label="Account *"
+                                   Clearable="true"
+                                   ReadOnly="@isReadOnly"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
+                            @if (Acc != null && Acc.Any())
+                            {
+                                foreach (var i in Acc)
+                                {
+                                    <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => Model.AccountId)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudSelect T="string"
+                                   @bind-Value="Model.PaymentMethod"
+                                   Placeholder="Payment Method"
+                                   Variant="Variant.Outlined"
+                                   Label="Payment Method *"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
+                            @if (pm != null && pm.Any())
+                            {
+                                if (string.IsNullOrWhiteSpace(Model.PaymentMethod))
+                                {
+                                    Model.PaymentMethod = pm.First().Name ?? "";
+                                }
+                                foreach (var i in pm)
+                                {
+                                    <MudSelectItem T="string" Value="@i.Name">@i.Name</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => Model.PaymentMethod)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-4 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Currency</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <MudText Typo="Typo.body2" Class="fw-bold">
+                                @(Currencies.FirstOrDefault(c => c.Id == Model.EnteredCurrencyId)?.DisplayName ?? Currencies.FirstOrDefault(c => c.Id == Model.BaseCurrencyId)?.DisplayName ?? "N/A")
+                            </MudText>
+                            @if (!isReadOnly)
+                            {
+                                <MudButton Size="Size.Small" 
+                                           Variant="Variant.Text" 
+                                           Color="Color.Primary"
+                                           OnClick="ToggleCurrencySelection"
+                                           StartIcon="@Icons.Material.Filled.Edit">
+                                    Change
+                                </MudButton>
+                            }
+                        </div>
+                    </div>
+
+                    @if (showCurrencySelection && !isReadOnly)
+                    {
+                        <div class="col-12 col-md-4 mb-3 d-flex flex-column" style="height: 95px;">
+                            <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Select Currency</label>
+                            <AutoComplete TItem="CurrenciesModel"
+                                          DataList="@Currencies"
+                                          DisplayProperty="@(p => p.DisplayName)"
+                                          IdProperty="@(p => p.Id)"
+                                          @bind-SelectedId="Model.EnteredCurrencyId"
+                                          @bind-SelectedId:after="OnEnteredCurrencyChanged"
+                                          Label="Currency"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="@true" />
+                        </div>
+                    }
+
+                    @if (Model.EnteredCurrencyId != Model.BaseCurrencyId || showCurrencySelection)
+                    {
+                        <div class="col-12 col-md-4 mb-3 d-flex flex-column" style="height: 95px;">
+                            <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Exchange Rate</label>
+                            <MudNumericField @bind-Value="Model.ExchangeRate"
+                                             Format="#,##0.000000"
+                                             placeholder="Exchange Rate"
+                                             ReadOnly="@isReadOnly"
+                                             Variant="Variant.Outlined"
+                                             Dense="@true"
+                                             FullWidth="@true" />
+                        </div>
+                    }
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <AutoComplete TItem="EmployeesModel"
+                                      DataList="@Emp"
+                                      DisplayProperty="@(e => e.DisplayName ?? e.Fullname ?? "")"
+                                      IdProperty="@(e => e.Id)"
+                                      @bind-SelectedId="Model.EmployeeId"
+                                      Variant="Variant.Outlined"
+                                      Label="Employee *"
+                                      FullWidth="true" />
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => Model.EmployeeId)" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transaction Information Group -->
+                <h5 class="fw-bold mt-4 mb-3" style="color: var(--mud-palette-primary); border-bottom: 2px solid var(--mud-palette-primary); padding-bottom: 8px;">
+                    <i class="fa fa-exchange-alt me-2"></i>Transaction Information
+                </h5>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudTextField id="SeqNo"
+                                      @bind-Value="Model.SeqNo"
+                                      placeholder="Transaction #"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      Label="Transaction #"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => Model.SeqNo)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudTextField id="Description"
+                                      @bind-Value="Model.Description"
+                                      placeholder="Description"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      Label="Description"
+                                      FullWidth="true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => Model.Description)" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attachments Group -->
+                <h5 class="fw-bold mt-4 mb-3" style="color: var(--mud-palette-primary); border-bottom: 2px solid var(--mud-palette-primary); padding-bottom: 8px;">
+                    <i class="fa fa-paperclip me-2"></i>Document Attachment
+                </h5>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Document Attachment (Optional)</label>
+                        <div class="mt-2 flex-grow-1">
+                            @if (!isReadOnly)
+                            {
+                                <InputFile class="form-control" OnChange="OnFileInputChanged" />
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.FileAttachment))
+                            {
+                                <a href="@Model.FileAttachment" download class="btn btn-link" style="font-size: 12px; margin-top: 5px;">
+                                    <i class="fas fa-download me-1"></i>@Model.FileAttachment
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+        </ChildContent>
+    </MudExpansionPanel>
+    </EditForm>
+</div>
+
+@code
+{
+    [Parameter] public PettyCashModel Model { get; set; } = new();
+    [Parameter] public string? Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+    
+    // Internal state
+    List<LocationsModel> Loc = new();
+    List<EmployeesModel> Emp = new();
+    List<ChartOfAccountsModel> Acc = new();
+    List<ChartOfAccountsModel> pm = new();
+    List<CurrenciesModel> Currencies = new();
+    private bool showCurrencySelection = false;
+    private string filterCOA { get; set; } = string.Empty;
+
+    bool isReadOnly = false;
+    private bool LoadingPanel { get; set; } = false;
+    private string PeriodValidationMessage { get; set; } = string.Empty;
+    private bool PeriodValidationChecked { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Model != null)
+        {
+            // Show currency selection if different from base currency
+            showCurrencySelection = Model.EnteredCurrencyId != Model.BaseCurrencyId;
+            // Set read-only only if posted to GL; keep editable for INSERT and for EDIT when not posted
+            isReadOnly = (Action == "VIEW") || (Model.IsPostedToGL == 1);
+
+            await ValidatePeriodAsync();
+            await OnTransactionTypeChanged();
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if(firstRender)
+        {
+             GetDefaultValues();
+        }
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        Loc = await Functions.GetAsync<List<LocationsModel>>($"Locations/Search", true) ?? new List<LocationsModel>();
+        string PaymentMethods = "InterfaceType = 'PAYMENT METHOD'";
+        pm = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/{PaymentMethods}", true) ?? new List<ChartOfAccountsModel>();
+        Emp = await Functions.GetAsync<List<EmployeesModel>>($"Employees/Search", true) ?? new List<EmployeesModel>();
+        Currencies = await Functions.GetAsync<List<CurrenciesModel>>($"Currencies/Search", true) ?? new List<CurrenciesModel>();
+
+        // Load account list (Acc) on initial load so AccountId dropdown is filled
+        var tranType = !string.IsNullOrWhiteSpace(Model?.TranType) ? Model.TranType : "RECEIPT";
+        switch (tranType.ToUpperInvariant())
+        {
+            case "RECEIPT":
+                filterCOA = "(Type='REVENUE' OR InterfaceType='ADVANCE' OR InterfaceType='EMPLOYEE') AND ParentId!=0";
+                break;
+            case "PAYMENT":
+                filterCOA = "(Type='EXPENSE' OR InterfaceType='ADVANCE' OR InterfaceType='EMPLOYEE') AND ParentId!=0";
+                break;
+            default:
+                filterCOA = "(InterfaceType='EMPLOYEE')";
+                break;
+        }
+        Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/{filterCOA.ToUpper()}", true) ?? new List<ChartOfAccountsModel>();
+
+        if (Action == "INSERT" && Model.Id == 0)
+        {
+            GetDefaultValues();
+            isReadOnly = false;
+            await ValidatePeriodAsync();
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected void GetDefaultValues()
+    {
+        if (string.IsNullOrWhiteSpace(Model.TranType))
+        {
+            Model.TranType = "RECEIPT";
+        }
+
+        if (Acc != null && Acc.Any() && Model.AccountId == 0)
+        {
+            Model.AccountId = Acc.First().Id;
+        }
+
+        if (Emp != null && Emp.Any() && Model.EmployeeId == 0)
+        {
+            Model.EmployeeId = Emp.First().Id;
+        }
+
+        // Initialize currency fields if not set
+        if (Currencies != null && Currencies.Any())
+        {
+            var baseCurrency = Currencies.FirstOrDefault(c => c.IsBaseCurrency == 1);
+            if (baseCurrency != null)
+            {
+                if (Model.BaseCurrencyId == 0)
+                    Model.BaseCurrencyId = baseCurrency.Id;
+                if (Model.EnteredCurrencyId == 0)
+                    Model.EnteredCurrencyId = baseCurrency.Id;
+            }
+        }
+        if (Model.ExchangeRate == 0)
+            Model.ExchangeRate = 1.0;
+
+        StateHasChanged();
+    }
+
+    private async Task OnFileInputChanged(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var result = await Functions.FileUpload(e, FileUploadService, 25);
+
+            if (result.Item1 == true)
+            {
+                Model.FileAttachment = result.Item2;
+                string message = "Document uploaded successfully";
+                SnackbarService.Add(message, Severity.Success);
+            }
+            else
+            {
+                SnackbarService.Add($"Error: {result.Item2}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Exception: {ex.Message}", Severity.Error);
+            Model.FileAttachment = null;
+        }
+    }
+
+    private async Task OnTransactionTypeChanged()
+    {
+        switch (Model.TranType)
+        {
+            case "RECEIPT":
+                filterCOA = "(Type='REVENUE' OR InterfaceType='ADVANCE' OR InterfaceType='EMPLOYEE') AND ParentId!=0";
+                break;
+
+            case "PAYMENT":
+                filterCOA = "(Type='EXPENSE' OR InterfaceType='ADVANCE' OR InterfaceType='EMPLOYEE') AND ParentId!=0";
+                break;
+
+            default:
+                filterCOA = "(InterfaceType='EMPLOYEE')";
+                break;
+        }
+
+        Acc = await Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/{filterCOA.ToUpper()}", true) ?? new List<ChartOfAccountsModel>();
+        StateHasChanged();
+    }
+
+    private async Task OnAccountChanged()
+    {
+        StateHasChanged();
+    }
+
+    private async Task OnTranDateChanged()
+    {
+        await ValidatePeriodAsync();
+    }
+
+    private async Task ValidatePeriodAsync()
+    {
+        PeriodValidationChecked = false;
+        PeriodValidationMessage = string.Empty;
+        
+        if (Model?.TranDate == null || Model.OrganizationId == 0)
+        {
+            PeriodValidationMessage = string.Empty;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        try
+        {
+            string moduleType = "PETTYCASH"; 
+            string dateStr = Model.TranDate.Value.ToString("yyyy-MM-dd");
+            var result = await Functions.GetAsync<PeriodCloseModel>(
+                $"PeriodClose/GetOpenPeriod/{Model.OrganizationId}/{dateStr}/{moduleType}", 
+                true);
+
+            PeriodValidationChecked = true;
+
+            if (result != null && result.Id > 0 && 
+                (result.Status?.ToUpper() == "OPEN" || result.Status?.ToUpper() == "OPEN_PENDING"))
+            {
+                PeriodValidationMessage = string.Empty;
+            }
+            else
+            {
+                PeriodValidationMessage = $"âš ï¸ Period is CLOSED for {moduleType} module on {dateStr}. You cannot save transactions for this date. Please ensure the period is open before saving.";
+            }
+        }
+        catch (Exception ex)
+        {
+            PeriodValidationChecked = true;
+            PeriodValidationMessage = $"Error checking period status: {ex.Message}";
+        }
+        
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnEnteredCurrencyChanged()
+    {
+        if (Model.EnteredCurrencyId == Model.BaseCurrencyId)
+        {
+            Model.ExchangeRate = 1.0;
+            showCurrencySelection = false; 
+        }
+        else if (Model.EnteredCurrencyId > 0 && Model.BaseCurrencyId > 0)
+        {
+            // If different currency, set default rate to 1.0 (user can change it)
+            Model.ExchangeRate = 1.0;
+        }
+        StateHasChanged();
+    }
+
+    private void ToggleCurrencySelection()
+    {
+        showCurrencySelection = !showCurrencySelection;
+        if (!showCurrencySelection && Model.EnteredCurrencyId == Model.BaseCurrencyId)
+        {
+            Model.ExchangeRate = 1.0;
+        }
+        StateHasChanged();
+    }
+
+}
+

@@ -1,0 +1,576 @@
+﻿@page "/GeneralLedgerDashboard"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MyModelDialog Width="90%" Height="90%" @ref="_myDialog" Title="General Ledger Entry">
+    <ToolbarContent>
+        @if (Action != "VIEW")
+        {
+             <div class="d-flex align-items-center gap-2">
+                 <MudButton StartIcon="@Icons.Material.Filled.Save"
+                            Size="Size.Small"
+                            Variant="Variant.Filled"
+                            Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                            Disabled="@(_glPage?.IsSaving ?? false)"
+                            OnClick="@(() => _glPage?.Save())">
+                     @((Action == "INSERT" ? "Save" : "Update"))
+                 </MudButton>
+
+                 <MudButton StartIcon="@Icons.Material.Filled.AccountBalance"
+                            Size="Size.Small"
+                            Variant="Variant.Filled"
+                            Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                            OnClick="@(() => _glPage?.ShowGLPreview())">
+                     Preview
+                 </MudButton>
+
+                 @if (Action == "UPDATE")
+                 {
+                     <MudButton StartIcon="@Icons.Material.Filled.Delete"
+                                Size="Size.Small"
+                                Variant="Variant.Filled"
+                                Color="Color.Error"
+                                Style="background: rgba(244, 67, 54, 0.8); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                                OnClick="@(() => _glPage?.Delete())">
+                         Delete
+                     </MudButton>
+                 }
+             </div>
+        }
+    </ToolbarContent>
+    <ChildContent>
+        <GeneralLedgerPage @ref="_glPage" Action="@Action" CurrentRecord="@(record.Id.ToString())" OnSaved="ChildSaved"/>
+    </ChildContent>
+    <FooterContent>
+    </FooterContent>
+</MyModelDialog>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 2px;">
+    <div class="dashboard-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="me-2" Style="color: white;" />
+                    General Ledger Management
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">Manage journal entries and accounting records</MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 flex-wrap">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <MudDatePicker @bind-Date="startDate"
+                                   Label="Start Date" DateFormat="dd MMM yyyy" Variant="Variant.Outlined" />
+                    <MudDatePicker @bind-Date="endDate"
+                                   Label="End Date" DateFormat="dd MMM yyyy" Variant="Variant.Outlined" />
+                </div>
+                <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Success" 
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="Clear">
+                    New
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.TwoTone.Search" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Primary"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => GetAll())">
+                    Search
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Info"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => Refresh())">
+                    Refresh
+                </MudButton>
+            </div>
+        </div>
+    </div>
+
+    @if (LoadingPanel || data == null)
+    {
+        <SimpleLoading />
+    }
+    else
+    {
+        <MudPaper Elevation="3" Style="border-radius: 12px; overflow: hidden;">
+            <MudDataGrid T="GeneralLedgerHeaderModel"
+                         MultiSelection="false"
+                         Items="@data"
+                         SortMode="SortMode.Multiple"
+                         Filterable="true"
+                         Hideable="true"
+                         RowsPerPage="10"
+                         Dense="true"
+                         Striped="true"
+                         Hover="true"
+                         Class="professional-grid elevation-8">
+
+                <Columns>
+                    <TemplateColumn Title="Actions"
+                                    CellStyle="width: 80px; min-width: 80px;"
+                                    HeaderClass="grid-header">
+                        <CellTemplate Context="row">
+                            <div class="actions-cell">
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                         Color="Color.Primary"
+                                         Dense="true"
+                                         Class="actions-menu">
+                                    <MudMenuItem OnClick="@(() => View(row.Item.Id))"
+                                                 Class="menu-item view-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
+                                        <span>View</span>
+                                    </MudMenuItem>
+                                    @if (row.Item.IsPosted == 0)
+                                    {
+                                        <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
+                                                     Class="menu-item edit-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
+                                            <span>Edit</span>
+                                        </MudMenuItem>
+                                    
+                                        <MudMenuItem OnClick="@(() => Delete(row.Item.Id))"
+                                        Color="Color.Error"
+                                        Class="menu-item delete-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
+                                            <span>Delete</span>
+                                        </MudMenuItem>
+                                    }
+                                    @if (row.Item.IsPosted == 0)
+                                    {
+                                        <MudMenuItem OnClick="@(() => PostEntry(row.Item.EntryNo))"
+                                                     Class="menu-item post-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="menu-icon" />
+                                            <span>Post Entry</span>
+                                        </MudMenuItem>
+                                    }
+                                    <hr />
+                                    <MudMenuItem OnClick="@(() => Print(row.Item.Id))"
+                                                 Class="menu-item print-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Print" Class="menu-icon" />
+                                        <span>Print</span>
+                                    </MudMenuItem>
+                                </MudMenu>
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="x => x.EntryNo"
+                                    Title="Entry No"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="100px" />
+
+                    <PropertyColumn Property="x => x.EntryDate"
+                                    Title="Entry Date"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Format="dd-MMM-yyyy"
+                                    Width="120px" />
+
+                    <PropertyColumn Property="x => x.Source"
+                                    Title="Source"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="100px" />
+
+                    <PropertyColumn Property="x => x.Description"
+                                    Title="Description"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="200px" />
+
+                    <PropertyColumn Property="x => x.TotalDebit"
+                                    Title="Amount"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Format="#,##0.00"
+                                    Width="120px" />
+
+                    <PropertyColumn Property="x => x.PartyName"
+                                    Title="Party"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="150px" />
+
+                    <PropertyColumn Property="x => x.ReferenceNo"
+                                    Title="Reference #"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="120px" />
+
+                    <TemplateColumn Title="Currency"
+                                    Sortable="false"
+                                    Filterable="false"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="100px">
+                        <CellTemplate>
+                            @{
+                                var currencyId = context.Item.EnteredCurrencyId > 0 ? context.Item.EnteredCurrencyId : context.Item.BaseCurrencyId;
+                            }
+                            @if (currencyId > 0)
+                            {
+                                <MudChip Size="Size.Small" Variant="Variant.Text" Color="Color.Info">
+                                    @(GetCurrencyCode(currencyId))
+                                </MudChip>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <TemplateColumn Title="Rate"
+                                    Sortable="false"
+                                    Filterable="false"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell text-end"
+                                    Width="100px">
+                        <CellTemplate>
+                            @if (context.Item.ExchangeRate != 1.0)
+                            {
+                                <span class="fw-semibold">@context.Item.ExchangeRate.ToString("N6")</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <TemplateColumn Title="Status"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="100px">
+                        <CellTemplate Context="row">
+                            @if (row.Item.IsPosted == 1)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled">Posted</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Filled">Draft</MudChip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                </Columns>
+
+                <PagerContent>
+                    <div class="pager-container">
+                        <MudDataGridPager T="GeneralLedgerHeaderModel" Class="grid-pager" />
+                    </div>
+                </PagerContent>
+            </MudDataGrid>
+        </MudPaper>
+    }
+</MudContainer>
+
+<style>
+    .dashboard-header {
+        padding: 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 8px;
+    }
+
+    .dashboard-header .mud-typography {
+        color: white !important;
+    }
+
+    .dashboard-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .dashboard-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+</style>
+
+@code
+{
+    GeneralLedgerHeaderModel record = new();
+    List<GeneralLedgerHeaderModel> data = new();
+    List<CurrenciesModel> Currencies = new();
+
+    public DateTime? startDate { get; set; } = DateTime.Today.AddDays(-30);
+    public DateTime? endDate { get; set; } = DateTime.Today;
+
+    [Parameter] public string? Action { get; set; } = "INSERT";
+    private bool LoadingPanel { get; set; } = false;
+    private MyModelDialog? _myDialog;
+    private GeneralLedgerPage? _glPage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Globals.AccessLevel = Globals.PageAccess(NavManager, "GeneralLedgerDashboard");
+            Currencies = await Functions.GetAsync<List<CurrenciesModel>>($"Currencies/Search", true) ?? new List<CurrenciesModel>();
+            await GetAll();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error initializing: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private string GetCurrencyCode(int currencyId)
+    {
+        if (currencyId == 0) return "-";
+        var currency = Currencies.FirstOrDefault(c => c.Id == currencyId);
+        return currency?.Code ?? "-";
+    }
+
+    protected async Task GetAll()
+    {
+        try
+        {
+            LoadingPanel = true;
+            
+            string criteria = string.Empty;
+            if (startDate.HasValue && endDate.HasValue)
+            {
+                // Format dates for SQL comparison - use CAST to ensure proper date comparison
+                string formattedStartDate = startDate.Value.ToString("yyyy-MM-dd");
+                // Add 1 day to end date to include the entire end date in the range
+                string formattedEndDateNextDay = endDate.Value.Date.AddDays(1).ToString("yyyy-MM-dd");
+                criteria = $"EntryDate >= CAST('{formattedStartDate}' AS DATE) AND EntryDate < CAST('{formattedEndDateNextDay}' AS DATE)";
+            }
+            else if (startDate.HasValue)
+            {
+                string formattedStartDate = startDate.Value.ToString("yyyy-MM-dd");
+                criteria = $"EntryDate >= CAST('{formattedStartDate}' AS DATE)";
+            }
+            else if (endDate.HasValue)
+            {
+                // Add 1 day to end date to include the entire end date in the range
+                string formattedEndDateNextDay = endDate.Value.Date.AddDays(1).ToString("yyyy-MM-dd");
+                criteria = $"EntryDate < CAST('{formattedEndDateNextDay}' AS DATE)";
+            }
+            
+            string url = "GeneralLedger/Search";
+            if (!string.IsNullOrEmpty(criteria))
+            {
+                url += $"/{Uri.EscapeDataString(criteria)}";
+            }
+            
+            data = await Functions.GetAsync<List<GeneralLedgerHeaderModel>>(url, true) ?? new List<GeneralLedgerHeaderModel>();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading data: {ex.Message}", Severity.Error);
+            data = new List<GeneralLedgerHeaderModel>();
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    protected async Task Refresh()
+    {
+        await GetAll();
+        StateHasChanged();
+    }
+
+    protected void Clear()
+    {
+        try
+        {
+            Action = "INSERT";
+            record = new GeneralLedgerHeaderModel();
+            record.Details = new System.Collections.ObjectModel.ObservableCollection<GeneralLedgerDetailModel>();
+            record.Source = "MANUAL";
+            if (_myDialog != null)
+            {
+                _myDialog.Show();
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    protected async Task View(int id)
+    {
+        try
+        {
+            LoadingPanel = true;
+            Action = "VIEW";
+            record = await Functions.GetAsync<GeneralLedgerHeaderModel>($"GeneralLedger/Get/{id}", true) ?? new GeneralLedgerHeaderModel();
+            
+            if (record.Details == null)
+                record.Details = new System.Collections.ObjectModel.ObservableCollection<GeneralLedgerDetailModel>();
+                
+            LoadingPanel = false;
+            if (_myDialog != null)
+            {
+                _myDialog.Show();
+            }
+        }
+        catch (Exception ex)
+        {
+            LoadingPanel = false;
+            SnackbarService.Add($"Error loading record: {ex.Message}", Severity.Error);
+        }
+    }
+
+    protected async Task Edit(int id)
+    {
+        try
+        {
+            LoadingPanel = true;
+            Action = "UPDATE";
+            record = await Functions.GetAsync<GeneralLedgerHeaderModel>($"GeneralLedger/Get/{id}", true) ?? new GeneralLedgerHeaderModel();
+            if (record.Details == null)
+                record.Details = new System.Collections.ObjectModel.ObservableCollection<GeneralLedgerDetailModel>();
+            LoadingPanel = false;
+            if (_myDialog != null)
+            {
+                _myDialog.Show();
+            }
+        }
+        catch (Exception ex)
+        {
+            LoadingPanel = false;
+            SnackbarService.Add($"Error loading record: {ex.Message}", Severity.Error);
+        }
+    }
+
+    protected async Task Delete(int id)
+    {
+        try
+        {
+            var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+            if (res == false)
+                return;
+
+            Action = "SOFTDELETE";
+            record = await Functions.GetAsync<GeneralLedgerHeaderModel>($"GeneralLedger/Get/{id}", true) ?? new GeneralLedgerHeaderModel();
+            await Save();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    protected async Task PostEntry(string entryNo)
+    {
+        try
+        {
+            var res = await Functions.ShowConfirmation(dialogService, "Do you want to post this entry? Once posted, it cannot be modified.");
+            if (res == false)
+                return;
+
+            LoadingPanel = true;
+            var result = await Functions.PostAsync<string>($"GeneralLedger/PostEntry", entryNo, true);
+            LoadingPanel = false;
+
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+            }
+            else
+            {
+                SnackbarService.Add("Entry posted successfully", Severity.Success);
+                await GetAll();
+            }
+        }
+        catch (Exception ex)
+        {
+            LoadingPanel = false;
+            SnackbarService.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    protected void Print(int id)
+    {
+        NavManager.NavigateTo($"/GeneralLedgerReport/{id}");
+    }
+
+    protected async Task Save()
+    {
+        try
+        {
+            LoadingPanel = true;
+             
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            var result = await Functions.PostAsync<GeneralLedgerHeaderModel>($"GeneralLedger/{Action}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+            }
+            else
+            {
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) 
+                {
+                    await Edit(result.Result!.Id);
+                }
+            }
+        
+            await GetAll();
+            if (_myDialog != null)
+            {
+                _myDialog.Hide();
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error saving: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    private async Task ChildSaved()
+    {
+        await GetAll();
+        if (_myDialog != null)
+        {
+            _myDialog.Hide();
+        }
+        StateHasChanged();
+    }
+}
+

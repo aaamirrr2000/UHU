@@ -1,0 +1,126 @@
+/* Shared report grid – use .report-grid-wrapper and .report-grid-table for consistent tables across reports */
+
+.report-grid-wrapper {
+    overflow: auto;
+    max-height: calc(100vh - 280px);
+    border-radius: 10px;
+    border: 1px solid var(--mud-palette-lines-default);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04);
+}
+
+.report-grid-wrapper::-webkit-scrollbar { height: 10px; }
+.report-grid-wrapper::-webkit-scrollbar-track { background: var(--mud-palette-background-grey); border-radius: 5px; }
+.report-grid-wrapper::-webkit-scrollbar-thumb { background: var(--mud-palette-lines-default); border-radius: 5px; }
+.report-grid-wrapper::-webkit-scrollbar-thumb:hover { background: var(--mud-palette-primary-lighten); }
+
+.report-grid-table {
+    width: 100%;
+    min-width: 960px;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.875rem;
+}
+
+.report-grid-table th,
+.report-grid-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+    border-right: 1px solid var(--mud-palette-lines-default);
+    white-space: nowrap;
+}
+
+.report-grid-table th:last-child,
+.report-grid-table td:last-child { border-right: none; }
+
+.report-grid-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: linear-gradient(180deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    color: rgba(255,255,255,0.98);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
+.report-grid-table thead th.report-grid-col-code,
+.report-grid-table thead th.report-grid-col-name {
+    z-index: 4;
+    left: 0;
+    box-shadow: 2px 0 4px rgba(0,0,0,0.06);
+}
+
+.report-grid-table thead th.report-grid-col-name { left: 120px; }
+
+.report-grid-table .report-grid-col-code {
+    min-width: 120px;
+    max-width: 140px;
+    text-align: left !important;
+    font-variant-numeric: tabular-nums;
+}
+
+.report-grid-table .report-grid-col-name {
+    min-width: 200px;
+    max-width: 280px;
+    text-align: left !important;
+    white-space: normal;
+}
+
+.report-grid-table .report-grid-col-nature { min-width: 80px; text-align: left !important; }
+.report-grid-table .report-grid-col-currency { min-width: 72px; text-align: left !important; }
+.report-grid-table .report-grid-col-num {
+    min-width: 100px;
+    text-align: right !important;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+}
+
+.report-grid-table tbody .report-grid-col-code,
+.report-grid-table tbody .report-grid-col-name {
+    position: sticky;
+    background: var(--mud-palette-background);
+    z-index: 1;
+}
+
+.report-grid-table tbody .report-grid-col-name { left: 120px; }
+
+.report-grid-table tbody tr.report-grid-row:nth-child(even) .report-grid-col-code,
+.report-grid-table tbody tr.report-grid-row:nth-child(even) .report-grid-col-name {
+    background: var(--mud-palette-background-grey);
+}
+
+.report-grid-table tbody tr.report-grid-row:nth-child(even) td {
+    background: var(--mud-palette-background-grey);
+}
+
+/* Full-row hover: apply to every cell so sticky columns also highlight */
+.report-grid-table tbody tr.report-grid-row:hover td {
+    background: var(--mud-palette-action-hover) !important;
+}
+
+.report-grid-totals-row {
+    background: linear-gradient(180deg, var(--mud-palette-primary-lighten) 0%, rgba(var(--mud-palette-primary-rgb), 0.15) 100%) !important;
+    border-top: 2px solid var(--mud-palette-primary);
+    font-weight: 600;
+}
+
+.report-grid-totals-row .report-grid-col-code,
+.report-grid-totals-row .report-grid-col-name { background: inherit !important; }
+
+.report-grid-totals-label {
+    text-align: right !important;
+    padding-right: 14px !important;
+    font-weight: 600;
+}
+
+.report-grid-total-cell { font-weight: 600; }
+
+@media print {
+    .report-grid-wrapper { max-height: none; overflow: visible; border: none; box-shadow: none; }
+    .report-grid-table thead th.report-grid-col-code,
+    .report-grid-table thead th.report-grid-col-name,
+    .report-grid-table tbody .report-grid-col-code,
+    .report-grid-table tbody .report-grid-col-name { position: static; }
+}

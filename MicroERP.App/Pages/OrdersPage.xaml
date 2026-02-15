@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             x:Class="MicroERP.App.Pages.OrdersPage"
+             Title="Orders"
+             BackgroundColor="White">
+
+    <ContentPage.Background>
+        <LinearGradientBrush EndPoint="0,1">
+            <GradientStop Color="#E6F0FA" Offset="0.0" />
+            <GradientStop Color="#FFFFFF" Offset="1.0" />
+        </LinearGradientBrush>
+    </ContentPage.Background>
+
+    <ScrollView>
+
+        <Border StrokeThickness="0"
+                    Margin="5"
+                    Padding="5"
+                    BackgroundColor="White"
+                    HorizontalOptions="Fill"
+                    StrokeShape="RoundRectangle 15">
+            <Border.Shadow>
+                <Shadow Brush="#20000000" Offset="0,5" Radius="10" Opacity="0.3" />
+            </Border.Shadow>
+
+            <VerticalStackLayout Padding="10" Spacing="5">
+                <Label Text="Orders" FontAttributes="Bold" FontSize="28"
+                   HorizontalOptions="Center" TextColor="#333" FontFamily="Orbitron"/>
+
+                <HorizontalStackLayout Spacing="5" Padding="5">
+                    <DatePicker x:Name="FromDatePicker"
+                                    MaximumDate="{x:Static sys:DateTime.Now}"
+                                    Date="{x:Static sys:DateTime.Now}"
+                                    BackgroundColor="#F8F9FA"
+                                    TextColor="#333333"
+                                    FontSize="16"
+                                    FontFamily="Roboto"
+                                    WidthRequest="140"
+                                    HeightRequest="50">
+                    </DatePicker>
+
+
+                    <SearchBar x:Name="BillSearchBar"
+                                  HorizontalOptions="Fill"
+                                  Placeholder="Search bills..."
+                                  TextChanged="OnSearchTextChanged"
+                                  BackgroundColor="#F8F9FA"
+                                  TextColor="#333333"
+                                  PlaceholderColor="#999999"
+                                  FontSize="16"
+                                  FontFamily="Roboto"
+                                  HeightRequest="50">
+                    </SearchBar>
+
+                    <ImageButton Source="search.png"
+                                CornerRadius="10"
+                                WidthRequest="100"
+                                HeightRequest="50"
+                                VerticalOptions="Center"
+                                Clicked="OnFilterClicked">
+                       
+                    </ImageButton>
+
+                </HorizontalStackLayout>
+
+                <ActivityIndicator x:Name="LoadingIndicator"
+                                      IsRunning="False"
+                                      IsVisible="False"
+                                      Color="#00C4B4"
+                                      HeightRequest="40" />
+                <RefreshView x:Name="refreshView" IsRefreshing="False" Refreshing="OnRefresh">
+                    <CollectionView x:Name="BillsCollectionView" SelectionMode="None">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border StrokeThickness="0"
+                    Margin="5"
+                    Padding="5"
+                    BackgroundColor="White"
+                    HorizontalOptions="Fill"
+                    StrokeShape="RoundRectangle 10">
+                                    <Border.Shadow>
+                                        <Shadow Brush="#20000000" Offset="0,3" Radius="8" Opacity="0.2" />
+                                    </Border.Shadow>
+
+                                    <VerticalStackLayout Padding="5" Spacing="10">
+
+                                        <!-- Bill Info -->
+                                        <VerticalStackLayout>
+                                            <Label Text="{Binding SeqNo}"
+                               FontAttributes="Bold"
+                               FontSize="18"
+                               TextColor="Black"
+                               FontFamily="Roboto" />
+
+                                            <Label Text="{Binding TableName}"
+                               FontSize="14"
+                               TextColor="#333333"
+                               FontFamily="Roboto" />
+
+                                            <Label Text="{Binding TranDate, StringFormat='Date: {0:dd-MMM-yyyy}'}"
+                               FontSize="14"
+                               TextColor="#333333"
+                               FontFamily="Roboto" />
+
+                                            <Label Text="{Binding BillAmount, StringFormat='Amount: {0:N}'}"
+                               FontSize="14"
+                               TextColor="#333333"
+                               FontFamily="Roboto" />
+                                        </VerticalStackLayout>
+
+                                        <!-- Action Buttons -->
+                                        <HorizontalStackLayout Spacing="10">
+                                            <Button Text="View"
+                                BackgroundColor="#005B99"
+                                TextColor="White"
+                                HeightRequest="50"
+                                FontSize="12"
+                                FontFamily="Roboto"
+                                CornerRadius="5"
+                                Clicked="OnEditClicked" />
+
+                                            <Button Text="Delete"
+                                BackgroundColor="#D00000"
+                                TextColor="White"
+                                HeightRequest="50"
+                                FontSize="12"
+                                FontFamily="Roboto"
+                                CornerRadius="5"
+                                IsVisible="{Binding IsDeleteVisible}"
+                                Clicked="OnDeleteClicked" />
+
+                                            <Button Text="Complete"
+                                BackgroundColor="#15C39A"
+                                TextColor="White"
+                                HeightRequest="50"
+                                FontSize="12"
+                                FontFamily="Roboto"
+                                CornerRadius="5"
+                                IsVisible="{Binding IsStatusVisible}"
+                                Clicked="OnStatusClicked" />
+                                        </HorizontalStackLayout>
+
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                    </RefreshView>
+            </VerticalStackLayout>
+        </Border>
+    </ScrollView>
+</ContentPage>
+

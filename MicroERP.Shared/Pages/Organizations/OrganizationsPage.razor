@@ -1,0 +1,597 @@
+@page "/OrganizationsPage/{Action}/{CurrentRecord?}"
+@using Microsoft.AspNetCore.Components.Forms
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject FileUploadService FileUploadService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+    <EditForm Model="record">
+    <div class="text-end" style="margin-top:10px;">
+        @if (Action != "VIEW")
+        {
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                @(Action == "INSERT" ? "Save" : "Update")
+            </MudButton>
+        }
+    </div>
+
+    <br />
+
+    <MudExpansionPanels MultiExpansion="true">
+
+        <!-- Organization Information Panel -->
+        <MudExpansionPanel Text="Organization Information" Expanded="true" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-building"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">@(string.IsNullOrWhiteSpace(record.Name) ? "NO NAME" : record.Name)</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Organization basic information</MudText>
+                    </div>
+                </div>
+                
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudTextField id="Code"
+                                      @bind-Value="record.Code"
+                                      Label="Code"
+                                      Placeholder="Code"
+                                      ReadOnly="true"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Code)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudTextField id="Name"
+                                      @bind-Value="record.Name"
+                                      Label="Name"
+                                      Placeholder="Name"
+                                      ReadOnly="false"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Name)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudTextField id="Description"
+                                      @bind-Value="record.Description"
+                                      Label="Description"
+                                      Placeholder="Description"
+                                      ReadOnly="false"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Description)" />
+                        </div>
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <!-- Contact Information Panel -->
+        <MudExpansionPanel Text="Contact Information" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-address-card"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Contact Information</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Organization contact details</MudText>
+                    </div>
+                </div>
+                
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudTextField id="Phone"
+                                      @bind-Value="record.Phone"
+                                      Label="Phone"
+                                      Placeholder="Phone"
+                                      ReadOnly="false"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Phone)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudTextField id="Email"
+                                      @bind-Value="record.Email"
+                                      Label="Email"
+                                      Placeholder="Email"
+                                      ReadOnly="false"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Email)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudTextField id="Address"
+                                      @bind-Value="record.Address"
+                                      Label="Address"
+                                      Placeholder="Address"
+                                      ReadOnly="false"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Address)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudTextField id="Website"
+                                      @bind-Value="record.Website"
+                                      Label="Website"
+                                      Placeholder="Website"
+                                      ReadOnly="false"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1"></MudTextField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Website)" />
+                        </div>
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <!-- Business Details Panel -->
+        <MudExpansionPanel Text="Business Details" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-briefcase"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Business Details</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Industry and time settings</MudText>
+                    </div>
+                </div>
+                
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudSelect T="string"
+                                   @bind-Value="record.Industry"
+                                   Label="Industry"
+                                   Placeholder="Industry"
+                                   Variant="Variant.Outlined"
+                                   ReadOnly="true"
+                                   FullWidth="@true"
+                                   Class="flex-grow-1">
+                            @if (Industry != null)
+                            {
+                                foreach (var ind in Industry)
+                                {
+                                    <MudSelectItem T="string" Value="@ind.ListValue">@ind.ListValue</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Industry)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudSelect T="string"
+                                   @bind-Value="record.TimeZone"
+                                   Label="Time Zone"
+                                   Placeholder="Time Zone"
+                                   Variant="Variant.Outlined"
+                                   ReadOnly="false"
+                                   FullWidth="@true"
+                                   Class="flex-grow-1">
+                            @if (timeZones != null)
+                            {
+                                @foreach (var tz in timeZones)
+                                {
+                                    <MudSelectItem T="string" Value="@tz.Id">@tz.DisplayName</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.TimeZone)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudNumericField @bind-Value="record.GMT"
+                                         Label="GMT"
+                                         Placeholder="GMT"
+                                         ReadOnly="false"
+                                         Format="#,##0.00"
+                                         Variant="Variant.Outlined"
+                                         FullWidth="@true"
+                                         Class="flex-grow-1"></MudNumericField>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.GMT)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudDatePicker @bind-Date="record.Expiry"
+                                       Label="Expiry" DateFormat="dd MMM yyyy"
+                                       Placeholder="Expiry" Variant="Variant.Outlined"
+                                       FullWidth="@true"
+                                       Class="flex-grow-1"></MudDatePicker>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.Expiry)" />
+                        </div>
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <!-- Organization Structure Panel -->
+        <MudExpansionPanel Text="Organization Structure" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-sitemap"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Organization Structure</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Hierarchy and activation status</MudText>
+                    </div>
+                </div>
+                
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudSelect @bind-Value="record.ParentId"
+                                   Label="Parent Organization"
+                                   Placeholder="Parent"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="@true"
+                                   Class="flex-grow-1">
+                            @if (Par != null && Par.Any())
+                            {
+                                foreach (var i in Par)
+                                {
+                                    <MudSelectItem T="int" Value="@i.Id">@i.Name</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.ParentId)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudSelect T="int"
+                                   @bind-Value="record.IsActive"
+                                   Label="Active"
+                                   Placeholder="Active"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   FullWidth="@true"
+                                   Class="flex-grow-1">
+                            @if (record.IsActive != 0 && record.IsActive != 1)
+                            {
+                                record.IsActive = 1;
+                            }
+                            <MudSelectItem T="int" Value="1">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                Enable
+                            </MudSelectItem>
+                            <MudSelectItem T="int" Value="0">
+                                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" Class="me-2" />
+                                Disable
+                            </MudSelectItem>
+                        </MudSelect>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.IsActive)" />
+                        </div>
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <!-- Branding & Images Panel -->
+        <MudExpansionPanel Text="Branding & Images" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-images"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Branding & Images</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Organization logo and wallpaper</MudText>
+                    </div>
+                </div>
+                <hr style="height: 6px; border: none; background: #F44336; border-radius: 10px;" />
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-center align-items-start flex-wrap gap-4 w-100">
+                            <!-- Logo Card -->
+                            <div class="p-3 border rounded shadow-sm bg-white" style="width: 300px;">
+                                <label class="small fw-bold text-uppercase d-block mb-2 text-center">Logo</label>
+
+                                <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
+                                    @if (!string.IsNullOrEmpty(record.Logo))
+                                    {
+                                        <img src="@Globals.GetImageUrl(record.Logo)"
+                                             class="img-fluid rounded"
+                                             alt="Company Logo"
+                                             style="max-height: 100%; max-width: 100%; object-fit: cover;" />
+                                    }
+                                    else
+                                    {
+                                        <div class="d-flex align-items-center justify-content-center bg-secondary rounded-circle"
+                                             style="width: 120px; height: 120px;">
+                                            <i class="fas fa-image text-white fs-3"></i>
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="text-center">
+                                    <InputFile OnChange="OnFileInputChanged" class="form-control form-control-sm" />
+                                </div>
+                            </div>
+
+                            <!-- Wallpaper Card -->
+                            <div class="p-3 border rounded shadow-sm bg-white" style="width: 300px;">
+                                <label class="small fw-bold text-uppercase d-block mb-2 text-center">Wallpaper</label>
+
+                                <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
+                                    @if (!string.IsNullOrEmpty(record.Wallpaper))
+                                    {
+                                        <img src="@Globals.GetImageUrl(record.Wallpaper)"
+                                             class="img-fluid rounded"
+                                             alt="Wallpaper"
+                                             style="max-height: 100%; max-width: 100%; object-fit: cover;" />
+                                    }
+                                    else
+                                    {
+                                        <div class="d-flex align-items-center justify-content-center bg-secondary rounded-circle"
+                                             style="width: 120px; height: 120px;">
+                                            <i class="fas fa-image text-white fs-3"></i>
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="text-center">
+                                    <InputFile OnChange="OnWallpaperInputChanged" class="form-control form-control-sm" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+    </MudExpansionPanels>
+    </EditForm>
+</div>
+
+@code
+{
+    OrganizationsModel record = new();
+    List<OrganizationsModel> Par = new();
+    List<TypeCodeModel> Industry = null!;
+    List<TimeZoneInfo> timeZones = null!;
+
+    [Parameter] public string? Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+    [Parameter] public EventCallback OnSaved { get; set; }
+    
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        Par = await Functions.GetAsync<List<OrganizationsModel>>($"Organizations/Search", true) ?? new List<OrganizationsModel>();
+        timeZones = new List<TimeZoneInfo>(TimeZoneInfo.GetSystemTimeZones());
+        Industry = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/ListName/INDUSTRY", true) ?? new List<TypeCodeModel>();
+
+      
+        if (Action == "INSERT")
+        {
+            record = new OrganizationsModel();
+            record.IsActive = 1;
+            isReadOnly = false;
+        }
+        else if (Action == "UPDATE")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action == "VIEW")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<OrganizationsModel>($"Organizations/Get/{id}", true) ?? new OrganizationsModel();
+        LoadingPanel = false;
+    }
+
+    protected void GetDefaultValues()
+    {
+
+        if (Par != null && Par.Any() && record.ParentId == 0)
+            record.ParentId = Par.First().Id;
+
+        StateHasChanged();
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new OrganizationsModel();
+        record.IsActive = 1;
+        isReadOnly = false;
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        try
+        {
+            LoadingPanel = true;
+
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            string url = char.ToUpper(Action![0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<OrganizationsModel>($"Organizations/{url}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"Record Not Saved", Severity.Error);
+            }
+            else
+            {
+                await OnSaved.InvokeAsync();
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                    await Edit(result.Result!.Id);
+                else
+                {
+                    await Clear();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning($"Error: {ex.Message}");
+        }
+        finally
+        {
+            LoadingPanel = false;
+
+
+        }
+    }
+
+    private async Task OnFileInputChanged(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var result = await Functions.FileUpload(e, FileUploadService);
+
+            if (result.Item1 == true)
+            {
+                record.Logo = result.Item2;
+                SnackbarService.Add("File uploaded successfully!", Severity.Success);
+            }
+            else
+            {
+                SnackbarService.Add($"Error: {result.Item2}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Exception: {ex.Message}", Severity.Error);
+            record.Logo = null;
+        }
+    }
+
+    private async Task OnWallpaperInputChanged(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var result = await Functions.FileUpload(e, FileUploadService);
+
+            if (result.Item1 == true)
+            {
+                record.Wallpaper = result.Item2;
+                SnackbarService.Add("File uploaded successfully!", Severity.Success);
+            }
+            else
+            {
+                SnackbarService.Add($"Error: {result.Item2}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Exception: {ex.Message}", Severity.Error);
+            record.Wallpaper = null;
+        }
+    }
+
+    protected async Task SetParent(int id)
+    {
+        await Get(id);
+        record.ParentId = 0;
+        isReadOnly = false;
+        await Save();
+    }
+}
+
+

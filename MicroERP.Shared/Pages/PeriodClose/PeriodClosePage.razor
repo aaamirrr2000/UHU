@@ -1,0 +1,94 @@
+﻿@page "/PeriodClosePage/{Action}/{CurrentRecord?}"
+
+<div class="d-flex flex-column" style="margin: 5px; height: 100%; overflow-y: auto;">
+
+    <!-- Period Information -->
+    <MudCard Elevation="1" Class="mb-2" Style="padding: 8px;">
+        <MudCardContent Style="padding: 12px !important;">
+            <div class="row g-2">
+                <div class="col-12 col-md-6 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Period Name</label>
+                    <MudTextField id="PeriodName"
+                                  @bind-Value="Model.PeriodName"
+                                  placeholder="e.g., 2024-01 or Jan-2024"
+                                  ReadOnly="@IsReadOnly"
+                                  Variant="Variant.Outlined"
+                                  Dense="@true"
+                                  FullWidth="@true" />
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Start Date</label>
+                    <MudDatePicker @bind-Date="Model.StartDate" DateFormat="dd MMM yyyy"
+                                   placeholder="Start Date"
+                                   ReadOnly="@IsReadOnly" Variant="Variant.Outlined"
+                                   Dense="@true"
+                                   FullWidth="@true" />
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">End Date</label>
+                    <MudDatePicker @bind-Date="Model.EndDate" DateFormat="dd MMM yyyy"
+                                   placeholder="End Date"
+                                   ReadOnly="@IsReadOnly" Variant="Variant.Outlined"
+                                   Dense="@true"
+                                   FullWidth="@true" />
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Module Type</label>
+                    <MudSelect T="string"
+                               @bind-Value="Model.ModuleType"
+                               Placeholder="Module Type"
+                               Variant="Variant.Outlined"
+                               Dense="@true"
+                               Clearable="@false"
+                               FullWidth="@true"
+                               ReadOnly="@IsReadOnly">
+                        <MudSelectItem T="string" Value=@("ALL")>All Modules</MudSelectItem>
+                        <MudSelectItem T="string" Value=@("STOCK")>Stock</MudSelectItem>
+                        <MudSelectItem T="string" Value=@("SALE")>Sale Invoice</MudSelectItem>
+                        <MudSelectItem T="string" Value=@("PURCHASE")>Purchase Invoice</MudSelectItem>
+                        <MudSelectItem T="string" Value=@("CASHBOOK")>Cashbook</MudSelectItem>
+                        <MudSelectItem T="string" Value=@("GENERALLEDGER")>General Ledger</MudSelectItem>
+                    </MudSelect>
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Status</label>
+                    <MudSelect T="string"
+                               @bind-Value="Model.Status"
+                               Placeholder="Status"
+                               Variant="Variant.Outlined"
+                               Dense="@true"
+                               Clearable="@false"
+                               FullWidth="@true"
+                               ReadOnly="@IsReadOnly">
+                        <MudSelectItem T="string" Value=@("OPEN")>Open</MudSelectItem>
+                        <MudSelectItem T="string" Value=@("OPEN_PENDING")>Open Pending</MudSelectItem>
+                        <MudSelectItem T="string" Value=@("CLOSE")>Close</MudSelectItem>
+                    </MudSelect>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Notes</label>
+                    <MudTextField @bind-Value="Model.Notes"
+                                  placeholder="Additional notes"
+                                  ReadOnly="@IsReadOnly"
+                                  Variant="Variant.Outlined"
+                                  Dense="@true"
+                                  Lines="2"
+                                  FullWidth="@true" />
+                </div>
+            </div>
+        </MudCardContent>
+    </MudCard>
+
+</div>
+
+@code
+{
+    [Parameter] public PeriodCloseModel Model { get; set; } = new();
+    [Parameter] public bool IsReadOnly { get; set; } = true;
+}
+

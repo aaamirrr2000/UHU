@@ -1,0 +1,670 @@
+@page "/TablesPage"
+@using System.Collections.ObjectModel
+@using MudBlazor
+@using Microsoft.Maui.Storage
+@using MicroERP.App.SwiftServe.Helper
+@inject NavigationManager Nav
+@inject CartStateService CartState
+@layout MyMenuLayout
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 8px;">
+    <!-- Professional Header Section -->
+    <div class="tables-header mb-3">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.Restaurant" Class="me-2" Style="color: white;" />
+                    Restaurant Tables
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">
+                    Select a table to start taking orders
+                </MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+                <MudTextField @bind-Value="searchString"
+                            @bind-Value:after="FilterTables"
+                            Placeholder="Search tables..."
+                            Adornment="Adornment.Start"
+                            AdornmentIcon="@Icons.Material.Filled.Search"
+                            IconSize="Size.Small"
+                            Variant="Variant.Outlined"
+                            Immediate="true"
+                            Margin="Margin.Dense"
+                            Class="tables-search-field"
+                            Style="background: rgba(255,255,255,0.95); width: 280px;" />
+                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Info"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => RefreshTables())">
+                    Refresh
+                </MudButton>
+                <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="white--text">
+                    @(FilteredTables?.Count ?? 0) Tables
+                </MudChip>
+            </div>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <!-- Loading State -->
+        <MudPaper Elevation="2" Class="pa-8" Style="border-radius: 12px;">
+            <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 400px;">
+                <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+                <MudText Typo="Typo.body1" Class="mt-4 text-muted">Loading tables...</MudText>
+            </MudStack>
+        </MudPaper>
+    }
+    else if (FilteredTables?.Any() == true)
+    {
+        <MudGrid Spacing="3">
+            @foreach (var table in FilteredTables)
+            {
+                <MudItem xs="12" sm="6" md="4" lg="3">
+                    <!-- Card-style table design matching the reference image -->
+                    <div class="table-card-modern">
+                        <!-- Top Section: Icon, Name, and Location -->
+                        <div class="table-card-header">
+                            <!-- Circular Icon/Profile Picture -->
+                            <div class="table-icon-container">
+                                <div class="table-icon" style="background: @(table.IsAvailable == 1 ? "linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)" : "linear-gradient(135deg, #51cf66 0%, #40c057 100%)");">
+                                    <MudIcon Icon="@Icons.Material.Filled.Restaurant" 
+                                             Size="Size.Medium" 
+                                             Style="color: white; font-size: 28px;" />
+                                </div>
+                            </div>
+                            <!-- Table Name and Location -->
+                            <div class="table-info">
+                                <div class="table-name">@table.TableNumber</div>
+                                @if (!string.IsNullOrEmpty(table.TableLocation))
+                                {
+                                    <div class="table-location">@table.TableLocation</div>
+                                }
+                                else
+                                {
+                                    <div class="table-location">Table #@table.TableNumber</div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Middle Section: Status Title -->
+                        <div class="table-card-title">
+                            @if (table.IsAvailable == 1)
+                            {
+                                <span style="color: #e74c3c; font-weight: 600;">Busy</span>
+                            }
+                            else
+                            {
+                                <span style="color: #27ae60; font-weight: 600;">Available</span>
+                            }
+                        </div>
+
+                        <!-- Body Section: Description -->
+                        <div class="table-card-body">
+                            <div class="table-description">
+                                Capacity: @table.Capacity people
+                                @if (!string.IsNullOrEmpty(table.Notes))
+                                {
+                                    <br />@table.Notes
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Footer Section: Three Service Type Buttons -->
+                        <div class="table-card-footer" style="padding: 12px;">
+                            <MudStack Spacing="2" Class="mb-2">
+                                <!-- Dine-In Button -->
+                                <MudButton Variant="Variant.Filled" 
+                                           Color="Color.Primary" 
+                                           Size="Size.Small" 
+                                           FullWidth="true"
+                                           StartIcon="@Icons.Material.Filled.Restaurant"
+                                           OnClick="@(() => OnServiceTypeSelected(table, "Dine-In"))"
+                                           Disabled="@(table.IsAvailable == 1)"
+                                           Style="text-transform: none; font-weight: 500;">
+                                    Dine-In
+                                </MudButton>
+                                
+                                <!-- Takeaway Button -->
+                                <MudButton Variant="Variant.Filled" 
+                                           Color="Color.Secondary" 
+                                           Size="Size.Small" 
+                                           FullWidth="true"
+                                           StartIcon="@Icons.Material.Filled.ShoppingBag"
+                                           OnClick="@(() => OnServiceTypeSelected(table, "Takeaway"))"
+                                           Disabled="@(table.IsAvailable == 1)"
+                                           Style="text-transform: none; font-weight: 500;">
+                                    Takeaway
+                                </MudButton>
+                                
+                                <!-- Parcel Button -->
+                                <MudButton Variant="Variant.Filled" 
+                                           Color="Color.Tertiary" 
+                                           Size="Size.Small" 
+                                           FullWidth="true"
+                                           StartIcon="@Icons.Material.Filled.Inventory"
+                                           OnClick="@(() => OnServiceTypeSelected(table, "Parcel"))"
+                                           Disabled="@(table.IsAvailable == 1)"
+                                           Style="text-transform: none; font-weight: 500;">
+                                    Parcel
+                                </MudButton>
+                            </MudStack>
+                            
+                            <!-- View Icon Button -->
+                            <div class="text-center mt-2">
+                                <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
+                                               Color="Color.Info" 
+                                               Size="Size.Medium"
+                                               Variant="Variant.Text"
+                                               OnClick="@(() => OnViewOrderClicked(table.Id))"
+                                               Title="View Orders"
+                                               Style="font-size: 28px;">
+                                </MudIconButton>
+                            </div>
+                        </div>
+                    </div>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+    <!-- Empty State -->
+    else if (!isLoading)
+    {
+        <MudPaper Elevation="2" Class="pa-8" Style="border-radius: 12px;">
+            <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 400px;">
+                <MudIcon Icon="@Icons.Material.Filled.Restaurant" Size="Size.Large" Color="Color.Primary" Style="font-size: 80px; opacity: 0.3;" />
+                <MudText Typo="Typo.h6" Class="mt-4 text-muted">No tables found</MudText>
+                <MudText Typo="Typo.body2" Class="text-muted text-center mt-2">
+                    @if (!string.IsNullOrEmpty(searchString))
+                    {
+                        <span>No tables match your search criteria. Try a different search term.</span>
+                    }
+                    else
+                    {
+                        <span>Please ensure tables are configured in the system.</span>
+                    }
+                </MudText>
+                @if (!string.IsNullOrEmpty(searchString))
+                {
+                    <MudButton Variant="Variant.Outlined" 
+                               Color="Color.Primary" 
+                               Size="Size.Small" 
+                               Class="mt-3"
+                               OnClick="@(() => searchString = string.Empty)">
+                        Clear Search
+                    </MudButton>
+                }
+            </MudStack>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    private List<RestaurantTablesModel> Tables = new();
+    private List<RestaurantTablesModel> FilteredTables = new();
+    private string searchString = string.Empty;
+    [CascadingParameter] private List<ItemsModel> _cart { get; set; } = new();
+
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        MyGlobals.PageTitle = "Tables";
+
+        // Ensure BaseURI is set
+        if (string.IsNullOrEmpty(MyGlobals.BaseURI))
+        {
+            string savedUrl = Preferences.Get("BaseURI", "").Trim();
+            MyGlobals.BaseURI = !string.IsNullOrEmpty(savedUrl) ? savedUrl : "https://localhost:7019/api/";
+        }
+
+        var userType = MyGlobals.User?.UserType?.ToUpper() ?? "";
+        if (userType == "ONLINE")
+        {
+            Nav.NavigateTo("/OrdersPage?serviceType=Online");
+            return;
+        }
+
+        StateHasChanged();
+        await LoadTablesAsync();
+    }
+
+    // private void SyncTokenFromStaticGlobals()
+    // {
+    //     // Always sync from static SwiftServe Globals to injected shared project Globals singleton
+    //     if (!string.IsNullOrEmpty(StaticGlobals.Token))
+    //     {
+    //         // Update shared project Globals with values from static SwiftServe Globals
+    //         Globals.Token = StaticGlobals.Token;
+            
+    //         if (StaticGlobals.CurrentUser != null)
+    //         {
+    //             Globals.User = StaticGlobals.CurrentUser;
+    //         }
+            
+    //         if (StaticGlobals.CurrentOrg != null)
+    //         {
+    //             Globals.Organization = StaticGlobals.CurrentOrg;
+    //         }
+            
+    //         // Ensure BaseURI is set
+    //         if (string.IsNullOrEmpty(Globals.BaseURI) && !string.IsNullOrEmpty(StaticGlobals.Token))
+    //         {
+    //             string savedUrl = Preferences.Get("BaseURI", "").Trim();
+    //             Globals.BaseURI = !string.IsNullOrEmpty(savedUrl) ? savedUrl : "https://localhost:7019/api/";
+    //         }
+            
+    //         Serilog.Log.Information($"TablesPage: Synced token from static SwiftServe Globals to shared project Globals - Token length: {Globals.Token?.Length ?? 0}, User: {Globals.User?.Username ?? "NULL"}");
+    //     }
+    //     // If injected Globals has token but static Globals doesn't, sync to static Globals (for backwards compatibility)
+    //     else if (!string.IsNullOrEmpty(Globals.Token))
+    //     {
+    //         StaticGlobals.Token = Globals.Token;
+    //         if (Globals.User != null)
+    //         {
+    //             StaticGlobals.CurrentUser = Globals.User;
+    //         }
+    //         if (Globals.Organization != null)
+    //         {
+    //             StaticGlobals.CurrentOrg = Globals.Organization;
+    //         }
+    //         Serilog.Log.Information($"TablesPage: Synced token from shared project Globals to static SwiftServe Globals - Token length: {Globals.Token?.Length ?? 0}");
+    //     }
+    // }
+
+    // private async Task AuthenticateIfNeeded()
+    // {
+    //     // Check if token is already available
+    //     if (!string.IsNullOrEmpty(Globals.Token))
+    //     {
+    //         Serilog.Log.Information("Token already available in Globals, skipping authentication");
+    //         return;
+    //     }
+
+    //     try
+    //     {
+    //         // Read username and password from Preferences (stored by LoginPage.xaml.cs)
+    //         string username = Preferences.Get("Username", "");
+    //         string password = Preferences.Get("Password", "");
+
+    //         if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+    //         {
+    //             Serilog.Log.Warning("Username or password not found in Preferences");
+    //             return;
+    //         }
+
+    //         Serilog.Log.Information($"Authenticating in TablesPage with username: {username}");
+
+    //         // URL encode username and password
+    //         string encodedUsername = Uri.EscapeDataString(username);
+    //         string encodedPassword = Uri.EscapeDataString(password);
+
+    //         // Call login API to get token
+    //         var user = await Functions.GetAsync<UsersModel>($"api/Login/Login/{encodedUsername}/{encodedPassword}", false);
+
+    //         if (user != null && !string.IsNullOrEmpty(user.Token))
+    //         {
+    //             // Ensure BaseURI is set in shared project Globals
+    //             if (string.IsNullOrEmpty(Globals.BaseURI))
+    //             {
+    //                 string savedUrl = Preferences.Get("BaseURI", "").Trim();
+    //                 Globals.BaseURI = !string.IsNullOrEmpty(savedUrl) ? savedUrl : "https://localhost:7019/api/";
+    //             }
+
+    //             // Load organization first
+    //             var org = await Functions.GetAsync<List<OrganizationsModel>>($"api/Organizations/Search", true) ?? new List<OrganizationsModel>();
+                
+    //             // Update shared project Globals with all user data
+    //             Globals.Token = user.Token;
+    //             Globals.User = user;
+    //             if (org != null && org.Any())
+    //             {
+    //                 Globals.Organization = org.FirstOrDefault()!;
+    //             }
+
+    //             // Also update static SwiftServe Globals for future syncs
+    //             StaticGlobals.Token = Globals.Token;
+    //             StaticGlobals.CurrentUser = Globals.User;
+    //             StaticGlobals.CurrentOrg = Globals.Organization;
+
+    //             Serilog.Log.Information($"Authentication successful in TablesPage - Token stored in shared project Globals - Token length: {Globals.Token?.Length ?? 0}, User: {Globals.User?.Username ?? "NULL"}");
+    //             StateHasChanged();
+    //         }
+    //         else
+    //         {
+    //             Serilog.Log.Warning("Authentication failed in TablesPage - Invalid credentials");
+    //         }
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         Serilog.Log.Error(ex, $"Error during authentication in TablesPage: {ex.Message}");
+    //     }
+    // }
+
+    private async Task LoadTablesAsync()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+            
+            string apiUrl = BuildApiUrl("api/RestaurantTables/Search");
+            
+            Serilog.Log.Information($"Calling RestaurantTables API: {apiUrl}");
+            
+            var result = await MyFunctions.GetAsync<List<RestaurantTablesModel>>(apiUrl, true);
+
+            if (result != null && result.Any())
+            {
+                Serilog.Log.Information($"Loaded {result.Count} tables successfully");
+                Tables = result.Select(table =>
+                {
+                    table.AvailableStatus = table.IsAvailable == 1 ? "Busy" : "Available";
+                    return table;
+                }).OrderBy(t => t.TableNumber).ToList();
+                
+                FilteredTables = Tables.ToList();
+            }
+            else
+            {
+                Serilog.Log.Warning("No tables returned from API");
+                Tables = new List<RestaurantTablesModel>();
+                FilteredTables = new List<RestaurantTablesModel>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Error(ex, $"Error loading tables: {ex.Message}");
+            Tables = new List<RestaurantTablesModel>();
+            FilteredTables = new List<RestaurantTablesModel>();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void FilterTables()
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+        {
+            FilteredTables = Tables.ToList();
+        }
+        else
+        {
+            var searchLower = searchString.ToLower();
+            FilteredTables = Tables.Where(t => 
+                t.TableNumber?.ToLower().Contains(searchLower) == true ||
+                t.TableLocation?.ToLower().Contains(searchLower) == true ||
+                t.Capacity.ToString().Contains(searchLower)
+            ).ToList();
+        }
+        StateHasChanged();
+    }
+
+    private async Task RefreshTables()
+    {
+        await LoadTablesAsync();
+    }
+
+    private void OnServiceTypeSelected(RestaurantTablesModel selectedTable, string serviceType)
+    {
+        if (MyGlobals._selectedTable == null || MyGlobals._selectedTable.Id != selectedTable.Id)
+        {
+            _cart?.Clear();
+        }
+
+        MyGlobals._selectedTable = selectedTable;
+        MyGlobals._serviceType = serviceType;
+        Nav.NavigateTo($"/OrderPage?tableId={MyGlobals._selectedTable.Id}");
+    }
+
+    private void OnViewOrderClicked(int tableId)
+    {
+        Nav.NavigateTo($"/OrderDetailsPage/TABLE/{tableId}");
+    }
+
+    private string GetStatusBadgeStyle(int isAvailable)
+    {
+        return isAvailable == 1 
+            ? "background: rgba(255,255,255,0.95); color: #c92a2a;" 
+            : "background: rgba(255,255,255,0.95); color: #2b8a3e;";
+    }
+
+    private string GetGradientColor(int isAvailable, bool isStart)
+    {
+        if (isAvailable == 1)
+        {
+            return isStart ? "#ff6b6b" : "#ee5a6f";
+        }
+        else
+        {
+            return isStart ? "#51cf66" : "#40c057";
+        }
+    }
+
+    /// <summary>
+    /// Builds the API URL by ensuring proper format based on BaseURI
+    /// Functions.GetAsync concatenates BaseURI + url directly
+    /// If endpoint already has "api/", we need to check if BaseURI also has "api/" to avoid duplication
+    /// </summary>
+    private string BuildApiUrl(string endpoint)
+    {
+        if (string.IsNullOrEmpty(MyGlobals.BaseURI))
+            return endpoint.TrimStart('/');
+
+        string baseUri = MyGlobals.BaseURI.TrimEnd('/');
+        string normalizedEndpoint = endpoint.TrimStart('/');
+
+        // Check if BaseURI already includes "api" (case-insensitive)
+        bool baseUriHasApi = baseUri.EndsWith("/api", StringComparison.OrdinalIgnoreCase) || 
+                            baseUri.EndsWith("/api/", StringComparison.OrdinalIgnoreCase) ||
+                            baseUri.EndsWith("api", StringComparison.OrdinalIgnoreCase);
+
+        // Check if endpoint already starts with "api/"
+        bool endpointHasApi = normalizedEndpoint.StartsWith("api/", StringComparison.OrdinalIgnoreCase);
+
+        if (baseUriHasApi && endpointHasApi)
+        {
+            // Both have "api/", remove it from endpoint to avoid duplication
+            return normalizedEndpoint.Substring(4); // Remove "api/"
+        }
+        else if (!baseUriHasApi && !endpointHasApi)
+        {
+            // Neither has "api/", add it to endpoint
+            return $"api/{normalizedEndpoint}";
+        }
+        else
+        {
+            // One has "api/" and the other doesn't, return endpoint as-is
+            return normalizedEndpoint;
+        }
+    }
+}
+
+<style>
+    .tables-header {
+        padding: 16px 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .tables-header .mud-typography {
+        color: white !important;
+    }
+
+    .tables-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    .tables-search-field .mud-input-root {
+        color: var(--mud-palette-text-primary) !important;
+        border-radius: 28px !important;
+        overflow: hidden !important;
+    }
+
+    .tables-search-field .mud-input-root input {
+        color: var(--mud-palette-text-primary) !important;
+        border-radius: 28px !important;
+        padding-left: 48px !important;
+    }
+
+    .tables-search-field .mud-input-root::before {
+        border-color: rgba(0,0,0,0.2) !important;
+        border-radius: 28px !important;
+    }
+
+    .tables-search-field .mud-input-root:hover::before {
+        border-color: var(--mud-palette-primary) !important;
+    }
+
+    .tables-search-field .mud-input-root::after {
+        border-color: var(--mud-palette-primary) !important;
+        border-radius: 28px !important;
+    }
+
+    /* Modern Card-style Table Design */
+    .table-card-modern {
+        background: white;
+        border: 2px solid #87ceeb;
+        border-radius: 12px;
+        padding: 16px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+    }
+
+    .table-card-modern:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        border-color: #5dade2;
+    }
+
+    /* Header Section: Icon and Name */
+    .table-card-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .table-icon-container {
+        flex-shrink: 0;
+    }
+
+    .table-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .table-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .table-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .table-location {
+        font-size: 13px;
+        color: #7f8c8d;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Middle Section: Title */
+    .table-card-title {
+        text-align: center;
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        padding: 8px 0;
+    }
+
+    /* Body Section: Description */
+    .table-card-body {
+        flex: 1;
+        margin-bottom: 12px;
+    }
+
+    .table-description {
+        font-size: 14px;
+        color: #7f8c8d;
+        line-height: 1.5;
+        text-align: center;
+    }
+
+    /* Footer Section: Icon and Actions */
+    .table-card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 12px;
+        border-top: 1px solid #e0e0e0;
+    }
+
+    .footer-icon {
+        display: flex;
+        align-items: center;
+    }
+
+    .footer-actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .tables-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+
+    .mud-theme-dark .tables-search-field {
+        background: rgba(255,255,255,0.1) !important;
+    }
+
+    .mud-theme-dark .tables-search-field .mud-input-root {
+        color: white !important;
+    }
+
+    .mud-theme-dark .tables-search-field .mud-input-root input {
+        color: white !important;
+    }
+
+    .mud-theme-dark .tables-search-field .mud-input-root::placeholder {
+        color: rgba(255,255,255,0.7) !important;
+    }
+
+    .mud-theme-dark .table-card {
+        border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .mud-theme-dark .table-card:hover {
+        border-color: var(--mud-palette-primary);
+    }
+</style>
+

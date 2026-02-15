@@ -1,0 +1,97 @@
+@using MicroERP.Shared.Models
+@using MudBlazor
+@* Shared journal/GL entry table: Account | Debit | Credit | Description. Same structure as GL Preview and Posted dialogs. *@
+<MudTable Items="@Details"
+          Hover="true"
+          Dense="true"
+          Bordered="true"
+          Striped="true">
+    <HeaderContent>
+        <MudTh>Account</MudTh>
+        <MudTh Class="text-end">Debit</MudTh>
+        <MudTh Class="text-end">Credit</MudTh>
+        <MudTh>Description</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>
+            <div>
+                @if (context.AccountId == 0 || context.AccountCode == "MISSING")
+                {
+                    <MudText Typo="Typo.body2" Class="fw-semibold" Color="Color.Warning">
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="me-1" />
+                        @context.AccountCode - @context.AccountName
+                    </MudText>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Class="fw-semibold">@context.AccountCode - @context.AccountName</MudText>
+                }
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@context.AccountType</MudText>
+            </div>
+        </MudTd>
+        <MudTd Class="text-end">
+            @if (context.DebitAmount > 0)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Error" Class="fw-semibold">
+                    @context.DebitAmount.ToString("#,##0.00")
+                </MudText>
+            }
+        </MudTd>
+        <MudTd Class="text-end">
+            @if (context.CreditAmount > 0)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Success" Class="fw-semibold">
+                    @context.CreditAmount.ToString("#,##0.00")
+                </MudText>
+            }
+        </MudTd>
+        <MudTd>
+            <MudText Typo="Typo.body2">@context.Description</MudText>
+        </MudTd>
+    </RowTemplate>
+    <FooterContent>
+        @if (ShowTotals)
+        {
+            <MudTd Class="fw-bold">TOTAL</MudTd>
+            <MudTd Class="text-end fw-bold">
+                <MudText Typo="Typo.body2" Color="Color.Error">@TotalDebit.ToString("#,##0.00")</MudText>
+            </MudTd>
+            <MudTd Class="text-end fw-bold">
+                <MudText Typo="Typo.body2" Color="Color.Success">@TotalCredit.ToString("#,##0.00")</MudText>
+            </MudTd>
+            <MudTd></MudTd>
+        }
+    </FooterContent>
+</MudTable>
+@if (ShowReconciledAlert)
+{
+    @if (IsReconciled)
+    {
+        <MudAlert Severity="Severity.Success" Class="mt-3">
+            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="me-2" />
+            @(ReconciledMessage ?? "Entry is balanced: Debit = Credit (reconciled).")
+        </MudAlert>
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Warning" Class="mt-3">
+            <MudIcon Icon="@Icons.Material.Filled.Warning" Class="me-2" />
+            @(UnreconciledMessage ?? $"Entry is not reconciled: Debit ({TotalDebit:N2}) ≠ Credit ({TotalCredit:N2}).")
+        </MudAlert>
+    }
+}
+
+@code {
+    [Parameter] public IEnumerable<GeneralLedgerDetailModel>? Details { get; set; }
+    [Parameter] public bool ShowTotals { get; set; } = true;
+    [Parameter] public bool ShowReconciledAlert { get; set; } = true;
+    [Parameter] public string? ReconciledMessage { get; set; }
+    [Parameter] public string? UnreconciledMessage { get; set; }
+    [Parameter] public double? TotalDebitOverride { get; set; }
+    [Parameter] public double? TotalCreditOverride { get; set; }
+
+    private IEnumerable<GeneralLedgerDetailModel> SafeDetails => Details ?? Enumerable.Empty<GeneralLedgerDetailModel>();
+    private double TotalDebit => TotalDebitOverride ?? SafeDetails.Sum(d => d.DebitAmount);
+    private double TotalCredit => TotalCreditOverride ?? SafeDetails.Sum(d => d.CreditAmount);
+    private bool IsReconciled => Math.Abs(TotalDebit - TotalCredit) < 0.01;
+}

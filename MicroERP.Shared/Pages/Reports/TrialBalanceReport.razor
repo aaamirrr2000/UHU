@@ -1,0 +1,265 @@
+@page "/TrialBalanceReport"
+@using MicroERP.Shared.Models
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Trial Balance Report</PageTitle>
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 2px;">
+    <div class="dashboard-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountTree" Class="me-2" Style="color: white;" />
+                    Trial Balance Report
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">Trial balance for selected date range</MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 flex-wrap">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <MudDatePicker @bind-Date="startDate"
+                                   Label="Start Date" DateFormat="dd MMM yyyy" Variant="Variant.Outlined" />
+                    <MudDatePicker @bind-Date="endDate"
+                                   Label="End Date" DateFormat="dd MMM yyyy" Variant="Variant.Outlined" />
+                </div>
+                <MudButton StartIcon="@Icons.Material.TwoTone.Search"
+                           Size="Size.Small"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => LoadReport())">
+                    Generate
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.TwoTone.Print"
+                           Size="Size.Small"
+                           Variant="Variant.Filled"
+                           Color="Color.Info"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => PrintReport())">
+                    Print
+                </MudButton>
+                @if (reportData != null && reportData.Any())
+                {
+                    <MudButton StartIcon="@Icons.Material.TwoTone.TableChart"
+                               Size="Size.Small"
+                               Variant="Variant.Filled"
+                               Color="Color.Success"
+                               Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                               OnClick="@DownloadCsvAsync">
+                        Download CSV
+                    </MudButton>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (reportData != null && reportData.Any())
+    {
+        <MudPaper Elevation="3" Class="pa-4" Style="border-radius: 12px; overflow-x: auto;">
+            <div class="text-center mb-3">
+                <MudText Typo="Typo.h6">Trial Balance from @startDate?.ToString("dd MMM yyyy") to @endDate?.ToString("dd MMM yyyy")</MudText>
+            </div>
+            <div class="mb-3">
+                <MudTextField @bind-Value="filterText" Label="Filter" Placeholder="Filter by account code or name..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.FilterList" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Style="max-width: 320px;" />
+            </div>
+            <div class="report-grid-wrapper">
+                <table class="report-grid-table">
+                    <thead>
+                        <tr>
+                            <th class="report-grid-col-code">Account Code</th>
+                            <th class="report-grid-col-name">Account Name</th>
+                            <th class="report-grid-col-nature">Nature</th>
+                            <th class="report-grid-col-currency">Currency</th>
+                            <th class="report-grid-col-num">Ex. Rate</th>
+                            <th class="report-grid-col-num">Dr (Entered)</th>
+                            <th class="report-grid-col-num">Cr (Entered)</th>
+                            <th class="report-grid-col-num">Net (Entered)</th>
+                            <th class="report-grid-col-num">Dr (Base)</th>
+                            <th class="report-grid-col-num">Cr (Base)</th>
+                            <th class="report-grid-col-num">Net (Base)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in filteredReportData)
+                        {
+                            <tr class="report-grid-row">
+                                <td class="report-grid-col-code" style="padding-left: @((row.Level * 16) + 12)px;">@row.AccountCode</td>
+                                <td class="report-grid-col-name" style="padding-left: @((row.Level * 16) + 12)px;">@row.AccountName</td>
+                                <td class="report-grid-col-nature">@row.Nature</td>
+                                <td class="report-grid-col-currency">@row.CurrencyCode</td>
+                                <td class="report-grid-col-num">@row.ExchangeRate.ToString("N4")</td>
+                                <td class="report-grid-col-num">@row.DrEntered.ToString("N2")</td>
+                                <td class="report-grid-col-num">@row.CrEntered.ToString("N2")</td>
+                                <td class="report-grid-col-num">@row.NetEntered.ToString("N2")</td>
+                                <td class="report-grid-col-num">@row.Debit.ToString("N2")</td>
+                                <td class="report-grid-col-num">@row.Credit.ToString("N2")</td>
+                                <td class="report-grid-col-num">@row.Net.ToString("N2")</td>
+                            </tr>
+                        }
+                        <tr class="report-grid-totals-row">
+                            <td colspan="5" class="report-grid-totals-label">Total</td>
+                            <td class="report-grid-col-num report-grid-total-cell">@filteredReportData.Sum(x => x.DrEntered).ToString("N2")</td>
+                            <td class="report-grid-col-num report-grid-total-cell">@filteredReportData.Sum(x => x.CrEntered).ToString("N2")</td>
+                            <td class="report-grid-col-num report-grid-total-cell">@filteredReportData.Sum(x => x.NetEntered).ToString("N2")</td>
+                            <td class="report-grid-col-num report-grid-total-cell">@filteredReportData.Sum(x => x.Debit).ToString("N2")</td>
+                            <td class="report-grid-col-num report-grid-total-cell">@filteredReportData.Sum(x => x.Credit).ToString("N2")</td>
+                            <td class="report-grid-col-num report-grid-total-cell">@filteredReportData.Sum(x => x.Net).ToString("N2")</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </MudPaper>
+    }
+    else if (!LoadingPanel && startDate.HasValue && endDate.HasValue)
+    {
+        <MudPaper Elevation="2" Class="pa-6 text-center">
+            <MudText Typo="Typo.body1">No data available for the selected date range.</MudText>
+        </MudPaper>
+    }
+</MudContainer>
+
+<style>
+    .dashboard-header {
+        padding: 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 8px;
+    }
+</style>
+
+@code {
+    private static readonly System.Globalization.CultureInfo Inv = System.Globalization.CultureInfo.InvariantCulture;
+    public DateTime? startDate { get; set; } = DateTime.Today.AddMonths(-1);
+    public DateTime? endDate { get; set; } = DateTime.Today;
+    private bool LoadingPanel { get; set; } = false;
+    private string filterText { get; set; } = "";
+    private List<TrialBalanceModel> reportData = new();
+    private IEnumerable<TrialBalanceModel> filteredReportData => reportData
+        .Where(x => string.IsNullOrWhiteSpace(filterText) ||
+            (x.AccountCode?.Contains(filterText, StringComparison.OrdinalIgnoreCase) == true) ||
+            (x.AccountName?.Contains(filterText, StringComparison.OrdinalIgnoreCase) == true))
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReport();
+    }
+
+    private async Task LoadReport()
+    {
+        if (!startDate.HasValue || !endDate.HasValue)
+        {
+            SnackbarService.Add("Please select start and end date", Severity.Warning);
+            return;
+        }
+        if (startDate > endDate)
+        {
+            SnackbarService.Add("Start date cannot be after end date", Severity.Warning);
+            return;
+        }
+
+        LoadingPanel = true;
+        try
+        {
+            var startStr = startDate.Value.ToString("yyyy-MM-dd");
+            var endStr = endDate.Value.ToString("yyyy-MM-dd");
+            reportData = await Functions.GetAsync<List<TrialBalanceModel>>(
+                $"Reports/TrialBalance/{Globals.User.OrganizationId}?startDate={startStr}&endDate={endStr}",
+                true) ?? new List<TrialBalanceModel>();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading report: {ex.Message}", Severity.Error);
+            reportData = new List<TrialBalanceModel>();
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    private void PrintReport()
+    {
+        JSRuntime.InvokeVoidAsync("window.print");
+    }
+
+    private async Task DownloadCsvAsync()
+    {
+        if (reportData == null || !reportData.Any())
+        {
+            SnackbarService.Add("No data to export", Severity.Warning);
+            return;
+        }
+        try
+        {
+            var csv = GenerateCsvContent();
+            var bytes = System.Text.Encoding.UTF8.GetBytes(csv);
+            var base64 = Convert.ToBase64String(bytes);
+            var fileName = $"TrialBalance_{startDate:yyyyMMdd}_{endDate:yyyyMMdd}.csv";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, base64);
+            SnackbarService.Add("CSV downloaded", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Export failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private string GenerateCsvContent()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine(string.Join(",", new[]
+        {
+            "Account Code", "Account Name", "Nature", "Currency", "Ex. Rate",
+            "Dr (Entered)", "Cr (Entered)", "Net (Entered)", "Dr (Base)", "Cr (Base)", "Net (Base)"
+        }));
+        foreach (var row in filteredReportData)
+        {
+            var line = string.Join(",", new[]
+            {
+                EscapeCsvField(row.AccountCode ?? ""),
+                EscapeCsvField(row.AccountName ?? ""),
+                EscapeCsvField(row.Nature ?? ""),
+                EscapeCsvField(row.CurrencyCode ?? ""),
+                row.ExchangeRate.ToString("N4", Inv),
+                row.DrEntered.ToString("N2", Inv),
+                row.CrEntered.ToString("N2", Inv),
+                row.NetEntered.ToString("N2", Inv),
+                row.Debit.ToString("N2", Inv),
+                row.Credit.ToString("N2", Inv),
+                row.Net.ToString("N2", Inv)
+            });
+            sb.AppendLine(line);
+        }
+        var data = filteredReportData.ToList();
+        sb.AppendLine(string.Join(",", new[]
+        {
+            EscapeCsvField("Total"),
+            EscapeCsvField(""),
+            EscapeCsvField(""),
+            EscapeCsvField(""),
+            "",
+            data.Sum(x => x.DrEntered).ToString("N2", Inv),
+            data.Sum(x => x.CrEntered).ToString("N2", Inv),
+            data.Sum(x => x.NetEntered).ToString("N2", Inv),
+            data.Sum(x => x.Debit).ToString("N2", Inv),
+            data.Sum(x => x.Credit).ToString("N2", Inv),
+            data.Sum(x => x.Net).ToString("N2", Inv)
+        }));
+        return sb.ToString();
+    }
+
+    private static string EscapeCsvField(string field)
+    {
+        if (string.IsNullOrEmpty(field)) return "\"\"";
+        if (field.Contains(',') || field.Contains('"') || field.Contains('\r') || field.Contains('\n'))
+            return "\"" + field.Replace("\"", "\"\"") + "\"";
+        return field;
+    }
+
+}

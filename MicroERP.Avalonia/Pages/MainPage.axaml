@@ -1,0 +1,210 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Avalonia.Pages"
+        xmlns:models="clr-namespace:MicroERP.Shared.Models;assembly=MicroERP.Shared"
+        x:Class="Avalonia.Pages.MainPage"
+        Title="Dashboard"
+        Width="1200"
+        Height="720"
+        MinWidth="900"
+        MinHeight="600"
+        WindowState="Maximized"
+        Background="#0c0e12">
+
+    <Window.Styles>
+        <Style Selector="Border.panel-card">
+            <Setter Property="Background" Value="#161a22" />
+            <Setter Property="BorderBrush" Value="#2a3140" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BoxShadow" Value="0 4 24 0 #00000040" />
+        </Style>
+        <Style Selector="TextBlock.heading-title">
+            <Setter Property="FontSize" Value="22" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#e8eaed" />
+        </Style>
+        <Style Selector="TextBlock.heading-subtitle">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="#8b929a" />
+        </Style>
+        <Style Selector="Button.menu-item">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#b0b6be" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Padding" Value="16,12" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Button.menu-item:pointerover">
+            <Setter Property="Background" Value="#1e232b" />
+            <Setter Property="Foreground" Value="#e8eaed" />
+        </Style>
+        <Style Selector="Button.menu-item.active">
+            <Setter Property="Background" Value="#5dd0c418" />
+            <Setter Property="Foreground" Value="#5dd0c4" />
+        </Style>
+        <Style Selector="Button.menu-item.active:pointerover">
+            <Setter Property="Background" Value="#5dd0c428" />
+        </Style>
+        <Style Selector="Button.menu-item:focus">
+            <Setter Property="Background" Value="#2a3140" />
+            <Setter Property="Foreground" Value="#e8eaed" />
+        </Style>
+        <Style Selector="Button.menu-item:focus-visible">
+            <Setter Property="Background" Value="#2a3140" />
+            <Setter Property="Foreground" Value="#e8eaed" />
+        </Style>
+    </Window.Styles>
+
+    <Grid ColumnDefinitions="240,*">
+        <Border x:Name="SidebarPanel"
+                Grid.Column="0"
+                Background="#161a22"
+                BorderBrush="#2a3140"
+                BorderThickness="0,0,1,0">
+            <StackPanel Margin="0,24,0,0">
+                <TextBlock Text="App"
+                          FontSize="18"
+                          FontWeight="SemiBold"
+                          Foreground="#e8eaed"
+                          Margin="24,0,24,32" />
+                <TextBlock Text="Tab/↑↓: move · Enter/Space: select · Ctrl+Q: sign out"
+                          FontSize="11"
+                          Foreground="#6b7280"
+                          Margin="24,0,24,8"
+                          TextWrapping="Wrap" />
+
+                <TextBlock Text="Menu"
+                          FontSize="11"
+                          FontWeight="SemiBold"
+                          Foreground="#6b7280"
+                          Margin="24,0,24,8" />
+
+                <Button x:Name="MenuDashboard" Classes="menu-item active" Content="Dashboard" Margin="12,0" Click="OnMenuClick" TabIndex="0" Focusable="True" />
+                <Button x:Name="MenuInvoices" Classes="menu-item" Content="Invoices" Margin="12,0" Click="OnInvoicesClick" TabIndex="1" Focusable="True" />
+                <Button x:Name="MenuProjects" Classes="menu-item" Content="Projects" Margin="12,0" Click="OnMenuClick" TabIndex="2" Focusable="True" />
+                <Button x:Name="MenuTeam" Classes="menu-item" Content="Team" Margin="12,0" Click="OnMenuClick" TabIndex="3" Focusable="True" />
+                <Button x:Name="MenuAnalytics" Classes="menu-item" Content="Analytics" Margin="12,0" Click="OnMenuClick" TabIndex="4" Focusable="True" />
+                <Button x:Name="MenuSettings" Classes="menu-item" Content="Settings" Margin="12,0" Click="OnMenuClick" TabIndex="5" Focusable="True" />
+
+                <Separator Background="#2a3140" Margin="24,24,24,0" />
+                <TextBlock Text="Account"
+                          FontSize="11"
+                          FontWeight="SemiBold"
+                          Foreground="#6b7280"
+                          Margin="24,16,24,8" />
+                <Button x:Name="MenuProfile" Classes="menu-item" Content="Profile" Margin="12,0" Click="OnMenuClick" TabIndex="6" Focusable="True" />
+                <Button x:Name="MenuSignOut" Classes="menu-item" Content="Sign out (Ctrl+Q)" Margin="12,0" Click="OnSignOutClick" TabIndex="7" Focusable="True" />
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer Grid.Column="1"
+                     HorizontalScrollBarVisibility="Auto"
+                     VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="32,32" Spacing="24">
+                <!-- Dashboard content (default) -->
+                <StackPanel x:Name="DashboardContent" IsVisible="True">
+                    <StackPanel Margin="0,0,0,8">
+                        <TextBlock Classes="heading-title" Text="Dashboard" />
+                        <TextBlock x:Name="WelcomeText" Classes="heading-subtitle" Text="Welcome back." Margin="0,4,0,0" />
+                    </StackPanel>
+                    <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto" Margin="0,8,0,0">
+                        <Border Grid.Column="0" Classes="panel-card" Padding="24" Margin="0,0,12,0">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Total projects" FontSize="13" Foreground="#8b929a" />
+                                <TextBlock Text="12" FontSize="28" FontWeight="SemiBold" Foreground="#e8eaed" />
+                                <TextBlock Text="+2 this month" FontSize="12" Foreground="#5dd0c4" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="1" Classes="panel-card" Padding="24" Margin="12,0">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Active tasks" FontSize="13" Foreground="#8b929a" />
+                                <TextBlock Text="8" FontSize="28" FontWeight="SemiBold" Foreground="#e8eaed" />
+                                <TextBlock Text="3 due this week" FontSize="12" Foreground="#8b929a" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="2" Classes="panel-card" Padding="24" Margin="12,0,0,0">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Team members" FontSize="13" Foreground="#8b929a" />
+                                <TextBlock Text="5" FontSize="28" FontWeight="SemiBold" Foreground="#e8eaed" />
+                                <TextBlock Text="All active" FontSize="12" Foreground="#5dd0c4" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                    <Border Classes="panel-card" Padding="24" Margin="0,8,0,0">
+                        <StackPanel Spacing="16">
+                            <TextBlock Text="Recent activity" FontSize="16" FontWeight="SemiBold" Foreground="#e8eaed" />
+                            <ItemsControl x:Name="ActivityList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type local:ActivityItem}">
+                                        <Border Background="#1e232b" CornerRadius="8" Padding="16" Margin="0,0,0,8">
+                                            <Grid ColumnDefinitions="Auto,*">
+                                                <Border Width="40" Height="40" Background="#5dd0c418" CornerRadius="8" VerticalAlignment="Center" Margin="0,0,12,0">
+                                                    <TextBlock Text="✓" FontSize="18" Foreground="#5dd0c4" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+                                                <StackPanel Grid.Column="1" Spacing="2">
+                                                    <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="Medium" Foreground="#e8eaed" />
+                                                    <TextBlock Text="{Binding Subtitle}" FontSize="12" Foreground="#8b929a" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Invoices list (middle portion when Invoices menu selected) -->
+                <StackPanel x:Name="InvoiceListContent" IsVisible="False" Spacing="16">
+                    <Border Background="#161a22" BorderBrush="#2a3140" BorderThickness="0,0,0,1" Padding="0,0,0,12" Margin="0,0,0,8">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <StackPanel Grid.Column="0" Orientation="Vertical" Spacing="4">
+                                <TextBlock Text="SALE Invoice Management" FontSize="18" FontWeight="SemiBold" Foreground="#e8eaed" />
+                                <TextBlock Text="Create and manage invoices. New or Edit opens in a new window." Foreground="#8b929a" FontSize="13" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <DatePicker x:Name="InvoiceDateStart" Width="140" />
+                                <DatePicker x:Name="InvoiceDateEnd" Width="140" />
+                                <TextBox x:Name="InvoiceTxtSearch" Width="220" />
+                                <Button x:Name="InvoiceBtnSearch" Content="Search" Background="#5dd0c4" Foreground="#0c0e12" Click="OnInvoiceSearch" />
+                                <Button x:Name="InvoiceBtnRefresh" Content="Refresh" Background="#2a3140" Foreground="#e8eaed" Click="OnInvoiceRefresh" />
+                            </StackPanel>
+                            <Button Grid.Column="2" x:Name="InvoiceBtnNew" Content="New" Background="#5dd0c4" Foreground="#0c0e12" Click="OnInvoiceNew" />
+                        </Grid>
+                    </Border>
+                    <Border Classes="panel-card" MinHeight="300">
+                        <Grid RowDefinitions="Auto,*" ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Row="0" Grid.Column="0" x:Name="InvoiceStatusLabel" Text="Select Invoices to load list." Foreground="#8b929a" Margin="0,0,0,8" />
+                            <ListBox x:Name="InvoiceGridInvoices" Grid.Row="1" Grid.Column="0" Background="Transparent" BorderThickness="0" SelectionMode="Single" DoubleTapped="OnInvoiceRowDoubleTapped">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type models:InvoicesAllModel}">
+                                        <Border Background="#1e232b" CornerRadius="6" Padding="12,8" Margin="0,0,0,4">
+                                            <Grid ColumnDefinitions="Auto,*,120,120,100,100">
+                                                <TextBlock Grid.Column="0" Text="{Binding Code}" Foreground="#5dd0c4" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0" />
+                                                <TextBlock Grid.Column="1" Text="{Binding PartyName}" Foreground="#e8eaed" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Grid.Column="2" Text="{Binding TranDate, StringFormat=\{0:dd-MMM-yyyy\}}" Foreground="#8b929a" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="3" Text="{Binding BillAmount, StringFormat=N2}" Foreground="#e8eaed" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="4" Text="{Binding BalanceAmount, StringFormat=N2}" Foreground="#e0a020" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="5" Text="{Binding Status}" Foreground="#8b929a" VerticalAlignment="Center" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical" Spacing="8" Margin="8,0,0,0" VerticalAlignment="Top">
+                                <Button x:Name="InvoiceBtnView" Content="View (Enter)" Background="#2a3140" Foreground="#e8eaed" Click="OnInvoiceView" IsEnabled="False" />
+                                <Button x:Name="InvoiceBtnEdit" Content="Edit" Background="#5dd0c4" Foreground="#0c0e12" Click="OnInvoiceEdit" IsEnabled="False" />
+                                <Button x:Name="InvoiceBtnPrint" Content="Print" Background="#2a3140" Foreground="#e8eaed" Click="OnInvoicePrint" IsEnabled="False" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Window>
+

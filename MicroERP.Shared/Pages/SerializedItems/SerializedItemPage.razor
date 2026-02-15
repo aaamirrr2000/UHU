@@ -1,0 +1,313 @@
+@page "/SerializedItemPage/{Action}/{CurrentRecord?}"
+@using MicroERP.Shared.Models
+@using Microsoft.AspNetCore.Components.Forms
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+    <EditForm Model="record">
+    <div class="text-end" style="margin-top:10px;">
+        @if (Action != "VIEW")
+        {
+            <MudButton Variant="Variant.Filled" OnClick="Save" Color="Color.Info" Class="px-2 py-2 mt-1 mr-2" Style="height:40px; width: 100px;">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                @(Action == "INSERT" ? "Save" : "Update")
+            </MudButton>
+
+            @if (Action == "UPDATE")
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" Class="px-2 py-2 mt-1 mr-2" Style="height:40px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                    Delete
+                </MudButton>
+            }
+        }
+    </div>
+
+    <br />
+
+    <MudExpansionPanels MultiExpansion="true">
+        <MudExpansionPanel Text="Serialized Item Information" Expanded="true" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-barcode" style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;"></i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">@(string.IsNullOrWhiteSpace(record.DisplayName) ? "NEW SERIALIZED ITEM" : record.DisplayName)</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Serialized item tracking information</MudText>
+                    </div>
+                </div>
+                
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Serial Number <span style='color:red;'>*</span></label>
+                        <MudTextField @bind-Value="record.SerialNumber"
+                                     Variant="Variant.Outlined"
+                                     ReadOnly="@isReadOnly"
+                                     FullWidth="@true" />
+                        <ValidationMessage For="@(() => record.SerialNumber)" />
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Item <span style='color:red;'>*</span></label>
+                        @if (isReadOnly)
+                        {
+                            <MudTextField Value="@(Items.FirstOrDefault(i => i.Id == record.ItemId)?.DisplayName ?? "")"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="@true"
+                                          ReadOnly="@true" />
+                        }
+                        else
+                        {
+                            <AutoComplete TItem="ItemsModel"
+                                          DataList="@Items"
+                                          DisplayProperty="@(p => p.DisplayName)"
+                                          IdProperty="@(p => p.Id)"
+                                          @bind-SelectedId="record.ItemId"
+                                          Variant="Variant.Outlined"
+                                          Label=""
+                                          FullWidth="@true" />
+                        }
+                        <ValidationMessage For="@(() => record.ItemId)" />
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Location</label>
+                        @if (isReadOnly || Globals.User.GroupId != 1)
+                        {
+                            <MudTextField Value="@(Locations.FirstOrDefault(l => l.Id == record.LocationId)?.Name ?? "")"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="@true"
+                                          ReadOnly="@true" />
+                        }
+                        else
+                        {
+                            <AutoComplete TItem="LocationsModel"
+                                          DataList="@Locations"
+                                          DisplayProperty="@(p => p.Name)"
+                                          IdProperty="@(p => p.Id)"
+                                          @bind-SelectedId="record.LocationId"
+                                          Variant="Variant.Outlined"
+                                          Label=""
+                                          FullWidth="@true" />
+                        }
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Status</label>
+                        <MudSelect T="string"
+                                   @bind-Value="record.Status"
+                                   Variant="Variant.Outlined"
+                                   FullWidth="@true"
+                                   ReadOnly="@isReadOnly">
+                            <MudSelectItem Value="@("AVAILABLE")">AVAILABLE</MudSelectItem>
+                            <MudSelectItem Value="@("RESERVED")">RESERVED</MudSelectItem>
+                            <MudSelectItem Value="@("SOLD")">SOLD</MudSelectItem>
+                            <MudSelectItem Value="@("DAMAGED")">DAMAGED</MudSelectItem>
+                            <MudSelectItem Value="@("RETURNED")">RETURNED</MudSelectItem>
+                        </MudSelect>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Purchase Date</label>
+                        <MudDatePicker @bind-Date="record.PurchaseDate" DateFormat="dd MMM yyyy"
+                                       ReadOnly="@isReadOnly" Variant="Variant.Outlined"
+                                       FullWidth="@true" />
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Purchase Price</label>
+                        <MudNumericField @bind-Value="record.PurchasePrice"
+                                         Variant="Variant.Outlined"
+                                         ReadOnly="@isReadOnly"
+                                         Format="#,##0.00"
+                                         FullWidth="@true" />
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Sale Date</label>
+                        <MudDatePicker @bind-Date="record.SaleDate" DateFormat="dd MMM yyyy"
+                                       ReadOnly="@isReadOnly" Variant="Variant.Outlined"
+                                       FullWidth="@true" />
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Sale Price</label>
+                        <MudNumericField @bind-Value="record.SalePrice"
+                                         Variant="Variant.Outlined"
+                                         ReadOnly="@isReadOnly"
+                                         Format="#,##0.00"
+                                         FullWidth="@true" />
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Party</label>
+                        @if (isReadOnly)
+                        {
+                            <MudTextField Value="@(Parties.FirstOrDefault(p => p.Id == record.PartyId)?.DisplayName ?? "")"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="@true"
+                                          ReadOnly="@true" />
+                        }
+                        else
+                        {
+                            <AutoComplete TItem="PartiesModel"
+                                          DataList="@Parties"
+                                          DisplayProperty="@(p => p.DisplayName)"
+                                          IdProperty="@(p => p.Id)"
+                                          @bind-SelectedId="record.PartyId"
+                                          Variant="Variant.Outlined"
+                                          Label=""
+                                          FullWidth="@true" />
+                        }
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Invoice</label>
+                        <MudTextField @bind-Value="record.InvoiceCode"
+                                     Variant="Variant.Outlined"
+                                     ReadOnly="@isReadOnly"
+                                     FullWidth="@true" />
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Batch Number</label>
+                        <MudTextField @bind-Value="record.BatchNumber"
+                                     Variant="Variant.Outlined"
+                                     ReadOnly="@isReadOnly"
+                                     FullWidth="@true" />
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Expiry Date</label>
+                        <MudDatePicker @bind-Date="record.ExpiryDate" DateFormat="dd MMM yyyy"
+                                       ReadOnly="@isReadOnly" Variant="Variant.Outlined"
+                                       FullWidth="@true" />
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Warranty Expiry Date</label>
+                        <MudDatePicker @bind-Date="record.WarrantyExpiryDate" DateFormat="dd MMM yyyy"
+                                       ReadOnly="@isReadOnly" Variant="Variant.Outlined"
+                                       FullWidth="@true" />
+                    </div>
+
+                    <div class="col-12 mb-3 d-flex flex-column">
+                        <label class="form-label fw-bold mb-1">Notes</label>
+                        <MudTextField @bind-Value="record.Notes"
+                                     Variant="Variant.Outlined"
+                                     ReadOnly="@isReadOnly"
+                                     Lines="3"
+                                     FullWidth="@true" />
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private SerializedItemModel record = new();
+    private bool isReadOnly = false;
+    private bool LoadingPanel = false;
+
+    private List<ItemsModel> Items = new();
+    private List<LocationsModel> Locations = new();
+    private List<PartiesModel> Parties = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        LoadingPanel = true;
+        Locations = await Functions.GetAsync<List<LocationsModel>>($"Locations/Search/OrganizationId={Globals.User.OrganizationId} AND IsActive=1", true) ?? new List<LocationsModel>();
+        Items = await Functions.GetAsync<List<ItemsModel>>($"Items/Search", true) ?? new List<ItemsModel>();
+        Parties = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search/OrganizationId={Globals.User.OrganizationId} AND IsActive=1", true) ?? new List<PartiesModel>();
+
+        if (Action == "INSERT")
+        {
+            record = new SerializedItemModel();
+            record.Status = "AVAILABLE";
+            // Set location for non-admin users
+            if (Globals.User.GroupId != 1)
+            {
+                record.LocationId = Globals.User.LocationId;
+            }
+            isReadOnly = false;
+        }
+        else if (Action == "UPDATE")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action == "VIEW")
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<SerializedItemModel>($"SerializedItems/Get/{id}", true) ?? new SerializedItemModel();
+        // Lock location for non-admin users
+        if (Globals.User.GroupId != 1 && record.LocationId != Globals.User.LocationId)
+        {
+            record.LocationId = Globals.User.LocationId;
+        }
+        LoadingPanel = false;
+    }
+
+    protected async Task Save()
+    {
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedFrom = Globals.ClientInfo;
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = Globals.ClientInfo;
+
+        LoadingPanel = true;
+        var result = await Functions.PostAsync<SerializedItemModel>($"SerializedItems/{Action}", record, true);
+        LoadingPanel = false;
+
+        if (result.Success == false || result.Result == null)
+        {
+            SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+        }
+        else
+        {
+            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+            await OnSaved.InvokeAsync();
+        }
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete this record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Save();
+    }
+}
+
+
+

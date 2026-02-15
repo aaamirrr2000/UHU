@@ -1,0 +1,72 @@
+@using MicroERP.Shared.Models
+@using MicroERP.Shared.Controls
+@using System.Linq
+@using MudBlazor
+@inject Functions Functions
+@inherits ComponentBase
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <MudText Typo="Typo.h6" Class="mb-0">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="me-2" />
+                    Posted Accounting Entry
+                </MudText>
+                <MudText Typo="Typo.caption" Color="Color.Success">
+                    This is the actual GL entry that was posted
+                </MudText>
+            </div>
+
+            @if (PostedData != null)
+            {
+                <MudPaper Elevation="2" Class="pa-3 mb-3">
+                    <MudText Typo="Typo.subtitle1" Class="mb-2 fw-bold">Entry Information</MudText>
+                    <MudGrid>
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.body2"><strong>Entry No:</strong> @PostedData.EntryNo</MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.body2"><strong>Date:</strong> @PostedData.EntryDate?.ToString("yyyy-MM-dd")</MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.body2"><strong>Reference:</strong> @PostedData.ReferenceNo</MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.body2"><strong>Description:</strong> @PostedData.Description</MudText>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+
+                <MudPaper Elevation="2" Class="pa-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <MudText Typo="Typo.subtitle1" Class="mb-0 fw-bold">Account Entries</MudText>
+                    </div>
+                    <JournalEntryTable Details="@PostedData.Details"
+                                      ShowTotals="true"
+                                      ShowReconciledAlert="true" />
+                </MudPaper>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info">
+                    Unable to load posted entry.
+                </MudAlert>
+            }
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public GeneralLedgerHeaderModel? PostedData { get; set; }
+
+    private void Close()
+    {
+        MudDialog?.Close();
+    }
+}
+

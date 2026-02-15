@@ -1,0 +1,90 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:models="clr-namespace:MicroERP.Shared.Models;assembly=MicroERP.Shared"
+        x:Class="Avalonia.Pages.Invoices.InvoiceDashboard"
+        Title="Invoice Management"
+        Width="1100"
+        Height="700"
+        MinWidth="800"
+        MinHeight="500"
+        WindowState="Maximized"
+        Background="#0c0e12">
+
+    <Window.Styles>
+        <Style Selector="Border.dash-card">
+            <Setter Property="Background" Value="#161a22" />
+            <Setter Property="BorderBrush" Value="#2a3140" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Padding" Value="16" />
+        </Style>
+        <Style Selector="Button.btn-primary">
+            <Setter Property="Background" Value="#5dd0c4" />
+            <Setter Property="Foreground" Value="#0c0e12" />
+        </Style>
+        <Style Selector="Button.btn-header">
+            <Setter Property="Background" Value="#2a3140" />
+            <Setter Property="Foreground" Value="#e8eaed" />
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#161a22" BorderBrush="#2a3140" BorderThickness="0,0,0,1" Padding="16,12">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Vertical" Spacing="4">
+                    <TextBlock x:Name="HeaderTitle" Text="SALE Invoice Management" FontSize="18" FontWeight="SemiBold" Foreground="#e8eaed" />
+                    <TextBlock Text="Create and manage invoices" Foreground="#8b929a" FontSize="13" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <DatePicker x:Name="DateStart" Width="140" />
+                    <DatePicker x:Name="DateEnd" Width="140" />
+                    <TextBox x:Name="TxtSearch" Width="220" Watermark="Search invoices..." />
+                    <Button Content="Search" Classes="btn-primary" Click="OnSearch" />
+                    <Button Content="Refresh" Classes="btn-header" Click="OnRefresh" />
+                </StackPanel>
+                <Button Grid.Column="2" x:Name="BtnNew" Content="New" Classes="btn-primary" Click="OnNew" />
+            </Grid>
+        </Border>
+
+        <!-- Grid -->
+        <Border Grid.Row="1" Classes="dash-card" Margin="16">
+            <Grid RowDefinitions="Auto,*">
+                <TextBlock Grid.Row="0" x:Name="StatusLabel" Text="Loading…" Foreground="#8b929a" Margin="0,0,0,8" />
+                <Grid RowDefinitions="*" ColumnDefinitions="*,Auto">
+                    <ListBox x:Name="GridInvoices" Grid.Row="0" Grid.Column="0" Background="Transparent" BorderThickness="0" SelectionMode="Single" DoubleTapped="OnRowDoubleTapped">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type models:InvoicesAllModel}">
+                                <Border Background="#1e232b" CornerRadius="6" Padding="12,8" Margin="0,0,0,4">
+                                    <Grid ColumnDefinitions="Auto,*,120,120,100,100">
+                                        <TextBlock Grid.Column="0" Text="{Binding Code}" Foreground="#5dd0c4" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0" />
+                                        <TextBlock Grid.Column="1" Text="{Binding PartyName}" Foreground="#e8eaed" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Grid.Column="2" Text="{Binding TranDate, StringFormat=\{0:dd-MMM-yyyy\}}" Foreground="#8b929a" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="3" Text="{Binding BillAmount, StringFormat=N2}" Foreground="#e8eaed" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="4" Text="{Binding BalanceAmount, StringFormat=N2}" Foreground="#e0a020" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="5" Text="{Binding Status}" Foreground="#8b929a" VerticalAlignment="Center" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Vertical" Spacing="8" Margin="8,0,0,0" VerticalAlignment="Top">
+                        <Button x:Name="BtnView" Content="View (Enter)" Classes="btn-header" Click="OnView" IsEnabled="False" />
+                        <Button x:Name="BtnEdit" Content="Edit" Classes="btn-primary" Click="OnEdit" IsEnabled="False" />
+                        <Button x:Name="BtnPrint" Content="Print" Classes="btn-header" Click="OnPrint" IsEnabled="False" />
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <TextBlock Grid.Row="2" x:Name="FooterText" Text="Tab: move · Enter: Open · Ctrl+N: New" Foreground="#6b7280" FontSize="11" Margin="16,8" />
+
+        <!-- Busy overlay -->
+        <Border x:Name="BusyOverlay" Grid.Row="0" Grid.RowSpan="3" Background="#CC0c0e12" IsVisible="False" ZIndex="100">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+                <ProgressBar IsIndeterminate="True" Width="200" Height="4" Foreground="#5dd0c4" />
+                <TextBlock Text="Loading…" Foreground="#e8eaed" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

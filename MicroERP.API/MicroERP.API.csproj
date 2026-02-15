@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Controllers\TaxController.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Scripts\*.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Scripts\*.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="Scripts\0005_CreateControlCenterTable.sql" />
+    <EmbeddedResource Remove="Scripts\0450_ExtendEmployeesTableForHRMS.sql" />
+    <EmbeddedResource Remove="Scripts\0711_AllowNullItemIdInInvoiceDetail.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+	  <PackageReference Include="dbup-sqlserver" Version="6.0.4" />
+	  <PackageReference Include="DinkToPdf" Version="1.0.8" />
+	  <PackageReference Include="DotNetZip" Version="1.16.0" />
+	  <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.3" />
+	  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.3" />
+	  <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+	  <PackageReference Include="Swashbuckle.AspNetCore" Version="8.0.0" />
+	  <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="8.0.0" />
+	  <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.3" />
+	  <PackageReference Include="System.Net.Primitives" Version="4.3.0" />
+	  <PackageReference Include="Serilog" Version="4.2.0" />
+	  <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+	  <PackageReference Include="Serilog.AspNetCore" Version="8.0.1" />
+	  <PackageReference Include="Polly" Version="8.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MicroERP.Aspire.ServiceDefaults\MicroERP.Aspire.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\MicroERP.Shared\MicroERP.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="logs\" />
+  </ItemGroup>
+
+  <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
+
+</Project>
+
+

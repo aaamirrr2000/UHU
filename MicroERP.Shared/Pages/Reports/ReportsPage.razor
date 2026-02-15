@@ -1,0 +1,451 @@
+@page "/ReportsPage"
+@page "/ReportsPage/{ReportCategory}"
+@using MicroERP.Shared.Models
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Globals Globals
+@inject Functions Functions
+
+<PageTitle>Reports</PageTitle>
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <div class="reports-header mb-4">
+        <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
+            <MudIcon Icon="@Icons.Material.Filled.Assessment" Class="me-2" Style="color: var(--mud-palette-primary);" />
+            Reports Dashboard
+        </MudText>
+        <MudText Typo="Typo.body2" Class="text-muted mt-1">Access and view all available reports</MudText>
+    </div>
+
+    @if (reportGroups == null || !reportGroups.Any())
+    {
+        <MudPaper Elevation="2" Class="pa-6 text-center" Style="background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%); border-radius: 12px;">
+            <MudIcon Icon="@Icons.Material.Filled.Info" Style="font-size: 3rem; color: white; margin-bottom: 1rem;" />
+            <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 0.5rem;">No Reports Available</MudText>
+            <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.9);">Please contact your administrator to assign report permissions.</MudText>
+        </MudPaper>
+    }
+    else
+    {
+        @foreach (var group in reportGroups.OrderBy(g => g.Key.SeqNo))
+        {
+            <MudPaper Elevation="3" Class="mb-4 report-group" Style="border-radius: 12px; overflow: hidden; background: var(--mud-palette-surface);">
+                <div class="report-group-header">
+                    <div class="d-flex align-items-center pa-3">
+                        <div class="group-icon-wrapper">
+                            <i class="@group.Key.Icon"></i>
+                        </div>
+                        <div class="ms-3">
+                            <MudText Typo="Typo.h6" Class="mb-0 fw-bold">@group.Key.MenuCaption</MudText>
+                            <MudText Typo="Typo.caption" Class="text-muted">@group.Value.Count report(s) available</MudText>
+                        </div>
+                    </div>
+                </div>
+                <div class="pa-3">
+                    <MudGrid Spacing="2">
+                        @foreach (var report in group.Value.OrderBy(r => r.SeqNo))
+                        {
+                            <MudItem xs="12" sm="6" md="4" lg="3" xl="2">
+                                <MudCard Elevation="2" Class="report-card" Style="cursor: pointer; height: 100%; border-radius: 8px; overflow: hidden;" @onclick="@(() => NavigateToReport(report))">
+                                    <MudCardContent Style="padding: 16px !important; position: relative;">
+                                        <div class="report-card-background"></div>
+                                        <div class="d-flex flex-column align-items-center text-center report-card-content">
+                                            <div class="report-icon-wrapper mb-2">
+                                                <i class="@report.Icon"></i>
+                                            </div>
+                                            <MudText Typo="Typo.body1" Class="mb-1 fw-bold report-title">@report.MenuCaption</MudText>
+                                            @if (!string.IsNullOrEmpty(report.Tooltip))
+                                            {
+                                                <MudText Typo="Typo.caption" Class="text-muted mb-2 report-description">@report.Tooltip</MudText>
+                                            }
+                                            @if (report.My_Privilege == "FULL ACCESS" || report.My_Privilege == "READ ONLY")
+                                            {
+                                                <MudChip T="string" 
+                                                         Size="Size.Small" 
+                                                         Color="@(report.My_Privilege == "FULL ACCESS" ? Color.Success : Color.Info)" 
+                                                         Variant="Variant.Filled" 
+                                                         Class="mt-1 report-chip">
+                                                    @report.My_Privilege
+                                                </MudChip>
+                                            }
+                                        </div>
+                                    </MudCardContent>
+                                </MudCard>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </div>
+            </MudPaper>
+        }
+    }
+</MudContainer>
+
+<style>
+    .reports-header {
+        padding: 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 24px;
+    }
+
+    .reports-header .mud-typography {
+        color: white !important;
+    }
+
+    .reports-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    .report-group {
+        border: 1px solid var(--mud-palette-lines-default);
+        transition: box-shadow 0.3s ease;
+    }
+
+    .report-group:hover {
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1) !important;
+    }
+
+    .report-group-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary-darken) 100%);
+        color: white;
+    }
+
+    .group-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        backdrop-filter: blur(10px);
+    }
+
+    .report-group-header .mud-typography {
+        color: white !important;
+    }
+
+    .report-group-header .text-muted {
+        color: rgba(255, 255, 255, 0.8) !important;
+    }
+
+    .report-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        min-height: 160px;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--mud-palette-lines-default);
+    }
+
+    .report-card-background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(89, 74, 226, 0.05) 0%, rgba(89, 74, 226, 0.02) 100%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .report-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(89, 74, 226, 0.15) !important;
+        border-color: var(--mud-palette-primary);
+    }
+
+    .report-card:hover .report-card-background {
+        opacity: 1;
+    }
+
+    .report-card-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .report-icon-wrapper {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(89, 74, 226, 0.2);
+    }
+
+    .report-icon-wrapper i {
+        font-size: 2rem;
+        color: white;
+        transition: transform 0.3s ease;
+    }
+
+    .report-card:hover .report-icon-wrapper {
+        transform: scale(1.1) rotate(5deg);
+        box-shadow: 0 6px 20px rgba(89, 74, 226, 0.3);
+    }
+
+    .report-card:hover .report-icon-wrapper i {
+        transform: scale(1.1);
+    }
+
+    .report-title {
+        font-size: 0.95rem;
+        color: var(--mud-palette-text-primary);
+        transition: color 0.3s ease;
+    }
+
+    .report-card:hover .report-title {
+        color: var(--mud-palette-primary);
+    }
+
+    .report-description {
+        font-size: 0.75rem;
+        line-height: 1.3;
+        min-height: 32px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .report-chip {
+        font-size: 0.7rem;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .report-group-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+
+    .mud-theme-dark .report-card-background {
+        background: linear-gradient(135deg, rgba(89, 74, 226, 0.1) 0%, rgba(89, 74, 226, 0.05) 100%);
+    }
+</style>
+
+@code {
+    [Parameter]
+    public string? ReportCategory { get; set; }
+
+    private bool LoadingPanel { get; set; } = false;
+    private List<GroupMenuModel> allReports = new();
+    private Dictionary<GroupMenuModel, List<GroupMenuModel>> reportGroups = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReports();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(ReportCategory))
+            await LoadReports();
+    }
+
+    private async Task LoadReports()
+    {
+        try
+        {
+            LoadingPanel = true;
+
+            // Get all menu items with permissions for current user's group
+            var allMenuItems = await Functions.GetAsync<List<GroupMenuModel>>(
+                $"Permissions/SearchGroupPermissions/{Globals.User.OrganizationId}/GroupId={Globals.User.GroupId}",
+                true) ?? new List<GroupMenuModel>();
+            
+            // For admin users, if no menu items found, try loading directly from Menu table
+            if ((allMenuItems == null || !allMenuItems.Any()) && Globals.User.GroupId == 1)
+            {
+                var menuData = await Functions.GetAsync<List<MyMenuModel>>(
+                    $"MyMenu/Search/Live=1",
+                    true);
+                
+                if (menuData != null && menuData.Any())
+                {
+                    allMenuItems = menuData
+                        .Select(x => new GroupMenuModel
+                        {
+                            MenuId = x.Id,
+                            MenuCaption = x.MenuCaption,
+                            ParentId = x.ParentId,
+                            Icon = x.Icon,
+                            PageName = x.PageName,
+                            Parameter = x.Parameter,
+                            SeqNo = x.SeqNo,
+                            Live = x.Live,
+                            GroupId = 1,
+                            My_Privilege = "FULL ACCESS",
+                            OrganizationId = Globals.User.OrganizationId
+                        })
+                        .ToList();
+                }
+            }
+
+            Console.WriteLine($"ReportsPage: Loaded {allMenuItems?.Count ?? 0} menu items");
+
+            // Report categories = direct children of Reports (150): Financial, Sales, Other, Operational (MenuIds 165,166,167,168)
+            var reportCategoryHeaders = allMenuItems
+                .Where(x => x.ParentId == 150 && x.Live == 1 &&
+                    !string.IsNullOrEmpty(x.Parameter) &&
+                    x.Parameter.ToUpper() != "REPORT")
+                .GroupBy(x => x.MenuId)
+                .Select(g => g.First())
+                .OrderBy(x => x.SeqNo)
+                .ToList();
+
+            if (reportCategoryHeaders.Count == 0)
+            {
+                // Fallback: treat Reports (150) as single header (legacy structure)
+                var legacyHeader = allMenuItems
+                    .Where(x => (x.Parameter?.ToUpper() == "REPORT" || x.Parameter == "Report") && x.Live == 1)
+                    .GroupBy(x => x.MenuId)
+                    .Select(g => g.First())
+                    .ToList();
+                reportCategoryHeaders = legacyHeader;
+            }
+
+            var reportHeaderIds = reportCategoryHeaders.Select(h => h.MenuId).Distinct().ToList();
+            Console.WriteLine($"ReportsPage: Report category headers: {reportCategoryHeaders.Count}");
+
+            // All report items (leaf nodes under categories): have PageName and ParentId in reportHeaderIds
+            var allReportsCandidates = allMenuItems
+                .Where(x =>
+                    reportHeaderIds.Contains(x.ParentId) &&
+                    x.Live == 1 &&
+                    !string.IsNullOrEmpty(x.PageName))
+                .GroupBy(x => x.MenuId)
+                .Select(g => g.First())
+                .ToList();
+            Console.WriteLine($"ReportsPage: Found {allReportsCandidates.Count} report candidate(s)");
+
+            // Filter reports using centralized PageAccess logic (without navigation)
+            allReports = new List<GroupMenuModel>();
+            foreach (var report in allReportsCandidates)
+            {
+                if (!string.IsNullOrEmpty(report.PageName))
+                {
+                    // Use centralized PageAccess logic: Admin (GroupId 1) always has access
+                    if (Globals.User.GroupId == 1)
+                    {
+                        allReports.Add(report);
+                    }
+                    else
+                    {
+                        // For non-admin, check if page exists in MyPermissions with proper access
+                        // This uses the same logic as PageAccess but without navigation
+                        if (Globals.MyPermissions != null && Globals.MyPermissions.Any())
+                        {
+                            string normalizedPage = report.PageName.Trim().ToLower();
+                            var menuPermission = Globals.MyPermissions.FirstOrDefault(p =>
+                                p.PageName?.Trim().ToLower() == normalizedPage &&
+                                p.GroupId == Globals.User.GroupId &&
+                                p.IsActive == 1);
+                            
+                            if (menuPermission != null)
+                            {
+                                string privilege = menuPermission.My_Privilege?.Trim().ToLower() ?? "";
+                                if (privilege == "full access" || privilege == "read only")
+                                {
+                                    allReports.Add(report);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Group reports by category (header = Financial, Sales, Other, Operational)
+            reportGroups = new Dictionary<GroupMenuModel, List<GroupMenuModel>>();
+            foreach (var header in reportCategoryHeaders)
+            {
+                var reportsInGroup = allReports.Where(r => r.ParentId == header.MenuId).ToList();
+                if (reportsInGroup.Any())
+                {
+                    reportGroups[header] = reportsInGroup;
+                }
+            }
+
+            // If a specific category was requested via route (e.g. /ReportsPage/FINANCIAL REPORT), show only that group
+            if (!string.IsNullOrWhiteSpace(ReportCategory))
+            {
+                var normalizedParam = ReportCategory.Replace("%20", " ").Trim().ToUpper();
+                var matching = reportGroups.Keys
+                    .Where(k => (k.Parameter?.Replace(" ", "").ToUpper() == normalizedParam.Replace(" ", "")) ||
+                                (k.Parameter?.ToUpper() == normalizedParam))
+                    .ToList();
+                if (matching.Any())
+                {
+                    var single = matching.First();
+                    reportGroups = new Dictionary<GroupMenuModel, List<GroupMenuModel>> { { single, reportGroups[single] } };
+                }
+            }
+
+            // Orphan reports (ParentId not in any category): show under "All Reports"
+            var orphanReports = allReports.Where(r => !reportHeaderIds.Contains(r.ParentId)).ToList();
+            if (orphanReports.Any())
+            {
+                var defaultParent = new GroupMenuModel
+                {
+                    MenuId = 0,
+                    MenuCaption = "All Reports",
+                    Icon = "fa-solid fa-chart-line",
+                    SeqNo = 9999
+                };
+                reportGroups[defaultParent] = orphanReports;
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading reports: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    private void NavigateToReport(GroupMenuModel report)
+    {
+        if (string.IsNullOrEmpty(report.PageName))
+        {
+            SnackbarService.Add("Report page not configured", Severity.Warning);
+            return;
+        }
+
+        // Use centralized PageAccess function to check access
+        int accessLevel = Globals.PageAccess(NavManager, report.PageName);
+        
+        if (accessLevel < 0)
+        {
+            SnackbarService.Add("You do not have permission to access this report", Severity.Warning);
+            return;
+        }
+
+        // Navigate to report page
+        string url = $"/{report.PageName}";
+        
+        // Add parameter if it exists and is not "REPORT" or "Report"
+        if (!string.IsNullOrEmpty(report.Parameter) && 
+            report.Parameter.ToUpper() != "REPORT" && 
+            report.Parameter != "Report")
+        {
+            url += $"/{report.Parameter}";
+        }
+        else if (string.IsNullOrEmpty(report.Parameter))
+        {
+            // If no parameter, just navigate to the page
+            url = $"/{report.PageName}";
+        }
+        
+        NavManager.NavigateTo(url);
+    }
+}
+
+

@@ -1,0 +1,345 @@
+@using System.Collections.ObjectModel
+@inject IDialogService dialogService
+@inject ISnackbar Snackbar
+@inject Functions Functions
+
+<MyModelDialog @ref="_dialog" Title="Payments" Width="600px" Height="auto">
+    <ChildContent>
+
+
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4">
+            <!-- Payment Entry Card -->
+            <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px;">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Payment" 
+                             Size="Size.Large" 
+                             Color="Color.Primary" 
+                             Class="me-3" />
+                    <div>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Add Payment</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Enter payment details</MudText>
+                    </div>
+                </div>
+                <MudDivider Class="mb-4" />
+
+                <MudGrid>
+                    <MudItem xs="12" md="4">
+                        <MudSelect T="int"
+                                   @bind-Value="_paymentEntry.AccountId"
+                                   Label="Payment Method"
+                                   Placeholder="Select Payment Method"
+                                   Variant="Variant.Outlined"
+                                   Clearable="@false"
+                                   FullWidth="@true"
+                                   Dense="@true"
+                                   @bind-Value:after="OnPaymentMethodSelected"
+                                   Required="@true"
+                                   RequiredError="Payment Method is required"
+                                   Class="mb-3">
+                            @if (PaymentMethod != null)
+                            {
+                                @foreach (var pm in PaymentMethod)
+                                {
+                                    <MudSelectItem T="int" Value="@pm.Id">@pm.Name</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" md="4">
+                        <MudTextField Label="Payment Reference"
+                                      @bind-Value="_paymentEntry.PaymentRef"
+                                      Variant="Variant.Outlined"
+                                      Dense="@true"
+                                      FullWidth="@true"
+                                      Class="mb-3" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="4">
+                        <MudNumericField Label="Amount"
+                                         @bind-Value="_paymentEntry.Amount"
+                                         Variant="Variant.Outlined"
+                                         Dense="@true"
+                                         Format="#,##0.00"
+                                         InputClass="text-end"
+                                         FullWidth="@true"
+                                         Class="mb-3" />
+                    </MudItem>
+                </MudGrid>
+
+                <!-- Balance and Actions -->
+                <MudDivider Class="my-4" />
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <MudPaper Elevation="1" Class="pa-3" Style="border-radius: 8px; border-left: 4px solid var(--mud-palette-error);">
+                        <MudText Typo="Typo.body2" Class="fw-bold mb-1">Remaining Balance</MudText>
+                        <MudText Typo="Typo.h6" Class="fw-bold mb-0" Color="Color.Error">
+                            @(CalculateRemainingBalance().ToString("#,##0.00"))
+                        </MudText>
+                    </MudPaper>
+
+                    <div class="d-flex gap-2">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Success"
+                                   StartIcon="@Icons.Material.Filled.Add"
+                                   OnClick="AddPayment"
+                                   Size="Size.Medium">
+                            Add Payment
+                        </MudButton>
+
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Secondary"
+                                   StartIcon="@Icons.Material.Filled.Close"
+                                   OnClick="CloseDialogMethod"
+                                   Size="Size.Medium">
+                            Close
+                        </MudButton>
+                    </div>
+                </div>
+            </MudPaper>
+
+            <!-- Payments List Card -->
+            <MudPaper Elevation="2" Class="pa-4" Style="border-radius: 12px;">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.List" 
+                             Size="Size.Large" 
+                             Color="Color.Info" 
+                             Class="me-3" />
+                    <div>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Payment History</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">List of all payments</MudText>
+                    </div>
+                </div>
+                <MudDivider Class="mb-4" />
+
+                <MudTable T="InvoicePaymentModel"
+                          Items="@Record.InvoicePayments"
+                          Dense="true"
+                          Hover="true"
+                          Bordered="true"
+                          Striped="true"
+                          Elevation="0">
+
+                    <HeaderContent>
+                        @if (!Disabled)
+                        {
+                            <MudTh Style="width:120px;">Actions</MudTh>
+                        }
+                        <MudTh>Payment Method</MudTh>
+                        <MudTh>Payment Reference</MudTh>
+                        <MudTh Class="text-end">Amount</MudTh>
+                    </HeaderContent>
+
+                    <RowTemplate>
+                        <MudTd>
+                            @if (!Disabled)
+                            {
+                                <MudButton StartIcon="@Icons.Material.Filled.Delete"
+                                           Size="Size.Small"
+                                           Variant="Variant.Filled"
+                                           Color="Color.Error"
+                                           OnClick="@(() => DeletePayment(context))">
+                                    Remove
+                                </MudButton>
+                            }
+                        </MudTd>
+                        <MudTd>@context.PaymentMethod</MudTd>
+                        <MudTd>@context.PaymentRef</MudTd>
+                        <MudTd Class="text-end fw-bold">@context.Amount.ToString("N2")</MudTd>
+                    </RowTemplate>
+
+                    <FooterContent></FooterContent>
+                </MudTable>
+
+                <!-- Summary Footer -->
+                <MudDivider Class="my-4" />
+                <MudPaper Elevation="1" Class="pa-3" Style="border-radius: 8px; background: var(--mud-palette-grey-lighteren);">
+                    <MudGrid>
+                        <MudItem xs="12" md="6">
+                            <div class="d-flex justify-content-between mb-2">
+                                <MudText Typo="Typo.body1" Class="fw-bold">Invoice Total:</MudText>
+                                <MudText Typo="Typo.body1" Class="fw-bold" Color="Color.Success">
+                                    @Record.Invoice.TotalInvoiceAmount.ToString("#,##0.00")
+                                </MudText>
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <div class="d-flex justify-content-between">
+                                <MudText Typo="Typo.body1" Class="fw-bold">Total Paid:</MudText>
+                                <MudText Typo="Typo.body1" Class="fw-bold" Color="Color.Primary">
+                                    @Record.Invoice.TotalPayments.ToString("#,##0.00")
+                                </MudText>
+                            </div>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            </MudPaper>
+        </MudContainer>
+    </ChildContent>
+</MyModelDialog>
+
+@code {
+    /// <summary>Local form state so parent re-renders cannot overwrite user's payment method selection.</summary>
+    private InvoicePaymentModel _paymentEntry = new();
+
+    private MyModelDialog _dialog;
+    private bool _visible = false;
+
+    [Parameter] public InvoicesModel Record { get; set; } = new();
+    [Parameter] public InvoicePaymentModel InvoicePayments { get; set; } = new();
+    [Parameter] public List<ChartOfAccountsModel> PaymentMethod { get; set; } = new();
+    [Parameter] public EventCallback OnPaymentMethodChange { get; set; }
+    [Parameter] public EventCallback OnAddPayment { get; set; }
+    [Parameter] public EventCallback<InvoicePaymentModel> OnDeletePayment { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public bool Disabled { get; set; } = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // When dialog is visible, keep amount in sync with remaining balance if user hasn't entered one (avoid overwriting _paymentEntry.AccountId)
+        if (_visible && _paymentEntry != null)
+        {
+            if (_paymentEntry.Amount == 0)
+            {
+                _paymentEntry.Amount = CalculateRemainingBalance();
+            }
+            if (_paymentEntry.PaidOn == default)
+            {
+                _paymentEntry.PaidOn = DateTime.UtcNow;
+            }
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    /// <summary>
+    /// Calculates the remaining balance considering already-added payments
+    /// </summary>
+    private decimal CalculateRemainingBalance()
+    {
+        if (Record == null || Record.Invoice == null)
+            return 0;
+
+        decimal totalPaid = Record.InvoicePayments?.Sum(x => x.Amount) ?? 0;
+        return Record.Invoice.TotalInvoiceAmount - totalPaid;
+    }
+
+    private async Task AddPayment()
+    {
+        if (_paymentEntry == null || _paymentEntry.Amount <= 0)
+        {
+            Snackbar.Add("Please enter a valid payment amount", Severity.Warning);
+            return;
+        }
+
+        // Validate AccountId (Payment Method) is selected
+        if (_paymentEntry.AccountId == 0)
+        {
+            Snackbar.Add("Please select a Payment Method. Payment Method is required.", Severity.Warning);
+            return;
+        }
+
+        // Validate payment amount doesn't exceed remaining balance
+        decimal remainingBalance = CalculateRemainingBalance();
+        if (_paymentEntry.Amount > remainingBalance)
+        {
+            Snackbar.Add($"Payment amount exceeds remaining balance of {remainingBalance:N2}", Severity.Warning);
+            return;
+        }
+
+        // Resolve account name from PaymentMethod lookup
+        var methodName = PaymentMethod?.FirstOrDefault(pm => pm.Id == _paymentEntry.AccountId)?.Name
+                         ?? _paymentEntry.PaymentMethod
+                         ?? string.Empty;
+
+        // Copy local form to parent's model so parent reads correct values when adding
+        InvoicePayments.AccountId = _paymentEntry.AccountId;
+        InvoicePayments.Amount = _paymentEntry.Amount;
+        InvoicePayments.PaymentRef = _paymentEntry.PaymentRef;
+        InvoicePayments.PaymentMethod = methodName;
+        InvoicePayments.PaidOn = _paymentEntry.PaidOn == default ? DateTime.UtcNow : _paymentEntry.PaidOn;
+        InvoicePayments.Notes = _paymentEntry.Notes;
+
+        // Notify parent to add payment and recalculate totals
+        if (OnAddPayment.HasDelegate)
+        {
+            await OnAddPayment.InvokeAsync();
+        }
+
+        // Reset local form for next payment (parent will also set its InvoicePayments = new)
+        _paymentEntry = new InvoicePaymentModel
+        {
+            Amount = CalculateRemainingBalance(),
+            PaidOn = DateTime.UtcNow
+        };
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task DeletePayment(InvoicePaymentModel payment)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do You want to REMOVE Payment?");
+        if (res == false) return;
+
+        try
+        {
+            await OnDeletePayment.InvokeAsync(payment);
+            // Refresh UI after payment deletion
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error deleting payment: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task CloseDialogMethod()
+    {
+        try
+        {
+            await OnClose.InvokeAsync();
+            _visible = false;
+            _dialog.Hide();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error closing dialog: {ex.Message}", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Called when user selects a payment method. Updates Amount to remaining balance (local form only).
+    /// </summary>
+    private async Task OnPaymentMethodSelected()
+    {
+        if (_paymentEntry != null)
+        {
+            _paymentEntry.Amount = CalculateRemainingBalance();
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public async Task Open()
+    {
+        // Initialize local form: amount = remaining balance, user must select payment method
+        _paymentEntry = new InvoicePaymentModel
+        {
+            Amount = CalculateRemainingBalance(),
+            PaidOn = DateTime.UtcNow
+        };
+
+        _visible = true;
+        _dialog.Show();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async Task CloseDialog()
+    {
+        await CloseDialogMethod();
+    }
+}
+
+<style>
+    .payment-dialog .mud-dialog {
+        min-width: 600px;
+        min-height: 500px;
+    }
+</style>

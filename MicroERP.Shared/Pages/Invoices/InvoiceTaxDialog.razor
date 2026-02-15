@@ -1,0 +1,79 @@
+﻿<MyModelDialog @ref="_dialog" Title="Service Charges & Taxes" Width="500px" Height="auto">
+    <ChildContent>
+
+
+      @*   @foreach (var group in Record.InvoiceCharges.GroupBy(x => x.ChargeCategory?.ToUpper()))
+        {
+            var categoryName = group.Key;
+            var categoryTotal = group.Sum(x => x.CalculatedAmount);
+
+            <MudText Typo="Typo.h6" Class="mb-2">@categoryName CHARGES</MudText>
+
+            <MudTable T="InvoiceChargeModel" Items="group" Dense="true">
+                <HeaderContent>
+                    <MudTh>Description</MudTh>
+                    <MudTh>Calculation</MudTh>
+                    <MudTh class="text-end">Amount</MudTh>
+                </HeaderContent>
+
+                <RowTemplate>
+                    <MudTd>
+                        @if (context.AmountType == "PERCENTAGE")
+                        {
+                            <span>@context.RuleName @@ @($"{context.Rate:#,##0.00}%")</span>
+                        }
+                        else if (context.AmountType == "FLAT")
+                        {
+                            <span>@context.RuleName @($"{context.Rate:#,##0.00}/-")</span>
+                        }
+                    </MudTd>
+                    <MudTd>
+                        @if (context.AmountType == "PERCENTAGE")
+                        {
+                            <span>@($"{Record.Invoice.SubTotalAmount:#,##0.00} x {context.Rate:#,##0.00}% = {context.CalculatedAmount:#,##0.00}")</span>
+                        }
+                        else if (context.AmountType == "FLAT")
+                        {
+                            <span>@($"Flat Amount = {context.CalculatedAmount:#,##0.00}")</span>
+                        }
+                    </MudTd>
+                    <MudTd class="text-end">@context.CalculatedAmount.ToString("#,##0.00")</MudTd>
+                </RowTemplate>
+
+                <FooterContent>
+                    <MudTd colspan="2" class="text-end font-weight-bold">Subtotal (@categoryName)</MudTd>
+                    <MudTd class="text-end font-weight-bold">@categoryTotal.ToString("#,##0.00")</MudTd>
+                </FooterContent>
+            </MudTable>
+        } *@
+
+        <MudDivider Class="my-4" />
+
+        @{
+            double grandTotal = Record.InvoiceCharges?.Sum(x => x.AppliedAmount) ?? 0.0;
+        }
+        <MudText Typo="Typo.h6" Class="mt-2 text-end font-weight-bold">
+            Grand Total: @grandTotal.ToString("#,##0.00")
+        </MudText>
+    </ChildContent>
+</MyModelDialog>
+
+@code {
+    private bool Visible { get; set; }
+    private MyModelDialog _dialog;
+
+    [Parameter] public InvoicesModel Record { get; set; } = new();
+
+    public async Task Open()
+    {
+        Visible = true;
+        _dialog.Show();
+        StateHasChanged();
+    }
+
+    public void Close() 
+    {
+        Visible = false;
+        _dialog.Hide();
+    }
+}

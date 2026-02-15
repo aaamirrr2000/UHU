@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Sdk Name="Aspire.AppHost.Sdk" Version="9.0.0" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsAspireHost>true</IsAspireHost>
+    <UserSecretsId>24c3d567-2159-48d1-81e3-5256eab97ed7</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MicroERP.API\MicroERP.API.csproj" />
+    <!-- Note: MAUI apps are excluded from Aspire as they are desktop/mobile applications. -->
+    <ProjectReference Include="..\MicroERP.Web\MicroERP.Web.csproj" />
+    <ProjectReference Include="..\MicroERP.Avalonia\MicroERP.Avalonia.csproj" />
+    <ProjectReference Include="..\MicroERP.Aspire.ApiService\MicroERP.Aspire.ApiService.csproj" />
+    <ProjectReference Include="..\MicroERP.Aspire.ServiceDefaults\MicroERP.Aspire.ServiceDefaults.csproj" IsAspireProjectResource="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="9.0.0" />
+  </ItemGroup>
+
+</Project>
+
+

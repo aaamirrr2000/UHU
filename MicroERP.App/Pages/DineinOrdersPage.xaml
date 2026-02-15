@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MicroERP.App.Pages.DineinOrdersPage"
+             NavigationPage.HasNavigationBar="False"
+             Title="Dine-in Orders">
+
+    <ContentPage.Background>
+        <LinearGradientBrush EndPoint="0,1">
+            <GradientStop Color="#E6F0FA" Offset="0.0" />
+            <GradientStop Color="#FFFFFF" Offset="1.0" />
+        </LinearGradientBrush>
+    </ContentPage.Background>
+
+    <ScrollView>
+        <Border StrokeThickness="0"
+                Margin="10"
+                Padding="20"
+                BackgroundColor="White"
+                HorizontalOptions="Fill"
+                StrokeShape="RoundRectangle 15">
+            <Border.Shadow>
+                <Shadow Brush="#20000000" Offset="0,5" Radius="10" Opacity="0.3" />
+            </Border.Shadow>
+
+            <VerticalStackLayout Spacing="20">
+                <Label Text="Pending Orders"
+                       FontSize="28"
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center"
+                       TextColor="#333"
+                       FontFamily="Orbitron" />
+
+                <ImageButton Source="cart.png"
+                                     Clicked="OnRefreshCartClicked"
+                                     CommandParameter="{Binding}"
+                                     CornerRadius="3"
+                                     HeightRequest="44"
+                                     Grid.Column="1"
+                                     HorizontalOptions="End"/>
+
+                <CollectionView x:Name="OrdersCollectionView"
+                                Margin="10"
+                                SelectionMode="None">
+
+                    <CollectionView.ItemsLayout>
+                        <LinearItemsLayout Orientation="Vertical" ItemSpacing="2" />
+                    </CollectionView.ItemsLayout>
+
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border StrokeThickness="0"
+                                    Padding="20"
+                                    BackgroundColor="#F0F1F3"
+                                    HorizontalOptions="Fill"
+                                    StrokeShape="RoundRectangle 15">
+                                <Border.Shadow>
+                                    <Shadow Brush="#20000000" Offset="0,5" Radius="10" Opacity="0.3" />
+                                </Border.Shadow>
+
+                                <Grid ColumnDefinitions="*, Auto" ColumnSpacing="10">
+                                    <VerticalStackLayout Spacing="5" Grid.Column="0">
+                                        <Label FontSize="16" TextColor="Black">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding ItemName}" FontAttributes="Bold" TextColor="Green" />
+                                                    <Span Text=" - " />
+                                                    <Span Text="{Binding ServingSize}" TextColor="Green" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+
+                                        <Label FontSize="16" TextColor="Black">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding TableNumber}" FontAttributes="Bold" TextColor="Gray" />
+                                                    <Span Text=" - " TextColor="Gray" />
+                                                    <Span Text="{Binding TableLocation}" TextColor="Gray" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+
+                                        <Label Text="{Binding TakeAway}"
+                                               FontSize="14"
+                                               TextColor="Red" />
+
+                                        <Label Text="{Binding ItemsInstruction}"
+                                               FontSize="14"
+                                               TextColor="Gray" />
+                                        
+                                    </VerticalStackLayout>
+
+                                    <Button Text="Ready"
+                                            Clicked="OnReadyClicked"
+                                            CommandParameter="{Binding}"
+                                            BackgroundColor="Green"
+                                            TextColor="White"
+                                            HeightRequest="50"
+                                            FontSize="14"
+                                            FontFamily="Roboto"
+                                            CornerRadius="5"
+                                            HorizontalOptions="Fill"
+                                            Grid.Column="1" />
+                                    
+                                    
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+        </Border>
+    </ScrollView>
+</ContentPage>
+

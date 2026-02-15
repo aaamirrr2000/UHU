@@ -1,0 +1,344 @@
+@page "/CategoriesDashboard"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 2px;">
+    <div class="dashboard-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.Category" Class="me-2" Style="color: white;" />
+                    Categories Management
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">Setup product categories and grouping</MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 flex-wrap">
+                <MudTextField @bind-Value="searchString"
+                             @bind-Value:after="FilterData"
+                             Placeholder="Search categories..."
+                             Adornment="Adornment.Start"
+                             AdornmentIcon="@Icons.Material.Filled.Search"
+                             IconSize="Size.Small"
+                             Variant="Variant.Outlined"
+                             Immediate="true"
+                             Margin="Margin.Dense"
+                             Style="background: rgba(255,255,255,0.95); width: 260px;" />
+                @if (Globals.AccessLevel == 1 && record.CreatedOn.Date == DateTime.Now.Date && (record.CreatedBy == Globals.User.Id || Globals.User.GroupId==1))
+                {
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
+                               Size="Size.Small" 
+                               Variant="Variant.Filled" 
+                               Color="Color.Success" 
+                               Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                               OnClick="@(() => Clear())">
+                        New
+                    </MudButton>
+                }
+                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Info"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => Refresh())">
+                    Refresh
+                </MudButton>
+            </div>
+        </div>
+    </div>
+
+    <MyDrawer @ref="_drawer" Title="Categories" FaIcon="fas fa-address-book">
+        <HeaderContent>
+            @if (Action != "VIEW")
+            {
+                <MudButton OnClick="@(() => Save())"
+                           Variant="Variant.Filled"
+                           Color="Color.Success"
+                           StartIcon="@Icons.Material.Filled.Save"
+                           Size="Size.Small"
+                           Class="me-2">
+                    @(Action == "INSERT" ? "Save" : "Update")
+                </MudButton>
+
+                @if (Action == "UPDATE")
+                {
+                    <MudButton OnClick="@(() => Delete(record.Id))"
+                               Variant="Variant.Filled"
+                               Color="Color.Error"
+                               StartIcon="@Icons.Material.Filled.Delete"
+                               Size="Size.Small">
+                        Delete
+                    </MudButton>
+                }
+            }
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <CategoriesPage Action="@Action" Model="record" OnSaved="ChildSaved"/>
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    @if (data == null)
+    {
+        <SimpleLoading />
+    }
+    else
+    {
+        <MudPaper Elevation="3" Style="border-radius: 12px; overflow: hidden;">
+            <MudDataGrid T="CategoriesModel"
+                         MultiSelection="false"
+                         Items="@data"
+                         SortMode="SortMode.Multiple"
+                         Filterable="true"
+                         Hideable="true"
+                         RowsPerPage="15"
+                         Dense="true"
+                         Striped="true"
+                         Class="professional-grid elevation-8">
+
+                <Columns>
+                    <TemplateColumn Title="Actions"
+                                    CellStyle="width: 80px; min-width: 80px;"
+                                    HeaderClass="grid-header">
+                        <CellTemplate Context="row">
+                            <div class="actions-cell">
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                         Color="Color.Primary"
+                                         Dense="true"
+                                         Class="actions-menu">
+                                    <MudMenuItem OnClick="@(() => View(row.Item.Id))"
+                                                 Class="menu-item view-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
+                                        <span>View Details</span>
+                                    </MudMenuItem>
+                                    @if (Globals.AccessLevel == 1)
+                                    {
+                                        <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
+                                                     Class="menu-item edit-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
+                                            <span>Edit</span>
+                                        </MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => Delete(row.Item.Id))"
+                                                     Color="Color.Error"
+                                                     Class="menu-item delete-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
+                                            <span>Delete</span>
+                                        </MudMenuItem>
+                                    }
+                                </MudMenu>
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="x => x.Code"
+                                    Title="Code"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.Name"
+                                    Title="Name"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.CategoryType"
+                                    Title="Category Type"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+                    <TemplateColumn Title="Status"
+                                    CellStyle="width: 70px; min-width: 70px;"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell">
+                        <CellTemplate Context="row">
+                            @if (row.Item.IsActive == 1)
+                            {
+                                <MudChip Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">Active</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">Locked</MudChip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+
+                <PagerContent>
+                    <div class="pager-container">
+                        <MudDataGridPager T="CategoriesModel" Class="grid-pager" />
+                    </div>
+                </PagerContent>
+
+            </MudDataGrid>
+        </MudPaper>
+    }
+</MudContainer>
+
+<style>
+    .dashboard-header {
+        padding: 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 8px;
+    }
+
+    .dashboard-header .mud-typography {
+        color: white !important;
+    }
+
+    .dashboard-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .dashboard-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+</style>
+
+@code
+{
+    static List<CategoriesModel> data = new();
+    static List<CategoriesModel> AllData = new();
+    private string searchString = "";
+    static CategoriesModel record = new();
+
+    public string? Action { get; set; } = "INSERT";
+    
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "CategoriesDashboard");
+        await GetAll();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        AllData = await Functions.GetAsync<List<CategoriesModel>>($"Categories/Search", true) ?? new List<CategoriesModel>();
+        FilterData();
+        LoadingPanel = false;
+    }
+
+    private void FilterData()
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            data = AllData.ToList();
+        else
+        {
+            var search = searchString.ToLower();
+            data = AllData.Where(x =>
+                (x.Code?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.Name?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.CategoryType?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
+            ).ToList();
+        }
+        StateHasChanged();
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<CategoriesModel>($"Categories/Get/{id}", true) ?? new CategoriesModel();
+        LoadingPanel = false;
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new CategoriesModel();
+        record.IsActive = 1;
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Refresh()
+    {
+        data = await Functions.GetAsync<List<CategoriesModel>>($"Categories/Search", true) ?? new List<CategoriesModel>();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        isReadOnly = true;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE"; 
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Get(id);
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+         
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedFrom = Globals.ClientInfo;
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = Globals.ClientInfo;
+
+        var result = await Functions.PostAsync<CategoriesModel>($"Categories/{Action}", record, true);
+        if (result.Success == false)
+        {
+            SnackbarService.Add($"Record Not Deleted", Severity.Error);
+        }
+        else
+        {
+            SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
+            if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) await Edit(result.Result!.Id);
+        }
+    
+        data = await Functions.GetAsync<List<CategoriesModel>>($"Categories/Search", true) ?? new List<CategoriesModel>();
+        LoadingPanel = false;
+        await _drawer.CloseDrawerAsync();
+     
+    }
+
+    private async Task ChildSaved()
+    {
+        await GetAll();
+        await _drawer.CloseDrawerAsync();
+        StateHasChanged();
+    }
+
+}
+

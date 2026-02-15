@@ -1,0 +1,21 @@
+@page "/LogoutPage"
+@layout MyMenuLayout
+@inject INavigationService NavigationService
+
+
+<div style="height: 100vh; display: flex; justify-content: center; align-items: center;">
+    <button class="btn btn-danger btn-lg" @onclick="GoToLoginPage">
+        <i class="fas fa-sign-out-alt me-2"></i> LogIn
+    </button>
+</div>
+
+
+@code {
+    [Inject] NavigationManager Nav { get; set; }
+
+    private async void GoToLoginPage()
+    {
+       await NavigationService.NavigateToAsync<MicroERP.App.SwiftServe.Components.MauiPages.LoginPage>();
+    }
+}
+

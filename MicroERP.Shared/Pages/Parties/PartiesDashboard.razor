@@ -1,0 +1,683 @@
+@page "/PartiesDashboard"
+@using MicroERP.Shared.Models
+@using System.Linq
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 2px;">
+    <div class="dashboard-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.Groups" Class="me-2" Style="color: white;" />
+                    Parties Management
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">Manage customers, suppliers, and contacts</MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 flex-wrap">
+                <div class="dashboard-search-container">
+                    <MudTextField @bind-Value="searchString"
+                                @bind-Value:after="FilterData"
+                                Placeholder="Search parties..."
+                                Adornment="Adornment.Start"
+                                AdornmentIcon="@Icons.Material.Filled.Search"
+                                IconSize="Size.Small"
+                                Variant="Variant.Outlined"
+                                Immediate="true"
+                                Margin="Margin.Dense"
+                                Class="dashboard-search-field"
+                                Style="background: rgba(255,255,255,0.95);" />
+                </div>
+                @if (Globals.AccessLevel == 1)
+                {
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
+                               Size="Size.Small" 
+                               Variant="Variant.Filled" 
+                               Color="Color.Success" 
+                               Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                               OnClick="@(() => Clear())">
+                        New
+                    </MudButton>
+                }
+                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Info"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => Refresh())">
+                    Refresh
+                </MudButton>
+            </div>
+        </div>
+    </div>
+
+    <MyDrawer @ref="_drawer" Title="Parties" FaIcon="fas fa-address-book">
+        <HeaderContent>
+             @if (Action != "VIEW" && Globals.AccessLevel == 1)
+            {
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Success"
+                           Size="Size.Small"
+                           OnClick="Save"
+                           Disabled="@_isSaving"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; margin-right: 8px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                    @(_isSaving ? "Saving..." : (Action == "INSERT" ? "Save" : "Update"))
+                </MudButton>
+
+                @if (Action == "UPDATE")
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Error"
+                               Size="Size.Small"
+                               OnClick="@(() => Delete(record.Id))"
+                               Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;">
+                        <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                        Delete
+                    </MudButton>
+                }
+            }
+        </HeaderContent>
+        <ChildContent>
+             <PartiesPage Model="@record" 
+                          ParentParties="@ParentParties"
+                          Employees="@Employees"
+                          PaymentTerms="@PaymentTerms"
+                          Accounts="@FilteredAccounts"
+                          Cities="@Cities"
+                          PartyClasses="@PartyClasses"
+                          PriceLists="@PriceLists"
+                          IsReadOnly="@isReadOnly"
+                          OnPartyTypeChanged="@OnPartyTypeChanged" />
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    <MyDrawer @ref="_drawerBankDetails" Title="Party Bank Details" FaIcon="fas fa-university">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <PartyBankDetailsPage Action="NO ACTION" CurrentRecord="record.Id" />
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    <MyDrawer @ref="_drawerContacts" Title="Party Contact" FaIcon="fas fa-address-book">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <PartyContactsPage Action="NO ACTION" CurrentRecord="record.Id" />
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    <MyDrawer @ref="_drawerDocuments" Title="Party Documents" FaIcon="fas fa-file-alt">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <PartyDocumentsPage Action="NO ACTION" CurrentRecord="record.Id" />
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    <MyDrawer @ref="_drawerFinancials" Title="Party Financials" FaIcon="fas fa-chart-line">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <PartyFinancialsPage Action="NO ACTION" CurrentRecord="record.Id" />
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    <MyDrawer @ref="_drawerVehicles" Title="Party Vehicles" FaIcon="fas fa-truck">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <PartyVehiclesPage Action="NO ACTION" CurrentRecord="record.Id" />
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    @if (data == null)
+    {
+        <SimpleLoading />
+    }
+    else
+    {
+        <MudPaper Elevation="3" Style="border-radius: 12px; overflow: hidden;">
+            <MudDataGrid T="PartiesModel"
+                         MultiSelection="false"
+                         Items="@data"
+                         SortMode="SortMode.Multiple"
+                         Filterable="true"
+                         Hideable="true"
+                         RowsPerPage="10"
+                         Dense="true"
+                         Striped="true"
+                         Class="professional-grid elevation-8">
+
+                <Columns>
+                    <TemplateColumn Title="Actions"
+                                    CellStyle="width: 80px; min-width: 80px;"
+                                    HeaderClass="grid-header">
+                        <CellTemplate Context="row">
+                            <div class="actions-cell">
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                         Color="Color.Primary"
+                                         Dense="true"
+                                         Class="actions-menu">
+                                    <MudMenuItem OnClick="@(() => View(row.Item.Id))"
+                                                 Class="menu-item view-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
+                                        <span>View Details</span>
+                                    </MudMenuItem>
+                                    @if (Globals.AccessLevel == 1)
+                                    {
+                                        <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
+                                                     Class="menu-item edit-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
+                                            <span>Edit</span>
+                                        </MudMenuItem>
+                                    
+                                        <MudMenuItem OnClick="@(() => Delete(row.Item.Id))"
+                                                     Color="Color.Error"
+                                                     Class="menu-item delete-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
+                                            <span>Delete</span>
+                                        </MudMenuItem>
+                                    
+                                        <hr />
+                                    
+                                        <MudMenuItem OnClick="@(() => Contacts(row.Item.Id))"
+                                                     Class="menu-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Contacts" Class="menu-icon" />
+                                            <span>Contacts</span>
+                                        </MudMenuItem>
+                                    
+                                        <MudMenuItem OnClick="@(() => Documents(row.Item.Id))"
+                                                     Class="menu-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Description" Class="menu-icon" />
+                                            <span>Documents</span>
+                                        </MudMenuItem>
+                                    
+                                        <MudMenuItem OnClick="@(() => Vehicles(row.Item.Id))"
+                                                     Class="menu-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.DirectionsCar" Class="menu-icon" />
+                                            <span>Vehicles</span>
+                                        </MudMenuItem>
+                                    
+                                        <hr />
+                                    
+                                        <MudMenuItem OnClick="@(() => BankDetails(row.Item.Id))"
+                                                     Class="menu-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="menu-icon" />
+                                            <span>Banking Details</span>
+                                        </MudMenuItem>
+                                    
+                                        <MudMenuItem OnClick="@(() => Financials(row.Item.Id))"
+                                                     Class="menu-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Class="menu-icon" />
+                                            <span>Financials</span>
+                                        </MudMenuItem>
+                                    }
+                                </MudMenu>
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <TemplateColumn Title="Photo"
+                                    CellStyle="width: 50px; min-width: 50px;"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell">
+                        <CellTemplate Context="row">
+                            <AvatarDisplay Pic="@row.Item.Pic" Name="@row.Item.Name" Size="24" />
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="x => x.Code"
+                                    Title="Code"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.Name"
+                                    Title="Party Name"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.PartyType"
+                                    Title="Party Type"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.ParentName"
+                                    Title="Parent"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.Address"
+                                    Title="Address"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.AreaName"
+                                    Title="City"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <TemplateColumn Title="Status"
+                                    CellStyle="width: 70px; min-width: 70px;"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell">
+                        <CellTemplate Context="row">
+                            @if (row.Item.IsActive == 1)
+                            {
+                                <MudChip Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">Active</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">Locked</MudChip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+
+                <PagerContent>
+                    <div class="pager-container">
+                        <MudDataGridPager T="PartiesModel" Class="grid-pager" />
+                    </div>
+                </PagerContent>
+
+            </MudDataGrid>
+        </MudPaper>
+    }
+</MudContainer>
+
+<style>
+    .dashboard-header {
+        padding: 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 8px;
+    }
+
+    .dashboard-header .mud-typography {
+        color: white !important;
+    }
+
+    .dashboard-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .dashboard-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+
+    .dashboard-search-container {
+        min-width: 200px;
+    }
+    .dashboard-search-field {
+        background: rgba(255,255,255,0.95);
+        border-radius: 8px;
+    }
+    .dashboard-search-field .mud-input-root {
+        background: transparent;
+    }
+</style>
+
+@code
+{
+    List<PartiesModel> data = new();
+    List<PartiesModel> AllData = new();
+    private string searchString = "";
+    PartiesModel record = new();
+    
+    // Dropdown lists
+    List<PartiesModel> ParentParties = new();
+    List<EmployeesModel> Employees = new();
+    List<PaymentTermsModel> PaymentTerms = new();
+    List<ChartOfAccountsModel> AllAccounts = new();
+    List<ChartOfAccountsModel> FilteredAccounts = new();
+    List<AreasModel> Cities = new();
+    List<TypeCodeModel> PartyClasses = new();
+    List<TypeCodeModel> PriceLists = new();
+
+    public string? Action { get; set; } = "INSERT";
+    private bool _isSaving = false;
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+    
+    // Drawers
+    private MyDrawer _drawer = new();
+    private MyDrawer _drawerBankDetails = new();
+    private MyDrawer _drawerContacts = new();
+    private MyDrawer _drawerDocuments = new();
+    private MyDrawer _drawerFinancials = new();
+    private MyDrawer _drawerVehicles = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "PartiesDashboard");
+        await LoadDropdowns();
+        await GetAll();
+    }
+    
+    private async Task LoadDropdowns()
+    {
+        try 
+        {
+            // Run parallel tasks for better performance where possible, or just sequential
+            var t1 = Functions.GetAsync<List<PartiesModel>>($"Parties/Search", true);
+            var t2 = Functions.GetAsync<List<EmployeesModel>>($"Employees/Search", true);
+            var t3 = Functions.GetAsync<List<PaymentTermsModel>>($"PaymentTerms/Search", true);
+            var t4 = Functions.GetAsync<List<AreasModel>>($"Areas/Search", true);
+            var t5 = Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PARTY CLASS", true);
+            var t6 = Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PRICE LIST", true);
+            var t7 = Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search", true);
+            
+            await Task.WhenAll(t1, t2, t3, t4, t5, t6, t7);
+            
+            ParentParties = await t1 ?? new List<PartiesModel>();
+            Employees = await t2 ?? new List<EmployeesModel>();
+            PaymentTerms = await t3 ?? new List<PaymentTermsModel>();
+            Cities = await t4 ?? new List<AreasModel>();
+            PartyClasses = await t5 ?? new List<TypeCodeModel>();
+            PriceLists = await t6 ?? new List<TypeCodeModel>();
+            AllAccounts = await t7 ?? new List<ChartOfAccountsModel>();
+            
+            FilteredAccounts = new List<ChartOfAccountsModel>(AllAccounts);
+        }
+        catch (Exception ex)
+        {
+             SnackbarService.Add($"Error loading dropdowns: {ex.Message}", Severity.Error);
+        }
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        try
+        {
+            AllData = await Functions.GetAsync<List<PartiesModel>>($"Parties/Search", true) ?? new List<PartiesModel>();
+            FilterData();
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    private void FilterData()
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+        {
+            data = AllData.ToList();
+        }
+        else
+        {
+            var search = searchString.ToLower();
+            data = AllData.Where(x =>
+                (x.Code?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.Name?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.PartyType?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.NTN?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.ContactEmail?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.Address?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.ContactPerson?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
+            ).ToList();
+        }
+        StateHasChanged();
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<PartiesModel>($"Parties/Get/{id}", true) ?? new PartiesModel();
+        LoadingPanel = false;
+        
+        // Filter accounts based on loaded party type
+        if (!string.IsNullOrWhiteSpace(record.PartyType))
+             FilterAccounts(record.PartyType);
+        else
+             FilteredAccounts = new List<ChartOfAccountsModel>(AllAccounts);
+    }
+    
+    private void FilterAccounts(string partyType)
+    {
+         string interfaceType = "";
+         switch (partyType?.ToUpper())
+         {
+             case "CUSTOMER": interfaceType = "ACCOUNTS RECEIVABLE"; break;
+             case "SUPPLIER": interfaceType = "ACCOUNTS PAYABLE"; break;
+             case "BANK": interfaceType = "BANK"; break;
+             default: interfaceType = ""; break;
+         }
+         
+         if (!string.IsNullOrEmpty(interfaceType))
+         {
+             FilteredAccounts = AllAccounts.Where(a => a.InterfaceType == interfaceType).ToList();
+         }
+         else
+         {
+             FilteredAccounts = new List<ChartOfAccountsModel>(AllAccounts);
+         }
+    }
+    
+    protected async Task OnPartyTypeChanged(string partyType)
+    {
+        FilterAccounts(partyType);
+        
+        // Reset AccountId if current selection is not in list
+        if (record.AccountId > 0 && !FilteredAccounts.Any(a => a.Id == record.AccountId))
+        {
+            record.AccountId = 0;
+            // Optionally set default
+            if (FilteredAccounts.Any()) record.AccountId = FilteredAccounts.First().Id;
+        }
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new PartiesModel();
+        record.IsActive = 1;
+        isReadOnly = false;
+        
+        // Set defaults
+        if (PaymentTerms.Any()) record.PaymentTermsId = PaymentTerms.First().Id;
+        if (Cities.Any()) record.CityId = Cities.First().Id;
+        if (PartyClasses.Any()) record.CustomerClass = PartyClasses.First().ListValue;
+        
+        FilteredAccounts = new List<ChartOfAccountsModel>(AllAccounts);
+        
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Refresh()
+    {
+        await GetAll();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        isReadOnly = true;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task BankDetails(int id)
+    {
+        await Get(id);
+        Action = "INSERT";
+        isReadOnly = false;
+        await _drawerBankDetails.OpenDrawerAsync();
+    }
+
+     protected async Task Contacts(int id)
+    {
+        await Get(id);
+        Action = "INSERT";
+        isReadOnly = false;
+        await _drawerContacts.OpenDrawerAsync();
+    }
+
+    protected async Task Documents(int id)
+    {
+        await Get(id);
+        Action = "INSERT";
+        isReadOnly = false;
+        await _drawerDocuments.OpenDrawerAsync();
+    }
+
+    protected async Task Financials(int id)
+    {
+        await Get(id);
+        Action = "INSERT";
+        isReadOnly = false;
+        await _drawerFinancials.OpenDrawerAsync();
+    }
+
+    protected async Task Vehicles(int id)
+    {
+        await Get(id);
+        Action = "INSERT";
+        isReadOnly = false;
+        await _drawerVehicles.OpenDrawerAsync();
+    }
+
+    protected async Task Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        // Need to ensure record is loaded for soft delete or just use ID?
+        // Usually SoftDelete expects a model with ID and update fields
+        await Get(id); 
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        if (_isSaving) return;
+        _isSaving = true;
+        
+        try 
+        {
+             // Validation (Code is assigned on save, not required from user)
+             var errors = new List<string>();
+             if (string.IsNullOrWhiteSpace(record.Name)) errors.Add("• Name is required");
+             if (string.IsNullOrWhiteSpace(record.PartyType)) errors.Add("• Party Type is required");
+    
+             if (errors.Count > 0)
+             {
+                 SnackbarService.Add($"ERROR:\n{string.Join("\n", errors)}", Severity.Error);
+                 return;
+             }
+    
+            LoadingPanel = true;
+    
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+    
+            string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<PartiesModel>($"Parties/{url}", record, true);
+            
+            if (result.Success)
+            {
+                SnackbarService.Add($"Record saved successfully", Severity.Success);
+                
+                if (Action == "SOFTDELETE")
+                {
+                     await _drawer.CloseDrawerAsync();
+                }
+                else if (result.Result != null)
+                {
+                     // Update local if needed or change mode
+                     if (Action == "INSERT") 
+                     {
+                         await Edit(result.Result.Id);
+                         Action = "UPDATE";
+                     }
+                }
+                
+                await GetAll();
+            }
+            else
+            {
+                SnackbarService.Add($"Error saving: {result.Message}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+             LoadingPanel = false;
+             _isSaving = false;
+        }
+    }
+}

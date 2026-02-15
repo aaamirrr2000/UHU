@@ -1,0 +1,453 @@
+@page "/ExchangeRatesPage/{Action}/{CurrentRecord?}"
+@using Microsoft.AspNetCore.Components.Forms
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <EditForm Model="record">
+    <MudGrid>
+        <!-- Exchange Rate Information Card -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px; height: 100%;">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.CurrencyExchange" 
+                             Size="Size.Large" 
+                             Color="Color.Primary" 
+                             Class="me-3" />
+                    <div>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Exchange Rate Information</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Currency pair and rate details</MudText>
+                    </div>
+                </div>
+                <MudDivider Class="mb-4" />
+
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudAutocomplete T="CurrenciesModel"
+                                         Label="Base Currency"
+                                         Value="@SelectedBaseCurrency"
+                                         ValueChanged="@OnBaseCurrencyChanged"
+                                         SearchFunc="@SearchBaseCurrencies"
+                                         ToStringFunc="@(x => x?.DisplayName ?? string.Empty)"
+                                         ReadOnly="@isReadOnly"
+                                         Variant="Variant.Outlined"
+                                         Required="true"
+                                         RequiredError="Base currency is required"
+                                         FullWidth="@true"
+                                         Class="mb-3" />
+                        <ValidationMessage For="@(() => record.BaseCurrencyId)" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudAutocomplete T="CurrenciesModel"
+                                         Label="Target Currency"
+                                         Value="@SelectedTargetCurrency"
+                                         ValueChanged="@OnTargetCurrencyChanged"
+                                         SearchFunc="@SearchTargetCurrencies"
+                                         ToStringFunc="@(x => x?.DisplayName ?? string.Empty)"
+                                         ReadOnly="@isReadOnly"
+                                         Variant="Variant.Outlined"
+                                         Required="true"
+                                         RequiredError="Target currency is required"
+                                         FullWidth="@true"
+                                         Class="mb-3" />
+                        <ValidationMessage For="@(() => record.TargetCurrencyId)" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudNumericField T="decimal"
+                                         Label="Exchange Rate"
+                                         @bind-Value="record.Rate"
+                                         Min="0.000001m"
+                                         Max="999999999.999999m"
+                                         Step="0.000001m"
+                                         ReadOnly="@isReadOnly"
+                                         Variant="Variant.Outlined"
+                                         Required="true"
+                                         RequiredError="Exchange rate is required"
+                                         FullWidth="@true"
+                                         Class="mb-3" />
+                        <ValidationMessage For="@(() => record.Rate)" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Date Range Card -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px; height: 100%;">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.DateRange" 
+                             Size="Size.Large" 
+                             Color="Color.Info" 
+                             Class="me-3" />
+                    <div>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Date Range</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Rate validity period</MudText>
+                    </div>
+                </div>
+                <MudDivider Class="mb-4" />
+
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudDatePicker DateFormat="dd MMM yyyy" Label="Start Date"
+                                       Date="@((DateTime?)record.StartDate)"
+                                       DateChanged="@((DateTime? date) => { if (date.HasValue) record.StartDate = date.Value; })"
+                                       ReadOnly="@isReadOnly"
+                                       Variant="Variant.Outlined"
+                                       FullWidth="@true"
+                                       Class="mb-3" />
+                        <ValidationMessage For="@(() => record.StartDate)" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudDatePicker DateFormat="dd MMM yyyy" Label="End Date (Optional)"
+                                       @bind-Date="record.EndDate"
+                                       ReadOnly="@isReadOnly" Variant="Variant.Outlined"
+                                       FullWidth="@true"
+                                       Class="mb-3" />
+                        <MudText Typo="Typo.caption" Class="text-muted">Leave empty for active rate</MudText>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Additional Information Card -->
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius: 12px;">
+                <div class="d-flex align-items-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Info" 
+                             Size="Size.Large" 
+                             Color="Color.Secondary" 
+                             Class="me-3" />
+                    <div>
+                        <MudText Typo="Typo.h6" Class="mb-0 fw-bold">Additional Information</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Source and remarks</MudText>
+                    </div>
+                </div>
+                <MudDivider Class="mb-4" />
+
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Source"
+                                      @bind-Value="record.Source"
+                                      Placeholder="e.g., State Bank of Pakistan, Manual Entry"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true"
+                                      Class="mb-3" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Remarks"
+                                      @bind-Value="record.Remarks"
+                                      Placeholder="Optional notes"
+                                      ReadOnly="@isReadOnly"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+    </EditForm>
+</MudContainer>
+
+<style>
+    .mud-paper {
+        transition: box-shadow 0.3s ease;
+    }
+
+    .mud-paper:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
+
+@code
+{
+    ExchangeRatesModel record = new();
+    List<CurrenciesModel> currencies = new();
+    CurrenciesModel? SelectedBaseCurrency { get; set; }
+    CurrenciesModel? SelectedTargetCurrency { get; set; }
+
+    [Parameter] public ExchangeRatesModel? Model { get; set; }
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+    [Parameter] public EventCallback OnSaved { get; set; }
+    private MyDrawer _drawer = new();
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCurrencies();
+        await GetAll();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Model != null)
+        {
+            record = Model;
+            if (record.BaseCurrencyId > 0)
+            {
+                SelectedBaseCurrency = currencies.FirstOrDefault(c => c.Id == record.BaseCurrencyId);
+            }
+            if (record.TargetCurrencyId > 0)
+            {
+                SelectedTargetCurrency = currencies.FirstOrDefault(c => c.Id == record.TargetCurrencyId);
+            }
+        }
+        else if (CurrentRecord > 0 && (record.Id != CurrentRecord || record.Id == 0))
+        {
+            await Get(CurrentRecord);
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
+    protected async Task LoadCurrencies()
+    {
+        LoadingPanel = true;
+        currencies = await Functions.GetAsync<List<CurrenciesModel>>($"Currencies/Search", true) ?? new List<CurrenciesModel>();
+        LoadingPanel = false;
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+
+        if (Action == "INSERT" && Model == null)
+        {
+            record = new ExchangeRatesModel();
+            record.StartDate = DateTime.Today;
+            isReadOnly = false;
+        }
+        else if (Action == "UPDATE" && Model == null)
+        {
+            await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action == "VIEW" && Model == null)
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<ExchangeRatesModel>($"ExchangeRates/Get/{id}", true) ?? new ExchangeRatesModel();
+        
+        // Set selected currencies for autocomplete
+        if (record.BaseCurrencyId > 0)
+        {
+            SelectedBaseCurrency = currencies.FirstOrDefault(c => c.Id == record.BaseCurrencyId);
+        }
+        if (record.TargetCurrencyId > 0)
+        {
+            SelectedTargetCurrency = currencies.FirstOrDefault(c => c.Id == record.TargetCurrencyId);
+        }
+        
+        LoadingPanel = false;
+    }
+
+    private async Task<IEnumerable<CurrenciesModel>> SearchBaseCurrencies(string value, CancellationToken cancellationToken)
+    {
+        await Task.CompletedTask;
+        if (string.IsNullOrEmpty(value))
+            return currencies.Where(c => c.Id != record.TargetCurrencyId);
+        
+        return currencies.Where(c => 
+            c.Id != record.TargetCurrencyId &&
+            (c.Code?.Contains(value, StringComparison.OrdinalIgnoreCase) == true ||
+             c.Name?.Contains(value, StringComparison.OrdinalIgnoreCase) == true));
+    }
+
+    private async Task<IEnumerable<CurrenciesModel>> SearchTargetCurrencies(string value, CancellationToken cancellationToken)
+    {
+        await Task.CompletedTask;
+        if (string.IsNullOrEmpty(value))
+            return currencies.Where(c => c.Id != record.BaseCurrencyId);
+        
+        return currencies.Where(c => 
+            c.Id != record.BaseCurrencyId &&
+            (c.Code?.Contains(value, StringComparison.OrdinalIgnoreCase) == true ||
+             c.Name?.Contains(value, StringComparison.OrdinalIgnoreCase) == true));
+    }
+
+    private void OnBaseCurrencyChanged(CurrenciesModel? item)
+    {
+        SelectedBaseCurrency = item; // Ensure the selected value is set
+        if (item != null)
+        {
+            record.BaseCurrencyId = item.Id;
+            record.BaseCurrencyCode = item.Code ?? string.Empty;
+            record.BaseCurrencyName = item.Name ?? string.Empty;
+        }
+        else
+        {
+            record.BaseCurrencyId = 0;
+            record.BaseCurrencyCode = string.Empty;
+            record.BaseCurrencyName = string.Empty;
+        }
+        StateHasChanged();
+    }
+
+    private void OnTargetCurrencyChanged(CurrenciesModel? item)
+    {
+        SelectedTargetCurrency = item; // Ensure the selected value is set
+        if (item != null)
+        {
+            record.TargetCurrencyId = item.Id;
+            record.TargetCurrencyCode = item.Code ?? string.Empty;
+            record.TargetCurrencyName = item.Name ?? string.Empty;
+        }
+        else
+        {
+            record.TargetCurrencyId = 0;
+            record.TargetCurrencyCode = string.Empty;
+            record.TargetCurrencyName = string.Empty;
+        }
+        StateHasChanged();
+    }
+
+    protected void GetDefaultValues()
+    {
+        StateHasChanged();
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new ExchangeRatesModel();
+        record.StartDate = DateTime.Today;
+        SelectedBaseCurrency = null;
+        SelectedTargetCurrency = null;
+        isReadOnly = false;
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        try
+        {
+            LoadingPanel = true;
+
+            // Ensure currency IDs are set from selected items - directly update record if needed
+            if (SelectedBaseCurrency != null)
+            {
+                record.BaseCurrencyId = SelectedBaseCurrency.Id;
+                record.BaseCurrencyCode = SelectedBaseCurrency.Code ?? string.Empty;
+                record.BaseCurrencyName = SelectedBaseCurrency.Name ?? string.Empty;
+            }
+
+            if (SelectedTargetCurrency != null)
+            {
+                record.TargetCurrencyId = SelectedTargetCurrency.Id;
+                record.TargetCurrencyCode = SelectedTargetCurrency.Code ?? string.Empty;
+                record.TargetCurrencyName = SelectedTargetCurrency.Name ?? string.Empty;
+            }
+
+            // Validation - check both SelectedCurrency and record ID
+            if (SelectedBaseCurrency == null || record.BaseCurrencyId == 0)
+            {
+                SnackbarService.Add("Please select a base currency", Severity.Error);
+                LoadingPanel = false;
+                return;
+            }
+
+            if (SelectedTargetCurrency == null || record.TargetCurrencyId == 0)
+            {
+                SnackbarService.Add("Please select a target currency", Severity.Error);
+                LoadingPanel = false;
+                return;
+            }
+
+            if (record.BaseCurrencyId == record.TargetCurrencyId)
+            {
+                SnackbarService.Add("Base currency and target currency cannot be the same", Severity.Error);
+                LoadingPanel = false;
+                return;
+            }
+
+            if (record.Rate <= 0)
+            {
+                SnackbarService.Add("Exchange rate must be greater than zero", Severity.Error);
+                LoadingPanel = false;
+                return;
+            }
+
+            if (record.EndDate.HasValue && record.EndDate.Value < record.StartDate)
+            {
+                SnackbarService.Add("End date cannot be earlier than start date", Severity.Error);
+                LoadingPanel = false;
+                return;
+            }
+
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<ExchangeRatesModel>($"ExchangeRates/{url}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"Record Not Saved: {result.Message ?? "Unknown error"}", Severity.Error);
+            }
+            else
+            {
+                await OnSaved.InvokeAsync();
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                    await Edit(result.Result!.Id);
+                else
+                {
+                    await Clear();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+}
+

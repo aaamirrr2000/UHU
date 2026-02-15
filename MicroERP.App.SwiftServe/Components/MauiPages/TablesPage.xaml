@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:MicroERP.App.SwiftServe.Components.MauiPages.Converters"
+             xmlns:controls="clr-namespace:MicroERP.App.SwiftServe.Components.MauiPages.Controls"
+             x:Class="MicroERP.App.SwiftServe.Components.MauiPages.TablesPage"
+             Title="Restaurant Tables"
+             BackgroundColor="#F5F5F5">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <Color x:Key="PrimaryColor">#512BD4</Color>
+            <Color x:Key="PrimaryLightColor">#7B5FE8</Color>
+            <Color x:Key="WhiteColor">#FFFFFF</Color>
+            <Color x:Key="TextPrimary">#212121</Color>
+            <Color x:Key="TextSecondary">#666666</Color>
+            <Color x:Key="BorderColor">#E0E0E0</Color>
+            <Color x:Key="SuccessColor">#51cf66</Color>
+            <Color x:Key="DangerColor">#ff6b6b</Color>
+            
+            <converters:InvertBoolConverter x:Key="InvertBoolConverter"/>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+        
+        <!-- Navigation Menu -->
+        <controls:NavigationMenu Grid.Row="0"
+                                Grid.RowSpan="2"
+                                ZIndex="1000"/>
+
+        <ScrollView Grid.Row="1">
+            <StackLayout Spacing="0" Padding="8">
+                
+                <!-- Header Section -->
+                <Frame BackgroundColor="{StaticResource PrimaryColor}"
+                       CornerRadius="12"
+                       Padding="20,16"
+                       Margin="0,0,0,12"
+                       HasShadow="True">
+                    <StackLayout Spacing="8">
+                        <Label Text="Restaurant Tables"
+                               FontSize="24"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource WhiteColor}"/>
+                        <Label Text="Select a table to start taking orders"
+                               FontSize="14"
+                               TextColor="#E0FFFFFF"/>
+                    
+                    <!-- Search and Refresh -->
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10" Margin="0,10,0,0">
+                        <Entry x:Name="SearchEntry"
+                               Placeholder="Search tables..."
+                               TextChanged="OnSearchTextChanged"
+                               BackgroundColor="{StaticResource WhiteColor}"
+                               TextColor="{StaticResource TextPrimary}"
+                               PlaceholderColor="{StaticResource TextSecondary}"
+                               Grid.Column="0"/>
+                        <Button Text="Refresh"
+                                Clicked="OnRefreshClicked"
+                                BackgroundColor="#E0FFFFFF"
+                                TextColor="{StaticResource PrimaryColor}"
+                                FontSize="14"
+                                Padding="15,8"
+                                CornerRadius="8"
+                                Grid.Column="1"/>
+                        <Label x:Name="TableCountLabel"
+                               Text="0 Tables"
+                               FontSize="14"
+                               TextColor="{StaticResource WhiteColor}"
+                               VerticalOptions="Center"
+                               Grid.Column="2"/>
+                    </Grid>
+                </StackLayout>
+            </Frame>
+
+            <!-- Loading Indicator -->
+            <ActivityIndicator x:Name="LoadingIndicator"
+                              IsRunning="True"
+                              IsVisible="False"
+                              Color="{StaticResource PrimaryColor}"
+                              HeightRequest="40"
+                              WidthRequest="40"
+                              HorizontalOptions="Center"
+                              Margin="0,20"/>
+
+            <!-- Tables Collection -->
+            <CollectionView x:Name="TablesCollectionView"
+                           ItemsSource="{Binding FilteredTables}"
+                           SelectionMode="None"
+                           Margin="0,0,0,20">
+                <CollectionView.ItemsLayout>
+                    <GridItemsLayout Orientation="Vertical"
+                                   Span="2"
+                                   HorizontalItemSpacing="8"
+                                   VerticalItemSpacing="8"/>
+                </CollectionView.ItemsLayout>
+                
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame x:Name="TableFrame"
+                               BackgroundColor="{StaticResource WhiteColor}"
+                               BorderColor="#87ceeb"
+                               CornerRadius="12"
+                               Padding="16"
+                               HasShadow="True"
+                               Margin="4">
+                            <StackLayout Spacing="12">
+                                <!-- Header: Icon and Name -->
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                    <Frame x:Name="StatusIconFrame"
+                                           BackgroundColor="#51cf66"
+                                           CornerRadius="24"
+                                           WidthRequest="48"
+                                           HeightRequest="48"
+                                           Padding="0"
+                                           HasShadow="False"
+                                           Grid.Column="0">
+                                        <Label Text="🍽"
+                                               FontSize="24"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center"/>
+                                    </Frame>
+                                    
+                                    <StackLayout Grid.Column="1" VerticalOptions="Center">
+                                        <Label Text="{Binding TableNumber}"
+                                               FontSize="18"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource TextPrimary}"/>
+                                        <Label Text="{Binding TableLocation}"
+                                               FontSize="12"
+                                               TextColor="{StaticResource TextSecondary}"/>
+                                    </StackLayout>
+                                </Grid>
+                                
+                                <!-- Status -->
+                                <Label x:Name="StatusLabel"
+                                       Text="{Binding AvailableStatus}"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       HorizontalOptions="Center"
+                                       TextColor="#27ae60"/>
+                                
+                                <!-- Description -->
+                                <Label Text="{Binding Capacity, StringFormat='Capacity: {0} people'}"
+                                       FontSize="14"
+                                       TextColor="{StaticResource TextSecondary}"
+                                       HorizontalOptions="Center"/>
+                                
+                                <!-- Service Type Buttons -->
+                                <StackLayout Spacing="8" Margin="0,8,0,0">
+                                    <Button Text="Dine-In"
+                                            Clicked="OnServiceTypeSelected"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="{StaticResource PrimaryColor}"
+                                            TextColor="{StaticResource WhiteColor}"
+                                            CornerRadius="8"
+                                            HeightRequest="40"
+                                            IsEnabled="{Binding IsAvailable, Converter={StaticResource InvertBoolConverter}}"/>
+                                    
+                                    <Button Text="Takeaway"
+                                            Clicked="OnTakeawaySelected"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="#6c757d"
+                                            TextColor="{StaticResource WhiteColor}"
+                                            CornerRadius="8"
+                                            HeightRequest="40"
+                                            IsEnabled="{Binding IsAvailable, Converter={StaticResource InvertBoolConverter}}"/>
+                                    
+                                    <Button Text="Parcel"
+                                            Clicked="OnParcelSelected"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="#17a2b8"
+                                            TextColor="{StaticResource WhiteColor}"
+                                            CornerRadius="8"
+                                            HeightRequest="40"
+                                            IsEnabled="{Binding IsAvailable, Converter={StaticResource InvertBoolConverter}}"/>
+                                </StackLayout>
+                                
+                                <!-- View Orders Button -->
+                                <Button Text="View Orders"
+                                        Clicked="OnViewOrderClicked"
+                                        CommandParameter="{Binding Id}"
+                                        BackgroundColor="Transparent"
+                                        TextColor="#3498db"
+                                        BorderColor="#3498db"
+                                        BorderWidth="1"
+                                        CornerRadius="8"
+                                        HeightRequest="36"
+                                        Margin="0,4,0,0"/>
+                            </StackLayout>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Empty State -->
+            <StackLayout x:Name="EmptyStateLayout"
+                        IsVisible="False"
+                        Spacing="20"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"
+                        Margin="0,40">
+                <Label Text="🍽"
+                       FontSize="80"
+                       HorizontalOptions="Center"
+                       Opacity="0.3"/>
+                <Label Text="No tables found"
+                       FontSize="20"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextSecondary}"
+                       HorizontalOptions="Center"/>
+                <Label x:Name="EmptyStateMessage"
+                       Text="Please ensure tables are configured in the system."
+                       FontSize="14"
+                       TextColor="{StaticResource TextSecondary}"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"/>
+            </StackLayout>
+
+            </StackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>
+

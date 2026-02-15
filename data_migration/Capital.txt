@@ -1,0 +1,529 @@
+-- =============================================
+-- CLEAN INSERT: CAPITAL INJECTIONS ONLY
+-- Investor name included in Description
+-- =============================================
+-- ✅ Ensures IDENTITY_INSERT is OFF to avoid common errors
+-- ✅ Uses auto‑generated identity values
+-- ✅ Description includes the investor’s name
+-- =============================================
+
+-- Turn OFF IDENTITY_INSERT if it was left ON from previous attempts
+SET IDENTITY_INSERT GeneralLedgerHeader OFF;
+SET IDENTITY_INSERT GeneralLedgerDetail OFF;
+GO
+
+DECLARE @OrganizationId INT = 1;
+DECLARE @UserId INT = 1; -- Admin
+
+-- Fetch Account IDs (adjust names if necessary)
+DECLARE @Acc_Cash INT = (SELECT Id FROM ChartOfAccounts WHERE Name = 'CASH' AND Code = '10007');
+DECLARE @Acc_OnlineTransfer INT = (SELECT Id FROM ChartOfAccounts WHERE Name = 'ONLINE BANK TRANSFER');
+DECLARE @Acc_EasyPaisa INT = (SELECT Id FROM ChartOfAccounts WHERE Name = 'EASYPAISA');
+DECLARE @Acc_JazzCash INT = (SELECT Id FROM ChartOfAccounts WHERE Name = 'JAZZCASH');
+DECLARE @Acc_PaymentBank INT = (SELECT Id FROM ChartOfAccounts WHERE Name = 'PAYMENT BANK');
+DECLARE @Acc_CollectionBank INT = (SELECT Id FROM ChartOfAccounts WHERE Name = 'COLLECTION BANK');
+DECLARE @Acc_CapitalInvestment INT = (SELECT Id FROM ChartOfAccounts WHERE Name = 'Capital Investment');
+
+-- Fetch Party IDs and Names for the two investors
+DECLARE @Party_Aamir INT, @Party_Talha INT;
+DECLARE @Name_Aamir NVARCHAR(100), @Name_Talha NVARCHAR(100);
+
+SELECT @Party_Aamir = Id, @Name_Aamir = Name FROM Parties WHERE Name = 'AAMIR RASHID';
+SELECT @Party_Talha = Id, @Name_Talha = Name FROM Parties WHERE Name = 'SHAH M TALHA TAHIR';
+
+-- Table variable to store generated HeaderId for each EntryNo
+DECLARE @HeaderIds TABLE (EntryNo NVARCHAR(20), HeaderId INT);
+
+-- ======================================================================
+-- 1. INSERT ALL HEADERS (CAPITAL INJECTIONS ONLY)
+--    Description includes investor name
+-- ======================================================================
+
+-- IMP-1 (2025-09-12) Aamir, Online Transfer, 150,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-1', '2025-09-12', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 150000, 150000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-1', SCOPE_IDENTITY());
+
+-- IMP-2 (2025-09-12) Talha, Online Transfer, 150,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-2', '2025-09-12', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 'Pre-Open', @Party_Talha, 150000, 150000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-2', SCOPE_IDENTITY());
+
+-- IMP-5 (2025-11-12) Aamir, Cash, 55,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-5', '2025-11-12', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 55000, 55000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-5', SCOPE_IDENTITY());
+
+-- IMP-6 (2025-11-12) Aamir, EasyPaisa, 15,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-6', '2025-11-12', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 15000, 15000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-6', SCOPE_IDENTITY());
+
+-- IMP-7 (2025-11-12) Talha, Online Transfer, 540,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-7', '2025-11-12', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 'Pre-Open', @Party_Talha, 540000, 540000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-7', SCOPE_IDENTITY());
+
+-- IMP-12 (2025-11-13) Aamir, Online Transfer, 300,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-12', '2025-11-13', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 300000, 300000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-12', SCOPE_IDENTITY());
+
+-- IMP-13 (2025-11-13) Aamir, EasyPaisa, 19,515
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-13', '2025-11-13', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 19515, 19515, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-13', SCOPE_IDENTITY());
+
+-- IMP-16 (2025-11-19) Aamir, Online Transfer, 1,000,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-16', '2025-11-19', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 1000000, 1000000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-16', SCOPE_IDENTITY());
+
+-- IMP-17 (2025-11-19) Talha, Online Transfer, 1,000,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-17', '2025-11-19', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 'Pre-Open', @Party_Talha, 1000000, 1000000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-17', SCOPE_IDENTITY());
+
+-- IMP-18 (2025-11-19) Talha, Cash, 115,900
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-18', '2025-11-19', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 'Pre-Open', @Party_Talha, 115900, 115900, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-18', SCOPE_IDENTITY());
+
+-- IMP-23 (2025-11-20) Aamir, Online Transfer, 1,000,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-23', '2025-11-20', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 1000000, 1000000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-23', SCOPE_IDENTITY());
+
+-- IMP-24 (2025-11-20) Talha, Online Transfer, 1,000,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-24', '2025-11-20', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 'Pre-Open', @Party_Talha, 1000000, 1000000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-24', SCOPE_IDENTITY());
+
+-- IMP-25 (2025-11-20) Aamir, Cash, 600
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-25', '2025-11-20', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 600, 600, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-25', SCOPE_IDENTITY());
+
+-- IMP-26 (2025-11-20) Talha, Cash, 950
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-26', '2025-11-20', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 'Pre-Open', @Party_Talha, 950, 950, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-26', SCOPE_IDENTITY());
+
+-- IMP-30 (2025-11-21) Aamir, Online Transfer, 500,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-30', '2025-11-21', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 500000, 500000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-30', SCOPE_IDENTITY());
+
+-- IMP-31 (2025-11-21) Talha, EasyPaisa, 500,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-31', '2025-11-21', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 'Pre-Open', @Party_Talha, 500000, 500000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-31', SCOPE_IDENTITY());
+
+-- IMP-32 (2025-11-21) Aamir, Cash, 70,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-32', '2025-11-21', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 70000, 70000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-32', SCOPE_IDENTITY());
+
+-- IMP-33 (2025-11-21) Talha, Cash, 900
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-33', '2025-11-21', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 'Pre-Open', @Party_Talha, 900, 900, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-33', SCOPE_IDENTITY());
+
+-- IMP-38 (2025-11-22) Talha, Cash, 440
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-38', '2025-11-22', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 'Pre-Open', @Party_Talha, 440, 440, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-38', SCOPE_IDENTITY());
+
+-- IMP-40 (2025-11-23) Aamir, Cash, 2,670
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-40', '2025-11-23', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 2670, 2670, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-40', SCOPE_IDENTITY());
+
+-- IMP-41 (2025-11-23) Aamir, Online Transfer, 223,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-41', '2025-11-23', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 223000, 223000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-41', SCOPE_IDENTITY());
+
+-- IMP-42 (2025-11-23) Aamir, EasyPaisa, 1,367
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-42', '2025-11-23', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 1367, 1367, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-42', SCOPE_IDENTITY());
+
+-- IMP-43 (2025-11-23) Talha, EasyPaisa, 33,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-43', '2025-11-23', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 'Pre-Open', @Party_Talha, 33000, 33000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-43', SCOPE_IDENTITY());
+
+-- IMP-50 (2025-11-24) Talha, Cash, 720
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-50', '2025-11-24', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 'Pre-Open', @Party_Talha, 720, 720, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-50', SCOPE_IDENTITY());
+
+-- IMP-51 (2025-11-24) Talha, EasyPaisa, 17,100
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-51', '2025-11-24', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 'Pre-Open', @Party_Talha, 17100, 17100, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-51', SCOPE_IDENTITY());
+
+-- IMP-55 (2025-11-25) Aamir, Cash, 2,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-55', '2025-11-25', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 2000, 2000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-55', SCOPE_IDENTITY());
+
+-- IMP-56 (2025-11-25) Talha, Cash, 6,880
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-56', '2025-11-25', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 'Pre-Open', @Party_Talha, 6880, 6880, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-56', SCOPE_IDENTITY());
+
+-- IMP-60 (2025-11-26) Aamir, Cash, 2,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-60', '2025-11-26', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 2000, 2000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-60', SCOPE_IDENTITY());
+
+-- IMP-62 (2025-11-27) Aamir, Cash, 39,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-62', '2025-11-27', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 39000, 39000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-62', SCOPE_IDENTITY());
+
+-- IMP-63 (2025-11-27) Aamir, Online Transfer, 85,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-63', '2025-11-27', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 85000, 85000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-63', SCOPE_IDENTITY());
+
+-- IMP-64 (2025-11-27) Aamir, Online Transfer, 1,500
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-64', '2025-11-27', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 1500, 1500, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-64', SCOPE_IDENTITY());
+
+-- IMP-65 (2025-11-27) Aamir, EasyPaisa, 6,955
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-65', '2025-11-27', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 6955, 6955, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-65', SCOPE_IDENTITY());
+
+-- IMP-66 (2025-11-27) Talha, Cash, 123,370
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-66', '2025-11-27', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 'Pre-Open', @Party_Talha, 123370, 123370, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-66', SCOPE_IDENTITY());
+
+-- IMP-67 (2025-11-27) Talha, Online Transfer, 27,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-67', '2025-11-27', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 'Pre-Open', @Party_Talha, 27000, 27000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-67', SCOPE_IDENTITY());
+
+-- IMP-90 (2025-11-28) Aamir, Online Transfer, 23,000
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-90', '2025-11-28', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 23000, 23000, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-90', SCOPE_IDENTITY());
+
+-- IMP-91 (2025-11-28) Aamir, EasyPaisa, 1,860
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-91', '2025-11-28', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 'Pre-Open', @Party_Aamir, 1860, 1860, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-91', SCOPE_IDENTITY());
+
+-- IMP-92 (2025-11-28) Talha, Cash, 700
+INSERT INTO GeneralLedgerHeader (OrganizationId, EntryNo, EntryDate, Source, Description, ReferenceNo, PartyId, TotalDebit, TotalCredit, IsPosted, CreatedBy)
+VALUES (1, 'IMP-92', '2025-11-28', 'IMPORT', 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 'Pre-Open', @Party_Talha, 700, 700, 1, 1);
+INSERT INTO @HeaderIds (EntryNo, HeaderId) VALUES ('IMP-92', SCOPE_IDENTITY());
+
+-- ======================================================================
+-- 2. INSERT ALL DETAILS (Debit + Credit)
+--    Description also includes investor name
+-- ======================================================================
+
+-- IMP-1
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_OnlineTransfer, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 150000, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-1';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 150000, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-1';
+
+-- IMP-2
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_OnlineTransfer, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 150000, 0, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-2';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 0, 150000, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-2';
+
+-- IMP-5
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_Cash, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 55000, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-5';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 55000, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-5';
+
+-- IMP-6
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_EasyPaisa, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 15000, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-6';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 15000, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-6';
+
+-- IMP-7
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_OnlineTransfer, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 540000, 0, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-7';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 0, 540000, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-7';
+
+-- IMP-12
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_OnlineTransfer, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 300000, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-12';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 300000, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-12';
+
+-- IMP-13
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_EasyPaisa, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 19515, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-13';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 19515, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-13';
+
+-- IMP-16
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_OnlineTransfer, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 1000000, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-16';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 1000000, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-16';
+
+-- IMP-17
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_OnlineTransfer, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 1000000, 0, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-17';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 0, 1000000, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-17';
+
+-- IMP-18
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_Cash, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 115900, 0, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-18';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 0, 115900, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-18';
+
+-- IMP-23
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_OnlineTransfer, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 1000000, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-23';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 1000000, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-23';
+
+-- IMP-24
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_OnlineTransfer, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 1000000, 0, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-24';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 0, 1000000, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-24';
+
+-- IMP-25
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_Cash, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 600, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-25';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 600, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-25';
+
+-- IMP-26
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_Cash, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 950, 0, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-26';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 0, 950, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-26';
+
+-- IMP-30
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_OnlineTransfer, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 500000, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-30';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 500000, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-30';
+
+-- IMP-31
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_EasyPaisa, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 500000, 0, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-31';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 0, 500000, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-31';
+
+-- IMP-32
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_Cash, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 70000, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-32';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 70000, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-32';
+
+-- IMP-33
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_Cash, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 900, 0, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-33';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 0, 900, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-33';
+
+-- IMP-38
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_Cash, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 440, 0, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-38';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 0, 440, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-38';
+
+-- IMP-40
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_Cash, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 2670, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-40';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 2670, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-40';
+
+-- IMP-41
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_OnlineTransfer, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 223000, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-41';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 223000, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-41';
+
+-- IMP-42
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_EasyPaisa, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 1367, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-42';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 1367, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-42';
+
+-- IMP-43
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_EasyPaisa, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 33000, 0, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-43';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 0, 33000, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-43';
+
+-- IMP-50
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_Cash, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 720, 0, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-50';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 0, 720, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-50';
+
+-- IMP-51
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_EasyPaisa, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 17100, 0, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-51';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 0, 17100, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-51';
+
+-- IMP-55
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_Cash, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 2000, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-55';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 2000, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-55';
+
+-- IMP-56
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_Cash, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 6880, 0, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-56';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 0, 6880, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-56';
+
+-- IMP-60
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_Cash, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 2000, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-60';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 2000, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-60';
+
+-- IMP-62
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_Cash, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 39000, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-62';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 39000, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-62';
+
+-- IMP-63
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_OnlineTransfer, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 85000, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-63';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 85000, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-63';
+
+-- IMP-64
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_OnlineTransfer, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 1500, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-64';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 1500, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-64';
+
+-- IMP-65
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_EasyPaisa, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 6955, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-65';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 6955, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-65';
+
+-- IMP-66
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_Cash, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 123370, 0, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-66';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 0, 123370, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-66';
+
+-- IMP-67
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_OnlineTransfer, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 27000, 0, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-67';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 0, 27000, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-67';
+
+-- IMP-90
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_OnlineTransfer, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 23000, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-90';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 23000, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-90';
+
+-- IMP-91
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_EasyPaisa, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 1860, 0, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-91';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Aamir, 0, 1860, @Party_Aamir, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-91';
+
+-- IMP-92
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_Cash, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 700, 0, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-92';
+INSERT INTO GeneralLedgerDetail (HeaderId, AccountId, Description, DebitAmount, CreditAmount, PartyId, CreatedBy)
+SELECT HeaderId, @Acc_CapitalInvestment, 'CAPITAL INJECTED HWPI - ' + @Name_Talha, 0, 700, @Party_Talha, 1
+FROM @HeaderIds WHERE EntryNo = 'IMP-92';
+
+PRINT 'All capital injection entries have been inserted successfully.';
+GO

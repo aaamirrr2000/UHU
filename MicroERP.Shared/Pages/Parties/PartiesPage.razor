@@ -1,0 +1,538 @@
+@page "/PartiesPage/{Action}/{CurrentRecord?}"
+
+@using MicroERP.Shared.Models
+@using Microsoft.AspNetCore.Components.Forms
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+    <EditForm Model="Model">
+    <MudExpansionPanels MultiExpansion="true">
+        <MudExpansionPanel Text="Basic Details & Identification" Expanded=true Style="margin-bottom:10px;">
+                <TitleContent>
+                    <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+
+                        <i class="fa fa-info-circle"
+                           style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                        </i>
+
+                        <div class="ms-2">
+                            <MudText Typo="Typo.h6" Class="fw-bold">@(string.IsNullOrWhiteSpace(Model.Name) ? "NO NAME" : Model.Name)</MudText>
+                            <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Parties</MudText>
+                        </div>
+                    </div>
+                    
+                </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <!-- Code -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudTextField id="Code"
+                                      Label="Code"
+                                      Variant="Variant.Outlined"
+                                      Value="@Model.Code"
+                                      ValueChanged="@((string v) => Model.Code = v?.ToUpper())"
+                                      Placeholder="Code"
+                                      ReadOnly="true"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1">
+                        </MudTextField>	<ValidationMessage For="@(() => Model.Code)" />
+                    </div>
+
+                    <!-- Name -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudTextField id="Name"
+                                      Label="Name *"
+                                      Variant="Variant.Outlined"
+                                      Value="@Model.Name"
+                                      ValueChanged="@((string v) => Model.Name = v?.ToUpper())"
+                                      Placeholder="Name"
+                                      ReadOnly="@IsReadOnly"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1">
+                        </MudTextField>	<ValidationMessage For="@(() => Model.Name)" />
+                    </div>
+
+                    <!-- Party Type -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudSelect T="string"
+                                   Value="Model.PartyType"
+                                   ValueChanged="@OnPartyTypeChangedHandler"
+                                   Label="Party Type *"
+                                   Placeholder="Party Type"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   ReadOnly="@IsReadOnly"
+                                   FullWidth="@true"
+                                   Class="flex-grow-1">
+                            <MudSelectItem T="string" Value="@("CUSTOMER")">Customer</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("SUPPLIER")">Supplier</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("BANK")">Bank</MudSelectItem>
+                        </MudSelect>
+                    </div>
+
+                    <!-- Parent Party -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <AutoComplete TItem="PartiesModel"
+                                      DataList="@ParentParties"
+                                      DisplayProperty="@(p => p.Name)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="Model.ParentId"
+                                      Variant="Variant.Outlined"
+                                      Label="Parent Party"
+                                      ReadOnly="@IsReadOnly"
+                                      FullWidth="@true" />
+                    </div>
+
+                    <!-- NTN -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudTextField id="NTN"
+                                      Label="NTN"
+                                      Variant="Variant.Outlined"
+                                      Value="@Model.NTN"
+                                      ValueChanged="@((string v) => Model.NTN = v?.ToUpper())"
+                                      Placeholder="NTN"
+                                      ReadOnly="@IsReadOnly"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1">
+                        </MudTextField>
+                    </div>
+
+                    <!-- STN -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudTextField id="STN"
+                                      Label="STN"
+                                      Variant="Variant.Outlined"
+                                      Value="@Model.STN"
+                                      ValueChanged="@((string v) => Model.STN = v?.ToUpper())"
+                                      Placeholder="STN"
+                                      ReadOnly="@IsReadOnly"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1">
+                        </MudTextField>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudSelect T="int"
+                                   @bind-Value="Model.IsRegistered"
+                                   Label="Is Registered"
+                                   Placeholder="Is Registered"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   ReadOnly="@IsReadOnly"
+                                   FullWidth="@true"
+                                   Class="flex-grow-1">
+                            <MudSelectItem T="int" Value="1">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                Yes
+                            </MudSelectItem>
+                            <MudSelectItem T="int" Value="0">
+                                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" Class="me-2" />
+                                No
+                            </MudSelectItem>
+                        </MudSelect>
+
+                    </div>
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudSelect T="int"
+                                   @bind-Value="Model.IsFiler"
+                                   Label="Is Filer"
+                                   Placeholder="Is Filer"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   ReadOnly="@IsReadOnly"
+                                   FullWidth="@true"
+                                   Class="flex-grow-1">
+                            <MudSelectItem T="int" Value="1">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                Yes
+                            </MudSelectItem>
+                            <MudSelectItem T="int" Value="0">
+                                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" Class="me-2" />
+                                No
+                            </MudSelectItem>
+                        </MudSelect>
+
+                    </div>
+                    <!-- Is Active -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudSelect T="int"
+                                   @bind-Value="Model.IsActive"
+                                   Label="Activation Status *"
+                                   Placeholder="Is Active"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   ReadOnly="@IsReadOnly"
+                                   FullWidth="@true"
+                                   Class="flex-grow-1">
+                            <MudSelectItem T="int" Value="1">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                Enable
+                            </MudSelectItem>
+                            <MudSelectItem T="int" Value="0">
+                                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" Class="me-2" />
+                                Disable
+                            </MudSelectItem>
+                        </MudSelect>
+                        <ValidationMessage For="@(() => Model.IsActive)" />
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <MudExpansionPanel Text="Party Class" Expanded=true Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+
+                    <i class="fa fa-info-circle"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Rating</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Parties</MudText>
+                    </div>
+                </div>
+                
+            </TitleContent>
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <!-- Rating -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudNumericField @bind-Value="Model.CustomerRating" 
+                                         Label="Rating"
+                                         Variant="Variant.Outlined" 
+                                         Placeholder="Rating" 
+                                         ReadOnly="@IsReadOnly" 
+                                         Format="#,##0.00"
+                                         FullWidth="@true"
+                                         Class="flex-grow-1"></MudNumericField>
+                    </div>
+
+                    <!-- Class -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudSelect T="string"
+                                   @bind-Value="Model.CustomerClass"
+                                   Label="Class"
+                                   Placeholder="Class"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   ReadOnly="@IsReadOnly"
+                                   FullWidth="@true"
+                                   Class="flex-grow-1">
+                            @if (PartyClasses != null && PartyClasses.Any())
+                            {
+                                foreach (var i in PartyClasses)
+                                {
+                                    <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => Model.CustomerClass)" />
+                        </div>
+                    </div>
+
+                    <!-- With Us Since -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudDatePicker @bind-Date="Model.CustomerSince" 
+                                       Label="With Us Since" Variant="Variant.Outlined" DateFormat="dd MMM yyyy" 
+                                       Placeholder="With Us Since" 
+                                       ReadOnly="@IsReadOnly"
+                                       FullWidth="@true"
+                                       Class="flex-grow-1"></MudDatePicker>
+                    </div>
+
+                    <!-- Sales Person Id -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <AutoComplete TItem="EmployeesModel"
+                                      DataList="@Employees"
+                                      DisplayProperty="@(p => p.Fullname)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="Model.SalesPersonId"
+                                      Variant="Variant.Outlined"
+                                      Label="Sales Person"
+                                      ReadOnly="@IsReadOnly"
+                                      FullWidth="@true" />
+                    </div>
+
+                    <!-- Credit Limit -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudNumericField @bind-Value="Model.CreditLimit" 
+                                         Label="Credit Limit"
+                                         Variant="Variant.Outlined" 
+                                         Placeholder="CreditLimit" 
+                                         ReadOnly="@IsReadOnly" 
+                                         Format="#,##0.00"
+                                         FullWidth="@true"
+                                         Class="flex-grow-1"></MudNumericField>
+                    </div>
+
+                    <!-- Payment Terms Id -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <AutoComplete TItem="PaymentTermsModel"
+                                      DataList="@PaymentTerms"
+                                      DisplayProperty="@(p => p.Description)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="Model.PaymentTermsId"
+                                      Variant="Variant.Outlined"
+                                      Label="Payment Terms"
+                                      ReadOnly="@IsReadOnly"
+                                      FullWidth="@true" />
+                    </div>
+
+                    <!-- Price List -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudSelect T="int"
+                                   Value="Model.PriceListId"
+                                   ValueChanged="@((int v) => Model.PriceListId = v)"
+                                   Label="Price List"
+                                   Placeholder="Select Price List"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   ReadOnly="@IsReadOnly"
+                                   FullWidth="@true"
+                                   Class="flex-grow-1">
+                            @if (PriceLists != null && PriceLists.Any())
+                            {
+                                @foreach (var priceList in PriceLists)
+                                {
+                                    <MudSelectItem T="int" Value="@priceList.Id">@priceList.ListValue</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <MudText Typo="Typo.caption" Class="text-muted mt-1">
+                            Price list to use for this party in sale invoices
+                        </MudText>
+                    </div>
+
+                    <!-- Account Id -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <AutoComplete TItem="ChartOfAccountsModel"
+                                      DataList="@Accounts"
+                                      DisplayProperty="@(p => p.Name)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="Model.AccountId"
+                                      Variant="Variant.Outlined"
+                                      Label="Account"
+                                      ReadOnly="@IsReadOnly"
+                                      FullWidth="@true" />
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <MudExpansionPanel Text="Party Details" Expanded=true Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+
+                    <i class="fa fa-info-circle"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Details</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Manage & Maintain Parties</MudText>
+                    </div>
+                </div>
+                
+            </TitleContent>
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <!-- Address -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudTextField id="Address"
+                                      Label="Address"
+                                      Variant="Variant.Outlined"
+                                      Value="@Model.Address"
+                                      ValueChanged="@((string v) => Model.Address = v?.ToUpper())"
+                                      Placeholder="Address"
+                                      ReadOnly="@IsReadOnly"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1">
+                        </MudTextField>
+                    </div>
+
+                    <!-- City Id -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <AutoComplete TItem="AreasModel"
+                                      DataList="@Cities"
+                                      DisplayProperty="@(p => p.AreaName)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="Model.CityId"
+                                      Variant="Variant.Outlined"
+                                      Label="City/Area"
+                                      ReadOnly="@IsReadOnly"
+                                      FullWidth="@true" />
+                    </div>
+
+                    <!-- Contact Person -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudTextField id="ContactPerson"
+                                      Label="Contact Person"
+                                      Variant="Variant.Outlined"
+                                      Value="@Model.ContactPerson"
+                                      ValueChanged="@((string v) => Model.ContactPerson = v?.ToUpper())"
+                                      Placeholder="Contact Person"
+                                      ReadOnly="@IsReadOnly"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1">
+                        </MudTextField>
+                    </div>
+
+                    <!-- Contact Designation -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudTextField id="ContactDesignation"
+                                      Label="Contact Designation"
+                                      Variant="Variant.Outlined"
+                                      Value="@Model.ContactDesignation"
+                                      ValueChanged="@((string v) => Model.ContactDesignation = v?.ToUpper())"
+                                      Placeholder="Contact Designation"
+                                      ReadOnly="@IsReadOnly"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1">
+                        </MudTextField>
+                    </div>
+
+                    <!-- Contact Email -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudTextField id="ContactEmail"
+                                      Label="Contact Email"
+                                      Variant="Variant.Outlined"
+                                      Value="@Model.ContactEmail"
+                                      ValueChanged="@((string v) => Model.ContactEmail = v?.ToUpper())"
+                                      Placeholder="Contact Email"
+                                      ReadOnly="@IsReadOnly"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1">
+                        </MudTextField>
+                    </div>
+
+                    <!-- Latitude -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudTextField id="Latitude"
+                                      Label="Latitude"
+                                      Variant="Variant.Outlined"
+                                      Value="@Model.Latitude"
+                                      ValueChanged="@((string v) => Model.Latitude = v?.ToUpper())"
+                                      Placeholder="Latitude"
+                                      ReadOnly="@IsReadOnly"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1">
+                        </MudTextField>
+                    </div>
+
+                    <!-- Longitude -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudTextField id="Longitude"
+                                      Label="Longitude"
+                                      Variant="Variant.Outlined"
+                                      Value="@Model.Longitude"
+                                      ValueChanged="@((string v) => Model.Longitude = v?.ToUpper())"
+                                      Placeholder="Longitude"
+                                      ReadOnly="@IsReadOnly"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1">
+                        </MudTextField>
+                    </div>
+
+                    <!-- Radius -->
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudNumericField @bind-Value="Model.Radius" 
+                                         Label="Radius"
+                                         Variant="Variant.Outlined" 
+                                         Placeholder="Radius" 
+                                         ReadOnly="@IsReadOnly" 
+                                         Format="#,##0.00"
+                                         FullWidth="@true"
+                                         Class="flex-grow-1"></MudNumericField>
+                    </div>
+
+                    <!-- Image Upload Section -->
+                    <div class="col-12 col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="p-3 border rounded">
+                                    <label class="small fw-bold text-uppercase d-block mb-2 text-center">Item Image</label>
+                                    <div class="d-flex justify-content-center align-items-center mb-3" style="height: 150px;">
+                                        @if (!string.IsNullOrEmpty(Model.Pic))
+                                        {
+                                            <img src="@Globals.GetImageUrl(Model.Pic)"
+                                                 class="img-fluid rounded"
+                                                 alt="Party Image"
+                                                 style="max-height: 100%; max-width: 100%; object-fit: cover;" />
+                                        }
+                                        else
+                                        {
+                                            <div class="d-flex align-items-center justify-content-center bg-secondary rounded-circle"
+                                                 style="width: 120px; height: 120px;">
+                                                <i class="fas fa-user-circle text-white fs-3"></i>
+                                            </div>
+                                        }
+                                    </div>
+                                    @if (!IsReadOnly)
+                                    {
+                                        <InputFile OnChange="OnFileInputChanged" class="form-control form-control-sm" />
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter] public PartiesModel Model { get; set; } = new();
+    
+    // Dropdown Data
+    [Parameter] public List<PartiesModel> ParentParties { get; set; } = new();
+    [Parameter] public List<EmployeesModel> Employees { get; set; } = new();
+    [Parameter] public List<PaymentTermsModel> PaymentTerms { get; set; } = new();
+    [Parameter] public List<ChartOfAccountsModel> Accounts { get; set; } = new();
+    [Parameter] public List<AreasModel> Cities { get; set; } = new();
+    [Parameter] public List<TypeCodeModel> PartyClasses { get; set; } = new();
+    [Parameter] public List<TypeCodeModel> PriceLists { get; set; } = new();
+    
+    [Parameter] public bool IsReadOnly { get; set; }
+    
+    [Parameter] public EventCallback<string> OnPartyTypeChanged { get; set; }
+    
+    // Injected services used directly in component (typically minimal)
+    @inject FileUploadService FileUploadService
+    @inject Functions Functions
+    @inject ISnackbar SnackbarService
+    @inject Globals Globals
+
+    private async Task OnPartyTypeChangedHandler(string value)
+    {
+        Model.PartyType = value;
+        await OnPartyTypeChanged.InvokeAsync(value);
+    }
+    
+    private async Task OnFileInputChanged(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var result = await Functions.FileUpload(e, FileUploadService);
+
+            if (result.Item1 == true)
+            {
+                Model.Pic = result.Item2;
+                SnackbarService.Add("File uploaded successfully!", Severity.Success);
+            }
+            else
+            {
+                SnackbarService.Add($"Error: {result.Item2}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Exception: {ex.Message}", Severity.Error);
+            Model.Pic = null;
+        }
+    }
+}
+

@@ -1,0 +1,383 @@
+@page "/ChargesRulesDashboard"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 2px;">
+    <div class="dashboard-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Class="me-2" Style="color: white;" />
+                    Charges Rules Management
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">Configure charges and fees</MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+                <MudTextField @bind-Value="searchString"
+                            @bind-Value:after="FilterData"
+                            Placeholder="Search rules..."
+                            Adornment="Adornment.Start"
+                            AdornmentIcon="@Icons.Material.Filled.Search"
+                            IconSize="Size.Small"
+                            Variant="Variant.Outlined"
+                            Immediate="true"
+                            Margin="Margin.Dense"
+                            Class="dashboard-search-field"
+                            Style="background: rgba(255,255,255,0.95); width: 280px;" />
+                @if (Globals.AccessLevel == 1)
+                {
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
+                               Size="Size.Small" 
+                               Variant="Variant.Filled" 
+                               Color="Color.Success" 
+                               Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                               OnClick="@(() => Clear())">
+                        New
+                    </MudButton>
+                }
+                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Info"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => Refresh())">
+                    Refresh
+                </MudButton>
+            </div>
+        </div>
+    </div>
+
+    <MyDrawer @ref="_drawer" Title="ChargesRules" FaIcon="fas fa-address-book">
+        <HeaderContent>
+             @if (Action != "VIEW" && Globals.AccessLevel == 1)
+            {
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Success"
+                           Size="Size.Small"
+                           OnClick="Save"
+                           Disabled="@_isSaving"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; margin-right: 8px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                    @(_isSaving ? "Saving..." : (Action == "INSERT" ? "Save" : "Update"))
+                </MudButton>
+
+                @if (Action == "UPDATE")
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Error"
+                               Size="Size.Small"
+                               OnClick="@(() => Delete(record.Id))"
+                               Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;">
+                        <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                        Delete
+                    </MudButton>
+                }
+            }
+        </HeaderContent>
+        <ChildContent>
+             <ChargesRulesPage Model="record"
+                               Accounts="Accounts"
+                               IsReadOnly="@isReadOnly" />
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    @if (data == null)
+    {
+        <SimpleLoading />
+    }
+    else
+    {
+        <MudPaper Elevation="3" Style="border-radius: 12px; overflow: hidden;">
+            <MudDataGrid T="ChargesRulesModel" MultiSelection="false" Items="@data" SortMode="SortMode.Multiple" Filterable="true" Hideable="true" RowsPerPage="10" Dense="true" Striped="true" Class="professional-grid elevation-8">
+
+                <Columns>
+                    <TemplateColumn Title="Actions" CellStyle="width: 80px; min-width: 80px;" HeaderClass="grid-header">
+                        <CellTemplate Context="row">
+                            <div class="actions-cell">
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                         Color="Color.Primary"
+                                         Dense="true"
+                                         Class="actions-menu">
+                                    <MudMenuItem OnClick="@(() => View(row.Item.Id))"
+                                                 Class="menu-item view-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
+                                        <span>View Details</span>
+                                    </MudMenuItem>
+                                    @if (Globals.AccessLevel == 1)
+                                    {
+                                        <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
+                                                     Class="menu-item edit-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
+                                            <span>Edit</span>
+                                        </MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => Delete(row.Item.Id))"
+                                                     Color="Color.Error"
+                                                     Class="menu-item delete-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
+                                            <span>Delete</span>
+                                        </MudMenuItem>
+                                    }
+                                </MudMenu>
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="x => x.Account" Title="Account" Sortable="true" Filterable="true" HeaderClass="grid-header" CellClass="grid-cell" />
+                    <PropertyColumn Property="x => x.AmountType" Title="Amount Type" Sortable="true" Filterable="true" HeaderClass="grid-header" CellClass="grid-cell" />
+                    <PropertyColumn Property="x => x.Amount" Title="Amount" Sortable="true" Filterable="true" Format="#,##0.00" CellStyle="text-align: right;" HeaderClass="grid-header" CellClass="grid-cell" />
+                    <PropertyColumn Property="x => x.ChargeCategory" Title="Charge Category" Sortable="true" Filterable="true" HeaderClass="grid-header" CellClass="grid-cell" />
+                    <PropertyColumn Property="x => x.EffectiveFrom" Title="Effective From" Sortable="true" Filterable="true" Format="dd-MMM-yyy" HeaderClass="grid-header" CellClass="grid-cell" />
+                    <PropertyColumn Property="x => x.EffectiveTo" Title="Effective To" Sortable="true" Filterable="true" Format="dd-MMM-yyy" HeaderClass="grid-header" CellClass="grid-cell" />
+                    <TemplateColumn Title="IsActive"
+                                    CellStyle="width: 70px; min-width: 70px;"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell">
+                        <CellTemplate Context="row">
+                            @if (row.Item.IsActive == 1)
+                            {
+                                <MudChip Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">Yes</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">No</MudChip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+
+                <PagerContent>
+                    <div class="pager-container">
+                        <MudDataGridPager T="ChargesRulesModel" Class="grid-pager" />
+                    </div>
+                </PagerContent>
+            </MudDataGrid>
+        </MudPaper>
+    }
+</MudContainer>
+
+<style>
+    .dashboard-header {
+        padding: 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 8px;
+    }
+
+    .dashboard-header .mud-typography {
+        color: white !important;
+    }
+
+    .dashboard-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    .dashboard-search-field .mud-input-root {
+        color: var(--mud-palette-text-primary) !important;
+    }
+
+    .dashboard-search-field .mud-input-root input {
+        color: var(--mud-palette-text-primary) !important;
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .dashboard-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+</style>
+
+@code
+{
+    List<ChargesRulesModel> AllData = new();
+    List<ChargesRulesModel> data = new();
+    ChargesRulesModel record = new();
+    
+    // Dropdowns
+    List<ChartOfAccountsModel> Accounts = new();
+
+    public string Action { get; set; } = "INSERT";
+    private string searchString = "";
+
+    private bool LoadingPanel { get; set; } = false;
+    private bool _isSaving { get; set; } = false;
+    private bool isReadOnly = true;
+    
+    private MyDrawer _drawer = new();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "ChargesRulesDashboard");
+        await GetAll();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        try 
+        {
+            var t1 = Functions.GetAsync<List<ChargesRulesModel>>($"ChargesRules/Search", true);
+            var t2 = Functions.GetAsync<List<ChartOfAccountsModel>>($"ChartOfAccounts/Search/InterfaceType='SERVICE' or InterfaceType='DISCOUNT'", true);
+            
+            await Task.WhenAll(t1, t2);
+            
+            AllData = await t1 ?? new List<ChargesRulesModel>();
+            Accounts = await t2 ?? new List<ChartOfAccountsModel>();
+            data = AllData;
+        }
+        catch (Exception ex)
+        {
+             SnackbarService.Add($"Error loading data: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+             LoadingPanel = false;
+        }
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<ChargesRulesModel>($"ChargesRules/Get/{id}", true) ?? new ChargesRulesModel();
+        LoadingPanel = false;
+        
+        // Ensure default account if missing but we have list? 
+        // Logic handled in Page now via OnParametersSet
+    }
+
+     private void FilterData()
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+        {
+            data = AllData.ToList();
+        }
+        else
+        {
+            var search = searchString.ToLower();
+            data = AllData.Where(x =>
+                (x.ChargeCategory != null && x.ChargeCategory.ToString().Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                (x.AmountType != null && x.AmountType.Contains(search, StringComparison.OrdinalIgnoreCase))
+            ).ToList();
+        }
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new ChargesRulesModel();
+        record.IsActive = 1;
+        isReadOnly = false;
+        
+        // Set default values
+        if (Accounts.Any()) record.AccountId = Accounts.First().Id;
+        
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Refresh()
+    {
+        await GetAll();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        isReadOnly = true;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE"; 
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        // Ensure we have the record loaded or just use ID?
+        // Usually safer to load it
+        await Get(id);
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        if (_isSaving) return;
+        _isSaving = true;
+        
+        // Validation
+        var errors = new List<string>();
+        if (string.IsNullOrWhiteSpace(record.ChargeCategory))
+            errors.Add("• Charge Category is required");
+
+        if (errors.Count > 0)
+        {
+            SnackbarService.Add($"ERROR:\n{string.Join("\n", errors)}", Severity.Error);
+            _isSaving = false;
+            return;
+        }
+
+        try
+        {
+            LoadingPanel = true;
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<ChargesRulesModel>($"ChargesRules/{url}", record, true);
+            
+            if (result.Success)
+            {
+                SnackbarService.Add($"Record Saved Successfully", Severity.Success);
+                await GetAll();
+                
+                if (Action == "SOFTDELETE")
+                {
+                    await _drawer.CloseDrawerAsync();
+                }
+                else if (result.Result != null)
+                {
+                     if (Action == "INSERT")
+                     {
+                         await Edit(result.Result.Id);
+                         Action = "UPDATE";
+                     }
+                }
+            }
+            else
+            {
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"ERROR: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+            _isSaving = false;
+        }
+    }
+}

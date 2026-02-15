@@ -1,0 +1,470 @@
+@page "/PeriodCloseDashboard"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 2px;">
+    <div class="dashboard-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Class="me-2" Style="color: white;" />
+                    Period Close Management
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">Manage accounting periods and closing</MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+                <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Success" 
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="Clear">
+                    New
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Info"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => Refresh())">
+                    Refresh
+                </MudButton>
+            </div>
+        </div>
+    </div>
+
+    <MyDrawer @ref="_drawer" Title="Period Close" FaIcon="fas fa-calendar-check">
+        <HeaderContent>
+             @if (Action != "VIEW" && Globals.AccessLevel == 1)
+            {
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Success"
+                           Size="Size.Small"
+                           OnClick="Save"
+                           Disabled="@_isSaving"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; margin-right: 8px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-1" />
+                    @(_isSaving ? "Saving..." : (Action == "INSERT" ? "Save" : "Update"))
+                </MudButton>
+
+                @if (Action == "UPDATE")
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Error"
+                               Size="Size.Small"
+                               OnClick="@(() => Delete(record.Id))"
+                               Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;">
+                        <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-1" />
+                        Delete
+                    </MudButton>
+                }
+            }
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <PeriodClosePage Model="record" IsReadOnly="@isReadOnly" />
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    @if (LoadingPanel || data == null)
+    {
+        <SimpleLoading />
+    }
+    else
+    {
+        <MudPaper Elevation="3" Style="border-radius: 12px; overflow: hidden;">
+            <MudDataGrid T="PeriodCloseModel"
+                         MultiSelection="false"
+                         Items="@data"
+                         SortMode="SortMode.Multiple"
+                         Filterable="true"
+                         Hideable="true"
+                         RowsPerPage="10"
+                         Dense="true"
+                         Striped="true"
+                         Hover="true"
+                         Class="professional-grid elevation-8">
+
+                <Columns>
+                    <TemplateColumn Title="Actions"
+                                    CellStyle="width: 80px; min-width: 80px;"
+                                    HeaderClass="grid-header">
+                        <CellTemplate Context="row">
+                            <div class="actions-cell">
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                         Color="Color.Primary"
+                                         Dense="true"
+                                         Class="actions-menu">
+                                    <MudMenuItem OnClick="@(() => View(row.Item.Id))"
+                                                 Class="menu-item view-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
+                                        <span>View</span>
+                                    </MudMenuItem>
+                                    @if (row.Item.Status == "OPEN" || row.Item.Status == "OPEN_PENDING")
+                                    {
+                                        <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
+                                                     Class="menu-item edit-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
+                                            <span>Edit</span>
+                                        </MudMenuItem>
+                                    
+                                        <MudMenuItem OnClick="@(() => Delete(row.Item.Id))"
+                                        Color="Color.Error"
+                                        Class="menu-item delete-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
+                                            <span>Delete</span>
+                                        </MudMenuItem>
+
+                                        <hr />
+                                        <MudMenuItem OnClick="@(() => ClosePeriod(row.Item.Id))"
+                                                     Class="menu-item close-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Lock" Class="menu-icon" />
+                                            <span>Close Period</span>
+                                        </MudMenuItem>
+                                    }
+                                </MudMenu>
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="x => x.PeriodName"
+                                    Title="Period Name"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="150px" />
+
+                    <PropertyColumn Property="x => x.StartDate"
+                                    Title="Start Date"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Format="dd-MMM-yyyy"
+                                    Width="120px" />
+
+                    <PropertyColumn Property="x => x.EndDate"
+                                    Title="End Date"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Format="dd-MMM-yyyy"
+                                    Width="120px" />
+
+                    <PropertyColumn Property="x => x.ModuleType"
+                                    Title="Module Type"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="120px" />
+
+                    <TemplateColumn Title="Status"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="120px">
+                        <CellTemplate Context="row">
+                            @if (row.Item.Status == "OPEN")
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled">Open</MudChip>
+                            }
+                            else if (row.Item.Status == "OPEN_PENDING")
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Filled">Open Pending</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">Closed</MudChip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="x => x.ClosedDate"
+                                    Title="Closed Date"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Format="dd-MMM-yyyy HH:mm"
+                                    Width="150px" />
+
+                    <PropertyColumn Property="x => x.ClosedByName"
+                                    Title="Closed By"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell"
+                                    Width="150px" />
+
+                    <PropertyColumn Property="x => x.Notes"
+                                    Title="Notes"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                </Columns>
+
+                <PagerContent>
+                    <div class="pager-container">
+                        <MudDataGridPager T="PeriodCloseModel" Class="grid-pager" />
+                    </div>
+                </PagerContent>
+            </MudDataGrid>
+        </MudPaper>
+    }
+</MudContainer>
+
+<style>
+    .dashboard-header {
+        padding: 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 8px;
+    }
+
+    .dashboard-header .mud-typography {
+        color: white !important;
+    }
+
+    .dashboard-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .dashboard-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+</style>
+
+@code
+{
+    PeriodCloseModel record = new();
+    List<PeriodCloseModel> data = new();
+
+    public string Action { get; set; } = "INSERT";
+    private bool LoadingPanel { get; set; } = false;
+    private bool _isSaving { get; set; } = false;
+    private bool isReadOnly = true;
+    
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Globals.AccessLevel = Globals.PageAccess(NavManager, "PeriodCloseDashboard");
+            await GetAll();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error initializing: {ex.Message}", Severity.Error);
+        }
+    }
+
+    protected async Task GetAll()
+    {
+        try
+        {
+            LoadingPanel = true;
+            data = await Functions.GetAsync<List<PeriodCloseModel>>($"PeriodClose/Search", true) ?? new List<PeriodCloseModel>();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading data: {ex.Message}", Severity.Error);
+            data = new List<PeriodCloseModel>();
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+
+    protected async Task Refresh()
+    {
+        await GetAll();
+        StateHasChanged();
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<PeriodCloseModel>($"PeriodClose/Get/{id}", true) ?? new PeriodCloseModel();
+        LoadingPanel = false;
+    }
+
+    protected async Task Clear()
+    {
+        try
+        {
+            Action = "INSERT";
+            record = new PeriodCloseModel();
+            record.Status = "OPEN";
+            record.ModuleType = "ALL";
+            record.StartDate = DateTime.Today;
+            record.EndDate = DateTime.Today.AddMonths(1).AddDays(-1);
+            isReadOnly = false;
+            await _drawer.OpenDrawerAsync();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        isReadOnly = true;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        try
+        {
+            await Get(id);
+            Action = "UPDATE";
+            isReadOnly = false;
+            await _drawer.OpenDrawerAsync();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading record: {ex.Message}", Severity.Error);
+        }
+    }
+
+    protected async Task Delete(int id)
+    {
+        try
+        {
+            var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+            if (res == false)
+                return;
+
+            Action = "SOFTDELETE";
+            await Get(id);
+            await Save();
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    protected async Task ClosePeriod(int id)
+    {
+        try
+        {
+            var res = await Functions.ShowConfirmation(dialogService, "Do you want to close this period? Once closed, no transactions can be posted to this period.");
+            if (res == false)
+                return;
+
+            LoadingPanel = true;
+            var result = await Functions.PostAsync<string>($"PeriodClose/ClosePeriod/{id}?userId={Globals.User.Id}", "", true);
+            LoadingPanel = false;
+
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+            }
+            else
+            {
+                SnackbarService.Add("Period closed successfully", Severity.Success);
+                await GetAll();
+            }
+        }
+        catch (Exception ex)
+        {
+            LoadingPanel = false;
+            SnackbarService.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    protected async Task Save()
+    {
+        if (_isSaving) return;
+        _isSaving = true;
+
+        try
+        {
+            LoadingPanel = true;
+             
+            // Normalize ModuleType and Status to uppercase before saving
+            if (!string.IsNullOrWhiteSpace(record.ModuleType))
+            {
+                record.ModuleType = record.ModuleType.ToUpper().Trim();
+            }
+            else
+            {
+                record.ModuleType = "ALL"; // Default to ALL if not set
+            }
+            
+            if (!string.IsNullOrWhiteSpace(record.Status))
+            {
+                record.Status = record.Status.ToUpper().Trim();
+            }
+            else
+            {
+                record.Status = "OPEN"; // Default to OPEN if not set
+            }
+
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            var result = await Functions.PostAsync<PeriodCloseModel>($"PeriodClose/{Action}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+            }
+            else
+            {
+                SnackbarService.Add($"Record Saved Successfully", Severity.Success);
+                await GetAll();
+
+                if (Action == "SOFTDELETE")
+                {
+                    await _drawer.CloseDrawerAsync();
+                }
+                else if (result.Result != null)
+                {
+                     if (Action == "INSERT")
+                     {
+                         await Edit(result.Result.Id);
+                         Action = "UPDATE";
+                     }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error saving: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+            _isSaving = false;
+        }
+    }
+}

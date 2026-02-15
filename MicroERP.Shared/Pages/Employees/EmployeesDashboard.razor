@@ -1,0 +1,417 @@
+@page "/EmployeesDashboard"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 2px;">
+    <div class="dashboard-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.People" Class="me-2" Style="color: white;" />
+                    Employees Management
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">Manage employee records and information</MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 flex-wrap">
+                <MudTextField @bind-Value="searchString"
+                             @bind-Value:after="FilterData"
+                             Placeholder="Search employees..."
+                             Adornment="Adornment.Start"
+                             AdornmentIcon="@Icons.Material.Filled.Search"
+                             IconSize="Size.Small"
+                             Variant="Variant.Outlined"
+                             Immediate="true"
+                             Margin="Margin.Dense"
+                             Class="dashboard-search-field"
+                             Style="background: rgba(255,255,255,0.95); width: 260px;" />
+                @if (Globals.AccessLevel == 1)
+                {
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
+                               Size="Size.Small" 
+                               Variant="Variant.Filled" 
+                               Color="Color.Success" 
+                               Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                               OnClick="@(() => Clear())">
+                        New
+                    </MudButton>
+                }
+                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Info"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => Refresh())">
+                    Refresh
+                </MudButton>
+            </div>
+        </div>
+    </div>
+
+    <MyDrawer @ref="_drawer" Title="Employees" FaIcon="fas fa-id-badge" >
+        <HeaderContent>
+            @if (Action != "VIEW")
+            {
+                <MudButton OnClick="@(() => Save())"
+                           Variant="Variant.Filled"
+                           Color="Color.Success"
+                           StartIcon="@Icons.Material.Filled.Save"
+                           Size="Size.Small"
+                           Class="me-2">
+                    @(Action == "INSERT" ? "Save" : "Update")
+                </MudButton>
+
+                @if (Action == "UPDATE")
+                {
+                    <MudButton OnClick="@(() => Delete(record.Id))"
+                               Variant="Variant.Filled"
+                               Color="Color.Error"
+                               StartIcon="@Icons.Material.Filled.Delete"
+                               Size="Size.Small">
+                        Delete
+                    </MudButton>
+                }
+            }
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <EmployeesPage Action="@Action" Model="record" OnSaved="ChildSaved"/>
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyDrawer>
+
+    @if (data == null)
+    {
+        <SimpleLoading />
+    }
+    else
+    {
+        <MudPaper Elevation="3" Style="border-radius: 12px; overflow: hidden;">
+            <MudDataGrid T="EmployeesModel"
+                         MultiSelection="false"
+                         Items="@data"
+                         SortMode="SortMode.Multiple"
+                         Filterable="true"
+                         Hideable="true"
+                         RowsPerPage="10"
+                         Dense="true"
+                         Striped="true"
+                         Class="professional-grid elevation-8">
+
+                <Columns>
+                    <TemplateColumn Title="Actions"
+                                    CellStyle="width: 80px; min-width: 80px;"
+                                    HeaderClass="grid-header">
+                        <CellTemplate Context="row">
+                            <div class="actions-cell">
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                         Color="Color.Primary"
+                                         Dense="true"
+                                         Class="actions-menu">
+                                    <MudMenuItem OnClick="@(() => View(row.Item.Id))"
+                                                 Class="menu-item view-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
+                                        <span>View Details</span>
+                                    </MudMenuItem>
+                                    @if (Globals.AccessLevel == 1)
+                                    {
+                                        <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
+                                                     Class="menu-item edit-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
+                                            <span>Edit</span>
+                                        </MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => Delete(row.Item.Id))"
+                                                     Color="Color.Error"
+                                                     Class="menu-item delete-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
+                                            <span>Delete</span>
+                                        </MudMenuItem>
+                                    }
+                                </MudMenu>
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="x => x.EmpId"
+                                    Title="Employee ID"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <TemplateColumn Title="Photo"
+                                    CellStyle="width: 50px; min-width: 50px;"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell">
+                        <CellTemplate Context="row">
+                            <img src="@(!string.IsNullOrWhiteSpace(row.Item.Pic) ? Globals.GetImageUrl(row.Item.Pic) : "images/no-image.png")"
+                                 alt="Employee Photo"
+                                 style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd;" />
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="x => x.Fullname"
+                                    Title="Full Name"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.DesignationName"
+                                    Title="Designation"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.DepartmentName"
+                                    Title="Department"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.Phone"
+                                    Title="Phone"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.Email"
+                                    Title="Email"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.Cnic"
+                                    Title="NIC"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.Address"
+                                    Title="Address"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.EmpType"
+                                    Title="Employee Type"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.HireDate"
+                                    Title="Hire Date"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    Format="dd-MMM-yyyy"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <PropertyColumn Property="x => x.BasicSalary"
+                                    Title="Basic Salary"
+                                    Sortable="true"
+                                    Filterable="true"
+                                    Format="#,##0.00"
+                                    CellStyle="text-align: right;"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell" />
+
+                    <TemplateColumn Title="Status"
+                                    CellStyle="width: 70px; min-width: 70px;"
+                                    HeaderClass="grid-header"
+                                    CellClass="grid-cell">
+                        <CellTemplate Context="row">
+                            @if (row.Item.IsActive == 1)
+                            {
+                                <MudChip Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">Active</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">Locked</MudChip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+
+                <PagerContent>
+                    <div class="pager-container">
+                        <MudDataGridPager T="EmployeesModel" Class="grid-pager" />
+                    </div>
+                </PagerContent>
+
+            </MudDataGrid>
+        </MudPaper>
+    }
+</MudContainer>
+
+<style>
+    .dashboard-header {
+        padding: 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 8px;
+    }
+
+    .dashboard-header .mud-typography {
+        color: white !important;
+    }
+
+    .dashboard-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .dashboard-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+</style>
+
+@code
+{
+    List<EmployeesModel> data = new();
+    List<EmployeesModel> AllData = new();
+    private string searchString = "";
+    EmployeesModel record = new();
+
+    public string? Action { get; set; } = "INSERT";
+
+    bool isReadOnly = true;
+    
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "EmployeesDashboard");
+        await GetAll();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        AllData = await Functions.GetAsync<List<EmployeesModel>>($"Employees/Search", true) ?? new List<EmployeesModel>();
+        FilterData();
+        LoadingPanel = false;
+    }
+
+    private void FilterData()
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            data = AllData.ToList();
+        else
+        {
+            var search = searchString.ToLower();
+            data = AllData.Where(x =>
+                (x.Fullname?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.EmpId?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.Cnic?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.Phone?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.Email?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
+            ).ToList();
+        }
+        StateHasChanged();
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<EmployeesModel>($"Employees/Get/{id}", true) ?? new EmployeesModel();
+        LoadingPanel = false;
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new EmployeesModel();
+        record.IsActive = 1;
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Refresh()
+    {
+        await GetAll();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        isReadOnly = true;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Get(id);
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        LoadingPanel = true;
+
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedFrom = Globals.ClientInfo;
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = Globals.ClientInfo;
+
+        var result = await Functions.PostAsync<EmployeesModel>($"Employees/{Action}", record, true);
+        if (result.Success == true)
+        {
+            SnackbarService.Add($"Record Deleted Successfully", Severity.Success);
+            if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) await Edit(result.Result!.Id);
+        }
+        else
+        {
+            SnackbarService.Add($"Record Not Deleted", Severity.Error);
+        }
+
+        await GetAll();
+        LoadingPanel = false;
+        await _drawer.CloseDrawerAsync();
+
+    }
+
+    private async Task ChildSaved()
+    {
+        await GetAll();
+        await _drawer.CloseDrawerAsync();
+        StateHasChanged();
+    }
+
+}

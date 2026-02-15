@@ -1,0 +1,505 @@
+@using Microsoft.AspNetCore.Components.Web
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Globals Globals
+@inject IJSRuntime JSRuntime
+@inject IFormFactor FormFactor
+@using MudBlazor
+@inject Functions Functions
+@implements IDisposable
+
+<div class="uniget-sidebar @(IsCollapsed ? "collapsed" : "expanded")" @onclick:stopPropagation>
+    @if (isLoading)
+    {
+        <div class="uniget-sidebar-loading">
+            <MudProgressCircular Size="Size.Small" Color="Color.Primary" />
+            <span>Loading menu...</span>
+        </div>
+    }
+    else if (hasError)
+    {
+        <div class="uniget-sidebar-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>Failed to load menu</span>
+            <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="RetryLoadMenu">Retry</MudButton>
+        </div>
+    }
+    else
+    {
+        <!-- Main Navigation (like Discover Packages, Software Updates, etc.) -->
+        <div class="uniget-nav-main">
+            @foreach (var group in MenuGroupData)
+            {
+                var isSelected = expandedGroupId == group.MenuId;
+                var groupItems = GetGroupItems(group.MenuId);
+                <div class="uniget-nav-section">
+                    <div class="uniget-nav-item @(isSelected ? "selected" : "")"
+                         @onclick="() => OnGroupClick(group.MenuId)">
+                        <i class="@(group.Icon ?? "fas fa-circle") uniget-nav-icon"></i>
+                        @if (!IsCollapsed)
+                        {
+                            <span class="uniget-nav-label">@group.MenuCaption</span>
+                            <i class="fas fa-chevron-@(isSelected ? "down" : "right") uniget-nav-arrow"></i>
+                        }
+                    </div>
+                    @if (!IsCollapsed && isSelected && groupItems.Any())
+                    {
+                        <div class="uniget-nav-children">
+                            @foreach (var item in groupItems)
+                            {
+                                <div class="uniget-nav-child @(IsActive(item) ? "active" : "")"
+                                     @onclick="() => LoadOption(item)">
+                                    <i class="@(item.Icon ?? "fas fa-circle")"></i>
+                                    <span>@item.MenuCaption</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Report section -->
+        @if (ReportMenuItems.Any())
+        {
+            <div class="uniget-nav-report-section">
+                <div class="uniget-nav-item @(reportExpanded ? "selected" : "")" @onclick="OnReportClick">
+                    <i class="fas fa-chart-line uniget-nav-icon"></i>
+                    @if (!IsCollapsed)
+                    {
+                        <span class="uniget-nav-label">Reports</span>
+                        <i class="fas fa-chevron-@(reportExpanded ? "down" : "right") uniget-nav-arrow"></i>
+                    }
+                </div>
+                @if (!IsCollapsed && reportExpanded)
+                {
+                    <div class="uniget-nav-children">
+                        @foreach (var item in ReportMenuItems)
+                        {
+                            <div class="uniget-nav-child @(IsActive(item) ? "active" : "")" @onclick="() => LoadOption(item)">
+                                <i class="@(item.Icon ?? "fas fa-file-alt")"></i>
+                                <span>@item.MenuCaption</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Setup section: menu items with Parameter = SETUP and their sub-menus -->
+        @if (SetupParentItems.Any())
+        {
+            <div class="uniget-nav-setup-section">
+                <div class="uniget-nav-item @(setupExpanded ? "selected" : "")" @onclick="OnSetupClick">
+                    <i class="fas fa-cogs uniget-nav-icon"></i>
+                    @if (!IsCollapsed)
+                    {
+                        <span class="uniget-nav-label">Setup</span>
+                        <i class="fas fa-chevron-@(setupExpanded ? "down" : "right") uniget-nav-arrow"></i>
+                    }
+                </div>
+                @if (!IsCollapsed && setupExpanded)
+                {
+                    <div class="uniget-nav-children">
+                        @foreach (var setupParent in SetupParentItems)
+                        {
+                            var isSetupGroupExpanded = expandedSetupParentId == setupParent.MenuId;
+                            var setupChildren = GetGroupItems(setupParent.MenuId);
+                            <div class="uniget-nav-setup-group">
+                                <div class="uniget-nav-item uniget-nav-setup-parent @(isSetupGroupExpanded ? "selected" : "")"
+                                     @onclick="() => ToggleSetupParent(setupParent.MenuId)">
+                                    <i class="@(setupParent.Icon ?? "fas fa-folder") uniget-nav-icon"></i>
+                                    <span class="uniget-nav-label">@setupParent.MenuCaption</span>
+                                    <i class="fas fa-chevron-@(isSetupGroupExpanded ? "down" : "right") uniget-nav-arrow"></i>
+                                </div>
+                                @if (isSetupGroupExpanded && setupChildren.Any())
+                                {
+                                    <div class="uniget-nav-children uniget-nav-setup-children">
+                                        @foreach (var child in setupChildren)
+                                        {
+                                            <div class="uniget-nav-child @(IsActive(child) ? "active" : "")" @onclick="() => LoadOption(child)">
+                                                <i class="@(child.Icon ?? "fas fa-circle")"></i>
+                                                <span>@child.MenuCaption</span>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Bottom: Home, Theme (Change Password & Log out are in top-bar user menu) -->
+        <div class="uniget-sidebar-bottom">
+            @if (IsCollapsed)
+            {
+                <div class="uniget-bottom-item" @onclick="OnExpandOnly">
+                    <i class="fas fa-home"></i>
+                </div>
+            }
+            else
+            {
+                <a href="/@(Globals.User?.Dashboard ?? "dashboard")" class="uniget-bottom-item">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
+            }
+            <div class="uniget-bottom-item uniget-bottom-theme"
+                 @onclick="() => { if (IsCollapsed) OnExpandOnly(); }">
+                <i class="fas fa-adjust"></i>
+                @if (!IsCollapsed) { <span>Theme</span> }
+                @if (!IsCollapsed) { <MudSwitch Value="Globals._isDarkMode" ValueChanged="OnThemeChanged" Color="Color.Primary" T="bool" Class="ms-auto" /> }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<GroupMenuModel> MenuGroupData = new();
+    private List<GroupMenuModel> data = new();
+    private List<GroupMenuModel> ReportMenuItems = new();
+    private List<GroupMenuModel> SetupParentItems = new();
+    private bool isLoading = true;
+    private bool hasError = false;
+    private int? expandedGroupId = null;
+    private bool reportExpanded = false;
+    private bool setupExpanded = false;
+    private int? expandedSetupParentId = null;
+
+    [Parameter] public bool IsCollapsed { get; set; }
+    [Parameter] public EventCallback<bool> OnSidebarToggle { get; set; }
+    [Parameter] public EventCallback<bool> OnThemeToggle { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMenuData();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Globals.User?.Id > 0 && Globals.Organization != null && MenuGroupData.Count == 0 && !isLoading && !hasError)
+            await LoadMenuData();
+    }
+
+    private async Task LoadMenuData()
+    {
+        try
+        {
+            isLoading = true;
+            hasError = false;
+            StateHasChanged();
+
+            if (Globals.User == null || Globals.Organization == null)
+            {
+                hasError = true;
+                return;
+            }
+
+            data = await Functions.GetAsync<List<GroupMenuModel>>(
+                $"Permissions/SearchGroupPermissions/{Globals.User.OrganizationId}", true) ?? new List<GroupMenuModel>();
+
+            if (data.Count > 0)
+            {
+                data = data.Where(x => x.GroupId == Globals.User.GroupId).ToList();
+
+                // Find Reports parent by caption and ParentId = 0 (root)
+                var reportsParentId = data.FirstOrDefault(x => string.Equals(x.MenuCaption, "Reports", StringComparison.OrdinalIgnoreCase) && x.ParentId == 0)?.MenuId ?? -1;
+
+                // Report items: children of Reports parent (by ParentId), only items with PageName (report categories)
+                ReportMenuItems = data
+                    .Where(x => reportsParentId >= 0 && x.ParentId == reportsParentId
+                        && !string.IsNullOrEmpty(x.PageName)
+                        && (Globals.User.GroupId == 1 || x.My_Privilege == "READ ONLY" || x.My_Privilege == "FULL ACCESS"))
+                    .OrderBy(x => x.SeqNo)
+                    .ToList();
+
+                // Setup parents: menu items with Parameter = SETUP (Security Setup, General Setup, Financial Setup)
+                var setupParentIds = data
+                    .Where(x => (x.Parameter?.ToUpper() == "SETUP" || x.Parameter == "Setup") && x.ParentId == 0 && x.Live == 1)
+                    .Select(x => x.MenuId)
+                    .Distinct()
+                    .ToList();
+                SetupParentItems = data
+                    .Where(x => setupParentIds.Contains(x.MenuId) && (Globals.User.GroupId == 1 || data.Any(c => c.ParentId == x.MenuId && (c.My_Privilege == "READ ONLY" || c.My_Privilege == "FULL ACCESS"))))
+                    .GroupBy(x => x.MenuId)
+                    .Select(g => g.First())
+                    .OrderBy(x => x.SeqNo)
+                    .ToList();
+
+                // Main nav: exclude Reports parent, Setup parents, and their descendants
+                var mainData = data
+                    .Where(x => x.MenuId != reportsParentId && x.ParentId != reportsParentId
+                        && !setupParentIds.Contains(x.MenuId) && !setupParentIds.Contains(x.ParentId))
+                    .ToList();
+
+                if (Globals.User.GroupId != 1)
+                {
+                    MenuGroupData = mainData
+                        .Where(p => p.ParentId == 0 && mainData.Any(c => c.ParentId == p.MenuId && (c.My_Privilege == "READ ONLY" || c.My_Privilege == "FULL ACCESS")))
+                        .OrderBy(x => x.SeqNo)
+                        .ToList();
+                }
+                else
+                {
+                    MenuGroupData = mainData.Where(x => x.ParentId == 0).OrderBy(x => x.SeqNo).ToList();
+                }
+
+                Globals.MyPermissions = data;
+                if (MenuGroupData.Count > 0)
+                    expandedGroupId = MenuGroupData[0].MenuId;
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Failed to load menu: {ex.Message}", Severity.Error);
+            hasError = true;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private List<GroupMenuModel> GetGroupItems(int parentId)
+    {
+        if (data == null) return new List<GroupMenuModel>();
+        return data
+            .Where(x => x.ParentId == parentId && (Globals.User?.GroupId == 1 || x.My_Privilege == "READ ONLY" || x.My_Privilege == "FULL ACCESS"))
+            .OrderBy(x => x.SeqNo)
+            .ToList();
+    }
+
+    private void RetryLoadMenu() => _ = LoadMenuData();
+
+    private void ToggleGroup(int groupId)
+    {
+        expandedGroupId = expandedGroupId == groupId ? null : groupId;
+        StateHasChanged();
+    }
+
+    private async Task OnGroupClick(int groupId)
+    {
+        if (IsCollapsed)
+        {
+            await OnSidebarToggle.InvokeAsync(true);
+            expandedGroupId = groupId;
+            StateHasChanged();
+        }
+        else
+        {
+            ToggleGroup(groupId);
+        }
+    }
+
+    private async Task OnReportClick()
+    {
+        if (IsCollapsed)
+        {
+            await OnSidebarToggle.InvokeAsync(true);
+            reportExpanded = true;
+            StateHasChanged();
+        }
+        else
+        {
+            reportExpanded = !reportExpanded;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnSetupClick()
+    {
+        if (IsCollapsed)
+        {
+            await OnSidebarToggle.InvokeAsync(true);
+            setupExpanded = true;
+            StateHasChanged();
+        }
+        else
+        {
+            setupExpanded = !setupExpanded;
+            if (!setupExpanded)
+                expandedSetupParentId = null;
+            StateHasChanged();
+        }
+    }
+
+    private void ToggleSetupParent(int parentId)
+    {
+        expandedSetupParentId = expandedSetupParentId == parentId ? null : parentId;
+        StateHasChanged();
+    }
+
+    private async Task OnExpandOnly()
+    {
+        await OnSidebarToggle.InvokeAsync(true);
+    }
+
+    private void LoadOption(GroupMenuModel item)
+    {
+        Globals.SelectedMenuItem = item.MenuCaption ?? "";
+        string url;
+        bool isInvoiceDashboard = string.Equals(item.PageName, "InvoiceDashboard", StringComparison.OrdinalIgnoreCase);
+        bool isInvoicePage = string.Equals(item.PageName, "InvoicePage", StringComparison.OrdinalIgnoreCase);
+        if (isInvoiceDashboard || isInvoicePage)
+        {
+            // Sales Orders → SALE, Purchase Orders → PURCHASE. Never produce /InvoiceDashboard/ with missing type.
+            var param = (item.Parameter ?? item.AdditionalInfo)?.Trim().ToUpperInvariant() ?? "";
+            var invoiceType = (param == "PURCHASE" || param == "SALE")
+                ? param
+                : (item.MenuCaption?.Contains("Purchase", StringComparison.OrdinalIgnoreCase) == true ? "PURCHASE" : "SALE");
+            url = $"/InvoiceDashboard/{invoiceType}";
+        }
+        else if (string.Equals(item.PageName, "ReportsPage", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(item.Parameter))
+            url = $"/ReportsPage/{Uri.EscapeDataString(item.Parameter!.Trim())}";
+        else if (!string.IsNullOrWhiteSpace(item.AdditionalInfo))
+            url = $"/{item.PageName}/{item.AdditionalInfo}";
+        else
+            url = $"/{item.PageName}";
+        NavManager.NavigateTo(url);
+        StateHasChanged();
+    }
+
+    private bool IsActive(GroupMenuModel item) => Globals.SelectedMenuItem == item.MenuCaption;
+
+    private async Task OnThemeChanged(bool value)
+    {
+        Globals._isDarkMode = value;
+        await OnThemeToggle.InvokeAsync(value);
+        StateHasChanged();
+    }
+
+    private async Task LogoutAsync()
+    {
+        await SessionStorageHelper.ClearSessionAsync(JSRuntime);
+        Globals.SessionRestoreAttempted = false;
+        NavManager.NavigateTo("/", true);
+    }
+
+    public void Dispose() { }
+}
+
+<style>
+    .uniget-sidebar {
+        position: relative;
+        height: 100%;
+        width: 280px;
+        background: var(--mud-palette-surface);
+        border-right: 1px solid var(--mud-palette-lines-default);
+        display: flex;
+        flex-direction: column;
+        transition: width 0.25s ease;
+        overflow: hidden;
+    }
+    .uniget-sidebar.collapsed {
+        width: 56px;
+        min-width: 56px;
+    }
+    .uniget-sidebar.collapsed .uniget-nav-item {
+        justify-content: center;
+        padding: 10px;
+    }
+    .uniget-sidebar.collapsed .uniget-bottom-item {
+        justify-content: center;
+        padding: 10px;
+    }
+    .uniget-sidebar-loading, .uniget-sidebar-error {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        gap: 8px;
+        color: var(--mud-palette-text-secondary);
+    }
+    .uniget-sidebar-error { color: var(--mud-palette-warning); }
+
+    .uniget-nav-main {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 0;
+    }
+    .uniget-nav-section { margin-bottom: 2px; }
+    .uniget-nav-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 16px;
+        cursor: pointer;
+        color: var(--mud-palette-text-primary);
+        transition: background 0.2s, border-left 0.2s;
+        border-left: 3px solid transparent;
+        gap: 12px;
+    }
+    .uniget-nav-item:hover {
+        background: var(--mud-palette-action-hover);
+        border-left-color: var(--mud-palette-primary-lighten);
+    }
+    .uniget-nav-item.selected {
+        background: rgba(var(--mud-palette-primary-rgb), 0.12);
+        border-left-color: var(--mud-palette-primary);
+        color: var(--mud-palette-primary);
+        font-weight: 600;
+    }
+    .uniget-nav-icon { width: 20px; text-align: center; color: inherit; font-size: 14px; flex-shrink: 0; }
+    .uniget-nav-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+    .uniget-nav-arrow { font-size: 10px; color: var(--mud-palette-text-secondary); }
+    .uniget-nav-children {
+        background: var(--mud-palette-background);
+        border-left: 2px solid var(--mud-palette-primary);
+        margin-left: 20px;
+        margin-bottom: 6px;
+    }
+    .uniget-nav-child {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 16px;
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--mud-palette-text-primary);
+        border-left: 3px solid transparent;
+        transition: background 0.2s;
+    }
+    .uniget-nav-child:hover { background: var(--mud-palette-action-hover); border-left-color: var(--mud-palette-primary-lighten); }
+    .uniget-nav-child.active {
+        background: var(--mud-palette-primary);
+        color: var(--mud-palette-primary-contrast);
+        border-left-color: var(--mud-palette-primary-darken);
+    }
+    .uniget-nav-child i { width: 18px; text-align: center; flex-shrink: 0; }
+
+    .uniget-nav-report-section,
+    .uniget-nav-setup-section {
+        border-top: 1px solid var(--mud-palette-lines-default);
+        padding-top: 8px;
+    }
+    .uniget-nav-setup-group { margin-bottom: 2px; }
+    .uniget-nav-setup-parent { padding-left: 12px; }
+    .uniget-nav-setup-children { margin-left: 8px; }
+
+    .uniget-sidebar-bottom {
+        border-top: 1px solid var(--mud-palette-lines-default);
+        padding: 8px 0;
+        background: var(--mud-palette-background);
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .uniget-bottom-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 16px;
+        color: var(--mud-palette-text-primary);
+        text-decoration: none;
+        font-size: 13px;
+        border-left: 3px solid transparent;
+        transition: background 0.2s;
+    }
+    .uniget-bottom-item:hover { background: var(--mud-palette-action-hover); border-left-color: var(--mud-palette-primary-lighten); }
+    .uniget-bottom-item i { width: 20px; text-align: center; }
+    .uniget-bottom-theme { display: flex; align-items: center; }
+    .uniget-bottom-theme .mud-switch { margin-left: auto; }
+</style>

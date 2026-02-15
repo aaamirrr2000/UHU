@@ -1,0 +1,396 @@
+@page "/StockMovementsDashboard"
+@using MicroERP.Shared.Models
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 2px;">
+    <div class="stock-movements-header mb-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.SwapHoriz" Class="me-2" Style="color: white;" />
+                    Stock Movements Management
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">Track and manage stock transfers between locations</MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+                <MudTextField @bind-Value="searchString"
+                            @bind-Value:after="FilterData"
+                            Placeholder="Search movements..."
+                            Adornment="Adornment.Start"
+                            AdornmentIcon="@Icons.Material.Filled.Search"
+                            IconSize="Size.Small"
+                            Variant="Variant.Outlined"
+                            Immediate="@true"
+                            Margin="Margin.Dense"
+                            Class="stock-movements-search-field"
+                            Style="background: rgba(255,255,255,0.95); width: 280px;" />
+                @if (Globals.AccessLevel == 1)
+                {
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
+                               Size="Size.Small" 
+                               Variant="Variant.Filled" 
+                               Color="Color.Success" 
+                               Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                               OnClick="@(() => Clear())">
+                        New
+                    </MudButton>
+                }
+                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Info"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => Refresh())">
+                    Refresh
+                </MudButton>
+            </div>
+        </div>
+    </div>
+
+    <MyModelDialog Width="90%" Height="90%" @ref="_myDialog" Title="Stock Movement">
+        <HeaderContent>
+        </HeaderContent>
+        <ChildContent>
+            <EditForm Model="record" OnSubmit="Save">
+                <MudForm>
+                    <StockMovementPage Action="@Action" CurrentRecord="record.Id" OnSaved="ChildSaved"/>
+                </MudForm>
+            </EditForm>
+        </ChildContent>
+        <FooterContent>
+        </FooterContent>
+    </MyModelDialog>
+
+    @if (LoadingPanel || data == null)
+    {
+        <SimpleLoading />
+    }
+    else
+    {
+        <MudPaper Elevation="3" Style="border-radius: 12px; overflow: hidden;">
+            <MudDataGrid T="StockMovementModel"
+                         MultiSelection="false"
+                         Items="@data"
+                         SortMode="SortMode.Multiple"
+                         Filterable="true"
+                         Hideable="true"
+                         RowsPerPage="10"
+                         Dense="@true">
+
+                <Columns>
+                    <TemplateColumn Title="Actions"
+                                    CellStyle="width: 80px; min-width: 80px;"
+                                    HeaderClass="grid-header">
+                        <CellTemplate Context="row">
+                            <div class="actions-cell">
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                         Color="Color.Primary"
+                                         Dense="@true"
+                                         Class="actions-menu">
+                                    <MudMenuItem OnClick="@(() => View(row.Item.Id))"
+                                                 Class="menu-item view-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="menu-icon" />
+                                        <span>View</span>
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => Print(row.Item.Id))"
+                                                 Class="menu-item">
+                                        <MudIcon Icon="@Icons.Material.Filled.Print" Class="menu-icon" />
+                                        <span>Print</span>
+                                    </MudMenuItem>
+                                    @if (Globals.AccessLevel == 1 && row.Item.Status != "COMPLETED")
+                                    {
+                                        <MudMenuItem OnClick="@(() => Edit(row.Item.Id))"
+                                                     Class="menu-item edit-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="menu-icon" />
+                                            <span>Edit</span>
+                                        </MudMenuItem>
+                                    
+                                        <MudMenuItem OnClick="@(() => Delete(row.Item.Id))"
+                                        Color="Color.Error"
+                                        Class="menu-item delete-item">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Class="menu-icon" />
+                                            <span>Delete</span>
+                                        </MudMenuItem>
+                                    }
+                                </MudMenu>
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="@(x => x.MovementNo)" Title="Document No" Sortable="true" />
+                    <PropertyColumn Property="@(x => x.DocumentType)" Title="Doc Type" Sortable="true" />
+                    <PropertyColumn Property="@(x => x.MovementType)" Title="Movement Type" Sortable="true" />
+                    <PropertyColumn Property="@(x => x.FromLocationName)" Title="From Location" Sortable="true" />
+                    <PropertyColumn Property="@(x => x.ToLocationName)" Title="To Location" Sortable="true" />
+                    <PropertyColumn Property="@(x => x.MovementDate)" Title="Movement Date" Format="yyyy-MM-dd" Sortable="true" />
+                    <PropertyColumn Property="@(x => x.Status)" Title="Status" Sortable="true">
+                        <CellTemplate Context="row">
+                            <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(row.Item.Status)">
+                                @row.Item.Status
+                            </MudChip>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="@(x => x.Reason)" Title="Reason" Sortable="true" />
+                </Columns>
+
+                <PagerContent>
+                    <div class="pager-container">
+                        <MudDataGridPager T="StockMovementModel" />
+                    </div>
+                </PagerContent>
+            </MudDataGrid>
+        </MudPaper>
+    }
+</MudContainer>
+
+<style>
+    .stock-movements-header {
+        padding: 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 8px;
+    }
+
+    .stock-movements-header .mud-typography {
+        color: white !important;
+    }
+
+    .stock-movements-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    .stock-movements-search-field .mud-input-root {
+        color: var(--mud-palette-text-primary) !important;
+        border-radius: 28px !important;
+        overflow: hidden !important;
+    }
+
+    .stock-movements-search-field .mud-input-root input {
+        color: var(--mud-palette-text-primary) !important;
+        border-radius: 28px !important;
+        padding-left: 48px !important;
+    }
+
+    .stock-movements-search-field .mud-input-root::before {
+        border-color: rgba(0,0,0,0.2) !important;
+        border-radius: 28px !important;
+    }
+
+    .stock-movements-search-field .mud-input-root:hover::before {
+        border-color: var(--mud-palette-primary) !important;
+    }
+
+    .stock-movements-search-field .mud-input-root::after {
+        border-color: var(--mud-palette-primary) !important;
+        border-radius: 28px !important;
+    }
+
+    .stock-movements-search-field .mud-input-adornment {
+        border-radius: 28px 0 0 28px !important;
+        position: absolute !important;
+        left: 8px !important;
+        z-index: 1 !important;
+    }
+
+    .stock-movements-search-field .mud-input-adornment-start {
+        border-radius: 28px 0 0 28px !important;
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .stock-movements-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+
+    .mud-theme-dark .stock-movements-search-field {
+        background: rgba(255,255,255,0.1) !important;
+    }
+
+    .mud-theme-dark .stock-movements-search-field .mud-input-root {
+        color: white !important;
+    }
+
+    .mud-theme-dark .stock-movements-search-field .mud-input-root input {
+        color: white !important;
+    }
+
+    .mud-theme-dark .stock-movements-search-field .mud-input-root::placeholder {
+        color: rgba(255,255,255,0.7) !important;
+    }
+</style>
+
+@code {
+    private MyModelDialog? _myDialog;
+    private List<StockMovementModel> AllData = new();
+    private List<StockMovementModel> data = new();
+    private StockMovementModel record = new();
+    private string Action = "INSERT";
+    private bool LoadingPanel = false;
+    private string searchString = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "StockMovementsDashboard");
+        await GetAll();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        var result = await Functions.GetAsync<List<StockMovementModel>>($"StockMovements/Search/OrganizationId={Globals.User.OrganizationId} AND IsSoftDeleted=0", true);
+        AllData = result ?? new List<StockMovementModel>();
+        data = AllData;
+        LoadingPanel = false;
+        StateHasChanged();
+    }
+
+    private void FilterData()
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+        {
+            data = AllData.ToList();
+        }
+        else
+        {
+            var search = searchString.ToLower();
+            data = AllData.Where(x =>
+                (x.MovementNo?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.MovementType?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.FromLocationName?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.ToLocationName?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.Status?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.Reason?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
+            ).ToList();
+        }
+
+        StateHasChanged();
+    }
+
+    protected void Clear()
+    {
+        Action = "INSERT";
+        record = new StockMovementModel();
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.MovementType = "TRANSFER";
+        record.Status = "PENDING";
+        record.MovementDate = DateTime.Today;
+        _myDialog?.Show();
+        StateHasChanged();
+    }
+
+    protected async Task Edit(int id)
+    {
+        Action = "UPDATE";
+        LoadingPanel = true;
+        record = await Functions.GetAsync<StockMovementModel>($"StockMovements/Get/{id}", true) ?? new StockMovementModel();
+        LoadingPanel = false;
+        _myDialog?.Show();
+        StateHasChanged();
+    }
+
+    protected async Task View(int id)
+    {
+        Action = "VIEW";
+        LoadingPanel = true;
+        record = await Functions.GetAsync<StockMovementModel>($"StockMovements/Get/{id}", true) ?? new StockMovementModel();
+        LoadingPanel = false;
+        _myDialog?.Show();
+        StateHasChanged();
+    }
+
+    protected void Print(int id)
+    {
+        NavManager.NavigateTo($"/StockMovementReport/{id}");
+    }
+
+    protected async Task Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete this record?");
+        if (res == false)
+            return;
+
+        LoadingPanel = true;
+        record = await Functions.GetAsync<StockMovementModel>($"StockMovements/Get/{id}", true) ?? new StockMovementModel();
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedFrom = Globals.ClientInfo;
+        record.IsSoftDeleted = 1;
+
+        var result = await Functions.PostAsync<StockMovementModel>($"StockMovements/SoftDelete", record, true);
+        LoadingPanel = false;
+
+        if (result.Success == false)
+        {
+            SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+        }
+        else
+        {
+            SnackbarService.Add("Record Deleted Successfully", Severity.Success);
+            await GetAll();
+        }
+    }
+
+    protected async Task Refresh()
+    {
+        await GetAll();
+    }
+
+    protected async Task Save()
+    {
+        record.OrganizationId = Globals.User.OrganizationId;
+        record.CreatedBy = Globals.User.Id;
+        record.CreatedOn = DateTime.Now;
+        record.CreatedFrom = Globals.ClientInfo;
+        record.UpdatedBy = Globals.User.Id;
+        record.UpdatedOn = DateTime.Now;
+        record.UpdatedFrom = Globals.ClientInfo;
+
+        LoadingPanel = true;
+        var result = await Functions.PostAsync<StockMovementModel>($"StockMovements/{Action}", record, true);
+        LoadingPanel = false;
+
+        if (result.Success == false || result.Result == null)
+        {
+            SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+        }
+        else
+        {
+            SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+            await GetAll();
+            if (_myDialog != null)
+            {
+                _myDialog.Hide();
+            }
+        }
+    }
+
+    private async Task ChildSaved()
+    {
+        await GetAll();
+        if (_myDialog != null)
+        {
+            _myDialog.Hide();
+        }
+        StateHasChanged();
+    }
+
+    private Color GetStatusColor(string? status)
+    {
+        return status?.ToUpper() switch
+        {
+            "PENDING" => Color.Default,
+            "IN_TRANSIT" => Color.Warning,
+            "COMPLETED" => Color.Success,
+            "CANCELLED" => Color.Error,
+            _ => Color.Default
+        };
+    }
+}
+

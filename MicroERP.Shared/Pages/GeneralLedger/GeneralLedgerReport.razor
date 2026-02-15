@@ -1,0 +1,608 @@
+@page "/GeneralLedgerReport/{id:int}"
+@using MicroERP.Shared.Models
+@inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime
+@inject Functions Functions
+@inject Globals Globals
+
+@if (glEntry != null && glEntry.Id > 0)
+{
+    <div class="report-actions no-print">
+        <MudButton Variant="Variant.Outlined" 
+                   Color="Color.Default" 
+                   StartIcon="@Icons.Material.Filled.ArrowBack"
+                   OnClick="GoBack"
+                   Class="me-2">
+            Back
+        </MudButton>
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   StartIcon="@Icons.Material.Filled.Print"
+                   OnClick="PrintReport">
+            Print
+        </MudButton>
+    </div>
+
+    <div id="gledger-print-content" class="print-area">
+        <div class="transaction-receipt">
+        <!-- Header Section -->
+        <div class="receipt-header">
+            <div class="header-content">
+                <div class="logo-section">
+                    @if (!string.IsNullOrEmpty(Globals.Organization?.Logo))
+                    {
+                        <img src="@Globals.GetImageUrl(Globals.Organization.Logo)" alt="Logo" class="company-logo" />
+                    }
+                </div>
+                <div class="company-info">
+                    <h1 class="company-name">@Globals.Organization?.Name</h1>
+                    @if (!string.IsNullOrEmpty(Globals.Organization?.Description))
+                    {
+                        <p class="company-desc">@Globals.Organization.Description</p>
+                    }
+                    <div class="document-type">
+                        <span class="type-badge journal-badge">
+                            JOURNAL ENTRY
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Document Info Section -->
+        <div class="document-info">
+            <div class="info-row">
+                <div class="info-item">
+                    <span class="info-label">Entry #:</span>
+                    <span class="info-value">@(glEntry.EntryNo ?? "N/A")</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Date:</span>
+                    <span class="info-value">@glEntry.EntryDate?.ToString("dd MMMM yyyy")</span>
+                </div>
+                 <div class="info-item">
+                    <span class="info-label">Reference:</span>
+                    <span class="info-value">@(glEntry.ReferenceNo ?? "N/A")</span>
+                </div>
+            </div>
+             @if (!string.IsNullOrWhiteSpace(glEntry.Description))
+            {
+                <div class="info-row mt-2" style="border-top: 1px solid #eee; padding-top: 8px;">
+                     <div class="info-item full-width">
+                        <span class="info-label">Description:</span>
+                        <span class="info-value">@glEntry.Description</span>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Transaction Details Section -->
+        <div class="details-section">
+            <h3 class="section-title">Entry Details</h3>
+            
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Account Code</th>
+                        <th style="width: 25%;">Account Name</th>
+                        <th style="width: 30%;">Description</th>
+                        <th style="width: 15%; text-align: right;">Debit</th>
+                        <th style="width: 15%; text-align: right;">Credit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (glEntry.Details != null)
+                    {
+                        @foreach (var detail in glEntry.Details)
+                        {
+                            <tr>
+                                <td>@detail.AccountCode</td>
+                                <td>@detail.AccountName</td>
+                                <td>@detail.Description</td>
+                                <td class="text-end">@(detail.DebitAmount > 0 ? detail.DebitAmount.ToString("N2") : "-")</td>
+                                <td class="text-end">@(detail.CreditAmount > 0 ? detail.CreditAmount.ToString("N2") : "-")</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+                <tfoot>
+                    <tr class="totals-row">
+                        <td colspan="3" class="text-end fw-bold">Totals:</td>
+                        <td class="text-end fw-bold">@glEntry.TotalDebit.ToString("N2")</td>
+                        <td class="text-end fw-bold">@glEntry.TotalCredit.ToString("N2")</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Footer Section -->
+        <div class="receipt-footer">
+            <div class="footer-row">
+                <div class="footer-col">
+                    <div class="footer-item">
+                        <span class="footer-label">Created By ID:</span>
+                        <span class="footer-value">@glEntry.CreatedBy</span>
+                    </div>
+                    <div class="footer-item">
+                        <span class="footer-label">Created On:</span>
+                        <span class="footer-value">@glEntry.CreatedOn.ToString("dd MMM yyyy HH:mm")</span>
+                    </div>
+                    @if (glEntry.IsPosted == 1)
+                    {
+                        <div class="footer-item">
+                            <span class="footer-label">Posted By ID:</span>
+                            <span class="footer-value">@glEntry.PostedBy</span>
+                        </div>
+                        @if (glEntry.PostedDate.HasValue)
+                        {
+                            <div class="footer-item">
+                                <span class="footer-label">Posted On:</span>
+                                <span class="footer-value">@glEntry.PostedDate.Value.ToString("dd MMM yyyy HH:mm")</span>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="loading-container">
+        <p>Loading entry data...</p>
+    </div>
+}
+
+@code {
+    [Parameter] public int id { get; set; }
+    private GeneralLedgerHeaderModel? glEntry;
+    private bool LoadingPanel { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Globals.User != null)
+        {
+            Globals.AccessLevel = Globals.PageAccess(NavManager, "GeneralLedgerDashboard");
+        }
+        else
+        {
+            Globals.AccessLevel = 0;
+        }
+        
+        // Fetch full header model which includes details
+        glEntry = await Functions.GetAsync<GeneralLedgerHeaderModel>($"GeneralLedger/Get/{id}", true);
+        LoadingPanel = false;
+    }
+
+    private void GoBack()
+    {
+        NavManager.NavigateTo("/GeneralLedgerDashboard");
+    }
+
+    private async Task PrintReport()
+    {
+        var originalIsDarkMode = Globals._isDarkMode;
+        
+        await JSRuntime.InvokeVoidAsync("eval", @"
+            (function() {
+                var html = document.documentElement;
+                var body = document.body;
+                
+                var hasDarkTheme = html.classList.contains('mud-dark-theme');
+                var hasLightTheme = html.classList.contains('mud-light-theme');
+                var originalTheme = hasDarkTheme ? 'dark' : (hasLightTheme ? 'light' : 'light');
+                
+                window.__printOriginalTheme = originalTheme;
+                window.__printOriginalIsDarkMode = " + (originalIsDarkMode ? "true" : "false") + @";
+                window.__printThemeLocked = true;
+                
+                var forceRestoreTheme = function() {
+                    if (!window.__printThemeLocked) return;
+                    
+                    var storedTheme = window.__printOriginalTheme;
+                    var storedIsDark = window.__printOriginalIsDarkMode;
+                    
+                    if (storedTheme === 'dark' || storedIsDark) {
+                        html.classList.remove('mud-light-theme');
+                        html.classList.add('mud-dark-theme');
+                        body.setAttribute('data-theme', 'dark');
+                    } else {
+                        html.classList.remove('mud-dark-theme');
+                        html.classList.add('mud-light-theme');
+                        body.setAttribute('data-theme', 'light');
+                    }
+                };
+                
+                var observer = new MutationObserver(function(mutations) {
+                    if (!window.__printThemeLocked) return;
+                    
+                    var currentHasDark = html.classList.contains('mud-dark-theme');
+                    var currentHasLight = html.classList.contains('mud-light-theme');
+                    var storedTheme = window.__printOriginalTheme;
+                    
+                    if (storedTheme === 'dark' && !currentHasDark) {
+                        forceRestoreTheme();
+                    } else if (storedTheme === 'light' && !currentHasLight) {
+                        forceRestoreTheme();
+                    }
+                });
+                
+                observer.observe(html, {
+                    attributes: true,
+                    attributeFilter: ['class'],
+                    childList: false,
+                    subtree: false
+                });
+                
+                var bodyObserver = new MutationObserver(function() {
+                    if (window.__printThemeLocked) {
+                        forceRestoreTheme();
+                    }
+                });
+                bodyObserver.observe(body, {
+                    attributes: true,
+                    attributeFilter: ['data-theme', 'class']
+                });
+                
+                var cleanup = function() {
+                    observer.disconnect();
+                    bodyObserver.disconnect();
+                    forceRestoreTheme();
+                    setTimeout(function() {
+                        if (window.__printThemeLocked) {
+                            forceRestoreTheme();
+                        }
+                    }, 100);
+                    setTimeout(function() {
+                        if (window.__printThemeLocked) {
+                            forceRestoreTheme();
+                        }
+                    }, 300);
+                    setTimeout(function() {
+                        if (window.__printThemeLocked) {
+                            forceRestoreTheme();
+                        }
+                    }, 500);
+                    setTimeout(function() {
+                        if (window.__printThemeLocked) {
+                            forceRestoreTheme();
+                        }
+                    }, 1000);
+                    setTimeout(function() {
+                        window.__printThemeLocked = false;
+                    }, 2000);
+                };
+                
+                var afterPrintHandler = function() {
+                    cleanup();
+                    window.removeEventListener('afterprint', afterPrintHandler);
+                };
+                
+                window.addEventListener('afterprint', afterPrintHandler, { once: true });
+                
+                setTimeout(function() { if (window.__printThemeLocked) forceRestoreTheme(); }, 500);
+                setTimeout(function() { if (window.__printThemeLocked) forceRestoreTheme(); }, 1000);
+                setTimeout(function() { if (window.__printThemeLocked) forceRestoreTheme(); }, 1500);
+                setTimeout(function() { if (window.__printThemeLocked) forceRestoreTheme(); }, 2000);
+                setTimeout(function() { window.__printThemeLocked = false; }, 2500);
+                
+                window.print();
+            })();
+        ");
+        
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(500);
+            Globals._isDarkMode = originalIsDarkMode;
+            await Task.Delay(500);
+            Globals._isDarkMode = originalIsDarkMode;
+            await Task.Delay(500);
+            Globals._isDarkMode = originalIsDarkMode;
+        });
+    }
+}
+
+<style>
+    .report-actions {
+        margin-bottom: 20px;
+        padding: 10px;
+        text-align: right;
+    }
+
+    .transaction-receipt {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    html.prevent-theme-change,
+    html.prevent-theme-change body,
+    html.prevent-theme-change .mud-theme-provider {
+        color-scheme: light !important;
+    }
+    
+    @@media print {
+        html,
+        body {
+            color-scheme: light !important;
+        }
+    }
+
+    .receipt-header {
+        border-bottom: 2px solid #2196F3;
+        padding-bottom: 12px;
+        margin-bottom: 20px;
+    }
+
+    .header-content {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .logo-section {
+        flex-shrink: 0;
+    }
+
+    .company-logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        border-radius: 4px;
+    }
+
+    .company-info {
+        flex: 1;
+    }
+
+    .company-name {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1976D2;
+        margin: 0 0 5px 0;
+    }
+
+    .company-desc {
+        font-size: 13px;
+        color: #666;
+        margin: 0 0 10px 0;
+    }
+
+    .document-type {
+        margin-top: 10px;
+    }
+
+    .type-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .journal-badge {
+        background: #2196F3;
+        color: white;
+    }
+
+    .document-info {
+        background: #f5f5f5;
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: flex-start;
+        gap: 40px;
+        flex-wrap: wrap;
+    }
+
+    .info-item {
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+    }
+    
+    .info-item.full-width {
+        width: 100%;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #555;
+        font-size: 13px;
+    }
+
+    .info-value {
+        color: #333;
+        font-size: 14px;
+    }
+
+    .details-section {
+        margin-bottom: 20px;
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1976D2;
+        margin-bottom: 15px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #E3F2FD;
+    }
+
+    .details-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .details-table th {
+        background-color: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+        text-align: left;
+        padding: 10px;
+        border-bottom: 2px solid #dee2e6;
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.5px;
+    }
+
+    .details-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #dee2e6;
+        color: #212529;
+        vertical-align: top;
+    }
+    
+    .details-table .text-end {
+        text-align: right;
+    }
+    
+    .details-table .fw-bold {
+        font-weight: 700;
+    }
+    
+    .totals-row td {
+        background-color: #f8f9fa;
+        border-top: 2px solid #dee2e6;
+    }
+
+    .receipt-footer {
+        border-top: 2px solid #e0e0e0;
+        padding-top: 20px;
+        margin-top: 25px;
+    }
+
+    .footer-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 30px;
+        flex-wrap: wrap;
+    }
+
+    .footer-col {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .footer-item {
+        margin-bottom: 8px;
+    }
+
+    .footer-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #666;
+        margin-right: 8px;
+    }
+
+    .footer-value {
+        font-size: 13px;
+        color: #333;
+    }
+
+    .loading-container {
+        text-align: center;
+        padding: 50px;
+        color: #666;
+    }
+
+    /* Print Styles */
+    @@media print {
+        .no-print,
+        .report-actions {
+            display: none !important;
+        }
+
+        .mud-appbar,
+        .mud-appbar-content,
+        .mud-appbar-toolbar,
+        .mud-drawer,
+        .mud-drawer-open,
+        .mud-main-content > aside,
+        nav,
+        .nav-menu,
+        .top-navbar,
+        .sidebar,
+        header,
+        .navbar,
+        .menu-container {
+            display: none !important;
+        }
+
+        .mud-layout {
+            display: block !important;
+        }
+
+        .mud-main-content {
+            padding: 0 !important;
+            margin: 0 !important;
+            background: white !important;
+            display: block !important;
+        }
+
+        #gledger-print-content {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: flex-start !important;
+            width: 100% !important;
+            padding: 20px 0 !important;
+            margin: 0 !important;
+            position: relative !important;
+            page-break-after: avoid !important;
+        }
+
+        .transaction-receipt {
+            box-shadow: none !important;
+            border: none !important;
+            padding: 10px !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            margin: 0 auto !important;
+            background: white !important;
+            display: block !important;
+            page-break-after: avoid !important;
+            page-break-inside: avoid !important;
+        }
+
+        @@page {
+            margin: 10mm;
+            size: auto;
+        }
+        
+        body::after {
+            display: none !important;
+        }
+
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+        }
+
+        .receipt-header {
+            page-break-inside: avoid;
+        }
+
+        .details-section {
+            page-break-inside: auto;
+        }
+        
+        .details-table tr {
+            page-break-inside: avoid;
+        }
+    }
+</style>
+

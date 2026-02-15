@@ -1,0 +1,292 @@
+@using MicroERP.Shared.Controls
+@using MicroERP.Shared.Models
+@inject IDialogService dialogService
+@inject Functions Functions
+
+<MyDrawer @ref="_drawerRef" Title="Invoice Options" FaIcon="fas fa-cog">
+    <ChildContent>
+        <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
+            <!-- Party Details Panel -->
+            <MudExpansionPanels MultiExpansion="true">
+                <MudExpansionPanel Text="Party Details" Expanded="true">
+                    <TitleContent>
+                        <div class="d-flex align-items-center">
+                            <MudIcon Icon="@Icons.Material.Filled.People" class="mr-3" />
+                            <MudText Typo="Typo.h6" Class="mb-0">Party Details</MudText>
+                        </div>
+                    </TitleContent>
+                    <ChildContent>
+
+
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Party Name"
+                                      @bind-Value="Record.Invoice.PartyName"
+                                      Disabled="Disabled"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true"
+                                      Class="mb-3" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Phone"
+                                      @bind-Value="Record.Invoice.PartyPhone"
+                                      Disabled="Disabled"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true"
+                                      Class="mb-3" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Email"
+                                      InputType="InputType.Email"
+                                      @bind-Value="Record.Invoice.PartyEmail"
+                                      Disabled="Disabled"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="@true"
+                                      Class="mb-3" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Address"
+                                      @bind-Value="Record.Invoice.PartyAddress"
+                                      Disabled="Disabled"
+                                      Variant="Variant.Outlined"
+                                      Lines="2"
+                                      FullWidth="@true"
+                                      Class="mb-3" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="int"
+                                   Label="Sales Person"
+                                   @bind-Value="Record.Invoice.SalesId"
+                                   Disabled="Disabled"
+                                   Variant="Variant.Outlined"
+                                   FullWidth="@true"
+                                   Class="mb-3">
+                            @if (SalesId != null && SalesId.Any())
+                            {
+                                @foreach (var employee in SalesId)
+                                {
+                                    <MudSelectItem T="int" Value="@employee.Id">@employee.Fullname</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="string"
+                                   Label="Invoice Status"
+                                   @bind-Value="Record.Invoice.Status"
+                                   Disabled="Disabled"
+                                   Variant="Variant.Outlined"
+                                   FullWidth="@true">
+                            @if (InvoiceStatus != null && InvoiceStatus.Any())
+                            {
+                                @foreach (var status in InvoiceStatus)
+                                {
+                                    <MudSelectItem T="string" Value="@status.ListValue">@status.ListValue</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Account"
+                                      Value="@(Accounts?.FirstOrDefault(a => a.Id == Record.Invoice.AccountId)?.DisplayName ?? "Not Set")"
+                                      Variant="Variant.Outlined"
+                                      ReadOnly="@true"
+                                      FullWidth="@true"
+                                      Class="mb-3"
+                                      HelperText="Account is automatically set from the selected party" />
+                    </MudItem>
+                </MudGrid>
+                    </ChildContent>
+                </MudExpansionPanel>
+
+                <!-- Currency & Exchange Rate Panel -->
+                <MudExpansionPanel Text="Currency & Exchange Rate" Expanded="true">
+                     <TitleContent>
+                        <div class="d-flex align-items-center">
+                            <MudIcon Icon="@Icons.Material.Filled.CurrencyExchange" class="mr-3" />
+                            <MudText Typo="Typo.h6" Class="mb-0">Currency & Exchange Rate</MudText>
+                        </div>
+                    </TitleContent>
+                    <ChildContent>
+
+
+                <MudGrid>
+                    <MudItem xs="12" md="4">
+                        <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Currency</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <MudText Typo="Typo.body2" Class="fw-bold">
+                                @(Currencies?.FirstOrDefault(c => c.Id == Record.Invoice.EnteredCurrencyId)?.DisplayName ?? Currencies?.FirstOrDefault(c => c.Id == Record.Invoice.BaseCurrencyId)?.DisplayName ?? "N/A")
+                            </MudText>
+                            @if (!Disabled && !IsInvoiceTypeAndDateLocked)
+                            {
+                                <MudButton Size="Size.Small" 
+                                           Variant="Variant.Text" 
+                                           Color="Color.Primary"
+                                           OnClick="ToggleCurrencySelection"
+                                           StartIcon="@Icons.Material.Filled.Edit">
+                                    Change
+                                </MudButton>
+                            }
+                        </div>
+                    </MudItem>
+
+                    @if (showCurrencySelection && !Disabled && !IsInvoiceTypeAndDateLocked)
+                    {
+                        <MudItem xs="12" md="4">
+                            <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Select Currency</label>
+                            <AutoComplete TItem="CurrenciesModel"
+                                          DataList="@Currencies"
+                                          DisplayProperty="@(p => p.DisplayName)"
+                                          IdProperty="@(p => p.Id)"
+                                          @bind-SelectedId="Record.Invoice.EnteredCurrencyId"
+                                          @bind-SelectedId:after="OnEnteredCurrencyChanged"
+                                          Label="Currency"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="@true" />
+                        </MudItem>
+                    }
+
+                    @if (Record.Invoice.EnteredCurrencyId != Record.Invoice.BaseCurrencyId || showCurrencySelection)
+                    {
+                        <MudItem xs="12" md="4">
+                            <label class="form-label fw-bold mb-1" style="font-size: 0.85rem;">Exchange Rate</label>
+                            <MudNumericField @bind-Value="Record.Invoice.ExchangeRate"
+                                             Format="#,##0.000000"
+                                             placeholder="Exchange Rate"
+                                             ReadOnly="@(Disabled || IsInvoiceTypeAndDateLocked)"
+                                             Variant="Variant.Outlined"
+                                             Dense="@true"
+                                             FullWidth="@true" />
+                        </MudItem>
+                    }
+                </MudGrid>
+                    </ChildContent>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        </MudContainer>
+    </ChildContent>
+</MyDrawer>
+
+
+@code {
+    private MyDrawer _drawerRef = new();
+    private bool showCurrencySelection = false;
+
+    [Parameter] public InvoicesModel Record { get; set; } = new();
+    [Parameter] public List<PartiesModel> Parties { get; set; } = new();
+    [Parameter] public List<EmployeesModel> SalesId { get; set; } = new();
+    [Parameter] public List<TypeCodeModel> InvoiceStatus { get; set; } = new();
+    [Parameter] public List<ChartOfAccountsModel> Accounts { get; set; } = new();
+    [Parameter] public List<CurrenciesModel> Currencies { get; set; } = new();
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public bool IsInvoiceTypeAndDateLocked { get; set; }
+    [Parameter] public EventCallback<int> OnPartyChanged { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        // Show currency selection if different from base currency when drawer opens
+        if (Record?.Invoice != null)
+        {
+            showCurrencySelection = Record.Invoice.EnteredCurrencyId != Record.Invoice.BaseCurrencyId;
+        }
+    }
+
+    private async Task OnEnteredCurrencyChanged()
+    {
+        // When entered currency changes, auto-populate exchange rate
+        // If entered currency is same as base currency, set rate to 1.0
+        if (Record.Invoice.EnteredCurrencyId == Record.Invoice.BaseCurrencyId)
+        {
+            Record.Invoice.ExchangeRate = 1.0;
+            showCurrencySelection = false; // Hide selection when back to base currency
+        }
+        else if (Record.Invoice.EnteredCurrencyId > 0 && Record.Invoice.BaseCurrencyId > 0)
+        {
+            // Fetch the latest exchange rate from ExchangeRates table
+            try
+            {
+                // Handle nullable TranDate - use today if null or invalid
+                DateTime transactionDate = Record.Invoice.TranDate.HasValue && Record.Invoice.TranDate.Value > DateTime.MinValue 
+                    ? Record.Invoice.TranDate.Value 
+                    : DateTime.Today;
+                
+                var exchangeRate = await GetLatestExchangeRate(
+                    Record.Invoice.BaseCurrencyId,
+                    Record.Invoice.EnteredCurrencyId,
+                    transactionDate
+                );
+                
+                if (exchangeRate > 0)
+                {
+                    Record.Invoice.ExchangeRate = exchangeRate;
+                }
+                else
+                {
+                    // If no rate found, set default to 1.0 (user can change it)
+                    Record.Invoice.ExchangeRate = 1.0;
+                }
+            }
+            catch (Exception ex)
+            {
+                // If error occurs, set default rate to 1.0
+                Record.Invoice.ExchangeRate = 1.0;
+                Console.WriteLine($"Error fetching exchange rate: {ex.Message}");
+            }
+        }
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Get the latest exchange rate from ExchangeRates table for the given currencies and date
+    /// </summary>
+    private async Task<double> GetLatestExchangeRate(int baseCurrencyId, int targetCurrencyId, DateTime transactionDate)
+    {
+        try
+        {
+            string dateStr = transactionDate.ToString("yyyy-MM-dd");
+            string apiUrl = $"Currencies/GetLatestExchangeRate/{baseCurrencyId}/{targetCurrencyId}/{dateStr}";
+            
+            var result = await Functions.GetAsync<double>(apiUrl, true);
+            
+            if (result > 0)
+            {
+                return result;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"GetLatestExchangeRate error: {ex.Message}");
+        }
+        
+        return 0; // Return 0 if not found
+    }
+
+    private void ToggleCurrencySelection()
+    {
+        showCurrencySelection = !showCurrencySelection;
+        // If hiding and currency is base, reset to base
+        if (!showCurrencySelection && Record.Invoice.EnteredCurrencyId == Record.Invoice.BaseCurrencyId)
+        {
+            Record.Invoice.ExchangeRate = 1.0;
+        }
+        StateHasChanged();
+    }
+
+    public async Task Open() => await _drawerRef.OpenDrawerAsync();
+}
+
+<style>
+    .mud-paper {
+        transition: box-shadow 0.3s ease;
+    }
+
+    .mud-paper:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+    }
+</style>

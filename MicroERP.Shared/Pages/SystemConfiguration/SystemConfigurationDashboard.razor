@@ -1,0 +1,722 @@
+@page "/SystemConfigurationDashboard"
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-0" Style="padding: 2px;">
+    <div class="dashboard-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap">
+            <div>
+                <MudText Typo="Typo.h5" Class="mb-0 fw-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.Settings" Class="me-2" Style="color: white;" />
+                    System Configuration
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted mt-1" Style="color: rgba(255,255,255,0.85) !important;">Manage system settings and configurations</MudText>
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+                <MudTextField @bind-Value="searchString"
+                            @bind-Value:after="FilterData"
+                            Placeholder="Search configurations..."
+                            Adornment="Adornment.Start"
+                            AdornmentIcon="@Icons.Material.Filled.Search"
+                            IconSize="Size.Small"
+                            Variant="Variant.Outlined"
+                            Immediate="true"
+                            Margin="Margin.Dense"
+                            Class="dashboard-search-field"
+                            Style="background: rgba(255,255,255,0.95); width: 280px;" />
+                <MudButton StartIcon="@Icons.Material.TwoTone.Expand" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Success"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => ExpandAllNodes())">
+                    Expand All
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.TwoTone.ExpandLess" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Error"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => CollapseAllNodes())">
+                    Collapse All
+                </MudButton>
+                @if (Globals.AccessLevel == 1)
+                {
+                    <MudButton StartIcon="@Icons.Material.TwoTone.Add" 
+                               Size="Size.Small" 
+                               Variant="Variant.Filled" 
+                               Color="Color.Success" 
+                               Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                               OnClick="@(() => Clear())">
+                        New
+                    </MudButton>
+                }
+                <MudButton StartIcon="@Icons.Material.TwoTone.Refresh" 
+                           Size="Size.Small" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Info"
+                           Style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;"
+                           OnClick="@(() => Refresh())">
+                    Refresh
+                </MudButton>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" style="margin: 2px; height: 90vh; display: flex;">
+        <MyDrawer @ref="_drawer" Title="System Configuration" FaIcon="fas fa-cog">
+            <HeaderContent>
+                @if (Action != "VIEW")
+                {
+                    <MudButton OnClick="@(() => Save())"
+                               Variant="Variant.Filled"
+                               Color="Color.Success"
+                               StartIcon="@Icons.Material.Filled.Save"
+                               Size="Size.Small"
+                               Class="me-2">
+                        @(Action == "INSERT" ? "Save" : "Update")
+                    </MudButton>
+
+                    @if (Action == "UPDATE")
+                    {
+                        <MudButton OnClick="@(() => Delete(record.Id))"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Error"
+                                   StartIcon="@Icons.Material.Filled.Delete"
+                                   Size="Size.Small">
+                            Delete
+                        </MudButton>
+                    }
+                }
+            </HeaderContent>
+            <ChildContent>
+                <EditForm Model="record" OnSubmit="Save">
+                    <MudForm>
+                        <SystemConfigurationPage Action="@Action" Model="record" OnSaved="ChildSaved" />
+                    </MudForm>
+                </EditForm>
+            </ChildContent>
+            <FooterContent>
+            </FooterContent>
+        </MyDrawer>
+
+        <MudPaper Elevation="3" Class="config-tree-container" Style="width: 100%; max-width: 1200px; height: 80vh; border-radius: 12px; overflow: hidden;">
+            <!-- Tree Header -->
+            <div class="config-tree-header">
+                <div class="config-header-grid">
+                    <MudText Typo="Typo.caption" Class="config-header-text" Style="font-weight: 600;">Actions</MudText>
+                    <MudText Typo="Typo.caption" Class="config-header-text" Style="font-weight: 600;">Category</MudText>
+                    <MudText Typo="Typo.caption" Class="config-header-text" Style="font-weight: 600;">Configuration Key</MudText>
+                    <MudText Typo="Typo.caption" Class="config-header-text" Style="font-weight: 600;">Value</MudText>
+                    <MudText Typo="Typo.caption" Class="config-header-text" Style="font-weight: 600;">Description</MudText>
+                </div>
+            </div>
+
+            <!-- Tree Content -->
+            <div class="config-tree-content">
+                <MudTreeView Items="@TreeItems"
+                             T="SystemConfigurationTreeItem"
+                             Hover="true"
+                             Dense="false"
+                             SelectedValueChanged="OnSelectedValueChanged"
+                             @ref="treeViewRef"
+                             Class="config-treeview">
+
+                    <ItemTemplate Context="item">
+                        <MudTreeViewItem Items="@item.Children" Value="@item.Value">
+                            <BodyContent>
+                                <div class="config-tree-row">
+                                    @if (item.Value.IsCategory)
+                                    {
+                                        <!-- Category Row (Parent) -->
+                                        <div class="config-action-menu">
+                                            <MudIcon Icon="@Icons.Material.Filled.Folder" 
+                                                     Size="Size.Small" 
+                                                     Color="Color.Primary" />
+                                        </div>
+                                        <div class="config-category-cell">
+                                            <MudChip Size="Size.Small" 
+                                                     Color="Color.Primary" 
+                                                     Variant="Variant.Filled" 
+                                                     Class="config-category-chip">
+                                                <MudIcon Icon="@GetCategoryIcon(item.Value.Category)" Size="Size.Small" Class="me-1" />
+                                                @item.Value.Category
+                                            </MudChip>
+                                        </div>
+                                        <div class="config-key-cell">
+                                            <MudText Typo="Typo.body2" Class="text-muted" Style="font-style: italic;">
+                                                (@item.Value.ChildrenCount items)
+                                            </MudText>
+                                        </div>
+                                        <div class="config-value-cell">
+                                            <MudText Typo="Typo.body2" Class="text-muted" Style="font-style: italic;">
+                                                -
+                                            </MudText>
+                                        </div>
+                                        <div class="config-description-cell">
+                                            <MudText Typo="Typo.body2" Class="text-muted" Style="font-style: italic;">
+                                                Category
+                                            </MudText>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <!-- Configuration Item Row (Child) -->
+                                        var configItem = item.Value.ConfigItem;
+                                        <div class="config-action-menu">
+                                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" 
+                                                     Color="Color.Inherit" 
+                                                     Dense="true"
+                                                     Size="Size.Small"
+                                                     Class="config-menu-button">
+                                                <MudMenuItem OnClick="@(() => View(configItem!.Id))" Class="config-menu-item">
+                                                    <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="me-2" Size="Size.Small" />
+                                                    <span>View</span>
+                                                </MudMenuItem>
+                                                @if (Globals.AccessLevel == 1)
+                                                {
+                                                    <MudMenuItem OnClick="@(() => Edit(configItem!.Id))" Class="config-menu-item">
+                                                        <MudIcon Icon="@Icons.Material.Filled.Edit" Class="me-2" Size="Size.Small" />
+                                                        <span>Edit</span>
+                                                    </MudMenuItem>
+                                                    <MudMenuItem OnClick="@(() => Delete(configItem!.Id))" 
+                                                                 Color="Color.Error" 
+                                                                 Class="config-menu-item">
+                                                        <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" Size="Size.Small" />
+                                                        <span>Delete</span>
+                                                    </MudMenuItem>
+                                                }
+                                            </MudMenu>
+                                        </div>
+                                        <div class="config-category-cell">
+                                            <MudText Typo="Typo.body2" Class="text-muted" Style="font-size: 11px;">
+                                                @configItem?.Category
+                                            </MudText>
+                                        </div>
+                                        <div class="config-key-cell">
+                                            <MudChip Size="Size.Small" 
+                                                     Color="Color.Info" 
+                                                     Variant="Variant.Outlined" 
+                                                     Class="config-key-chip">
+                                                @configItem?.ConfigKey
+                                            </MudChip>
+                                        </div>
+                                        <div class="config-value-cell">
+                                            <MudText Typo="Typo.body2" 
+                                                     Class="config-value-text"
+                                                     Style="font-weight: 500; color: var(--mud-palette-text-primary);">
+                                                @(configItem?.ConfigValue ?? "-")
+                                            </MudText>
+                                        </div>
+                                        <div class="config-description-cell">
+                                            <MudText Typo="Typo.body2" 
+                                                     Class="config-description-text text-truncate"
+                                                     Style="color: var(--mud-palette-text-secondary);">
+                                                @(configItem?.Description ?? "-")
+                                            </MudText>
+                                        </div>
+                                    }
+                                </div>
+                            </BodyContent>
+                        </MudTreeViewItem>
+                    </ItemTemplate>
+                </MudTreeView>
+            </div>
+        </MudPaper>
+
+        <style>
+            /* Tree Container */
+            .config-tree-container {
+                display: flex;
+                flex-direction: column;
+                background: var(--mud-palette-surface);
+            }
+
+            /* Tree Header */
+            .config-tree-header {
+                background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+                padding: 12px 16px;
+                border-bottom: 2px solid var(--mud-palette-primary);
+            }
+
+            .config-header-grid {
+                display: grid;
+                grid-template-columns: 80px 150px 200px 1fr 250px;
+                gap: 12px;
+                align-items: center;
+            }
+
+            .config-header-text {
+                color: white !important;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                font-size: 11px;
+            }
+
+            /* Tree Content */
+            .config-tree-content {
+                flex: 1;
+                overflow-y: auto;
+                overflow-x: hidden;
+                background: var(--mud-palette-background);
+            }
+
+            /* Tree View Styling */
+            .config-treeview {
+                padding: 8px 0;
+            }
+
+            .config-treeview .mud-treeview-item {
+                margin: 2px 0;
+            }
+
+            .config-treeview .mud-treeview-item-content {
+                padding: 0 8px;
+                border-radius: 8px;
+                transition: all 0.2s ease;
+            }
+
+            .config-treeview .mud-treeview-item-content:hover {
+                background-color: var(--mud-palette-action-hover);
+            }
+
+            /* Tree Row */
+            .config-tree-row {
+                display: grid;
+                grid-template-columns: 80px 150px 200px 1fr 250px;
+                gap: 12px;
+                align-items: center;
+                padding: 10px 8px;
+                min-height: 48px;
+                border-radius: 8px;
+                transition: all 0.2s ease;
+                position: relative;
+            }
+
+            .config-tree-row:hover {
+                background-color: var(--mud-palette-action-hover);
+            }
+
+            .config-tree-row::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 3px;
+                background: var(--mud-palette-primary);
+                border-radius: 0 3px 3px 0;
+                opacity: 0;
+                transition: opacity 0.2s ease;
+            }
+
+            .config-tree-row:hover::before {
+                opacity: 1;
+            }
+
+            /* Action Menu */
+            .config-action-menu {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .config-menu-button {
+                opacity: 0.6;
+                transition: opacity 0.2s ease;
+            }
+
+            .config-tree-row:hover .config-menu-button {
+                opacity: 1;
+            }
+
+            .config-menu-item {
+                min-height: 36px;
+                padding: 6px 16px;
+            }
+
+            /* Category Cell */
+            .config-category-cell {
+                display: flex;
+                align-items: center;
+            }
+
+            .config-category-chip {
+                font-weight: 600;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
+                min-width: 100px;
+                justify-content: center;
+            }
+
+            /* Key Cell */
+            .config-key-cell {
+                display: flex;
+                align-items: center;
+            }
+
+            .config-key-chip {
+                font-weight: 500;
+                font-size: 11px;
+                letter-spacing: 0.3px;
+                min-width: 120px;
+                justify-content: center;
+            }
+
+            /* Value Cell */
+            .config-value-cell {
+                display: flex;
+                align-items: center;
+                min-width: 0;
+                overflow: hidden;
+            }
+
+            .config-value-text {
+                font-size: 13px;
+                line-height: 1.4;
+            }
+
+            /* Description Cell */
+            .config-description-cell {
+                display: flex;
+                align-items: center;
+                min-width: 0;
+                overflow: hidden;
+            }
+
+            .config-description-text {
+                font-size: 12px;
+                line-height: 1.4;
+            }
+
+            /* Tree Indentation */
+            .config-treeview .mud-treeview-item {
+                position: relative;
+            }
+
+            .config-treeview .mud-treeview-item-toggle {
+                width: 24px;
+                height: 24px;
+                margin-right: 8px;
+                border-radius: 4px;
+                transition: all 0.2s ease;
+            }
+
+            .config-treeview .mud-treeview-item-toggle:hover {
+                background-color: var(--mud-palette-action-hover);
+            }
+
+            /* Dark Mode Adjustments */
+            .mud-theme-dark .config-tree-header {
+                background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+            }
+
+            .mud-theme-dark .config-tree-content {
+                background: var(--mud-palette-background);
+            }
+
+            /* Scrollbar Styling */
+            .config-tree-content::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            .config-tree-content::-webkit-scrollbar-track {
+                background: var(--mud-palette-background);
+            }
+
+            .config-tree-content::-webkit-scrollbar-thumb {
+                background: var(--mud-palette-action-disabled);
+                border-radius: 4px;
+            }
+
+            .config-tree-content::-webkit-scrollbar-thumb:hover {
+                background: var(--mud-palette-action-disabled-background);
+            }
+        </style>
+
+    </div>
+</MudContainer>
+
+<style>
+    .dashboard-header {
+        padding: 20px;
+        background: linear-gradient(135deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-primary) 100%);
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 8px;
+    }
+
+    .dashboard-header .mud-typography {
+        color: white !important;
+    }
+
+    .dashboard-header .text-muted {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    .dashboard-search-field .mud-input-root {
+        color: var(--mud-palette-text-primary) !important;
+    }
+
+    .dashboard-search-field .mud-input-root input {
+        color: var(--mud-palette-text-primary) !important;
+    }
+
+    .dashboard-search-field .mud-input-root::before {
+        border-color: rgba(0,0,0,0.2) !important;
+    }
+
+    .dashboard-search-field .mud-input-root:hover::before {
+        border-color: var(--mud-palette-primary) !important;
+    }
+
+    .dashboard-search-field .mud-input-root::after {
+        border-color: var(--mud-palette-primary) !important;
+    }
+
+    /* Dark mode adjustments */
+    .mud-theme-dark .dashboard-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+    }
+
+    .mud-theme-dark .dashboard-search-field {
+        background: rgba(255,255,255,0.1) !important;
+    }
+
+    .mud-theme-dark .dashboard-search-field .mud-input-root {
+        color: white !important;
+    }
+
+    .mud-theme-dark .dashboard-search-field .mud-input-root input {
+        color: white !important;
+    }
+
+    .mud-theme-dark .dashboard-search-field .mud-input-root::placeholder {
+        color: rgba(255,255,255,0.7) !important;
+    }
+</style>
+@code
+{
+    private List<TreeItemData<SystemConfigurationTreeItem>> TreeItems { get; set; } = new();
+    List<SystemConfigurationModel> AllData = new();
+    List<SystemConfigurationModel> data = new();
+    SystemConfigurationModel record = new();
+    private SystemConfigurationTreeItem? SelectedItem;
+    private MudTreeView<SystemConfigurationTreeItem>? treeViewRef;
+
+    public string Action { get; set; } = "INSERT";
+    private bool LoadingPanel { get; set; } = false;
+    private MyDrawer _drawer = new();
+    private string searchString = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        Globals.AccessLevel = Globals.PageAccess(NavManager, "SystemConfigurationDashboard");
+        await GetAll();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        AllData = await Functions.GetAsync<List<SystemConfigurationModel>>($"SystemConfiguration/Search", true) ?? new List<SystemConfigurationModel>();
+        data = AllData;
+        TreeItems = BuildTree(data);
+        LoadingPanel = false;
+    }
+
+    private List<TreeItemData<SystemConfigurationTreeItem>> BuildTree(List<SystemConfigurationModel> flatList)
+    {
+        var treeItems = new List<TreeItemData<SystemConfigurationTreeItem>>();
+        
+        // Group by category
+        var categories = flatList
+            .Where(x => !string.IsNullOrEmpty(x.Category))
+            .GroupBy(x => x.Category!)
+            .OrderBy(g => g.Key)
+            .ToList();
+
+        foreach (var categoryGroup in categories)
+        {
+            var categoryName = categoryGroup.Key;
+            var configItems = categoryGroup.OrderBy(x => x.ConfigKey).ToList();
+
+            // Create category node
+            var categoryNode = new SystemConfigurationTreeItem
+            {
+                IsCategory = true,
+                Category = categoryName,
+                ChildrenCount = configItems.Count
+            };
+
+            // Create child nodes for each config item
+            var children = configItems.Select(config => new TreeItemData<SystemConfigurationTreeItem>
+            {
+                Value = new SystemConfigurationTreeItem
+                {
+                    IsCategory = false,
+                    Category = categoryName,
+                    ConfigItem = config
+                },
+                Children = new List<TreeItemData<SystemConfigurationTreeItem>>()
+            }).ToList();
+
+            treeItems.Add(new TreeItemData<SystemConfigurationTreeItem>
+            {
+                Value = categoryNode,
+                Children = children
+            });
+        }
+
+        return treeItems;
+    }
+
+    private string GetCategoryIcon(string? category)
+    {
+        return category?.ToUpper() switch
+        {
+            "BACKUP" => Icons.Material.Filled.Backup,
+            "IMAGES" => Icons.Material.Filled.Image,
+            "EMAIL" => Icons.Material.Filled.Email,
+            "FTP" => Icons.Material.Filled.CloudUpload,
+            _ => Icons.Material.Filled.Folder
+        };
+    }
+
+    private async Task ExpandAllNodes()
+    {
+        if (treeViewRef != null)
+        {
+            await treeViewRef.ExpandAllAsync();
+        }
+    }
+
+    private async Task CollapseAllNodes()
+    {
+        if (treeViewRef != null)
+        {
+            await treeViewRef.CollapseAllAsync();
+        }
+    }
+
+    private async Task OnSelectedValueChanged(SystemConfigurationTreeItem? selectedItem)
+    {
+        SelectedItem = selectedItem;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<SystemConfigurationModel>($"SystemConfiguration/Get/{id}", true) ?? new SystemConfigurationModel();
+        LoadingPanel = false;
+    }
+
+    private void FilterData()
+    {
+        var filtered = AllData.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(searchString))
+        {
+            var search = searchString.ToLower();
+            filtered = filtered.Where(x =>
+                (x.Category?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.ConfigKey?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.ConfigValue?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                (x.Description?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
+            );
+        }
+
+        data = filtered.ToList();
+        TreeItems = BuildTree(data);
+        StateHasChanged();
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new SystemConfigurationModel();
+        record.IsActive = 1;
+        record.OrganizationId = Globals.User.OrganizationId;
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Refresh()
+    {
+        await GetAll();
+    }
+
+    protected async Task View(int id)
+    {
+        await Get(id);
+        Action = "VIEW";
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        await _drawer.OpenDrawerAsync();
+    }
+
+    protected async Task Delete(int id)
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Get(id);
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        try
+        {
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            var result = await Functions.PostAsync<SystemConfigurationModel>($"SystemConfiguration/{Action}", record, true);
+            if (result.Success == true)
+            {
+                SnackbarService.Add($"Record Saved Successfully", Severity.Success);
+                await GetAll();
+                if (Action?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false) await Edit(result.Result!.Id);
+            }
+            else
+            {
+                SnackbarService.Add($"{result.Message}", Severity.Error);
+                record = new();
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"ERROR: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+            await _drawer.CloseDrawerAsync();
+        }
+    }
+
+    private async Task ChildSaved()
+    {
+        await GetAll();
+        await _drawer.CloseDrawerAsync();
+        StateHasChanged();
+    }
+}

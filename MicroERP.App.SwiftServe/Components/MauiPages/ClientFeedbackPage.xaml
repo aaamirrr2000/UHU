@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MicroERP.App.SwiftServe.Components.MauiPages.ClientFeedbackPage"
+             Title="Client Feedback"
+             BackgroundColor="#F5F5F5">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <Color x:Key="PrimaryColor">#512BD4</Color>
+            <Color x:Key="WhiteColor">#FFFFFF</Color>
+            <Color x:Key="TextPrimary">#212121</Color>
+            <Color x:Key="TextSecondary">#666666</Color>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <StackLayout Spacing="12" Padding="8">
+            
+            <!-- Header -->
+            <Frame BackgroundColor="{StaticResource PrimaryColor}"
+                   CornerRadius="12"
+                   Padding="20,16"
+                   Margin="0,0,0,12"
+                   HasShadow="True">
+                <StackLayout Spacing="8">
+                    <Button Text="← Back"
+                            Clicked="OnBackClicked"
+                            BackgroundColor="#E0FFFFFF"
+                            TextColor="{StaticResource PrimaryColor}"
+                            FontSize="14"
+                            Padding="15,8"
+                            CornerRadius="8"
+                            HorizontalOptions="Start"
+                            Margin="0,0,0,8"/>
+                    <Label Text="Feedback"
+                           FontSize="24"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource WhiteColor}"/>
+                </StackLayout>
+            </Frame>
+
+            <!-- Feedback Form -->
+            <Frame BackgroundColor="{StaticResource WhiteColor}"
+                   BorderColor="#E0E0E0"
+                   CornerRadius="12"
+                   Padding="16"
+                   Margin="0,0,0,12"
+                   HasShadow="True">
+                <StackLayout Spacing="16">
+                    <Label Text="Client Feedback Page - Full Implementation in Progress"
+                           FontSize="16"
+                           TextColor="{StaticResource TextSecondary}"
+                           HorizontalOptions="Center"
+                           Margin="0,20"/>
+                    <Label Text="This page will include feedback form with ratings and comments."
+                           FontSize="14"
+                           TextColor="{StaticResource TextSecondary}"
+                           HorizontalOptions="Center"
+                           HorizontalTextAlignment="Center"/>
+                    
+                    <!-- Save Button -->
+                    <Button Text="Save"
+                            Clicked="OnSaveClicked"
+                            BackgroundColor="{StaticResource PrimaryColor}"
+                            TextColor="{StaticResource WhiteColor}"
+                            CornerRadius="12"
+                            HeightRequest="50"
+                            FontSize="18"
+                            FontAttributes="Bold"
+                            Margin="0,20,0,0"/>
+                </StackLayout>
+            </Frame>
+
+        </StackLayout>
+    </ScrollView>
+</ContentPage>
+

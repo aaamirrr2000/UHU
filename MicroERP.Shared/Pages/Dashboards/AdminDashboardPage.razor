@@ -1,0 +1,229 @@
+@page "/AdminDashboardPage"
+@page "/dashboard"
+@using MudBlazor
+@using MicroERP.Shared.Models
+@inject Functions Functions
+@inject Globals Globals
+@inject ISnackbar SnackbarService
+
+<PageTitle>Funds Dashboard</PageTitle>
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.False" Class="pa-4" Style="min-height: 100vh; background: linear-gradient(180deg, #0d47a1 0%, #1565c0 12%, #f5f7fa 12%);">
+
+    <!-- Header with date range -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div class="d-flex align-items-center gap-2">
+            <MudIcon Icon="@Icons.Material.Filled.Assessment" Size="Size.Large" Style="color: white;" />
+            <div>
+                <MudText Typo="Typo.h5" Class="fw-bold mb-0" Style="color: white;">Location-wise Funds Dashboard</MudText>
+                <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.9);">Funds collection progress for selected period</MudText>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <MudDatePicker T="DateTime?" Label="From" @bind-Date="_startDate" DateFormat="dd MMM yyyy" Variant="Variant.Outlined" Dense="true"
+                          Style="max-width: 160px;" Class="admin-dash-date" />
+            <MudDatePicker T="DateTime?" Label="To" @bind-Date="_endDate" DateFormat="dd MMM yyyy" Variant="Variant.Outlined" Dense="true"
+                          Style="max-width: 160px;" Class="admin-dash-date" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadDashboardData" Disabled="@LoadingPanel">
+                Apply
+            </MudButton>
+        </div>
+    </div>
+
+    @if (_cashMovements != null)
+    {
+        <!-- KPI Cards -->
+        <MudGrid Class="mb-4" Spacing="2">
+            <MudItem xs="12" sm="6" md="3">
+                <MudCard Class="h-100 admin-dash-card" Elevation="2" Style="border-radius: 12px; border-top: 4px solid #2e7d32;">
+                    <MudCardContent Class="py-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Total Collected</MudText>
+                                <MudText Typo="Typo.h5" Class="fw-bold text-success">@_grandReceipts.ToString("N0")</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Receipts in period</MudText>
+                            </div>
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Color="Color.Success" Size="Size.Large" Style="opacity: 0.6;" />
+                        </div>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudCard Class="h-100 admin-dash-card" Elevation="2" Style="border-radius: 12px; border-top: 4px solid #c62828;">
+                    <MudCardContent Class="py-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Total Payments</MudText>
+                                <MudText Typo="Typo.h5" Class="fw-bold text-error">@_grandPayments.ToString("N0")</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Payments in period</MudText>
+                            </div>
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingDown" Color="Color.Error" Size="Size.Large" Style="opacity: 0.6;" />
+                        </div>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudCard Class="h-100 admin-dash-card" Elevation="2" Style="border-radius: 12px; border-top: 4px solid #1565c0;">
+                    <MudCardContent Class="py-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Net Flow</MudText>
+                                <MudText Typo="Typo.h5" Class="@($"fw-bold {GetNetFlowColorClass(_grandNetFlow)}")">@_grandNetFlow.ToString("N0")</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Collected − Payments</MudText>
+                            </div>
+                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Color="Color.Info" Size="Size.Large" Style="opacity: 0.6;" />
+                        </div>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudCard Class="h-100 admin-dash-card" Elevation="2" Style="border-radius: 12px; border-top: 4px solid #6a1b9a;">
+                    <MudCardContent Class="py-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Locations</MudText>
+                                <MudText Typo="Typo.h5" Class="fw-bold text-primary">@(_locationWise?.Count ?? 0)</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">With activity in period</MudText>
+                            </div>
+                            <MudIcon Icon="@Icons.Material.Filled.Place" Color="Color.Secondary" Size="Size.Large" Style="opacity: 0.6;" />
+                        </div>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+
+        <!-- Collection progress chart -->
+        <MudPaper Class="pa-4 mb-4" Elevation="2" Style="border-radius: 12px;">
+            <MudText Typo="Typo.subtitle1" Class="fw-bold mb-3">Funds collection progress</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">Cumulative receipts over the selected period</MudText>
+            @if (_chartLabels != null && _chartLabels.Length > 0)
+            {
+                <MudChart ChartType="ChartType.Line" Labels="_chartLabels" InputData="_chartData" Style="height: 320px;" />
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">No daily data in this period. Try a wider date range.</MudAlert>
+            }
+        </MudPaper>
+
+        <!-- Location-wise funds table (from CashMovementModel grouped by LocationName) -->
+        <MudPaper Class="pa-4" Elevation="2" Style="border-radius: 12px;">
+            <MudText Typo="Typo.subtitle1" Class="fw-bold mb-3">Funds by location</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">Receipts and payments per location for the selected dates</MudText>
+            @if (_locationWise != null && _locationWise.Any())
+            {
+                <MudTable Items="@_locationWise" Dense="true" Hover="true" Striped="true" Bordered="true" Breakpoint="Breakpoint.Sm">
+                    <HeaderContent>
+                        <MudTh>Location</MudTh>
+                        <MudTh Class="text-end">Receipts</MudTh>
+                        <MudTh Class="text-end">Payments</MudTh>
+                        <MudTh Class="text-end">Net flow</MudTh>
+                    </HeaderContent>
+                    <RowTemplate Context="row">
+                        <MudTd DataLabel="Location">
+                            <span class="fw-medium">@(row.LocationName ?? "Unassigned")</span>
+                        </MudTd>
+                        <MudTd DataLabel="Receipts" Class="text-end text-success">@row.TotalReceipts.ToString("N0")</MudTd>
+                        <MudTd DataLabel="Payments" Class="text-end text-error">@row.TotalPayments.ToString("N0")</MudTd>
+                        <MudTd DataLabel="Net flow" Class="@($"text-end fw-medium {GetNetFlowColorClass(row.NetFlow)}")">@row.NetFlow.ToString("N0")</MudTd>
+                    </RowTemplate>
+                    <FooterContent>
+                        <MudTd Class="fw-bold">Total</MudTd>
+                        <MudTd Class="text-end fw-bold text-success">@_grandReceipts.ToString("N0")</MudTd>
+                        <MudTd Class="text-end fw-bold text-error">@_grandPayments.ToString("N0")</MudTd>
+                        <MudTd Class="@($"text-end fw-bold {GetNetFlowColorClass(_grandNetFlow)}")">@_grandNetFlow.ToString("N0")</MudTd>
+                    </FooterContent>
+                </MudTable>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">No location-wise data for the selected period.</MudAlert>
+            }
+        </MudPaper>
+    }
+    else if (!LoadingPanel)
+    {
+        <MudAlert Severity="Severity.Info" Class="mt-4">Select dates and click Apply to load the dashboard.</MudAlert>
+    }
+</MudContainer>
+
+@code {
+    private List<CashMovementModel>? _cashMovements;
+    private List<(string LocationName, decimal TotalReceipts, decimal TotalPayments, decimal NetFlow)>? _locationWise;
+    private decimal _grandReceipts;
+    private decimal _grandPayments;
+    private decimal _grandNetFlow;
+    private bool LoadingPanel { get; set; }
+    private DateTime? _startDate;
+    private DateTime? _endDate;
+    private string[] _chartLabels = Array.Empty<string>();
+    private double[] _chartData = Array.Empty<double>();
+
+    private static string GetNetFlowColorClass(decimal value) => value >= 0 ? "text-success" : "text-error";
+
+    protected override void OnInitialized()
+    {
+        var today = DateTime.Today;
+        _endDate = today;
+        _startDate = new DateTime(today.Year, today.Month, 1);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        var start = _startDate ?? DateTime.Today.AddMonths(-1);
+        var end = _endDate ?? DateTime.Today;
+        if (start > end)
+        {
+            SnackbarService.Add("From date must be before To date.", Severity.Warning);
+            return;
+        }
+        try
+        {
+            LoadingPanel = true;
+            StateHasChanged();
+            int orgId = Globals.User?.OrganizationId ?? 0;
+            if (orgId == 0)
+            {
+                SnackbarService.Add("Organization not set.", Severity.Warning);
+                return;
+            }
+            var url = $"Reports/CashMovement/{orgId}/{start:yyyy-MM-dd}/{end:yyyy-MM-dd}";
+            _cashMovements = await Functions.GetAsync<List<CashMovementModel>>(url, true);
+            if (_cashMovements != null)
+            {
+                _grandReceipts = _cashMovements.Sum(x => x.Receipts);
+                _grandPayments = _cashMovements.Sum(x => x.Payments);
+                _grandNetFlow = _grandReceipts - _grandPayments;
+                _locationWise = _cashMovements
+                    .GroupBy(x => x.LocationName ?? "Unassigned")
+                    .Select(g => (LocationName: g.Key, TotalReceipts: g.Sum(x => x.Receipts), TotalPayments: g.Sum(x => x.Payments), NetFlow: g.Sum(x => x.Receipts - x.Payments)))
+                    .OrderBy(x => x.LocationName)
+                    .ToList();
+                var byDate = _cashMovements
+                    .GroupBy(x => x.TranDate.Date)
+                    .OrderBy(g => g.Key)
+                    .Select(g => (Date: g.Key, Receipts: g.Sum(x => x.Receipts)))
+                    .ToList();
+                decimal cum = 0;
+                var dailyWithCum = byDate.Select(d => { cum += d.Receipts; return (Date: d.Date, Cumulative: cum); }).ToList();
+                _chartLabels = dailyWithCum.Select(d => d.Date.ToString("dd MMM")).ToArray();
+                _chartData = dailyWithCum.Select(d => (double)d.Cumulative).ToArray();
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"Error loading dashboard: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+}

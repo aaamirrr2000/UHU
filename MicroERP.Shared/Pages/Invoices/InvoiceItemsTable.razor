@@ -1,0 +1,946 @@
+
+@using System.Collections.ObjectModel
+@inject Globals Globals
+@inject IDialogService DialogService
+@inject Functions Functions
+
+<div class="summary-cards-container">
+    <!-- Service Charges -->
+    <div class="summary-card-wrapper">
+        <MudPaper Elevation="4" Class="pa-3 mb-2 summary-card-professional summary-card-info" Style="border-radius: 16px; height: 100%; background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.05) 100%); border-left: 4px solid #2196F3; box-shadow: 0 4px 12px rgba(33, 150, 243, 0.15);">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="d-flex align-items-center">
+                    <div class="card-icon-wrapper" style="background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%); border-radius: 10px; padding: 8px; margin-right: 10px;">
+                        <MudIcon Icon="@Icons.Material.Filled.AddCircle" 
+                                    Size="Size.Small" 
+                                    Style="color: white;" />
+                    </div>
+                    <MudText Typo="Typo.subtitle2" Class="fw-bold mb-0 card-label-large" Style="color: #1976D2;">Service Charges</MudText>
+                </div>
+                @if (ChargesManuallyOverridden)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh" 
+                                    Size="Size.Small" 
+                                    Color="Color.Info" 
+                                    Variant="Variant.Text"
+                                    Class="ms-1"
+                                    Style="min-width: 24px; width: 24px; height: 24px; padding: 2px;"
+                                    Title="Reset to auto-calculate"
+                                    OnClick="OnResetCharges" />
+                }
+            </div>
+            @if (!_editingCharges)
+            {
+                <div class="d-flex align-items-center justify-content-end" style="cursor: pointer;" @onclick="ToggleChargesEdit">
+                    <MudText Typo="Typo.h4" Class="fw-bold text-end mb-0 digital-display-large" Style="color: #1976D2; font-family: 'Courier New', monospace; letter-spacing: 1px;">
+                        @Record.Invoice.ChargesAmount.ToString("#,##0.00")
+                    </MudText>
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Style="color: #1976D2; margin-left: 8px;" />
+                </div>
+            }
+            else
+            {
+                <MudNumericField T="decimal"
+                                    Value="Record.Invoice.ChargesAmount"
+                                    ValueChanged="@(async (decimal val) => { await OnChargesAmountChanged(val); _editingCharges = false; })"
+                                    Dense="@true"
+                                    Variant="Variant.Outlined"
+                                    HideSpinButtons="@true"
+                                    InputClass="text-end number-input-large-bold"
+                                    Format="#,##0.00"
+                                    FullWidth="@true"
+                                    Margin="Margin.Dense"
+                                    Style="background: white;"
+                                    AutoFocus="true"
+                                    @onblur="() => _editingCharges = false" />
+            }
+        </MudPaper>
+    </div>
+
+    <!-- Discount -->
+    <div class="summary-card-wrapper">
+        <MudPaper Elevation="4" Class="pa-3 mb-2 summary-card-professional summary-card-success" Style="border-radius: 16px; height: 100%; background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.05) 100%); border-left: 4px solid #4CAF50; box-shadow: 0 4px 12px rgba(76, 175, 80, 0.15);">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="d-flex align-items-center">
+                    <div class="card-icon-wrapper" style="background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%); border-radius: 10px; padding: 8px; margin-right: 10px;">
+                        <MudIcon Icon="@Icons.Material.Filled.Discount" 
+                                    Size="Size.Small" 
+                                    Style="color: white;" />
+                    </div>
+                    <MudText Typo="Typo.subtitle2" Class="fw-bold mb-0 card-label-large" Style="color: #388E3C;">Discount</MudText>
+                </div>
+                @if (DiscountManuallyOverridden)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh" 
+                                    Size="Size.Small" 
+                                    Color="Color.Success" 
+                                    Variant="Variant.Text"
+                                    Class="ms-1"
+                                    Style="min-width: 24px; width: 24px; height: 24px; padding: 2px;"
+                                    Title="Reset to auto-calculate"
+                                    OnClick="OnResetDiscount" />
+                }
+            </div>
+            @if (!_editingDiscount)
+            {
+                <div class="d-flex align-items-center justify-content-end" style="cursor: pointer;" @onclick="ToggleDiscountEdit">
+                    <MudText Typo="Typo.h4" Class="fw-bold text-end mb-0 digital-display-large" Style="color: #388E3C; font-family: 'Courier New', monospace; letter-spacing: 1px;">
+                        @Record.Invoice.DiscountAmount.ToString("#,##0.00")
+                    </MudText>
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Style="color: #388E3C; margin-left: 8px;" />
+                </div>
+            }
+            else
+            {
+                <MudNumericField T="decimal"
+                                    Value="Record.Invoice.DiscountAmount"
+                                    ValueChanged="@(async (decimal val) => { await OnDiscountAmountChanged(val); _editingDiscount = false; })"
+                                    Dense="@true"
+                                    Variant="Variant.Outlined"
+                                    HideSpinButtons="@true"
+                                    InputClass="text-end number-input-large-bold"
+                                    Format="#,##0.00"
+                                    FullWidth="@true"
+                                    Margin="Margin.Dense"
+                                    Style="background: white;"
+                                    AutoFocus="true"
+                                    @onblur="() => _editingDiscount = false" />
+            }
+        </MudPaper>
+    </div>
+
+    <!-- Tax Amount - Show when tax setting is on invoice level OR has value -->
+    @if ((_taxRuleAppliedOnInvoiceLevel || Record.Invoice.TaxAmount != 0) && Record.Invoice.TaxAmount != 0)
+    {
+        <div class="summary-card-wrapper">
+            <MudPaper Elevation="4" Class="pa-3 mb-2 summary-card-professional summary-card-error" Style="border-radius: 16px; height: 100%; background: linear-gradient(135deg, rgba(244, 67, 54, 0.15) 0%, rgba(244, 67, 54, 0.1) 100%); border-left: 4px solid #F44336; box-shadow: 0 4px 12px rgba(244, 67, 54, 0.2);">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="d-flex align-items-center">
+                        <div class="card-icon-wrapper" style="background: linear-gradient(135deg, #F44336 0%, #D32F2F 100%); border-radius: 10px; padding: 8px; margin-right: 10px;">
+                            <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" 
+                                     Size="Size.Small" 
+                                     Style="color: white;" />
+                        </div>
+                        <MudText Typo="Typo.subtitle2" Class="fw-bold mb-0 card-label-large" Style="color: #D32F2F;">Tax Amount</MudText>
+                    </div>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                                   Size="Size.Small" 
+                                   Color="Color.Error" 
+                                   Variant="Variant.Text"
+                                   Class="ms-1"
+                                   Style="min-width: 24px; width: 24px; height: 24px; padding: 2px;"
+                                   Title="View tax calculation details"
+                                   OnClick="ShowTaxCalculationDialog" />
+                </div>
+                <MudText Typo="Typo.h4" Class="fw-bold text-end mb-0 digital-display-large" Style="color: #D32F2F; font-family: 'Courier New', monospace; letter-spacing: 1px;">
+                    @Record.Invoice.TaxAmount.ToString("#,##0.00")
+                </MudText>
+            </MudPaper>
+        </div>
+    }
+
+    <!-- Invoice Amount -->
+    <div class="summary-card-wrapper">
+        <MudPaper Elevation="4" Class="pa-3 mb-2 summary-card-professional summary-card-warning" Style="border-radius: 16px; height: 100%; background: linear-gradient(135deg, rgba(255, 152, 0, 0.1) 0%, rgba(255, 152, 0, 0.05) 100%); border-left: 4px solid #FF9800; box-shadow: 0 4px 12px rgba(255, 152, 0, 0.15);">
+            <div class="d-flex align-items-center mb-2">
+                <div class="card-icon-wrapper" style="background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%); border-radius: 10px; padding: 8px; margin-right: 10px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Receipt" 
+                             Size="Size.Small" 
+                             Style="color: white;" />
+                </div>
+                <MudText Typo="Typo.subtitle2" Class="fw-bold mb-0 card-label-large" Style="color: #F57C00;">Invoice Amount</MudText>
+            </div>
+            <MudText Typo="Typo.h4" Class="fw-bold text-end mb-0 digital-display-large" Style="color: #F57C00; font-family: 'Courier New', monospace; letter-spacing: 1px;">
+                @Record.Invoice.TotalInvoiceAmount.ToString("#,##0.00")
+            </MudText>
+        </MudPaper>
+    </div>
+
+    <!-- Payment -->
+    <div class="summary-card-wrapper">
+        <MudPaper Elevation="4" Class="pa-3 mb-2 summary-card-professional summary-card-primary" Style="border-radius: 16px; height: 100%; background: linear-gradient(135deg, rgba(103, 58, 183, 0.1) 0%, rgba(103, 58, 183, 0.05) 100%); border-left: 4px solid #673AB7; box-shadow: 0 4px 12px rgba(103, 58, 183, 0.15);">
+            <div class="d-flex align-items-center mb-2">
+                <div class="card-icon-wrapper" style="background: linear-gradient(135deg, #673AB7 0%, #512DA8 100%); border-radius: 10px; padding: 8px; margin-right: 10px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Payments" 
+                             Size="Size.Small" 
+                             Style="color: white;" />
+                </div>
+                <MudText Typo="Typo.subtitle2" Class="fw-bold mb-0 card-label-large" Style="color: #512DA8;">Payment</MudText>
+            </div>
+            <MudText Typo="Typo.h4" Class="fw-bold text-end mb-0 digital-display-large" Style="color: #512DA8; font-family: 'Courier New', monospace; letter-spacing: 1px;">
+                @Record.Invoice.TotalPayments.ToString("#,##0.00")
+            </MudText>
+        </MudPaper>
+    </div>
+
+    <!-- Balance -->
+    <div class="summary-card-wrapper">
+        <MudPaper Elevation="4" Class="pa-3 mb-2 summary-card-professional summary-card-error" Style="border-radius: 16px; height: 100%; background: linear-gradient(135deg, rgba(244, 67, 54, 0.1) 0%, rgba(244, 67, 54, 0.05) 100%); border-left: 4px solid #F44336; box-shadow: 0 4px 12px rgba(244, 67, 54, 0.15);">
+            <div class="d-flex align-items-center mb-2">
+                <div class="card-icon-wrapper" style="background: linear-gradient(135deg, #F44336 0%, #D32F2F 100%); border-radius: 10px; padding: 8px; margin-right: 10px;">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" 
+                             Size="Size.Small" 
+                             Style="color: white;" />
+                </div>
+                <MudText Typo="Typo.subtitle2" Class="fw-bold mb-0 card-label-large" Style="color: #D32F2F;">Balance</MudText>
+            </div>
+            <MudText Typo="Typo.h4" Class="fw-bold text-end mb-0 digital-display-large" Style="color: #D32F2F; font-family: 'Courier New', monospace; letter-spacing: 1px;">
+                @Record.Invoice.BalanceAmount.ToString("#,##0.00")
+            </MudText>
+        </MudPaper>
+    </div>
+</div>
+
+
+<MudPaper Elevation="4" Class="mt-4 invoice-items-table-paper" Style="border-radius: 12px; overflow: hidden; background: linear-gradient(135deg, rgba(63, 81, 181, 0.12) 0%, rgba(63, 81, 181, 0.08) 100%); border: 2px solid rgba(63, 81, 181, 0.2); box-shadow: 0 6px 20px rgba(63, 81, 181, 0.25);">
+    <div class="d-flex align-items-center justify-content-between p-3 invoice-items-header" style="background: linear-gradient(135deg, rgba(63, 81, 181, 0.1) 0%, rgba(63, 81, 181, 0.05) 100%); border-bottom: 2px solid rgba(63, 81, 181, 0.2);">
+        <MudText Typo="Typo.h6" Class="fw-bold mb-0" Style="color: var(--mud-palette-primary);">
+            Invoice Items
+        </MudText>
+        @if (!Disabled)
+        {
+            <div class="d-flex align-items-center gap-2">
+                <MudTooltip Text="Browse items catalog">
+                    <MudButton StartIcon="@Icons.Material.Filled.Inventory"
+                               Variant="Variant.Filled"
+                               Color="Color.Info"
+                               Size="Size.Small"
+                               OnClick="OnBrowseItems"
+                               Style="border-radius: 8px; box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);">
+                        Browse Items
+                    </MudButton>
+                </MudTooltip>
+                <MudTooltip Text="Add a line item manually without selecting from catalog. Useful for one-time services, custom descriptions, or special charges.">
+                    <MudButton StartIcon="@Icons.Material.Filled.Add"
+                               Variant="Variant.Filled"
+                               Color="Color.Success"
+                               Size="Size.Small"
+                               OnClick="OnAddManualLine"
+                               Style="border-radius: 8px; box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3); text-transform: uppercase !important; font-weight: 600; letter-spacing: 0.5px;"
+                               Class="text-uppercase manual-line-button">
+                        ADD MANUAL LINE
+                    </MudButton>
+                </MudTooltip>
+                <MudTooltip Text="Add payment for this invoice. Record payment methods and amounts.">
+                    <MudButton StartIcon="@Icons.Material.Filled.Payment"
+                               Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               OnClick="HandlePaymentClick"
+                               Style="border-radius: 8px; text-transform: none; box-shadow: 0 2px 4px rgba(63, 81, 181, 0.3);">
+                        Payment
+                    </MudButton>
+                </MudTooltip>
+            </div>
+        }
+    </div>
+    <div class="invoice-items-table-container" style="max-height: calc(100vh - 500px); overflow-y: auto; overflow-x: auto;">
+        <MudTable Items="Record.InvoiceDetails"
+                  Hover="true"
+                  Dense="true"
+                  StickyHeader="true"
+                  Elevation="0"
+                  Bordered="true"
+                  Breakpoint="Breakpoint.Xs"
+                  Class="invoice-table modern-invoice-table"
+                  Style="font-size: 0.875rem; min-width: 100%;">
+
+                <!-- HEADER -->
+                <HeaderContent>
+                    <MudTh Class="th-center th-header-large-bold" Style="width:4%; font-size: 0.8rem; padding: 8px 4px;">#</MudTh>
+                    <MudTh Class="th-center th-header-large-bold" Style="width:4%; font-size: 0.8rem; padding: 8px 4px;">⋮</MudTh>
+                    <MudTh Class="th-header-large-bold" Style="width:25%; font-size: 0.8rem; padding: 8px 4px;">Item</MudTh>
+                    <MudTh Class="th-header-large-bold" Style="width:20%; min-width: 150px; font-size: 0.8rem; padding: 8px 4px;">Description</MudTh>
+                    <MudTh Class="th-right th-header-large-bold" Style="width:8%; font-size: 0.8rem; padding: 8px 4px;">Qty</MudTh>
+                    <MudTh Class="th-right th-header-large-bold" Style="width:10%; font-size: 0.8rem; padding: 8px 4px;">Retail Price</MudTh>
+                    @if (_showTaxColumn)
+                    {
+                        <MudTh Class="th-right th-header-large-bold" Style="width:8%; font-size: 0.8rem; padding: 8px 4px;">Tax</MudTh>
+                    }
+                    <MudTh Class="th-right th-header-large-bold" Style="width:8%; font-size: 0.8rem; padding: 8px 4px;">Discount</MudTh>
+                    <MudTh Class="th-right th-header-large-bold" Style="width:13%; font-size: 0.8rem; padding: 8px 4px;">Amount</MudTh>
+                </HeaderContent>
+
+                <!-- ROW -->
+                <RowTemplate Context="row">
+                    @{
+                        var serial = Record.InvoiceDetails.Count - Record.InvoiceDetails.IndexOf(row);
+                        var itemAmount = (row.Qty * row.UnitPrice) - row.DiscountAmount + row.TaxAmount;
+                        // Calculate retail price per unit (base price + tax per unit - discount per unit)
+                        var taxPerUnit = row.Qty > 0 ? row.TaxAmount / row.Qty : 0;
+                        var discountPerUnit = row.Qty > 0 ? row.DiscountAmount / row.Qty : 0;
+                        var retailPrice = row.UnitPrice + taxPerUnit - discountPerUnit;
+                        
+                        // Determine row background color class
+                        bool isNewItem = !OriginalItemIds.Contains(row.ItemId);
+                        bool isInsert = string.Equals(Action, "INSERT", StringComparison.OrdinalIgnoreCase);
+                        string rowClass = isNewItem 
+                            ? (isInsert ? "row-new-insert" : "row-new-update")
+                            : string.Empty;
+                        string rowStyle = isNewItem 
+                            ? (isInsert ? "background-color: #e8f5e9;" : "background-color: #ffebee;")
+                            : string.Empty;
+                    }
+                    
+                    <MudTd Class="@($"td-center {rowClass}")" Style="@($"{rowStyle} width:4%;")">
+                        <MudText Typo="Typo.caption" Class="grid-text" Style="font-size: 0.75rem;">@serial</MudText>
+                    </MudTd>
+
+                    <MudTd Class="@($"td-center {rowClass}")" Style="@($"{rowStyle} width:4%;")">
+                        <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                 Size="Size.Small"
+                                 Dense="true"
+                                 Color="Color.Inherit">
+                            @if (!Disabled && !string.Equals(Action, "VIEW", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <MudMenuItem OnClick="@(() => OnDeleteItem.InvokeAsync(row))">
+                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Class="me-2" />
+                                    Delete
+                                </MudMenuItem>
+                            }
+                            @if (Math.Abs(row.TaxAmount) > 0.01)
+                            {
+                                <MudMenuItem OnClick="@(() => OnItemSelection.InvokeAsync(row))">
+                                    <MudIcon Icon="@Icons.Material.Filled.Money" Color="Color.Success" Class="me-2" />
+                                    Taxes
+                                </MudMenuItem>
+                            }
+                        </MudMenu>
+                    </MudTd>
+
+                    <MudTd Class="@rowClass" Style="@($"{rowStyle} width:25%; text-align:left; padding: 12px 8px;")">
+                        @{
+                            // Determine item name: if ItemId is not null (catalog item), show ItemName, otherwise show ManualItem
+                            string displayItemName = row.ItemId > 0 
+                                ? (!string.IsNullOrWhiteSpace(row.ItemName) ? row.ItemName : string.Empty)
+                                : (!string.IsNullOrWhiteSpace(row.ManualItem) ? row.ManualItem : string.Empty);
+                        }
+                        <div class="item-name-container">
+                            <MudText Typo="Typo.body1" Class="grid-text item-title fw-bold" Style="text-align:left; font-size: 0.9rem; line-height: 1.4; color: var(--mud-palette-text-primary); margin-bottom: 4px;">@displayItemName</MudText>
+                            @if (row.ItemId > 0 && !string.IsNullOrWhiteSpace(row.ServingSize))
+                            {
+                                <MudChip T="string" Size="Size.Small" 
+                                         Variant="Variant.Outlined" 
+                                         Color="Color.Info"
+                                         Class="item-size-chip"
+                                         Style="font-size: 0.7rem; height: 20px; padding: 0 6px;">
+                                    @row.ServingSize
+                                </MudChip>
+                            }
+                        </div>
+                    </MudTd>
+
+                    <MudTd Class="@rowClass" Style="@($"{rowStyle} width:20%; min-width: 150px; text-align:left; padding: 12px 8px;")">
+                        @if (!Disabled && !string.Equals(Action, "VIEW", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <MudTextField @bind-Value="row.Description"
+                                         Placeholder="Item description"
+                                         Variant="Variant.Outlined"
+                                         Dense="true"
+                                         Disabled="@Disabled"
+                                         FullWidth="@true"
+                                         Margin="Margin.Dense"
+                                         MaxLength="255"
+                                         Style="font-size: 0.8rem; min-width: 140px;"
+                                         Class="item-description-field" />
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2" Class="grid-text" Style="text-align:left; font-size: 0.8rem; color: #666; min-width: 140px; line-height: 1.4;">
+                                @(string.IsNullOrWhiteSpace(row.Description) ? "-" : row.Description)
+                            </MudText>
+                        }
+                    </MudTd>
+
+                    <MudTd Class="@($"td-right {rowClass}")" Style="@($"{rowStyle} width:8%; padding: 12px 8px;")">
+                        <MudNumericField T="double"
+                                         Dense="true"
+                                         Min="0"
+                                         HideSpinButtons="false"
+                                         Value="row.Qty"
+                                         ValueChanged="@(async q => await HandleQtyChanged(row, q))"
+                                         Variant="Variant.Outlined"
+                                         InputClass="numeric-input-large-bold"
+                                         ToStringFormat="#,##0.00"
+                                         Style="font-size: 0.85rem;" />
+                    </MudTd>
+
+                    <MudTd Class="@($"td-right {rowClass}")" Style="@($"{rowStyle} width:10%; padding: 12px 8px;")">
+                        <MudText Typo="Typo.body1" Class="grid-text price-text-large-bold fw-bold" Color="Color.Primary" Style="font-weight: 600; font-size: 0.9rem;">
+                            @row.UnitPrice.ToString("#,##0.00")
+                        </MudText>
+                    </MudTd>
+                    @if (_showTaxColumn)
+                    {
+                        <MudTd Class="@($"td-right {rowClass}")" Style="@($"{rowStyle} width:8%; padding: 12px 8px;")">
+                            <MudText Typo="Typo.body1" Class="grid-text number-text-large-bold fw-bold" Color="Color.Info" Style="font-weight: 600; font-size: 0.9rem;">
+                                @row.TaxAmount.ToString("#,##0.00")
+                            </MudText>
+                        </MudTd>
+                    }
+                    <MudTd Class="@($"td-right {rowClass}")" Style="@($"{rowStyle} width:8%; padding: 12px 8px;")">
+                        <MudText Typo="Typo.body1" Class="grid-text number-text-large-bold fw-bold" Color="Color.Success" Style="font-weight: 600; font-size: 0.9rem;">
+                            @row.DiscountAmount.ToString("#,##0.00")
+                        </MudText>
+                    </MudTd>
+
+                    <MudTd Class="@($"td-right {rowClass}")" Style="@($"{rowStyle} width:13%; padding: 12px 8px;")">
+                        <MudText Typo="Typo.body1" Class="grid-text number-text-large-bold fw-bold" Color="@(itemAmount < 0 ? Color.Error : Color.Primary)" Style="font-weight: 700; font-size: 0.95rem;">
+                            @itemAmount.ToString("#,##0.00")
+                        </MudText>
+                    </MudTd>
+                </RowTemplate>
+
+                <!-- FOOTER -->
+                <FooterContent>
+                    <MudTd ColSpan="4" Class="footer-label footer-label-large-bold" Style="font-size: 0.9rem; padding: 8px 4px;">TOTAL</MudTd> <!-- covers #, ⋮, Item, Description columns -->
+                    <MudTd Class="footer-num footer-num-large-bold" Style="font-size: 0.9rem; padding: 8px 4px;">@TotalQty.ToString("#,##0.00")</MudTd> <!-- Qty -->
+                    <MudTd Class="footer-num" Style="padding: 8px 4px;"></MudTd> <!-- Retail Price -->
+                    @if (_showTaxColumn)
+                    {
+                        <MudTd Class="footer-num footer-num-large-bold" Style="font-size: 0.9rem; padding: 8px 4px;">@TotalTaxAmount.ToString("#,##0.00")</MudTd> <!-- Tax -->
+                    }
+                    <MudTd Class="footer-num footer-num-large-bold" Style="font-size: 0.9rem; padding: 8px 4px;">@TotalDiscountAmount.ToString("#,##0.00")</MudTd> <!-- Discount -->
+                    <MudTd Class="footer-num footer-num-large-bold" Style="font-size: 0.9rem; padding: 8px 4px;">@Record.InvoiceDetails.Sum(x => (x.Qty * x.UnitPrice) - x.DiscountAmount + x.TaxAmount).ToString("#,##0.00")</MudTd> <!-- Amount -->
+                </FooterContent>
+
+
+        </MudTable>
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter] public InvoicesModel Record { get; set; } = new();
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public string InvoiceType { get; set; } = "SALE";
+    [Parameter] public HashSet<int> OriginalItemIds { get; set; } = new();
+    [Parameter] public EventCallback<InvoicesModel> OnAmountChanged { get; set; }
+    [Parameter] public EventCallback<InvoiceItemReportModel> OnDeleteItem { get; set; }
+    [Parameter] public EventCallback<InvoiceItemReportModel> OnItemSelection { get; set; }
+    [Parameter] public EventCallback<QtyChangedEventArgs> OnRowQtyChanged { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public double TotalQty { get; set; }
+    [Parameter] public double TotalDiscountAmount { get; set; }
+    [Parameter] public double TotalTaxAmount { get; set; }
+    [Parameter] public EventCallback OnTaxClick { get; set; }
+    [Parameter] public EventCallback OnPaymentClick { get; set; }
+    [Parameter] public bool ChargesManuallyOverridden { get; set; } = false;
+    [Parameter] public bool DiscountManuallyOverridden { get; set; } = false;
+    [Parameter] public EventCallback OnResetChargesClick { get; set; }
+    [Parameter] public EventCallback OnResetDiscountClick { get; set; }
+    [Parameter] public EventCallback OnAddManualLineClick { get; set; }
+    [Parameter] public EventCallback OnBrowseItemsClick { get; set; }
+    [Parameter] public bool TaxRuleAppliedOnInvoiceLevel { get; set; } = false;
+    
+    private bool IsPurchaseInvoice => !string.IsNullOrEmpty(InvoiceType) && InvoiceType.ToUpper().Contains("PURCHASE");
+    private bool _editingCharges = false;
+    private bool _editingDiscount = false;
+    private bool _taxRuleAppliedOnInvoiceLevel => TaxRuleAppliedOnInvoiceLevel;
+    /// <summary>Show Tax column when tax is at item level; hide when tax is at invoice level.</summary>
+    private bool _showTaxColumn => !TaxRuleAppliedOnInvoiceLevel;
+
+    private async Task ShowTaxCalculationDialog()
+    {
+        if (Record?.Invoice == null || Record.Invoice.TaxAmount <= 0)
+            return;
+
+        var parameters = new DialogParameters
+        {
+            { "Invoice", Record },
+            { "InvoiceType", InvoiceType }
+        };
+
+        var options = new DialogOptions
+        {
+            CloseButton = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+
+        await DialogService.ShowAsync<InvoiceTaxCalculationDialog>("Tax Calculation Details", parameters, options);
+    }
+
+    private async Task OnAddManualLine()
+    {
+        if (OnAddManualLineClick.HasDelegate)
+        {
+            await OnAddManualLineClick.InvokeAsync();
+        }
+    }
+
+    private async Task HandlePaymentClick()
+    {
+        if (OnPaymentClick.HasDelegate)
+        {
+            await OnPaymentClick.InvokeAsync();
+        }
+    }
+
+    private async Task OnBrowseItems()
+    {
+        if (OnBrowseItemsClick.HasDelegate)
+        {
+            await OnBrowseItemsClick.InvokeAsync();
+        }
+    }
+
+    private void ToggleChargesEdit()
+    {
+        _editingCharges = !_editingCharges;
+    }
+
+    private void ToggleDiscountEdit()
+    {
+        _editingDiscount = !_editingDiscount;
+    }
+
+    private async Task HandleQtyChanged(InvoiceItemReportModel row, double newQty)
+    {
+        if (OnRowQtyChanged.HasDelegate)
+        {
+            await OnRowQtyChanged.InvokeAsync(new QtyChangedEventArgs { Item = row, NewQty = newQty });
+        }
+    }
+
+    private async Task UpdateInvoiceAmounts()
+    {
+        if (OnAmountChanged.HasDelegate)
+        {
+            await OnAmountChanged.InvokeAsync(Record);
+        }
+    }
+
+    public async Task OnChargesAmountChanged(decimal value)
+    {
+        Record.Invoice.ChargesAmount = value;
+        await UpdateInvoiceAmounts();
+    }
+
+    public async Task OnDiscountAmountChanged(decimal value)
+    {
+        Record.Invoice.DiscountAmount = value;
+        await UpdateInvoiceAmounts();
+    }
+
+    private async Task OnResetCharges()
+    {
+        if (OnResetChargesClick.HasDelegate)
+        {
+            await OnResetChargesClick.InvokeAsync();
+        }
+    }
+
+    private async Task OnResetDiscount()
+    {
+        if (OnResetDiscountClick.HasDelegate)
+        {
+            await OnResetDiscountClick.InvokeAsync();
+        }
+    }
+}
+
+<style>
+    /* Standard fonts for POS */
+    .pos-card, .pos-table-card {
+        font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+        border-radius: 8px;
+        transition: transform 0.1s ease-in-out;
+    }
+
+        .pos-card:hover {
+            transform: translateY(-2px);
+        }
+
+    .card-title {
+        font-weight: 700;
+        font-size: 14px;
+        color: #1f2937;
+    }
+
+    .card-input {
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .card-icon-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+    }
+
+    .invoice-table {
+        font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .manual-line-button {
+        text-transform: uppercase !important;
+    }
+
+    .manual-line-button .mud-button-label {
+        text-transform: uppercase !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.5px !important;
+    }
+    
+    .grid-text {
+        font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+        font-size: 0.875rem;
+    }
+
+        .invoice-table th {
+            font-weight: 600;
+            border-bottom: 1px solid var(--mud-palette-divider);
+        }
+
+    .th-header-large-bold {
+        font-size: 0.8rem !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.3px;
+    }
+
+    .th-center {
+        text-align: center;
+    }
+
+    .th-right {
+        text-align: right;
+    }
+
+    .td-center {
+        text-align: center;
+    }
+
+    .td-right {
+        text-align: right;
+    }
+
+    .item-title {
+        font-weight: 600;
+    }
+
+    .item-sub {
+        font-weight: 400;
+    }
+
+    .item-description-field {
+        font-size: 0.75rem !important;
+    }
+
+    .item-description-field .mud-input-root {
+        min-height: 32px !important;
+    }
+
+    .item-description-field .mud-input-control {
+        font-size: 0.75rem !important;
+    }
+
+    .numeric-input {
+        text-align: right;
+        padding: 2px 6px;
+    }
+
+    .price-text {
+        font-weight: 500;
+    }
+
+    .modern-invoice-table {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .modern-invoice-table td {
+        vertical-align: middle;
+        padding: 12px 8px;
+        font-size: 0.875rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .modern-invoice-table th {
+        background: linear-gradient(135deg, rgba(63, 81, 181, 0.08) 0%, rgba(63, 81, 181, 0.04) 100%);
+        border-bottom: 2px solid rgba(63, 81, 181, 0.2);
+        padding: 12px 8px;
+    }
+
+    .modern-invoice-table tr:hover {
+        background: linear-gradient(90deg, rgba(63, 81, 181, 0.04) 0%, rgba(63, 81, 181, 0.01) 100%);
+        transition: background-color 0.2s ease;
+    }
+
+    .modern-invoice-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .item-name-container {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .item-size-chip {
+        display: inline-flex;
+        align-items: center;
+    }
+
+    /* FOOTER */
+    .invoice-table tfoot td {
+        background: #f3f4f6;
+        border-top: 2px solid #d1d5db;
+        font-weight: 600;
+    }
+
+    .footer-label {
+        text-align: right;
+        color: #111827;
+    }
+
+    .footer-label-large-bold {
+        font-size: 0.9rem !important;
+        font-weight: 700 !important;
+        color: #111827 !important;
+    }
+
+    .footer-num {
+        text-align: right;
+    }
+
+    .footer-num-large-bold {
+        font-size: 0.9rem !important;
+        font-weight: 700 !important;
+        font-family: 'Courier New', monospace !important;
+    }
+
+    .summary-card {
+        height: 100%;
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+    }
+    /* Professional Summary Cards with Enhanced Styling */
+    .summary-card-professional {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .summary-card-professional::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, transparent 0%, currentColor 50%, transparent 100%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .summary-card-professional:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+    }
+
+    .summary-card-professional:hover::after {
+        opacity: 0.3;
+    }
+
+    .card-icon-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Border colors remain theme-aware via inline styles */
+    .summary-card-info {
+        border-left-color: var(--mud-palette-info) !important;
+    }
+
+    .summary-card-success {
+        border-left-color: var(--mud-palette-success) !important;
+    }
+
+    .summary-card-warning {
+        border-left-color: var(--mud-palette-warning) !important;
+    }
+
+    .summary-card-primary {
+        border-left-color: var(--mud-palette-primary) !important;
+    }
+
+    .summary-card-error {
+        border-left-color: var(--mud-palette-error) !important;
+    }
+
+    /* Dark mode: Use darker shades of primary color */
+    .mud-theme-dark .summary-card-beautiful::before {
+        background: linear-gradient(135deg, var(--mud-palette-primary-darken) 0%, var(--mud-palette-primary) 100%);
+        opacity: 0.15;
+    }
+
+    .mud-theme-dark .summary-card-beautiful:hover::before {
+        opacity: 0.20;
+    }
+
+    /* Professional Card Labels */
+    .card-label-large {
+        font-size: 0.875rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.3px;
+        font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif !important;
+        color: #495057 !important;
+    }
+
+    /* Professional Number Inputs */
+    .number-input-large-bold input {
+        font-size: 1.25rem !important;
+        font-weight: 600 !important;
+        font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif !important;
+        letter-spacing: 0.5px !important;
+        padding: 6px 10px !important;
+        color: #212529 !important;
+    }
+
+    .numeric-input-large-bold {
+        font-size: 1.25rem !important;
+        font-weight: 700 !important;
+        font-family: 'Cooper Black', 'Cooper Std', 'Rubik Wet Paint', 'Bungee', 'Impact', 'Arial Black', sans-serif !important;
+        text-align: right !important;
+        padding: 4px 8px !important;
+    }
+
+    /* Large Bold Text for Numbers */
+    .number-text-large-bold {
+        font-size: 0.875rem !important;
+        font-weight: 600 !important;
+        font-family: 'Courier New', monospace !important;
+    }
+
+    .price-text-large-bold {
+        font-size: 0.875rem !important;
+        font-weight: 600 !important;
+    }
+
+    /* Professional Digital Display Style for Card Values */
+    .digital-display-large {
+        font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif !important;
+        font-weight: 600 !important;
+        font-size: 1.5rem !important;
+        letter-spacing: 0.5px !important;
+        line-height: 1.3 !important;
+        color: inherit !important;
+    }
+
+    /* Legacy support */
+    .digital-display {
+        font-family: 'Courier New', 'Consolas', 'Monaco', monospace !important;
+        font-weight: 700 !important;
+        letter-spacing: 2px !important;
+        text-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
+        line-height: 1.2 !important;
+    }
+
+    .amount-input-modern input {
+        font-size: 1.5rem;
+        font-weight: 700;
+        font-family: 'Courier New', monospace;
+        letter-spacing: 1px;
+    }
+
+    /* Summary Cards Container - Flexbox with no wrap */
+    .summary-cards-container {
+        display: flex;
+        gap: 6px;
+        flex-wrap: nowrap;
+        width: 100%;
+        margin-bottom: 8px;
+        align-items: stretch;
+    }
+
+    .summary-card-wrapper {
+        flex: 1 1 0;
+        min-width: 0;
+        max-width: 100%;
+        display: flex;
+    }
+
+    /* Ensure cards don't shrink below minimum width */
+    .summary-card-wrapper {
+        min-width: 140px;
+    }
+
+    /* Ensure all MudPaper cards have same height */
+    .summary-card-wrapper .mud-paper {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    /* Responsive: allow wrapping on small screens */
+    @@media (max-width: 1200px) {
+        .summary-cards-container {
+            flex-wrap: wrap;
+        }
+
+        .summary-card-wrapper {
+            flex: 1 1 calc(33.33% - 4px);
+            min-width: calc(33.33% - 4px);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .summary-card-wrapper {
+            flex: 1 1 calc(50% - 3px) !important;
+            min-width: calc(50% - 3px) !important;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .summary-card-wrapper {
+            flex: 1 1 100% !important;
+            min-width: 100% !important;
+        }
+    }
+
+    /* Invoice Items Table Styling */
+    .invoice-items-table-paper {
+        box-shadow: 0 4px 12px rgba(63, 81, 181, 0.1) !important;
+    }
+
+    .invoice-items-header {
+        backdrop-filter: blur(10px);
+    }
+
+    .invoice-items-table-container {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(63, 81, 181, 0.3) rgba(63, 81, 181, 0.1);
+    }
+
+    .invoice-items-table-container::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .invoice-items-table-container::-webkit-scrollbar-track {
+        background: rgba(63, 81, 181, 0.05);
+        border-radius: 4px;
+    }
+
+    .invoice-items-table-container::-webkit-scrollbar-thumb {
+        background: rgba(63, 81, 181, 0.3);
+        border-radius: 4px;
+    }
+
+    .invoice-items-table-container::-webkit-scrollbar-thumb:hover {
+        background: rgba(63, 81, 181, 0.5);
+    }
+
+    /* Table row hover effects */
+    .invoice-table .mud-table-row:hover {
+        background: linear-gradient(90deg, rgba(63, 81, 181, 0.05) 0%, rgba(63, 81, 181, 0.02) 100%);
+    }
+
+</style>

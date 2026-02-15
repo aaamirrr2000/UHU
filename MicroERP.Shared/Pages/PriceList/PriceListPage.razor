@@ -1,0 +1,314 @@
+@page "/PriceListPage/{Action}/{CurrentRecord?}"
+@using Microsoft.AspNetCore.Components.Forms
+
+@inject IJSRuntime JSRuntime
+@inject IDialogService dialogService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackbarService
+@inject Functions Functions
+@inject Globals Globals
+
+<Loading IsLoading="@LoadingPanel" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <EditForm Model="record">
+    <MudExpansionPanels MultiExpansion="true">
+        <MudGrid>
+        <!-- Basic Details Panel -->
+        <MudItem xs="12">
+            <MudExpansionPanel Text="Basic Details" Expanded="true">
+                <TitleContent>
+                    <div class="d-flex align-items-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" class="mr-3" />
+                        <MudText Typo="Typo.h6" Class="mb-0">Basic Details</MudText>
+                    </div>
+                </TitleContent>
+                <ChildContent>
+
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        @if (isReadOnly)
+                        {
+                            <MudTextField Label="Item"
+                                         T="string"
+                                         Value="@(Ite.FirstOrDefault(i => i.Id == record.ItemId)?.DisplayName ?? string.Empty)"
+                                         ReadOnly="@true"
+                                         Variant="Variant.Outlined"
+                                         FullWidth="@true"
+                                         Class="mb-3" />
+                        }
+                        else
+                        {
+                            <AutoComplete TItem="ItemsModel"
+                                          DataList="@Ite"
+                                          DisplayProperty="@(p => p.DisplayName)"
+                                          IdProperty="@(p => p.Id)"
+                                          Label="Item **"
+                                          @bind-SelectedId="record.ItemId"
+                                          Variant="Variant.Outlined"
+                                          FullWidth="@true"
+                                          Class="mb-3" />
+                        }
+                        <ValidationMessage For="@(() => record.ItemId)" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="string"
+                                   @bind-Value="record.PriceListName"
+                                   Placeholder="Select Price List"
+                                   Variant="Variant.Outlined"
+                                   Label="Price List **"
+                                   Clearable="true"
+                                   FullWidth="true"
+                                   Class="flex-grow-1">
+                            @if (PriceList != null && PriceList.Any())
+                            {
+                                if (string.IsNullOrWhiteSpace(record.PriceListName))
+                                {
+                                    record.PriceListName = PriceList.First().ListValue;
+                                }
+                                foreach (var i in PriceList)
+                                {
+                                    <MudSelectItem T="string" Value="@i.ListValue">@i.ListValue</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => record.PriceListName)" />
+                        </div>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudNumericField T="int"
+                                         Label="Min Quantity"
+                                         @bind-Value="record.MinQuantity"
+                                         Variant="Variant.Outlined"
+                                         Placeholder="MinQuantity"
+                                         ReadOnly="@isReadOnly"
+                                         Format="#,##0.00"
+                                         FullWidth="@true"
+                                         Class="mb-3" />
+                        <ValidationMessage For="@(() => record.MinQuantity)" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudNumericField T="double"
+                                         Label="One Quantity Price"
+                                         @bind-Value="record.OneQuantityPrice"
+                                         Variant="Variant.Outlined"
+                                         Placeholder="OneQuantityPrice"
+                                         ReadOnly="@isReadOnly"
+                                         Format="#,##0.00"
+                                         FullWidth="@true"
+                                         Class="mb-3" />
+                        <ValidationMessage For="@(() => record.OneQuantityPrice)" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudNumericField T="double"
+                                         Label="Min Quantity Price"
+                                         @bind-Value="record.MinQuantityPrice"
+                                         Variant="Variant.Outlined"
+                                         Placeholder="MinQuantityPrice"
+                                         ReadOnly="@isReadOnly"
+                                         Format="#,##0.00"
+                                         FullWidth="@true"
+                                         Class="mb-3" />
+                        <ValidationMessage For="@(() => record.MinQuantityPrice)" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker Label="Effective Date"
+                                      @bind-Date="record.EffectiveDate" DateFormat="dd MMM yyyy"
+                                      Placeholder="Effective Date"
+                                      ReadOnly="@isReadOnly" Variant="Variant.Outlined"
+                                      FullWidth="@true"
+                                      Class="mb-3" />
+                        <ValidationMessage For="@(() => record.EffectiveDate)" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="int"
+                                   Label="Active Status"
+                                   @bind-Value="record.IsActive"
+                                   Placeholder="Active Status"
+                                   Variant="Variant.Outlined"
+                                   Clearable="@true"
+                                   FullWidth="@true"
+                                   ReadOnly="@isReadOnly"
+                                   Class="mb-3">
+                            @if (record.IsActive != 0 && record.IsActive != 1)
+                            {
+                                record.IsActive = 1;
+                            }
+                            <MudSelectItem T="int" Value="1">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="me-2" />
+                                Enable
+                            </MudSelectItem>
+                            <MudSelectItem T="int" Value="0">
+                                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" Class="me-2" />
+                                Disable
+                            </MudSelectItem>
+                        </MudSelect>
+                        <ValidationMessage For="@(() => record.IsActive)" />
+                    </MudItem>
+                </MudGrid>
+                </ChildContent>
+            </MudExpansionPanel>
+        </MudItem>
+        </MudGrid>
+    </MudExpansionPanels>
+    </EditForm>
+</MudContainer>
+
+@code
+{
+    PriceListModel record = new();
+    List<ItemsModel> Ite = new();
+    List<TypeCodeModel> PriceList = null!;
+    [Parameter] public PriceListModel? Model { get; set; }
+    [Parameter] public string Action { get; set; } = "INSERT";
+    [Parameter] public int CurrentRecord { get; set; } = 0;
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    bool isReadOnly = true;
+    private bool LoadingPanel { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAll();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Model != null)
+        {
+            record = Model;
+        }
+        else if (CurrentRecord > 0 && (record.Id != CurrentRecord || record.Id == 0))
+        {
+            await Get(CurrentRecord);
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GetDefaultValues();
+    }
+
+    protected async Task GetAll()
+    {
+        LoadingPanel = true;
+        PriceList = await Functions.GetAsync<List<TypeCodeModel>>($"TypeCode/Search/PRICE LIST", true) ?? new List<TypeCodeModel>();
+        Ite = await Functions.GetAsync<List<ItemsModel>>($"Items/Search", true) ?? new List<ItemsModel>();
+
+        if (Action == "INSERT" && Model == null)
+        {
+            record = new PriceListModel();
+            record.IsActive = 1;
+            isReadOnly = false;
+        }
+        else if (Action == "UPDATE" && Model == null)
+        {
+            await Get(CurrentRecord);
+            isReadOnly = false;
+        }
+        else if (Action == "VIEW" && Model == null)
+        {
+            await Get(CurrentRecord);
+            isReadOnly = true;
+        }
+
+        LoadingPanel = false;
+    }
+
+    protected async Task Get(int id)
+    {
+        LoadingPanel = true;
+        record = await Functions.GetAsync<PriceListModel>($"PriceList/Get/{id}", true) ?? new PriceListModel();
+        LoadingPanel = false;
+    }
+
+    protected void GetDefaultValues()
+    {
+        StateHasChanged();
+    }
+
+    protected async Task Clear()
+    {
+        Action = "INSERT";
+        record = new PriceListModel();
+        record.IsActive = 1;
+        isReadOnly = false;
+    }
+
+    protected async Task Edit(int id)
+    {
+        await Get(id);
+        Action = "UPDATE";
+        isReadOnly = false;
+    }
+
+    protected async Task Delete()
+    {
+        var res = await Functions.ShowConfirmation(dialogService, "Do you want to delete existing record?");
+        if (res == false)
+            return;
+
+        Action = "SOFTDELETE";
+        await Save();
+    }
+
+    protected async Task Save()
+    {
+        var errors = new List<string>();
+        if (string.IsNullOrWhiteSpace(record.PriceListName))
+            errors.Add("â€¢ Price List Name is required");
+
+        if (errors.Count > 0)
+        {
+            SnackbarService.Add($"ERROR:\n{string.Join("\n", errors)}", Severity.Error);
+            return;
+        }
+
+        try
+        {
+            LoadingPanel = true;
+
+            record.OrganizationId = Globals.User.OrganizationId;
+            record.CreatedBy = Globals.User.Id;
+            record.CreatedOn = DateTime.Now;
+            record.CreatedFrom = Globals.ClientInfo;
+            record.UpdatedBy = Globals.User.Id;
+            record.UpdatedOn = DateTime.Now;
+            record.UpdatedFrom = Globals.ClientInfo;
+
+            string url = char.ToUpper(Action[0]) + Action.Substring(1).ToLower();
+            var result = await Functions.PostAsync<PriceListModel>($"PriceList/{url}", record, true);
+            if (result.Success == false)
+            {
+                SnackbarService.Add($"ERROR: {result.Message}", Severity.Error);
+            }
+            else
+            {
+                await OnSaved.InvokeAsync();
+                SnackbarService.Add($"Record {Action} Successfully", Severity.Success);
+                if (url?.Contains("delete", StringComparison.OrdinalIgnoreCase) == false)
+                    await Edit(result.Result!.Id);
+                else
+                {
+                    await Clear();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackbarService.Add($"ERROR: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            LoadingPanel = false;
+        }
+    }
+}
+

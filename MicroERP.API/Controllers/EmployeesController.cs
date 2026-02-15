@@ -1,0 +1,87 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using MicroERP.Shared.Models;
+using MicroERP.API.Services;
+using MicroERP.API.Helper;
+
+namespace MicroERP.API.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+[Authorize]
+public class EmployeesController : ControllerBase
+{
+    EmployeesService Srv = new EmployeesService();
+
+    [HttpGet("Search/{Criteria?}")]
+    public async Task<IActionResult> Search(string Criteria = "")
+    {
+        if (!string.IsNullOrEmpty(Criteria) && !SQLInjectionHelper.IsSafeSearchCriteria(Criteria))
+            return BadRequest("Invalid search criteria. The search criteria contains potentially unsafe characters.");
+
+        var result = await Srv.Search(Criteria)!;
+        if (result.Item1 == false)
+            return NotFound("No employees found matching the search criteria.");
+
+        return Ok(result.Item2);
+    }
+
+    [HttpGet("Get/{id}")]
+    public async Task<IActionResult> Get(int id)
+    {
+        if (id <= 0)
+            return BadRequest($"Invalid employee ID: {id}. Employee ID must be greater than zero.");
+
+        var result = await Srv.Get(id)!;
+        if (result.Item1 == false)
+            return NotFound($"Employee with ID {id} not found. The employee may have been deleted or does not exist.");
+
+        return Ok(result.Item2);
+
+    }
+
+    [HttpPost("Insert")]
+    public async Task<IActionResult> Insert(EmployeesModel obj)
+    {
+        var result = await Srv.Post(obj)!;
+        if (result.Item1 == true)
+            return Ok(result.Item2);
+        else
+            return BadRequest(result.Item3);
+    }
+
+    [HttpPost("Update")]
+    public async Task<IActionResult> Update(EmployeesModel obj)
+    {
+        var result = await Srv.Put(obj)!;
+        if (result.Item1 == true)
+            return Ok(result.Item2);
+        else
+            return BadRequest(result.Item3);
+    }
+
+    [HttpPost("Delete")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var result = await Srv.Delete(id)!;
+        if (result.Item1 == true)
+        {
+            return Ok(result.Item2);
+        }
+        else
+        {
+            return BadRequest(result.Item2);
+        }
+    }
+
+    [HttpPost("SoftDelete")]
+    public async Task<IActionResult> SoftDelete(EmployeesModel obj)
+    {
+        var result = await Srv.SoftDelete(obj)!;
+        if (result.Item1 == true)
+            return Ok(result.Item2);
+        else
+            return BadRequest(result.Item2);
+    }
+}

@@ -1,0 +1,313 @@
+@page "/PhysicalCashCountPage/{Action}/{CurrentRecord?}"
+
+@using MicroERP.Shared.Models
+@using System.Linq
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+
+<div class="d-flex flex-column" style="margin: 5px; height: 80vh;">
+    <EditForm Model="Model">
+    @if (!string.IsNullOrEmpty(PeriodValidationMessage))
+    {
+        <MudAlert Severity="@(PeriodValidationMessage.Contains("CLOSED") ? Severity.Error : Severity.Success)" Class="mb-3">
+            @PeriodValidationMessage
+        </MudAlert>
+    }
+
+    <MudExpansionPanels MultiExpansion="true">
+
+        <!-- Basic Mandatory Details Panel -->
+        <MudExpansionPanel Text="Basic Details" Expanded="true" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-check-circle"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Basic Details</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Required mandatory information</MudText>
+                    </div>
+                </div>
+                
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudDatePicker @bind-Date="Model.CountDate"
+                                       Label="Count Date & Time *" DateFormat="dd MMM yyyy"
+                                       TimeFormat="HH:mm"
+                                       UseTimePicker="true"
+                                       Placeholder="Select Date & Time"
+                                       ReadOnly="@IsReadOnly" Variant="Variant.Outlined"
+                                       FullWidth="@true"
+                                       Class="flex-grow-1"
+                                       @bind-Date:after="OnCountDateChanged"></MudDatePicker>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        @if (IsAdmin)
+                        {
+                            <AutoComplete TItem="LocationsModel"
+                                          DataList="@Locations"
+                                          DisplayProperty="@(p => p.Name)"
+                                          IdProperty="@(p => p.Id)"
+                                          @bind-SelectedId="Model.LocationId"
+                                          @bind-SelectedId:after="OnLocationChanged"
+                                          Variant="Variant.Outlined"
+                                          Label="Location *"
+                                          FullWidth="@true" />
+                        }
+                        else
+                        {
+                            <MudTextField Value="@(Locations.FirstOrDefault(l => l.Id == Model.LocationId)?.Name ?? "")"
+                                          Label="Location *"
+                                          Variant="Variant.Outlined"
+                                          ReadOnly="true"
+                                          FullWidth="@true" />
+                        }
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <MudSelect T="string"
+                                   @bind-Value="Model.Locker"
+                                   @bind-Value:after="OnLockerChanged"
+                                   Label="Locker *"
+                                   Placeholder="Select Locker"
+                                   Variant="Variant.Outlined"
+                                   FullWidth="@true"
+                                   Clearable="false"
+                                   ReadOnly="@IsReadOnly"
+                                   Class="flex-grow-1">
+                            @foreach (var lockerItem in Lockers)
+                            {
+                                <MudSelectItem T="string" Value="@lockerItem.ListValue">@lockerItem.ListValue</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => Model.Locker)" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <AutoComplete TItem="UsersModel"
+                                      DataList="@Users"
+                                      DisplayProperty="@(p => string.IsNullOrWhiteSpace(p.FullName) ? p.Username ?? "" : p.FullName)"
+                                      IdProperty="@(p => p.Id)"
+                                      @bind-SelectedId="Model.CountedBy"
+                                      @bind-SelectedId:after="OnCountedByChanged"
+                                      Variant="Variant.Outlined"
+                                      Label="Counted By (Employee) *"
+                                      FullWidth="@true"
+                                      Clearable="false"
+                                      ReadOnly="@IsReadOnly" />
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => Model.CountedBy)" />
+                        </div>
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <!-- Denominations Panel -->
+        <MudExpansionPanel Text="Cash Count by Denomination" Expanded="true" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-money-bill-wave"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Cash Count by Denomination</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Enter quantity for each denomination</MudText>
+                    </div>
+                </div>
+                
+            </TitleContent>
+
+            <ChildContent>
+                <MudPaper Elevation="2" Class="pa-4">
+                    <MudTable Items="@DenominationEntries" Hover="true" Dense="true" Bordered="true">
+                        <HeaderContent>
+                            <MudTh>Denomination</MudTh>
+                            <MudTh>X</MudTh>
+                            <MudTh>Quantity</MudTh>
+                            <MudTh>=</MudTh>
+                            <MudTh Class="text-end">Total</MudTh>
+                        </HeaderContent>
+                        <RowTemplate Context="denomRow">
+                            <MudTd>
+                                <MudText Typo="Typo.h6" Class="fw-bold">
+                                    @denomRow.Denomination.ToString("#,##0.00")
+                                </MudText>
+                            </MudTd>
+                            <MudTd Class="text-center">
+                                <MudText Typo="Typo.body1" Class="fw-bold">X</MudText>
+                            </MudTd>
+                            <MudTd>
+                                <MudNumericField @bind-Value="denomRow.Quantity"
+                                                 @bind-Value:after="CalculateTotal"
+                                                 ReadOnly="@IsReadOnly"
+                                                 Format="#,##0"
+                                                 Variant="Variant.Outlined"
+                                                 Style="max-width: 150px;"
+                                                 Min="0"></MudNumericField>
+                            </MudTd>
+                            <MudTd Class="text-center">
+                                <MudText Typo="Typo.body1" Class="fw-bold">=</MudText>
+                            </MudTd>
+                            <MudTd Class="text-end">
+                                <MudText Typo="Typo.h6" Class="fw-bold text-success">
+                                    @denomRow.Amount.ToString("#,##0.00")
+                                </MudText>
+                            </MudTd>
+                        </RowTemplate>
+                        <FooterContent>
+                            <MudTd ColSpan="4" Class="text-end fw-bold">
+                                <MudText Typo="Typo.h5">Grand Total:</MudText>
+                            </MudTd>
+                            <MudTd Class="text-end">
+                                <MudText Typo="Typo.h5" Class="fw-bold text-primary">
+                                    @GrandTotal.ToString("#,##0.00")
+                                </MudText>
+                            </MudTd>
+                        </FooterContent>
+                    </MudTable>
+                </MudPaper>
+            </ChildContent>
+        </MudExpansionPanel>
+
+        <!-- Additional Details Panel -->
+        <MudExpansionPanel Text="Additional Details" Style="margin-bottom:10px;">
+            <TitleContent>
+                <div class="d-flex align-items-center p-2 rounded" style="gap: 10px;">
+                    <i class="fa fa-info-circle"
+                       style="display:inline-block; width:40px; height:40px; font-size:24px; line-height:40px; text-align:center; border-radius:5%;">
+                    </i>
+                    <div class="ms-2">
+                        <MudText Typo="Typo.h6" Class="fw-bold">Additional Details</MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">Optional information</MudText>
+                    </div>
+                </div>
+                
+            </TitleContent>
+
+            <ChildContent>
+                <div class="row" style="width:100%; display: flex;">
+                    <div class="col-12 mb-3 d-flex flex-column" style="min-height: 95px;">
+                        <label class="form-label fw-bold mb-1">Notes</label>
+                        <MudTextField @bind-Value="Model.Notes"
+                                      placeholder="Additional notes or remarks"
+                                      ReadOnly="@IsReadOnly"
+                                      Variant="Variant.Outlined"
+                                      Lines="3"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1"></MudTextField>
+                    </div>
+
+                    <div class="col-12 mb-3 d-flex flex-column" style="min-height: 95px;">
+                        <label class="form-label fw-bold mb-1">Comments</label>
+                        <MudTextField @bind-Value="Model.Comments"
+                                      placeholder="Comments will be auto-generated on save if empty"
+                                      ReadOnly="@IsReadOnly"
+                                      Variant="Variant.Outlined"
+                                      Lines="3"
+                                      FullWidth="@true"
+                                      Class="flex-grow-1"></MudTextField>
+                        @if (!IsReadOnly && string.IsNullOrWhiteSpace(Model.Comments) && !string.IsNullOrWhiteSpace(Model.Locker))
+                        {
+                            <MudText Typo="Typo.caption" Class="text-muted mt-1">
+                                <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="me-1" />
+                                Will auto-generate: "{Model.Locker} Total Amount {GrandTotal:N2} on {DateTime.Now:dd MMM yyyy HH:mm}"
+                            </MudText>
+                        }
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3 d-flex flex-column" style="height: 95px;">
+                        <label class="form-label fw-bold mb-1">Status <span style='color:red;'>*</span></label>
+                        <MudSelect T="string"
+                                   @bind-Value="Model.Status"
+                                   @bind-Value:after="UpdateComments"
+                                   Placeholder="Select Status"
+                                   Variant="Variant.Outlined"
+                                   FullWidth="@true"
+                                   Clearable="false"
+                                   ReadOnly="@IsReadOnly"
+                                   Class="flex-grow-1">
+                            <MudSelectItem T="string" Value=@("RECONCILED")>Reconciled</MudSelectItem>
+                            <MudSelectItem T="string" Value=@("NOT RECONCILED")>Not Reconciled</MudSelectItem>
+                        </MudSelect>
+                        <div class="validation-container" style="min-height: 22px;">
+                            <ValidationMessage For="@(() => Model.Status)" />
+                        </div>
+                    </div>
+                </div>
+            </ChildContent>
+        </MudExpansionPanel>
+
+    </MudExpansionPanels>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter] public PhysicalCashCountModel Model { get; set; } = new();
+    [Parameter] public List<PhysicalCashCountDenominationEntry> DenominationEntries { get; set; } = new();
+    
+    [Parameter] public List<LocationsModel> Locations { get; set; } = new();
+    [Parameter] public List<UsersModel> Users { get; set; } = new();
+    [Parameter] public List<TypeCodeModel> Lockers { get; set; } = new();
+    
+    [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public bool IsAdmin { get; set; }
+    
+    [Parameter] public string PeriodValidationMessage { get; set; }
+    [Parameter] public EventCallback OnDateChanged { get; set; }
+
+    private decimal GrandTotal => DenominationEntries?.Sum(e => e.Amount) ?? 0;
+
+    private async Task OnCountDateChanged()
+    {
+        await OnDateChanged.InvokeAsync();
+        UpdateComments();
+    }
+
+    private void OnLockerChanged()
+    {
+        UpdateComments();
+    }
+
+    private void OnLocationChanged()
+    {
+        UpdateComments();
+    }
+
+    private void OnCountedByChanged()
+    {
+        // Can add logic if needed
+    }
+
+    private void UpdateComments()
+    {
+        // Auto-generate comments if locker is selected and we have a count date
+        // Only update if it seems to be auto-generated or empty (simple heuristic)
+        if (!string.IsNullOrWhiteSpace(Model.Locker) && Model.CountDate.HasValue)
+        {
+             // We only update the local suggestion, but binding updates the model
+             // Logic in Dashboard or Save will finalize this if empty
+             if (string.IsNullOrWhiteSpace(Model.Comments) || Model.Comments.Contains("Total Amount"))
+             {
+                 Model.Comments = $"{Model.Locker} Total Amount {GrandTotal:N2} on {Model.CountDate.Value:dd MMM yyyy HH:mm}";
+             }
+        }
+    }
+
+    private void CalculateTotal()
+    {
+        foreach (var entry in DenominationEntries)
+        {
+            entry.Amount = entry.Denomination * entry.Quantity;
+        }
+        UpdateComments();
+        StateHasChanged();
+    }
+}
+
